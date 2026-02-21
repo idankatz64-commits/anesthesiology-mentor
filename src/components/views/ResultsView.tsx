@@ -1,11 +1,42 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Search, RotateCcw } from 'lucide-react';
+import { RotateCcw, ChevronDown, ChevronUp, BookOpen, ExternalLink } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+
+function ExplanationRenderer({ text }: { text: string }) {
+  let processed = text.replace(
+    /<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
+    '[$2]($1)'
+  );
+  processed = processed.replace(
+    /(?<!\]\()(?<!\()(https?:\/\/[^\s\)]+)/g,
+    '[$1]($1)'
+  );
+  return (
+    <ReactMarkdown
+      components={{
+        a: ({ href, children }) => (
+          <a href={href} target="_blank" rel="noopener noreferrer"
+            className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1 break-all">
+            {children}
+            <ExternalLink className="w-3 h-3 inline-block flex-shrink-0" />
+          </a>
+        ),
+        p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+      }}
+    >
+      {processed}
+    </ReactMarkdown>
+  );
+}
 
 export default function ResultsView() {
   const { session, progress, data, navigate, startSession, updateHistory } = useApp();
   const { quiz, answers, mode } = session;
+  const [expandedQ, setExpandedQ] = useState<number | null>(null);
+
+  const isSimulation = mode === 'simulation';
 
   const results = useMemo(() => {
     let score = 0;
@@ -19,7 +50,7 @@ export default function ResultsView() {
       details.push({ q, userAns, correctAns, isCorrect });
     });
 
-    // Update history for exam mode
+    // Update history for exam mode (not simulation - already done on submit)
     if (mode === 'exam') {
       quiz.forEach((q, i) => {
         const userAns = answers[i];
@@ -33,11 +64,6 @@ export default function ResultsView() {
     return { score, pct, details };
   }, [quiz, answers, mode]);
 
-  const handleReview = () => {
-    navigate('session');
-    // Set mode to review - will be handled in session
-  };
-
   const handleRestart = () => {
     startSession(quiz, quiz.length, 'practice');
   };
@@ -47,8 +73,12 @@ export default function ResultsView() {
   return (
     <div className="fade-in max-w-2xl mx-auto text-center pt-10">
       <div className="text-8xl mb-6 animate-bounce drop-shadow-xl">{icon}</div>
-      <h2 className="text-4xl font-bold text-foreground mb-3">סיכום ביצועים</h2>
-      <p className="text-muted-foreground mb-10 text-lg font-light">סיימת את הסשן בהצלחה</p>
+      <h2 className="text-4xl font-bold text-foreground mb-3">
+        {isSimulation ? 'תוצאות סימולציה' : 'סיכום ביצועים'}
+      </h2>
+      <p className="text-muted-foreground mb-10 text-lg font-light">
+        {isSimulation ? 'המבחן הסתיים. להלן התוצאות המפורטות.' : 'סיימת את הסשן בהצלחה'}
+      </p>
 
       <div className="grid grid-cols-2 gap-6 mb-10">
         <div className="soft-card bg-card border border-border p-8">
@@ -75,38 +105,99 @@ export default function ResultsView() {
           .map(([topic, s]) => ({ topic, rate: s.wrong / s.total, count: s.total }))
           .filter(i => i.rate > 0 && i.count >= 1)
           .sort((a, b) => b.rate - a.rate)
-          .slice(0, 3);
+          .slice(0, 5);
 
         if (weak.length === 0) return null;
         return (
           <div className="bg-primary/5 rounded-3xl p-8 border border-primary/10 text-right mb-10 shadow-sm">
-            <h3 className="font-bold text-primary mb-4 flex items-center gap-3 text-lg">✨ ניתוח חכם והמלצות</h3>
-            <p className="text-foreground mb-2">זוהו נושאים לחיזוק:</p>
+            <h3 className="font-bold text-primary mb-4 flex items-center gap-3 text-lg">✨ נושאים לחיזוק</h3>
             <ul className="list-disc list-inside mt-2 font-bold text-primary space-y-1">
               {weak.map(t => <li key={t.topic}>{t.topic} ({Math.round(t.rate * 100)}% שגיאות)</li>)}
             </ul>
-            <p className="mt-2 text-xs text-muted-foreground">מומלץ לחזור על הפרקים הרלוונטיים במילר.</p>
           </div>
         );
       })()}
 
-      {/* Question details */}
-      <div className="text-right soft-card bg-card border border-border p-8 mb-10 max-h-96 overflow-y-auto">
-        <h3 className="font-bold text-foreground mb-6 border-b border-border pb-3">פירוט שאלות</h3>
-        <div className="space-y-4">
+      {/* Question details - expanded view for simulation */}
+      <div className="text-right soft-card bg-card border border-border p-8 mb-10 max-h-[600px] overflow-y-auto">
+        <h3 className="font-bold text-foreground mb-6 border-b border-border pb-3">
+          {isSimulation ? 'פירוט מלא עם הסברים' : 'פירוט שאלות'}
+        </h3>
+        <div className="space-y-2">
           {results.details.map((d, i) => (
             <div
               key={i}
-              className={`p-4 border-b border-border text-sm ${
-                d.isCorrect ? 'bg-success-muted' : d.userAns ? 'bg-destructive/5' : 'bg-muted'
+              className={`border rounded-xl overflow-hidden ${
+                d.isCorrect ? 'border-success/20' : d.userAns ? 'border-destructive/20' : 'border-border'
               }`}
             >
-              <div className="flex justify-between font-bold text-foreground">
-                <span>#{d.q[KEYS.ID]}</span>
-                <span>{d.userAns ? (d.isCorrect ? '✅' : '❌') : '⚪ (דולג)'}</span>
+              <div
+                className={`p-4 text-sm cursor-pointer flex justify-between items-center ${
+                  d.isCorrect ? 'bg-success-muted' : d.userAns ? 'bg-destructive/5' : 'bg-muted'
+                }`}
+                onClick={() => setExpandedQ(expandedQ === i ? null : i)}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="font-bold text-foreground">#{d.q[KEYS.REF_ID]}</span>
+                  <span className="text-muted-foreground text-xs">(סידורי: {d.q[KEYS.ID]})</span>
+                  <span>{d.userAns ? (d.isCorrect ? '✅' : '❌') : '⚪'}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">
+                    תשובתך: {d.userAns || '-'} | נכון: {d.correctAns}
+                  </span>
+                  {expandedQ === i ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
               </div>
-              <p className="mt-2 mb-2 text-muted-foreground font-light bidi-text">{d.q[KEYS.QUESTION].substring(0, 60)}...</p>
-              <div className="text-xs text-muted-foreground">תשובתך: {d.userAns || '-'} | נכון: {d.correctAns}</div>
+
+              {expandedQ === i && (
+                <div className="p-5 border-t border-border bg-card space-y-4">
+                  <p className="text-foreground text-sm bidi-text leading-relaxed">{d.q[KEYS.QUESTION]}</p>
+                  
+                  {/* Show all options with correct/incorrect marking */}
+                  <div className="space-y-2">
+                    {(['A', 'B', 'C', 'D'] as const).map(opt => {
+                      const text = d.q[KEYS[opt]];
+                      if (!text) return null;
+                      const isCorrectOpt = opt === d.correctAns;
+                      const isUserChoice = opt === d.userAns;
+                      return (
+                        <div key={opt} className={`p-3 rounded-lg text-sm flex items-center gap-2 ${
+                          isCorrectOpt ? 'bg-success-muted text-success font-bold' :
+                          isUserChoice ? 'bg-destructive/10 text-destructive' :
+                          'text-muted-foreground'
+                        }`}>
+                          <span className="font-bold">{opt}.</span>
+                          <span className="bidi-text">{text}</span>
+                          {isCorrectOpt && <span>✓</span>}
+                          {isUserChoice && !isCorrectOpt && <span>✗</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Explanation */}
+                  {d.q[KEYS.EXPLANATION] && (
+                    <div className="bg-muted/50 p-4 rounded-xl border border-border">
+                      <strong className="text-foreground text-xs block mb-2">💡 הסבר:</strong>
+                      <div className="text-sm text-foreground bidi-text markdown-content">
+                        <ExplanationRenderer text={d.q[KEYS.EXPLANATION]} />
+                      </div>
+                    </div>
+                  )}
+
+                  {d.q[KEYS.MILLER] && d.q[KEYS.MILLER] !== 'N/A' && (
+                    <a
+                      href={`https://www.google.com/search?q=Miller's+Anesthesia+10th+edition+page+${d.q[KEYS.MILLER]}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-full font-medium transition flex items-center gap-2 w-fit"
+                    >
+                      <BookOpen className="w-3 h-3" /> Miller Page: {d.q[KEYS.MILLER]}
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>

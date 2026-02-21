@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote } from 'lucide-react';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock } from 'lucide-react';
 
 export default function HomeView() {
-  const { data, progress, navigate, resetAllData, startSession } = useApp();
+  const { data, progress, navigate, resetAllData, startSession, getDueQuestions } = useApp();
+  const [loadingDue, setLoadingDue] = useState(false);
 
   let mistakes = 0;
   Object.values(progress.history).forEach(h => { if (h.lastResult === 'wrong') mistakes++; });
@@ -62,6 +64,27 @@ export default function HomeView() {
     startSession(selected, selected.length, 'practice');
   };
 
+  // Simulation Exam - 120 random questions
+  const handleSimulation = () => {
+    if (!data.length) return;
+    startSession(data, 120, 'simulation');
+  };
+
+  // Spaced Repetition - due questions
+  const handleSpacedRepetition = async () => {
+    setLoadingDue(true);
+    try {
+      const due = await getDueQuestions();
+      if (due.length === 0) {
+        alert('אין שאלות לחזרה היום! תרגל שאלות חדשות.');
+        return;
+      }
+      startSession(due, Math.min(due.length, 30), 'practice');
+    } finally {
+      setLoadingDue(false);
+    }
+  };
+
   return (
     <div className="fade-in max-w-6xl mx-auto">
       <header className="mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
@@ -92,6 +115,31 @@ export default function HomeView() {
           </div>
           <h3 className="font-bold text-lg mb-1 text-foreground">Smart Practice (AI)</h3>
           <p className="text-sm text-muted-foreground font-light">אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה.</p>
+        </div>
+
+        {/* Simulation Exam */}
+        <div
+          onClick={handleSimulation}
+          className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden"
+        >
+          <div className="absolute -left-10 -top-10 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl" />
+          <div className="w-12 h-12 bg-orange-500 text-white rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
+            <FileCheck className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-lg mb-1 text-foreground">מבחן סימולציה</h3>
+          <p className="text-sm text-muted-foreground font-light">120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי.</p>
+        </div>
+
+        {/* Spaced Repetition */}
+        <div
+          onClick={handleSpacedRepetition}
+          className={`soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`}
+        >
+          <div className="w-12 h-12 bg-info/10 text-info rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+            <CalendarClock className="w-6 h-6" />
+          </div>
+          <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה מרווחת</h3>
+          <p className="text-sm text-muted-foreground font-light">שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS.</p>
         </div>
 
         {/* Custom Practice */}

@@ -66,7 +66,9 @@ export type WeeklyDay = {
   type: 'weak' | 'new' | 'rest';
 };
 
-export type SessionMode = 'practice' | 'exam' | 'review';
+export type SessionMode = 'practice' | 'exam' | 'review' | 'simulation';
+
+export type ConfidenceLevel = 'confident' | 'hesitant' | 'guessed';
 
 export type SessionState = {
   quiz: Question[];
@@ -74,6 +76,7 @@ export type SessionState = {
   score: number;
   mode: SessionMode;
   answers: (string | null)[];
+  confidence: (ConfidenceLevel | null)[];
   flagged: Set<number>;
   skipped: Set<number>;
   sourceFilter: 'all' | 'mistakes' | 'fixed' | 'favorites';
@@ -90,4 +93,4 @@ export type MultiSelectState = {
   usertags: Set<string>;
 };
 
-export type ViewId = 'home' | 'setup-practice' | 'setup-exam' | 'session' | 'review' | 'results' | 'stats' | 'notebook' | 'weekly-plan' | 'ai-coach';
+export type ViewId = 'home' | 'setup-practice' | 'setup-exam' | 'session' | 'review' | 'results' | 'stats' | 'notebook' | 'weekly-plan' | 'ai-coach' | 'simulation-results';

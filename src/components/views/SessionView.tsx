@@ -1,22 +1,19 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { KEYS, type Question } from '@/lib/types';
+import { KEYS, type ConfidenceLevel } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import {
   X, Flag, Star, ChevronRight, ChevronLeft, SkipForward, BookOpen,
-  StickyNote, Tag, Plus, ExternalLink, Copy,
+  StickyNote, Tag, Plus, ExternalLink, Copy, Send,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 /** Parse URLs and <a> tags inside explanation text into clickable links */
 function ExplanationRenderer({ text }: { text: string }) {
-  // Convert raw HTML anchor tags to markdown links
   let processed = text.replace(
     /<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
     '[$2]($1)'
   );
-
-  // Convert bare URLs (not already in markdown link syntax) to markdown links
   processed = processed.replace(
     /(?<!\]\()(?<!\()(https?:\/\/[^\s\)]+)/g,
     '[$1]($1)'
@@ -26,12 +23,8 @@ function ExplanationRenderer({ text }: { text: string }) {
     <ReactMarkdown
       components={{
         a: ({ href, children }) => (
-          <a
-            href={href}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1 break-all"
-          >
+          <a href={href} target="_blank" rel="noopener noreferrer"
+            className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1 break-all">
             {children}
             <ExternalLink className="w-3 h-3 inline-block flex-shrink-0" />
           </a>
@@ -46,19 +39,23 @@ function ExplanationRenderer({ text }: { text: string }) {
 
 export default function SessionView() {
   const {
-    session, progress, navigate, setAnswer, setSessionIndex,
-    toggleFlag, skipQuestion, updateHistory, toggleFavorite,
+    session, progress, navigate, setAnswer, setConfidence, setSessionIndex,
+    toggleFlag, skipQuestion, updateHistory, updateSpacedRepetition, toggleFavorite,
     saveNote, setRating, addTag, removeTag,
   } = useApp();
   const { toast } = useToast();
 
-  const { quiz, index, mode, answers, flagged, skipped } = session;
+  const { quiz, index, mode, answers, confidence, flagged, skipped } = session;
   const [showNote, setShowNote] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [timerSeconds, setTimerSeconds] = useState(0);
+  const [simTimerSeconds, setSimTimerSeconds] = useState(3 * 60 * 60); // 3 hours countdown
   const mainRef = useRef<HTMLDivElement>(null);
 
-  // Timer for exam mode
+  const isSimulation = mode === 'simulation';
+  const isExam = mode === 'exam';
+
+  // Timer for exam mode (count up)
   useEffect(() => {
     if (mode !== 'exam') return;
     setTimerSeconds(0);
@@ -66,28 +63,53 @@ export default function SessionView() {
     return () => clearInterval(interval);
   }, [mode]);
 
+  // Timer for simulation mode (countdown from 3 hours)
+  useEffect(() => {
+    if (!isSimulation) return;
+    setSimTimerSeconds(3 * 60 * 60);
+    const interval = setInterval(() => setSimTimerSeconds(p => {
+      if (p <= 0) return 0;
+      return p - 1;
+    }), 1000);
+    return () => clearInterval(interval);
+  }, [isSimulation]);
+
   if (!quiz.length) return null;
 
   const qData = quiz[index];
-  const id = qData[KEYS.ID];
-  const refId = qData[KEYS.REF_ID];
+  const serialNumber = qData[KEYS.ID]; // Serial_Question_Number# from CSV
+  const questionId = qData[KEYS.REF_ID]; // QuestionID from CSV
   const savedAns = answers[index];
+  const savedConfidence = confidence[index];
   const correctAns = qData[KEYS.CORRECT];
-  const isPracticeRevealed = mode === 'practice' && savedAns !== null;
+  const isPracticeRevealed = mode === 'practice' && savedAns !== null && savedConfidence !== null;
   const isReviewMode = mode === 'review';
-  const showFeedback = isPracticeRevealed || isReviewMode;
+  // In simulation: never show feedback during session
+  const showFeedback = !isSimulation && (isPracticeRevealed || isReviewMode);
 
-  const isFav = progress.favorites.includes(id);
-  const noteText = progress.notes[id] || '';
-  const rating = progress.ratings[id];
-  const tags = progress.tags[id] || [];
+  const isFav = progress.favorites.includes(serialNumber);
+  const noteText = progress.notes[serialNumber] || '';
+  const rating = progress.ratings[serialNumber];
+  const tags = progress.tags[serialNumber] || [];
+
+  // Whether the user needs to pick confidence before proceeding (practice mode)
+  const needsConfidence = mode === 'practice' && savedAns !== null && savedConfidence === null;
 
   const handleAnswer = (opt: string) => {
     if (isPracticeRevealed || isReviewMode) return;
+    if (isSimulation && savedAns !== null) return; // can change in sim? No, lock it.
     setAnswer(index, opt);
-    if (mode === 'practice') {
-      updateHistory(id, opt === correctAns);
-    }
+    // For simulation/exam, don't reveal or update history yet
+    if (isSimulation || isExam) return;
+    // For practice, wait for confidence before updating history
+  };
+
+  const handleConfidenceSelect = (level: ConfidenceLevel) => {
+    if (mode !== 'practice' || savedAns === null) return;
+    setConfidence(index, level);
+    const isCorrect = savedAns === correctAns;
+    updateHistory(serialNumber, isCorrect);
+    updateSpacedRepetition(serialNumber, isCorrect, level);
   };
 
   const handleNext = () => {
@@ -96,6 +118,7 @@ export default function SessionView() {
       mainRef.current?.scrollTo(0, 0);
     } else {
       if (isReviewMode) navigate('results');
+      else if (isSimulation) navigate('results');
       else navigate('review');
     }
   };
@@ -113,7 +136,8 @@ export default function SessionView() {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
     } else {
-      navigate('review');
+      if (isSimulation) navigate('results');
+      else navigate('review');
     }
   };
 
@@ -122,14 +146,25 @@ export default function SessionView() {
     if (confirm('לצאת? ההתקדמות לא תישמר.')) navigate('home');
   };
 
+  const handleSubmitSimulation = () => {
+    // Update history for all answered questions
+    quiz.forEach((q, i) => {
+      const userAns = answers[i];
+      if (userAns) {
+        updateHistory(q[KEYS.ID], userAns === q[KEYS.CORRECT]);
+      }
+    });
+    navigate('results');
+  };
+
   const handleAddTag = () => {
     if (!tagInput.trim()) return;
-    addTag(id, tagInput.trim());
+    addTag(serialNumber, tagInput.trim());
     setTagInput('');
   };
 
   const handleSendToNotebookLM = () => {
-    const text = `Serial: ${refId} | Question ID: ${id} | ${qData[KEYS.QUESTION]}`;
+    const text = `Serial: ${serialNumber} | Question ID: ${questionId} | ${qData[KEYS.QUESTION]}`;
     navigator.clipboard.writeText(text);
     window.open('https://notebooklm.google.com/', '_blank', 'noopener,noreferrer');
     toast({ title: 'Copied!', description: 'הועתק ללוח. NotebookLM נפתח בטאב חדש.' });
@@ -138,8 +173,20 @@ export default function SessionView() {
   const formatTime = (s: number) =>
     `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
+  const formatCountdown = (s: number) => {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+  };
+
   const getOptionClasses = (opt: string) => {
     let base = 'w-full text-right p-5 rounded-2xl border transition relative flex items-center group ';
+
+    if (isSimulation) {
+      if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30';
+      return base + 'bg-card border-border hover:border-primary/30 hover:shadow-sm';
+    }
 
     if (isReviewMode) {
       if (opt === correctAns) return base + 'bg-success-muted border-success/30 text-success';
@@ -163,18 +210,26 @@ export default function SessionView() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <span className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
+            isSimulation ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800' :
             mode === 'practice' ? 'bg-info/10 text-info border-info/20' :
-            mode === 'exam' ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
+            isExam ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
             'bg-warning/10 text-warning border-warning/20'
           }`}>
-            {mode === 'practice' ? 'תרגול' : mode === 'exam' ? 'בחינה' : 'תחקור'}
+            {isSimulation ? 'סימולציה' : mode === 'practice' ? 'תרגול' : isExam ? 'בחינה' : 'תחקור'}
           </span>
-          {mode === 'exam' && (
+          {isSimulation && (
+            <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg border ${
+              simTimerSeconds < 600 ? 'bg-destructive/10 text-destructive border-destructive/20 animate-pulse' : 'bg-card text-success border-border'
+            }`}>
+              ⏱ {formatCountdown(simTimerSeconds)}
+            </span>
+          )}
+          {isExam && (
             <span className="bg-card text-success text-xs font-mono font-bold px-3 py-1.5 rounded-lg border border-border">
               {formatTime(timerSeconds)}
             </span>
           )}
-          {mode === 'exam' && (
+          {(isExam || isSimulation) && (
             <button
               onClick={() => toggleFlag(index)}
               className={`w-9 h-9 rounded-full flex items-center justify-center transition border shadow-sm ${
@@ -204,20 +259,22 @@ export default function SessionView() {
         <div className="bg-muted/50 px-8 py-4 border-b border-border flex flex-wrap gap-4 text-xs text-muted-foreground font-medium justify-between items-center">
           <div className="flex flex-wrap gap-4 items-center">
             <span className="text-foreground font-bold bidi-text">
-              שאלה {id} (מספר סידורי: {refId})
+              שאלה {questionId} (מספר סידורי: {serialNumber})
             </span>
             <span className="flex items-center gap-1.5">📁 <span className="text-foreground">{qData[KEYS.TOPIC]}</span></span>
             <span className="flex items-center gap-1.5">📅 <span className="text-foreground">{qData[KEYS.YEAR]}</span></span>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={handleSendToNotebookLM}
-              className="text-primary hover:text-primary/80 transition flex items-center gap-1.5 text-xs font-bold bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20"
-              title="Send to NotebookLM"
-            >
-              <Copy className="w-3 h-3" /> NotebookLM
-            </button>
-            <button onClick={() => toggleFavorite(id)} className="transition">
+            {!isSimulation && (
+              <button
+                onClick={handleSendToNotebookLM}
+                className="text-primary hover:text-primary/80 transition flex items-center gap-1.5 text-xs font-bold bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20"
+                title="Send to NotebookLM"
+              >
+                <Copy className="w-3 h-3" /> NotebookLM
+              </button>
+            )}
+            <button onClick={() => toggleFavorite(serialNumber)} className="transition">
               <Star className={`w-5 h-5 ${isFav ? 'fill-warning text-warning' : 'text-muted-foreground hover:text-warning'}`} />
             </button>
           </div>
@@ -249,86 +306,115 @@ export default function SessionView() {
                 <button
                   key={opt}
                   onClick={() => handleAnswer(opt)}
-                  disabled={isPracticeRevealed || isReviewMode}
+                  disabled={isPracticeRevealed || isReviewMode || (isSimulation && savedAns !== null)}
                   className={getOptionClasses(opt)}
                 >
                   <span className="w-8 h-8 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center ml-3 text-sm group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                     {opt}
                   </span>
                   <span className="flex-grow text-foreground text-lg font-light leading-snug bidi-text">{text}</span>
-                  {(isPracticeRevealed || isReviewMode) && opt === correctAns && <span className="absolute left-5 text-success text-xl">✓</span>}
-                  {(isPracticeRevealed || isReviewMode) && opt === savedAns && opt !== correctAns && <span className="absolute left-5 text-destructive text-xl">✗</span>}
+                  {!isSimulation && (isPracticeRevealed || isReviewMode) && opt === correctAns && <span className="absolute left-5 text-success text-xl">✓</span>}
+                  {!isSimulation && (isPracticeRevealed || isReviewMode) && opt === savedAns && opt !== correctAns && <span className="absolute left-5 text-destructive text-xl">✗</span>}
                 </button>
               );
             })}
           </div>
 
-          {/* Metadata: Notes, Rating, Tags */}
-          <div className="mt-8 pt-6 border-t border-border space-y-4">
-            {/* Rating */}
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground ml-2">דרגת קושי:</span>
-              {(['easy', 'medium', 'hard'] as const).map(level => (
+          {/* Confidence Tracker - Practice mode only */}
+          {needsConfidence && (
+            <div className="mt-6 p-6 bg-muted/50 rounded-2xl border border-border">
+              <p className="text-sm font-bold text-foreground mb-4 text-center">עד כמה אתה בטוח בתשובה?</p>
+              <div className="flex gap-3 justify-center">
                 <button
-                  key={level}
-                  onClick={() => setRating(id, level)}
-                  className={`rating-btn px-4 py-2 rounded-xl text-xs font-bold ${
-                    level === 'easy' ? 'bg-success/10 text-success' :
-                    level === 'medium' ? 'bg-warning/10 text-warning' :
-                    'bg-destructive/10 text-destructive'
-                  } ${rating === level ? 'active' : ''}`}
+                  onClick={() => handleConfidenceSelect('confident')}
+                  className="px-6 py-3 rounded-xl text-sm font-bold bg-success/15 text-success border border-success/30 hover:bg-success/25 transition"
                 >
-                  {level === 'easy' ? 'קל 🟢' : level === 'medium' ? 'בינוני 🟡' : 'קשה 🔴'}
+                  ✅ בטוח
                 </button>
-              ))}
-            </div>
-
-            {/* Tags */}
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold text-muted-foreground"><Tag className="w-3 h-3 inline" /> תגיות:</span>
-              {tags.map(tag => (
-                <div key={tag} className="tag-chip bg-muted text-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-border">
-                  {tag}
-                  <X className="w-3 h-3 cursor-pointer hover:text-destructive" onClick={() => removeTag(id, tag)} />
-                </div>
-              ))}
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  value={tagInput}
-                  onChange={e => setTagInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && handleAddTag()}
-                  placeholder="תגית חדשה..."
-                  className="px-3 py-1 bg-muted border border-border rounded-full text-xs outline-none focus:border-primary w-28 text-foreground"
-                />
-                <button onClick={handleAddTag} className="text-primary hover:text-primary/80 transition">
-                  <Plus className="w-4 h-4" />
+                <button
+                  onClick={() => handleConfidenceSelect('hesitant')}
+                  className="px-6 py-3 rounded-xl text-sm font-bold bg-warning/15 text-warning border border-warning/30 hover:bg-warning/25 transition"
+                >
+                  🤔 מתלבט
+                </button>
+                <button
+                  onClick={() => handleConfidenceSelect('guessed')}
+                  className="px-6 py-3 rounded-xl text-sm font-bold bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25 transition"
+                >
+                  🎲 ניחוש
                 </button>
               </div>
             </div>
+          )}
 
-            {/* Note */}
-            <div>
-              <button
-                onClick={() => setShowNote(!showNote)}
-                className="text-xs font-bold text-primary flex items-center gap-2 hover:underline"
-              >
-                <StickyNote className="w-3 h-3" />
-                {noteText ? 'ערוך הערה אישית (קיים)' : 'הוסף הערה אישית'}
-              </button>
-              {showNote && (
-                <textarea
-                  value={noteText}
-                  onChange={e => saveNote(id, e.target.value)}
-                  className="w-full mt-2 p-4 bg-muted border border-border rounded-xl text-sm outline-none focus:border-primary resize-y min-h-[80px] text-foreground"
-                  placeholder="הקלד הערה..."
-                />
-              )}
+          {/* Metadata: Notes, Rating, Tags — hide in simulation */}
+          {!isSimulation && (
+            <div className="mt-8 pt-6 border-t border-border space-y-4">
+              {/* Rating */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-muted-foreground ml-2">דרגת קושי:</span>
+                {(['easy', 'medium', 'hard'] as const).map(level => (
+                  <button
+                    key={level}
+                    onClick={() => setRating(serialNumber, level)}
+                    className={`rating-btn px-4 py-2 rounded-xl text-xs font-bold ${
+                      level === 'easy' ? 'bg-success/10 text-success' :
+                      level === 'medium' ? 'bg-warning/10 text-warning' :
+                      'bg-destructive/10 text-destructive'
+                    } ${rating === level ? 'active' : ''}`}
+                  >
+                    {level === 'easy' ? 'קל 🟢' : level === 'medium' ? 'בינוני 🟡' : 'קשה 🔴'}
+                  </button>
+                ))}
+              </div>
+
+              {/* Tags */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs font-bold text-muted-foreground"><Tag className="w-3 h-3 inline" /> תגיות:</span>
+                {tags.map(tag => (
+                  <div key={tag} className="tag-chip bg-muted text-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-border">
+                    {tag}
+                    <X className="w-3 h-3 cursor-pointer hover:text-destructive" onClick={() => removeTag(serialNumber, tag)} />
+                  </div>
+                ))}
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && handleAddTag()}
+                    placeholder="תגית חדשה..."
+                    className="px-3 py-1 bg-muted border border-border rounded-full text-xs outline-none focus:border-primary w-28 text-foreground"
+                  />
+                  <button onClick={handleAddTag} className="text-primary hover:text-primary/80 transition">
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Note */}
+              <div>
+                <button
+                  onClick={() => setShowNote(!showNote)}
+                  className="text-xs font-bold text-primary flex items-center gap-2 hover:underline"
+                >
+                  <StickyNote className="w-3 h-3" />
+                  {noteText ? 'ערוך הערה אישית (קיים)' : 'הוסף הערה אישית'}
+                </button>
+                {showNote && (
+                  <textarea
+                    value={noteText}
+                    onChange={e => saveNote(serialNumber, e.target.value)}
+                    className="w-full mt-2 p-4 bg-muted border border-border rounded-xl text-sm outline-none focus:border-primary resize-y min-h-[80px] text-foreground"
+                    placeholder="הקלד הערה..."
+                  />
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
-        {/* Feedback */}
+        {/* Feedback - NOT shown in simulation mode */}
         {showFeedback && (
           <div className="bg-muted/30 border-t border-border p-8 md:p-10">
             <div className="font-bold text-lg mb-3 flex items-center gap-2">
@@ -365,16 +451,33 @@ export default function SessionView() {
           >
             <ChevronRight className="w-4 h-4" /> הקודם
           </button>
-          {!isReviewMode && (
-            <button onClick={handleSkip} className="text-muted-foreground hover:text-foreground text-xs font-bold px-4 tracking-wider uppercase">
-              דלג <SkipForward className="w-3 h-3 inline mr-1" />
-            </button>
-          )}
+
+          <div className="flex items-center gap-3">
+            {!isReviewMode && !isSimulation && (
+              <button onClick={handleSkip} className="text-muted-foreground hover:text-foreground text-xs font-bold px-4 tracking-wider uppercase">
+                דלג <SkipForward className="w-3 h-3 inline mr-1" />
+              </button>
+            )}
+            {isSimulation && index === quiz.length - 1 && (
+              <button
+                onClick={handleSubmitSimulation}
+                className="bg-destructive text-destructive-foreground px-6 py-3 rounded-xl font-bold shadow-lg transition flex items-center gap-2"
+              >
+                <Send className="w-4 h-4" /> הגש מבחן
+              </button>
+            )}
+          </div>
+
           <button
             onClick={handleNext}
-            className="bg-primary text-primary-foreground px-8 py-3.5 rounded-xl hover:opacity-90 font-medium shadow-lg transition flex items-center gap-2 text-base"
+            disabled={needsConfidence}
+            className={`bg-primary text-primary-foreground px-8 py-3.5 rounded-xl hover:opacity-90 font-medium shadow-lg transition flex items-center gap-2 text-base ${
+              needsConfidence ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
           >
-            {index === quiz.length - 1 ? (isReviewMode ? 'סיים תחקור' : 'סיום וסיכום') : 'הבא'}
+            {index === quiz.length - 1
+              ? (isReviewMode ? 'סיים תחקור' : isSimulation ? 'הבא' : 'סיום וסיכום')
+              : 'הבא'}
             <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
