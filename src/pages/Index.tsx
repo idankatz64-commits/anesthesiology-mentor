@@ -1,6 +1,7 @@
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import Sidebar from '@/components/Sidebar';
 import MobileHeader from '@/components/MobileHeader';
+import TopNav from '@/components/TopNav';
 import WelcomeModal from '@/components/WelcomeModal';
 import HomeView from '@/components/views/HomeView';
 import SetupView from '@/components/views/SetupView';
@@ -17,11 +18,13 @@ function AppContent() {
   const { currentView, loading } = useApp();
 
   return (
-    <div className="h-screen flex overflow-hidden" dir="rtl">
-      <Sidebar />
-      <MobileHeader />
+    <div className="h-screen flex flex-col overflow-hidden" dir="rtl">
+      <TopNav />
+      <div className="flex flex-1 overflow-hidden pt-14">
+        <Sidebar />
+        <MobileHeader />
 
-      <main className="flex-grow overflow-y-auto p-4 md:p-10 pt-20 md:pt-10 relative bg-background transition-colors duration-300">
+        <main className="flex-grow overflow-y-auto p-4 md:p-10 pt-20 md:pt-10 relative bg-background transition-colors duration-300">
         {/* Loading */}
         {loading && (
           <div className="absolute inset-0 bg-background/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
@@ -43,7 +46,8 @@ function AppContent() {
         {currentView === 'ai-coach' && <AICoachView />}
       </main>
 
-      <WelcomeModal />
+        <WelcomeModal />
+      </div>
     </div>
   );
 }

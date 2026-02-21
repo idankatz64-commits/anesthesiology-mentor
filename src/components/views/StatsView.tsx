@@ -1,47 +1,40 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Search, Download, Upload, TrendingUp, TrendingDown, Target, BookOpen, AlertTriangle, CheckCircle } from 'lucide-react';
+import { Search, Download, Upload, ArrowUpDown } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 type TopicStat = {
   topic: string;
   total: number;
-  totalDb: number;
-  remaining: number;
   correct: number;
   wrong: number;
-  score: number;
-  smartScore: number;
+  accuracy: number;
 };
+
+type SortKey = 'topic' | 'total' | 'correct' | 'accuracy';
 
 export default function StatsView() {
   const { data, progress, importData } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('accuracy');
+  const [sortAsc, setSortAsc] = useState(true);
 
   const stats = useMemo(() => {
-    let totalUnique = 0, correctUnique = 0, mistakes = 0, fixed = 0, totalAttempts = 0;
-    const topicMap: Record<string, { ans: number; cor: number; wrong: number; uniqueIds: number }> = {};
-    const dbTopicCounts: Record<string, number> = {};
-
-    data.forEach(q => {
-      const t = q[KEYS.TOPIC] || 'Uncategorized';
-      dbTopicCounts[t] = (dbTopicCounts[t] || 0) + 1;
-    });
+    let totalUnique = 0, correctUnique = 0, totalAttempts = 0;
+    const topicMap: Record<string, { total: number; correct: number; wrong: number }> = {};
 
     Object.entries(progress.history).forEach(([id, h]) => {
       totalUnique++;
       if (h.lastResult === 'correct') correctUnique++;
-      if (h.lastResult === 'wrong') mistakes++;
-      if (h.everWrong && h.lastResult === 'correct') fixed++;
       totalAttempts += h.answered;
 
       const q = data.find(x => x[KEYS.ID] === id);
       if (q) {
         const t = q[KEYS.TOPIC] || 'Uncategorized';
-        if (!topicMap[t]) topicMap[t] = { ans: 0, cor: 0, wrong: 0, uniqueIds: 0 };
-        topicMap[t].ans += h.answered;
-        topicMap[t].uniqueIds++;
-        if (h.lastResult === 'correct') topicMap[t].cor++;
+        if (!topicMap[t]) topicMap[t] = { total: 0, correct: 0, wrong: 0 };
+        topicMap[t].total++;
+        if (h.lastResult === 'correct') topicMap[t].correct++;
         else topicMap[t].wrong++;
       }
     });
@@ -49,32 +42,47 @@ export default function StatsView() {
     const accuracy = totalUnique > 0 ? Math.round((correctUnique / totalUnique) * 100) : 0;
     const coverage = data.length > 0 ? Math.round((totalUnique / data.length) * 100) : 0;
 
-    const topicData: TopicStat[] = Object.entries(topicMap).map(([topic, s]) => {
-      const n = s.uniqueIds;
-      const bayesianAvg = (s.cor + 0.6 * 10) / (n + 10);
-      return {
-        topic,
-        total: s.uniqueIds,
-        totalDb: dbTopicCounts[topic] || 0,
-        remaining: (dbTopicCounts[topic] || 0) - s.uniqueIds,
-        correct: s.cor,
-        wrong: s.wrong,
-        score: n > 0 ? Math.round((s.cor / n) * 100) : 0,
-        smartScore: Math.round(bayesianAvg * 100),
-      };
-    });
+    const topicData: TopicStat[] = Object.entries(topicMap).map(([topic, s]) => ({
+      topic,
+      total: s.total,
+      correct: s.correct,
+      wrong: s.wrong,
+      accuracy: s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0,
+    }));
 
-    return { totalUnique, correctUnique, mistakes, fixed, totalAttempts, accuracy, coverage, topicData };
+    return { totalUnique, correctUnique, totalAttempts, accuracy, coverage, topicData };
   }, [data, progress]);
 
   const filteredTopics = useMemo(() => {
     let filtered = stats.topicData.filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()));
-    filtered.sort((a, b) => a.smartScore - b.smartScore);
+    filtered.sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === 'topic') cmp = a.topic.localeCompare(b.topic);
+      else if (sortKey === 'total') cmp = a.total - b.total;
+      else if (sortKey === 'correct') cmp = a.correct - b.correct;
+      else cmp = a.accuracy - b.accuracy;
+      return sortAsc ? cmp : -cmp;
+    });
     return filtered;
+  }, [stats.topicData, searchTerm, sortKey, sortAsc]);
+
+  // Chart data sorted weakest to strongest
+  const chartData = useMemo(() => {
+    return [...stats.topicData]
+      .filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()))
+      .sort((a, b) => a.accuracy - b.accuracy);
   }, [stats.topicData, searchTerm]);
 
-  const strongTopics = filteredTopics.filter(t => t.smartScore >= 70);
-  const weakTopics = filteredTopics.filter(t => t.smartScore < 70);
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortAsc(!sortAsc);
+    else { setSortKey(key); setSortAsc(true); }
+  };
+
+  const getBarColor = (accuracy: number) => {
+    if (accuracy >= 80) return 'hsl(160, 84%, 39%)';
+    if (accuracy >= 60) return 'hsl(38, 92%, 50%)';
+    return 'hsl(0, 84%, 60%)';
+  };
 
   const handleExport = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(progress));
@@ -107,29 +115,12 @@ export default function StatsView() {
     <div className="fade-in max-w-6xl mx-auto">
       <h2 className="text-3xl font-bold mb-8 text-foreground">הסטטיסטיקה שלי</h2>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
-        <SummaryCard label="סך ניסיונות" value={stats.totalAttempts} icon={<Target className="w-5 h-5" />} color="text-info" />
-        <SummaryCard label="שאלות ייחודיות" value={stats.totalUnique} icon={<BookOpen className="w-5 h-5" />} color="text-foreground" />
-        <SummaryCard label="כיסוי מאגר" value={`${stats.coverage}%`} icon={<Target className="w-5 h-5" />} color="text-primary" />
-        <SummaryCard label="דיוק כללי" value={`${stats.accuracy}%`} icon={stats.accuracy >= 60 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />} color={stats.accuracy >= 60 ? 'text-success' : 'text-destructive'} />
-        <SummaryCard label="טעויות פתוחות" value={stats.mistakes} icon={<AlertTriangle className="w-5 h-5" />} color="text-destructive" />
-        <SummaryCard label="תוקנו" value={stats.fixed} icon={<CheckCircle className="w-5 h-5" />} color="text-success" />
-      </div>
-
-      {/* Overall Progress Bar */}
-      <div className="soft-card bg-card border border-border p-6 mb-10">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-bold text-foreground">כיסוי כולל של המאגר</h3>
-          <span className="text-2xl font-black text-primary">{stats.coverage}%</span>
-        </div>
-        <div className="w-full bg-border h-4 rounded-full overflow-hidden">
-          <div
-            className="bg-primary h-full rounded-full transition-all duration-700"
-            style={{ width: `${stats.coverage}%` }}
-          />
-        </div>
-        <p className="text-xs text-muted-foreground mt-2">{stats.totalUnique} מתוך {data.length} שאלות נענו</p>
+      {/* Summary Row */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <SummaryCard label="סך ניסיונות" value={stats.totalAttempts} />
+        <SummaryCard label="שאלות ייחודיות" value={`${stats.totalUnique} / ${data.length}`} />
+        <SummaryCard label="כיסוי מאגר" value={`${stats.coverage}%`} accent />
+        <SummaryCard label="דיוק כללי" value={`${stats.accuracy}%`} accent />
       </div>
 
       {/* Search */}
@@ -144,30 +135,67 @@ export default function StatsView() {
         <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
       </div>
 
-      {/* Weak Topics */}
-      {weakTopics.length > 0 && (
-        <div className="mb-10">
-          <h3 className="text-lg font-bold text-destructive mb-4 flex items-center gap-2">
-            <TrendingDown className="w-5 h-5" /> נושאים לחיזוק ({weakTopics.length})
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {weakTopics.map(t => (
-              <TopicCard key={t.topic} topic={t} variant="weak" />
-            ))}
-          </div>
+      {/* Horizontal Bar Chart */}
+      {chartData.length > 0 && (
+        <div className="soft-card bg-card border border-border p-6 mb-10">
+          <h3 className="font-bold text-foreground mb-4">דיוק לפי נושא (חלש → חזק)</h3>
+          <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 36)}>
+            <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
+              <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
+              <YAxis
+                type="category"
+                dataKey="topic"
+                width={180}
+                tick={{ fontSize: 11, textAnchor: 'end' }}
+              />
+              <Tooltip
+                formatter={(value: number) => [`${value}%`, 'דיוק']}
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '0.75rem',
+                  fontSize: '0.8rem',
+                }}
+              />
+              <Bar dataKey="accuracy" radius={[0, 6, 6, 0]} barSize={20}>
+                {chartData.map((entry, i) => (
+                  <Cell key={i} fill={getBarColor(entry.accuracy)} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       )}
 
-      {/* Strong Topics */}
-      {strongTopics.length > 0 && (
-        <div className="mb-10">
-          <h3 className="text-lg font-bold text-success mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" /> נושאים חזקים ({strongTopics.length})
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {strongTopics.map(t => (
-              <TopicCard key={t.topic} topic={t} variant="strong" />
-            ))}
+      {/* Data Table */}
+      {filteredTopics.length > 0 && (
+        <div className="soft-card bg-card border border-border overflow-hidden mb-10">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-muted/50 border-b border-border text-muted-foreground">
+                  <ThHeader label="נושא" sortKey="topic" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="נענו" sortKey="total" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="נכון" sortKey="correct" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="דיוק %" sortKey="accuracy" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                </tr>
+              </thead>
+              <tbody>
+                {filteredTopics.map(t => (
+                  <tr key={t.topic} className="border-b border-border hover:bg-muted/30 transition">
+                    <td className="px-4 py-3 font-medium text-foreground">{t.topic}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{t.total}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{t.correct}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`font-bold ${t.accuracy >= 80 ? 'text-success' : t.accuracy >= 60 ? 'text-warning' : 'text-destructive'}`}>
+                        {t.accuracy}%
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
@@ -182,10 +210,7 @@ export default function StatsView() {
       <div className="soft-card bg-card border border-border p-8">
         <h3 className="font-bold mb-6 text-foreground flex items-center gap-3">💾 ניהול נתונים וגיבוי</h3>
         <div className="flex flex-col md:flex-row gap-4">
-          <button
-            onClick={handleExport}
-            className="bg-primary/10 text-primary border border-primary/20 px-6 py-3 rounded-xl font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2"
-          >
+          <button onClick={handleExport} className="bg-primary/10 text-primary border border-primary/20 px-6 py-3 rounded-xl font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2">
             <Download className="w-4 h-4" /> שמור גיבוי לקובץ
           </button>
           <label className="bg-card text-foreground border border-border px-6 py-3 rounded-xl font-bold hover:bg-muted transition flex items-center justify-center gap-2 cursor-pointer">
@@ -198,39 +223,30 @@ export default function StatsView() {
   );
 }
 
-function SummaryCard({ label, value, icon, color }: { label: string; value: string | number; icon: React.ReactNode; color: string }) {
+function SummaryCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
     <div className="soft-card bg-card border border-border p-5">
-      <div className={`${color} mb-2`}>{icon}</div>
-      <div className={`text-2xl font-black ${color}`}>{value}</div>
+      <div className={`text-2xl font-black ${accent ? 'text-primary' : 'text-foreground'}`}>{value}</div>
       <div className="text-xs text-muted-foreground mt-1 font-medium">{label}</div>
     </div>
   );
 }
 
-function TopicCard({ topic, variant }: { topic: TopicStat; variant: 'strong' | 'weak' }) {
-  const barColor = variant === 'strong' ? 'bg-success' : topic.smartScore >= 50 ? 'bg-warning' : 'bg-destructive';
-  const borderColor = variant === 'strong' ? 'border-success/20' : 'border-destructive/20';
-
+function ThHeader({ label, sortKey, currentKey, asc, onSort }: {
+  label: string; sortKey: SortKey; currentKey: SortKey; asc: boolean;
+  onSort: (key: SortKey) => void;
+}) {
+  const active = currentKey === sortKey;
   return (
-    <div className={`soft-card bg-card border ${borderColor} p-5`}>
-      <div className="flex items-start justify-between mb-3">
-        <h4 className="font-bold text-foreground text-sm leading-tight flex-1">{topic.topic}</h4>
-        <span className={`text-xl font-black ${variant === 'strong' ? 'text-success' : topic.smartScore >= 50 ? 'text-warning' : 'text-destructive'}`}>
-          {topic.smartScore}%
-        </span>
-      </div>
-      <div className="w-full bg-border h-2.5 rounded-full overflow-hidden mb-3">
-        <div
-          className={`${barColor} h-full rounded-full transition-all duration-500`}
-          style={{ width: `${topic.smartScore}%` }}
-        />
-      </div>
-      <div className="flex justify-between text-xs text-muted-foreground">
-        <span>✅ {topic.correct} נכון</span>
-        <span>❌ {topic.wrong} שגוי</span>
-        <span>📋 {topic.remaining} נותרו</span>
-      </div>
-    </div>
+    <th
+      className="px-4 py-3 text-xs font-bold cursor-pointer hover:text-foreground transition select-none"
+      onClick={() => onSort(sortKey)}
+    >
+      <span className="flex items-center gap-1">
+        {label}
+        <ArrowUpDown className={`w-3 h-3 ${active ? 'text-primary' : 'text-muted-foreground/50'}`} />
+        {active && <span className="text-[10px]">{asc ? '↑' : '↓'}</span>}
+      </span>
+    </th>
   );
 }

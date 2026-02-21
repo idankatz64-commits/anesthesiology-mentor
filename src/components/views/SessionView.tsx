@@ -10,10 +10,16 @@ import { useToast } from '@/hooks/use-toast';
 
 /** Parse URLs and <a> tags inside explanation text into clickable links */
 function ExplanationRenderer({ text }: { text: string }) {
-  // First, convert raw HTML anchor tags to markdown links
+  // Convert raw HTML anchor tags to markdown links
   let processed = text.replace(
     /<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
     '[$2]($1)'
+  );
+
+  // Convert bare URLs (not already in markdown link syntax) to markdown links
+  processed = processed.replace(
+    /(?<!\]\()(?<!\()(https?:\/\/[^\s\)]+)/g,
+    '[$1]($1)'
   );
 
   return (
@@ -24,10 +30,10 @@ function ExplanationRenderer({ text }: { text: string }) {
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1"
+            className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1 break-all"
           >
             {children}
-            <ExternalLink className="w-3 h-3 inline-block" />
+            <ExternalLink className="w-3 h-3 inline-block flex-shrink-0" />
           </a>
         ),
         p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
@@ -125,7 +131,7 @@ export default function SessionView() {
   const handleSendToNotebookLM = () => {
     const text = `Serial: ${refId} | Question ID: ${id} | ${qData[KEYS.QUESTION]}`;
     navigator.clipboard.writeText(text);
-    window.open('https://notebooklm.google.com/', '_blank');
+    window.open('https://notebooklm.google.com/', '_blank', 'noopener,noreferrer');
     toast({ title: 'Copied!', description: 'הועתק ללוח. NotebookLM נפתח בטאב חדש.' });
   };
 
