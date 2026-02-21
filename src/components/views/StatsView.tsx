@@ -2,27 +2,40 @@ import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Search, Download, Upload, ArrowUpDown } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 type TopicStat = {
   topic: string;
-  total: number;
+  totalInDb: number;
+  totalAnswered: number;
   correct: number;
   wrong: number;
   accuracy: number;
+  smartScore: number;
 };
 
-type SortKey = 'topic' | 'total' | 'correct' | 'accuracy';
+type SortKey = 'topic' | 'totalInDb' | 'totalAnswered' | 'correct' | 'wrong' | 'accuracy' | 'smartScore';
+
+function calcSmartScore(answered: number, accuracy: number): number {
+  // Bayesian weighted average: pulls toward 50% prior when sample is small
+  return Math.round(((answered / (answered + 10)) * accuracy) + ((10 / (answered + 10)) * 50));
+}
 
 export default function StatsView() {
   const { data, progress, importData } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortKey, setSortKey] = useState<SortKey>('accuracy');
+  const [sortKey, setSortKey] = useState<SortKey>('smartScore');
   const [sortAsc, setSortAsc] = useState(true);
 
   const stats = useMemo(() => {
     let totalUnique = 0, correctUnique = 0, totalAttempts = 0;
-    const topicMap: Record<string, { total: number; correct: number; wrong: number }> = {};
+    const topicMap: Record<string, { totalAnswered: number; correct: number; wrong: number }> = {};
+
+    // Count questions per topic in the database
+    const topicDbCount: Record<string, number> = {};
+    data.forEach(q => {
+      const t = q[KEYS.TOPIC] || 'Uncategorized';
+      topicDbCount[t] = (topicDbCount[t] || 0) + 1;
+    });
 
     Object.entries(progress.history).forEach(([id, h]) => {
       totalUnique++;
@@ -32,8 +45,8 @@ export default function StatsView() {
       const q = data.find(x => x[KEYS.ID] === id);
       if (q) {
         const t = q[KEYS.TOPIC] || 'Uncategorized';
-        if (!topicMap[t]) topicMap[t] = { total: 0, correct: 0, wrong: 0 };
-        topicMap[t].total++;
+        if (!topicMap[t]) topicMap[t] = { totalAnswered: 0, correct: 0, wrong: 0 };
+        topicMap[t].totalAnswered++;
         if (h.lastResult === 'correct') topicMap[t].correct++;
         else topicMap[t].wrong++;
       }
@@ -42,13 +55,18 @@ export default function StatsView() {
     const accuracy = totalUnique > 0 ? Math.round((correctUnique / totalUnique) * 100) : 0;
     const coverage = data.length > 0 ? Math.round((totalUnique / data.length) * 100) : 0;
 
-    const topicData: TopicStat[] = Object.entries(topicMap).map(([topic, s]) => ({
-      topic,
-      total: s.total,
-      correct: s.correct,
-      wrong: s.wrong,
-      accuracy: s.total > 0 ? Math.round((s.correct / s.total) * 100) : 0,
-    }));
+    const topicData: TopicStat[] = Object.entries(topicMap).map(([topic, s]) => {
+      const acc = s.totalAnswered > 0 ? Math.round((s.correct / s.totalAnswered) * 100) : 0;
+      return {
+        topic,
+        totalInDb: topicDbCount[topic] || 0,
+        totalAnswered: s.totalAnswered,
+        correct: s.correct,
+        wrong: s.wrong,
+        accuracy: acc,
+        smartScore: calcSmartScore(s.totalAnswered, acc),
+      };
+    });
 
     return { totalUnique, correctUnique, totalAttempts, accuracy, coverage, topicData };
   }, [data, progress]);
@@ -58,19 +76,17 @@ export default function StatsView() {
     filtered.sort((a, b) => {
       let cmp = 0;
       if (sortKey === 'topic') cmp = a.topic.localeCompare(b.topic);
-      else if (sortKey === 'total') cmp = a.total - b.total;
-      else if (sortKey === 'correct') cmp = a.correct - b.correct;
-      else cmp = a.accuracy - b.accuracy;
+      else cmp = (a[sortKey] as number) - (b[sortKey] as number);
       return sortAsc ? cmp : -cmp;
     });
     return filtered;
   }, [stats.topicData, searchTerm, sortKey, sortAsc]);
 
-  // Chart data sorted weakest to strongest
+  // Chart data sorted weakest to strongest by smartScore
   const chartData = useMemo(() => {
     return [...stats.topicData]
       .filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()))
-      .sort((a, b) => a.accuracy - b.accuracy);
+      .sort((a, b) => a.smartScore - b.smartScore);
   }, [stats.topicData, searchTerm]);
 
   const handleSort = (key: SortKey) => {
@@ -78,10 +94,10 @@ export default function StatsView() {
     else { setSortKey(key); setSortAsc(true); }
   };
 
-  const getBarColor = (accuracy: number) => {
-    if (accuracy >= 80) return 'hsl(160, 84%, 39%)';
-    if (accuracy >= 60) return 'hsl(38, 92%, 50%)';
-    return 'hsl(0, 84%, 60%)';
+  const getBarColor = (score: number) => {
+    if (score >= 80) return 'bg-emerald-500';
+    if (score >= 60) return 'bg-amber-500';
+    return 'bg-red-500';
   };
 
   const handleExport = () => {
@@ -135,40 +151,34 @@ export default function StatsView() {
         <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
       </div>
 
-      {/* Horizontal Bar Chart */}
+      {/* Custom CSS Horizontal Bar Chart */}
       {chartData.length > 0 && (
         <div className="soft-card bg-card border border-border p-6 mb-10">
-          <h3 className="font-bold text-foreground mb-4">דיוק לפי נושא (חלש → חזק)</h3>
-          <ResponsiveContainer width="100%" height={Math.max(300, chartData.length * 36)}>
-            <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="hsl(var(--border))" />
-              <XAxis type="number" domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 11 }} />
-              <YAxis
-                type="category"
-                dataKey="topic"
-                width={180}
-                tick={{ fontSize: 11, textAnchor: 'end' }}
-              />
-              <Tooltip
-                formatter={(value: number) => [`${value}%`, 'דיוק']}
-                contentStyle={{
-                  backgroundColor: 'hsl(var(--card))',
-                  border: '1px solid hsl(var(--border))',
-                  borderRadius: '0.75rem',
-                  fontSize: '0.8rem',
-                }}
-              />
-              <Bar dataKey="accuracy" radius={[0, 6, 6, 0]} barSize={20}>
-                {chartData.map((entry, i) => (
-                  <Cell key={i} fill={getBarColor(entry.accuracy)} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <h3 className="font-bold text-foreground mb-6">Smart Score לפי נושא (חלש → חזק)</h3>
+          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+            {chartData.map(entry => (
+              <div key={entry.topic}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-sm font-medium text-foreground truncate max-w-[60%]">{entry.topic}</span>
+                  <span className={`text-sm font-bold ${
+                    entry.smartScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
+                    entry.smartScore >= 60 ? 'text-amber-600 dark:text-amber-400' :
+                    'text-red-600 dark:text-red-400'
+                  }`}>{entry.smartScore}%</span>
+                </div>
+                <div className="w-full bg-muted rounded-full h-5 overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ${getBarColor(entry.smartScore)}`}
+                    style={{ width: `${Math.max(entry.smartScore, 2)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
-      {/* Data Table */}
+      {/* Advanced Data Table */}
       {filteredTopics.length > 0 && (
         <div className="soft-card bg-card border border-border overflow-hidden mb-10">
           <div className="overflow-x-auto">
@@ -176,20 +186,30 @@ export default function StatsView() {
               <thead>
                 <tr className="bg-muted/50 border-b border-border text-muted-foreground">
                   <ThHeader label="נושא" sortKey="topic" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
-                  <ThHeader label="נענו" sortKey="total" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="במאגר" sortKey="totalInDb" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="נענו" sortKey="totalAnswered" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
                   <ThHeader label="נכון" sortKey="correct" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="שגוי" sortKey="wrong" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
                   <ThHeader label="דיוק %" sortKey="accuracy" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="Smart Score %" sortKey="smartScore" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
                 </tr>
               </thead>
               <tbody>
                 {filteredTopics.map(t => (
                   <tr key={t.topic} className="border-b border-border hover:bg-muted/30 transition">
                     <td className="px-4 py-3 font-medium text-foreground">{t.topic}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">{t.total}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{t.totalInDb}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{t.totalAnswered}</td>
                     <td className="px-4 py-3 text-center text-muted-foreground">{t.correct}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground">{t.wrong}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`font-bold ${t.accuracy >= 80 ? 'text-success' : t.accuracy >= 60 ? 'text-warning' : 'text-destructive'}`}>
+                      <span className={`font-bold ${t.accuracy >= 80 ? 'text-emerald-600 dark:text-emerald-400' : t.accuracy >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
                         {t.accuracy}%
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`font-black text-base ${t.smartScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : t.smartScore >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                        {t.smartScore}%
                       </span>
                     </td>
                   </tr>
@@ -239,7 +259,7 @@ function ThHeader({ label, sortKey, currentKey, asc, onSort }: {
   const active = currentKey === sortKey;
   return (
     <th
-      className="px-4 py-3 text-xs font-bold cursor-pointer hover:text-foreground transition select-none"
+      className="px-4 py-3 text-xs font-bold cursor-pointer hover:text-foreground transition select-none whitespace-nowrap"
       onClick={() => onSort(sortKey)}
     >
       <span className="flex items-center gap-1">
