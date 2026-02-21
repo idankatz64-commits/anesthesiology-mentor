@@ -72,6 +72,7 @@ const defaultMultiSelect: MultiSelectState = {
   institution: new Set(['all']), difficulty: new Set(['all']), usertags: new Set(['all']),
 };
 
+// React context for app state
 const AppContext = createContext<AppContextType | null>(null);
 
 export function useApp() {
