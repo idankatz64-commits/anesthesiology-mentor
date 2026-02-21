@@ -1,5 +1,5 @@
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, Sparkles, Moon, Sun } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck, Moon, Sun } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 
@@ -10,7 +10,7 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'stats', label: 'סטטיסטיקה', icon: <BarChart3 className="w-5 h-5" /> },
   { id: 'notebook', label: 'המחברת שלי', icon: <StickyNote className="w-5 h-5" /> },
   { id: 'weekly-plan', label: 'תוכנית שבועית', icon: <CalendarDays className="w-5 h-5" /> },
-  { id: 'ai-coach', label: 'תובנות AI', icon: <Sparkles className="w-5 h-5" /> },
+  { id: 'ai-coach', label: 'דו״ח מטות', icon: <ClipboardCheck className="w-5 h-5" /> },
 ];
 
 export default function Sidebar() {
