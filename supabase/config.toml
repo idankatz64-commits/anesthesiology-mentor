@@ -1,1 +1,4 @@
 project_id = "agmcauhjhfwksrjllxar"
+
+[functions.matot-report]
+verify_jwt = false
