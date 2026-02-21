@@ -1,11 +1,42 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS, type Question } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import {
   X, Flag, Star, ChevronRight, ChevronLeft, SkipForward, BookOpen,
-  StickyNote, Tag, Plus,
+  StickyNote, Tag, Plus, ExternalLink, Copy,
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
+
+/** Parse URLs and <a> tags inside explanation text into clickable links */
+function ExplanationRenderer({ text }: { text: string }) {
+  // First, convert raw HTML anchor tags to markdown links
+  let processed = text.replace(
+    /<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
+    '[$2]($1)'
+  );
+
+  return (
+    <ReactMarkdown
+      components={{
+        a: ({ href, children }) => (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1"
+          >
+            {children}
+            <ExternalLink className="w-3 h-3 inline-block" />
+          </a>
+        ),
+        p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+      }}
+    >
+      {processed}
+    </ReactMarkdown>
+  );
+}
 
 export default function SessionView() {
   const {
@@ -13,6 +44,7 @@ export default function SessionView() {
     toggleFlag, skipQuestion, updateHistory, toggleFavorite,
     saveNote, setRating, addTag, removeTag,
   } = useApp();
+  const { toast } = useToast();
 
   const { quiz, index, mode, answers, flagged, skipped } = session;
   const [showNote, setShowNote] = useState(false);
@@ -32,6 +64,7 @@ export default function SessionView() {
 
   const qData = quiz[index];
   const id = qData[KEYS.ID];
+  const refId = qData[KEYS.REF_ID];
   const savedAns = answers[index];
   const correctAns = qData[KEYS.CORRECT];
   const isPracticeRevealed = mode === 'practice' && savedAns !== null;
@@ -87,6 +120,13 @@ export default function SessionView() {
     if (!tagInput.trim()) return;
     addTag(id, tagInput.trim());
     setTagInput('');
+  };
+
+  const handleSendToNotebookLM = () => {
+    const text = `Serial: ${refId} | Question ID: ${id} | ${qData[KEYS.QUESTION]}`;
+    navigator.clipboard.writeText(text);
+    window.open('https://notebooklm.google.com/', '_blank');
+    toast({ title: 'Copied!', description: 'הועתק ללוח. NotebookLM נפתח בטאב חדש.' });
   };
 
   const formatTime = (s: number) =>
@@ -156,14 +196,25 @@ export default function SessionView() {
       <div className="soft-card bg-card border border-border overflow-hidden relative">
         {/* Meta bar */}
         <div className="bg-muted/50 px-8 py-4 border-b border-border flex flex-wrap gap-4 text-xs text-muted-foreground font-medium justify-between items-center">
-          <div className="flex flex-wrap gap-4">
-            <span className="flex items-center gap-1.5"># <span className="text-foreground font-bold">{qData[KEYS.ID]}</span></span>
+          <div className="flex flex-wrap gap-4 items-center">
+            <span className="text-foreground font-bold bidi-text">
+              שאלה {id} (מספר סידורי: {refId})
+            </span>
             <span className="flex items-center gap-1.5">📁 <span className="text-foreground">{qData[KEYS.TOPIC]}</span></span>
             <span className="flex items-center gap-1.5">📅 <span className="text-foreground">{qData[KEYS.YEAR]}</span></span>
           </div>
-          <button onClick={() => toggleFavorite(id)} className="transition">
-            <Star className={`w-5 h-5 ${isFav ? 'fill-warning text-warning' : 'text-muted-foreground hover:text-warning'}`} />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSendToNotebookLM}
+              className="text-primary hover:text-primary/80 transition flex items-center gap-1.5 text-xs font-bold bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20"
+              title="Send to NotebookLM"
+            >
+              <Copy className="w-3 h-3" /> NotebookLM
+            </button>
+            <button onClick={() => toggleFavorite(id)} className="transition">
+              <Star className={`w-5 h-5 ${isFav ? 'fill-warning text-warning' : 'text-muted-foreground hover:text-warning'}`} />
+            </button>
+          </div>
         </div>
 
         {/* Question Text */}
@@ -286,7 +337,7 @@ export default function SessionView() {
                 💡 הסבר:
               </strong>
               <div className="markdown-content bidi-text">
-                <ReactMarkdown>{qData[KEYS.EXPLANATION] || 'אין הסבר'}</ReactMarkdown>
+                <ExplanationRenderer text={qData[KEYS.EXPLANATION] || 'אין הסבר'} />
               </div>
             </div>
             <a
