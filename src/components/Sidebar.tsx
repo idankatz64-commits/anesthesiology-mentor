@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck, Moon, Sun } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck, Moon, Sun, MessageSquareWarning } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
+import FeedbackModal from './FeedbackModal';
 
 const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'home', label: 'ראשי', icon: <Heart className="w-5 h-5" /> },
@@ -15,6 +17,7 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
 
 export default function Sidebar() {
   const { currentView, navigate, isDark, toggleTheme, progress, data } = useApp();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   let totalCorrect = 0;
   let totalAnswered = 0;
@@ -63,6 +66,13 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="p-6 space-y-4">
         <button
+          onClick={() => setFeedbackOpen(true)}
+          className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition text-xs font-bold"
+        >
+          <span>דווח על טעות / פידבק</span>
+          <MessageSquareWarning className="w-4 h-4 text-primary" />
+        </button>
+        <button
           onClick={toggleTheme}
           className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition text-xs font-bold"
         >
@@ -80,6 +90,7 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </aside>
   );
 }
