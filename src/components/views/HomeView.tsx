@@ -1,6 +1,6 @@
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, GraduationCap } from 'lucide-react';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote } from 'lucide-react';
 
 export default function HomeView() {
   const { data, progress, navigate, resetAllData, startSession } = useApp();
@@ -153,18 +153,6 @@ export default function HomeView() {
             <div className="text-3xl font-bold text-warning">{withoutExp}</div>
             <div className="text-xs text-warning/70 font-medium mt-1">ללא הסבר</div>
           </div>
-        </div>
-      </div>
-
-      {/* Daily Tip */}
-      <div className="bg-gradient-to-br from-primary to-info rounded-3xl p-8 text-primary-foreground relative overflow-hidden shadow-xl">
-        <div className="relative z-10">
-          <h3 className="text-xl font-bold mb-3 flex items-center gap-3">
-            <GraduationCap className="w-6 h-6 opacity-80" /> טיפ יומי ממילר
-          </h3>
-          <p className="text-primary-foreground/80 font-light text-lg leading-relaxed max-w-2xl">
-            זכור: במבחן שלב א', תשומת לב לפרטים הקטנים בפרמקולוגיה ופיזיולוגיה היא קריטית. אל תדלג על הגרפים בפרק הלב.
-          </p>
         </div>
       </div>
     </div>

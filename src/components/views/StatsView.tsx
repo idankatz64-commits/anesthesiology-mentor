@@ -1,8 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Search, Download, Upload } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Cell, Tooltip } from 'recharts';
+import { Search, Download, Upload, TrendingUp, TrendingDown, Target, BookOpen, AlertTriangle, CheckCircle } from 'lucide-react';
 
 type TopicStat = {
   topic: string;
@@ -18,8 +17,6 @@ type TopicStat = {
 export default function StatsView() {
   const { data, progress, importData } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
-  const [sortCol, setSortCol] = useState<keyof TopicStat>('smartScore');
-  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const stats = useMemo(() => {
     let totalUnique = 0, correctUnique = 0, mistakes = 0, fixed = 0, totalAttempts = 0;
@@ -50,6 +47,7 @@ export default function StatsView() {
     });
 
     const accuracy = totalUnique > 0 ? Math.round((correctUnique / totalUnique) * 100) : 0;
+    const coverage = data.length > 0 ? Math.round((totalUnique / data.length) * 100) : 0;
 
     const topicData: TopicStat[] = Object.entries(topicMap).map(([topic, s]) => {
       const n = s.uniqueIds;
@@ -66,30 +64,17 @@ export default function StatsView() {
       };
     });
 
-    return { totalUnique, correctUnique, mistakes, fixed, totalAttempts, accuracy, topicData };
+    return { totalUnique, correctUnique, mistakes, fixed, totalAttempts, accuracy, coverage, topicData };
   }, [data, progress]);
 
-  const sortedData = useMemo(() => {
+  const filteredTopics = useMemo(() => {
     let filtered = stats.topicData.filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()));
-    filtered.sort((a, b) => {
-      const va = a[sortCol];
-      const vb = b[sortCol];
-      if (typeof va === 'string') return sortDir === 'asc' ? va.localeCompare(vb as string) : (vb as string).localeCompare(va);
-      return sortDir === 'asc' ? (va as number) - (vb as number) : (vb as number) - (va as number);
-    });
+    filtered.sort((a, b) => a.smartScore - b.smartScore);
     return filtered;
-  }, [stats.topicData, searchTerm, sortCol, sortDir]);
+  }, [stats.topicData, searchTerm]);
 
-  const chartData = sortedData.slice(0, 30).map(d => ({
-    topic: d.topic,
-    smartScore: d.smartScore,
-    fill: d.smartScore >= 80 ? 'hsl(160, 84%, 39%)' : d.smartScore >= 60 ? 'hsl(38, 92%, 50%)' : 'hsl(0, 84%, 60%)',
-  }));
-
-  const handleSort = (col: keyof TopicStat) => {
-    if (sortCol === col) setSortDir(p => p === 'asc' ? 'desc' : 'asc');
-    else { setSortCol(col); setSortDir('asc'); }
-  };
+  const strongTopics = filteredTopics.filter(t => t.smartScore >= 70);
+  const weakTopics = filteredTopics.filter(t => t.smartScore < 70);
 
   const handleExport = () => {
     const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(progress));
@@ -123,44 +108,32 @@ export default function StatsView() {
       <h2 className="text-3xl font-bold mb-8 text-foreground">הסטטיסטיקה שלי</h2>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-6 mb-10">
-        {[
-          { label: 'סך ניסיונות', value: stats.totalAttempts, color: 'text-info' },
-          { label: 'שאלות ייחודיות', value: stats.totalUnique, color: 'text-foreground' },
-          { label: 'דיוק כללי', value: `${stats.accuracy}%`, color: 'text-primary' },
-          { label: 'טעויות פתוחות', value: stats.mistakes, color: 'text-destructive' },
-          { label: 'תוקנו', value: stats.fixed, color: 'text-success' },
-        ].map(item => (
-          <div key={item.label} className="soft-card bg-card border border-border p-6">
-            <div className={`text-3xl font-bold ${item.color}`}>{item.value}</div>
-            <div className="text-xs text-muted-foreground mt-1 font-medium">{item.label}</div>
-          </div>
-        ))}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-10">
+        <SummaryCard label="סך ניסיונות" value={stats.totalAttempts} icon={<Target className="w-5 h-5" />} color="text-info" />
+        <SummaryCard label="שאלות ייחודיות" value={stats.totalUnique} icon={<BookOpen className="w-5 h-5" />} color="text-foreground" />
+        <SummaryCard label="כיסוי מאגר" value={`${stats.coverage}%`} icon={<Target className="w-5 h-5" />} color="text-primary" />
+        <SummaryCard label="דיוק כללי" value={`${stats.accuracy}%`} icon={stats.accuracy >= 60 ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />} color={stats.accuracy >= 60 ? 'text-success' : 'text-destructive'} />
+        <SummaryCard label="טעויות פתוחות" value={stats.mistakes} icon={<AlertTriangle className="w-5 h-5" />} color="text-destructive" />
+        <SummaryCard label="תוקנו" value={stats.fixed} icon={<CheckCircle className="w-5 h-5" />} color="text-success" />
       </div>
 
-      {/* Chart */}
-      {chartData.length > 0 && (
-        <div className="soft-card bg-card border border-border p-6 mb-8">
-          <h3 className="font-bold mb-4 text-foreground text-lg">ביצועים לפי נושא (ציון משוקלל)</h3>
-          <div style={{ height: Math.max(400, chartData.length * 30) }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: 120, right: 20 }}>
-                <XAxis type="number" domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))' }} />
-                <YAxis type="category" dataKey="topic" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 11 }} width={120} />
-                <Tooltip />
-                <Bar dataKey="smartScore" radius={[0, 6, 6, 0]} barSize={20}>
-                  {chartData.map((entry, idx) => (
-                    <Cell key={idx} fill={entry.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Overall Progress Bar */}
+      <div className="soft-card bg-card border border-border p-6 mb-10">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-foreground">כיסוי כולל של המאגר</h3>
+          <span className="text-2xl font-black text-primary">{stats.coverage}%</span>
         </div>
-      )}
+        <div className="w-full bg-border h-4 rounded-full overflow-hidden">
+          <div
+            className="bg-primary h-full rounded-full transition-all duration-700"
+            style={{ width: `${stats.coverage}%` }}
+          />
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">{stats.totalUnique} מתוך {data.length} שאלות נענו</p>
+      </div>
 
       {/* Search */}
-      <div className="relative w-full md:w-1/3 mb-4">
+      <div className="relative w-full md:w-1/3 mb-6">
         <input
           type="text"
           value={searchTerm}
@@ -171,50 +144,39 @@ export default function StatsView() {
         <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
       </div>
 
-      {/* Table */}
-      <div className="soft-card bg-card border border-border p-8 overflow-x-auto mb-10">
-        <h3 className="font-bold mb-6 text-foreground text-lg">טבלת ביצועים מפורטת</h3>
-        <table className="w-full text-sm text-right">
-          <thead className="text-xs text-muted-foreground uppercase bg-muted border-b border-border select-none">
-            <tr>
-              {[
-                { key: 'topic', label: 'נושא' },
-                { key: 'totalDb', label: 'סה"כ במאגר' },
-                { key: 'total', label: 'נענו (ייחודי)' },
-                { key: 'remaining', label: 'נותרו' },
-                { key: 'correct', label: 'נכון' },
-                { key: 'wrong', label: 'שגוי' },
-                { key: 'smartScore', label: 'ציון משוקלל (%)' },
-              ].map(col => (
-                <th
-                  key={col.key}
-                  onClick={() => handleSort(col.key as keyof TopicStat)}
-                  className="px-4 py-3 cursor-pointer hover:bg-muted/80 transition"
-                >
-                  {col.label} {sortCol === col.key ? (sortDir === 'asc' ? '↑' : '↓') : ''}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="text-foreground">
-            {sortedData.map(d => (
-              <tr key={d.topic} className="border-b border-border hover:bg-muted/50 transition">
-                <td className="px-4 py-3 font-medium">{d.topic}</td>
-                <td className="px-4 py-3 text-muted-foreground">{d.totalDb}</td>
-                <td className="px-4 py-3 font-bold">{d.total}</td>
-                <td className="px-4 py-3 text-primary font-bold">{d.remaining}</td>
-                <td className="px-4 py-3 text-success">{d.correct}</td>
-                <td className="px-4 py-3 text-destructive">{d.wrong}</td>
-                <td className={`px-4 py-3 font-bold ${
-                  d.smartScore >= 80 ? 'text-success' : d.smartScore >= 60 ? 'text-warning' : 'text-destructive'
-                }`}>
-                  {d.smartScore}%
-                </td>
-              </tr>
+      {/* Weak Topics */}
+      {weakTopics.length > 0 && (
+        <div className="mb-10">
+          <h3 className="text-lg font-bold text-destructive mb-4 flex items-center gap-2">
+            <TrendingDown className="w-5 h-5" /> נושאים לחיזוק ({weakTopics.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {weakTopics.map(t => (
+              <TopicCard key={t.topic} topic={t} variant="weak" />
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </div>
+      )}
+
+      {/* Strong Topics */}
+      {strongTopics.length > 0 && (
+        <div className="mb-10">
+          <h3 className="text-lg font-bold text-success mb-4 flex items-center gap-2">
+            <TrendingUp className="w-5 h-5" /> נושאים חזקים ({strongTopics.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {strongTopics.map(t => (
+              <TopicCard key={t.topic} topic={t} variant="strong" />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {filteredTopics.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <p className="text-lg font-light">אין עדיין נתונים. התחל לתרגל כדי לראות סטטיסטיקות!</p>
+        </div>
+      )}
 
       {/* Import/Export */}
       <div className="soft-card bg-card border border-border p-8">
@@ -231,6 +193,43 @@ export default function StatsView() {
             <input type="file" className="hidden" accept=".json" onChange={handleImport} />
           </label>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function SummaryCard({ label, value, icon, color }: { label: string; value: string | number; icon: React.ReactNode; color: string }) {
+  return (
+    <div className="soft-card bg-card border border-border p-5">
+      <div className={`${color} mb-2`}>{icon}</div>
+      <div className={`text-2xl font-black ${color}`}>{value}</div>
+      <div className="text-xs text-muted-foreground mt-1 font-medium">{label}</div>
+    </div>
+  );
+}
+
+function TopicCard({ topic, variant }: { topic: TopicStat; variant: 'strong' | 'weak' }) {
+  const barColor = variant === 'strong' ? 'bg-success' : topic.smartScore >= 50 ? 'bg-warning' : 'bg-destructive';
+  const borderColor = variant === 'strong' ? 'border-success/20' : 'border-destructive/20';
+
+  return (
+    <div className={`soft-card bg-card border ${borderColor} p-5`}>
+      <div className="flex items-start justify-between mb-3">
+        <h4 className="font-bold text-foreground text-sm leading-tight flex-1">{topic.topic}</h4>
+        <span className={`text-xl font-black ${variant === 'strong' ? 'text-success' : topic.smartScore >= 50 ? 'text-warning' : 'text-destructive'}`}>
+          {topic.smartScore}%
+        </span>
+      </div>
+      <div className="w-full bg-border h-2.5 rounded-full overflow-hidden mb-3">
+        <div
+          className={`${barColor} h-full rounded-full transition-all duration-500`}
+          style={{ width: `${topic.smartScore}%` }}
+        />
+      </div>
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>✅ {topic.correct} נכון</span>
+        <span>❌ {topic.wrong} שגוי</span>
+        <span>📋 {topic.remaining} נותרו</span>
       </div>
     </div>
   );

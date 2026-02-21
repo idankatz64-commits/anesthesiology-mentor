@@ -197,7 +197,7 @@
 }
 
 .markdown-content a {
-  @apply text-primary underline;
+  @apply text-primary underline hover:text-primary/80 transition-colors cursor-pointer;
 }
 
 .markdown-content p {
