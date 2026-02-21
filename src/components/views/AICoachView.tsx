@@ -3,6 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { ClipboardCheck, Sparkles, Key, Loader2, AlertTriangle } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const GEMINI_KEY_LS = 'gemini_api_key';
 
@@ -98,27 +99,14 @@ Keep it under 250 words. Speak directly to Idan in Hebrew. Use markdown formatti
     setReport('');
 
     try {
-      const res = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`,
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: buildPrompt() }] }],
-          }),
-        }
-      );
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.error?.message || `API Error: ${res.status}`);
-      }
-
-      const json = await res.json();
-      const text = json.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (!text) throw new Error('No response from Gemini.');
-      setReport(text);
+      const genAI = new GoogleGenerativeAI(apiKey);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      const result = await model.generateContent(buildPrompt());
+      const responseText = result.response.text();
+      if (!responseText) throw new Error('No response from Gemini.');
+      setReport(responseText);
     } catch (err: any) {
+      console.error('Gemini SDK error:', err);
       setError(err.message || 'שגיאה בחיבור ל-API.');
     } finally {
       setLoading(false);
