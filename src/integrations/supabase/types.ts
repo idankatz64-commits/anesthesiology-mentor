@@ -14,7 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      spaced_repetition: {
+        Row: {
+          confidence: string | null
+          id: string
+          last_correct: boolean | null
+          next_review_date: string
+          question_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          confidence?: string | null
+          id?: string
+          last_correct?: boolean | null
+          next_review_date?: string
+          question_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          confidence?: string | null
+          id?: string
+          last_correct?: boolean | null
+          next_review_date?: string
+          question_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

@@ -4,7 +4,9 @@ import {
   KEYS, LS_KEY, WELCOME_KEY,
   type Question, type UserProgress, type SessionState,
   type MultiSelectState, type ViewId, type HistoryEntry, type WeeklyDay,
+  type ConfidenceLevel,
 } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AppContextType {
   data: Question[];
@@ -24,10 +26,12 @@ interface AppContextType {
   // Session actions
   startSession: (pool: Question[], count: number, mode: SessionState['mode']) => void;
   setAnswer: (index: number, answer: string) => void;
+  setConfidence: (index: number, level: ConfidenceLevel) => void;
   setSessionIndex: (index: number) => void;
   toggleFlag: (index: number) => void;
   skipQuestion: (index: number) => void;
   updateHistory: (id: string, isCorrect: boolean) => void;
+  updateSpacedRepetition: (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel) => void;
   
   // Progress actions
   toggleFavorite: (id: string) => void;
@@ -50,6 +54,7 @@ interface AppContextType {
   
   // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
+  getDueQuestions: () => Promise<Question[]>;
 }
 
 const defaultProgress: UserProgress = {
@@ -58,7 +63,7 @@ const defaultProgress: UserProgress = {
 
 const defaultSession: SessionState = {
   quiz: [], index: 0, score: 0, mode: 'practice',
-  answers: [], flagged: new Set(), skipped: new Set(),
+  answers: [], confidence: [], flagged: new Set(), skipped: new Set(),
   sourceFilter: 'all', countFilter: 10, unseenOnly: false,
 };
 
@@ -141,6 +146,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSession({
       quiz, index: 0, score: 0, mode,
       answers: new Array(quiz.length).fill(null),
+      confidence: new Array(quiz.length).fill(null),
       flagged: new Set(), skipped: new Set(),
       sourceFilter: 'all', countFilter: count, unseenOnly: false,
     });
@@ -192,6 +198,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
       return newProgress;
     });
+  }, []);
+
+  const setConfidence = useCallback((index: number, level: ConfidenceLevel) => {
+    setSession(prev => {
+      const confidence = [...prev.confidence];
+      confidence[index] = level;
+      return { ...prev, confidence };
+    });
+  }, []);
+
+  const updateSpacedRepetition = useCallback(async (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel) => {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    if (!authSession?.user) return;
+
+    let daysToAdd = 1;
+    if (isCorrect && confidence === 'confident') daysToAdd = 7;
+    else if (isCorrect && confidence === 'hesitant') daysToAdd = 3;
+    // incorrect or guessed = 1 day
+
+    const nextDate = new Date();
+    nextDate.setDate(nextDate.getDate() + daysToAdd);
+    const nextReviewDate = nextDate.toISOString().split('T')[0];
+
+    await supabase.from('spaced_repetition').upsert({
+      user_id: authSession.user.id,
+      question_id: questionId,
+      next_review_date: nextReviewDate,
+      confidence,
+      last_correct: isCorrect,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,question_id' });
   }, []);
 
   const incrementScore = useCallback(() => {
@@ -348,6 +385,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return pool;
   }, [session.sourceFilter, session.unseenOnly, multiSelect, data]);
 
+  const getDueQuestions = useCallback(async (): Promise<Question[]> => {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    if (!authSession?.user) return [];
+
+    const today = new Date().toISOString().split('T')[0];
+    const { data: dueRows } = await supabase
+      .from('spaced_repetition')
+      .select('question_id')
+      .eq('user_id', authSession.user.id)
+      .lte('next_review_date', today);
+
+    if (!dueRows || dueRows.length === 0) return [];
+
+    const dueIds = new Set(dueRows.map(r => r.question_id));
+    return dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
+  }, []);
+
   const generateWeeklyPlan = useCallback((force = false) => {
     const d = dataRef.current;
     const p = progressRef.current;
@@ -403,10 +457,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
     navigate, toggleTheme, closeWelcome, saveProgress: saveProgressFn,
-    startSession, setAnswer, setSessionIndex, toggleFlag, skipQuestion, updateHistory,
+    startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
+    updateHistory, updateSpacedRepetition,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
-    generateWeeklyPlan, getFilteredQuestions,
+    generateWeeklyPlan, getFilteredQuestions, getDueQuestions,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
