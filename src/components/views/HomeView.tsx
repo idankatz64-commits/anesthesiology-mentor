@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock } from 'lucide-react';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers } from 'lucide-react';
 
 export default function HomeView() {
   const { data, progress, navigate, resetAllData, startSession, getDueQuestions } = useApp();
@@ -142,7 +142,19 @@ export default function HomeView() {
           <p className="text-sm text-muted-foreground font-light">שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS.</p>
         </div>
 
-        {/* Custom Practice */}
+        {/* Flashcards */}
+        <div
+          onClick={() => navigate('flashcards')}
+          className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden"
+        >
+          <div className="absolute -left-10 -bottom-10 w-24 h-24 bg-accent/20 rounded-full blur-2xl" />
+          <div className="w-12 h-12 bg-accent text-accent-foreground rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
+            <Layers className="w-6 h-6" />
+          </div>
+          <h3 className="font-bold text-lg mb-1 text-foreground">תרגול כרטיסיות</h3>
+          <p className="text-sm text-muted-foreground font-light">כרטיסיות Anki – צפה בשאלה, חשוב, והצג תשובה.</p>
+        </div>
+
         <div onClick={() => navigate('setup-practice')} className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
           <div className="w-12 h-12 bg-muted text-primary rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
             <Dumbbell className="w-6 h-6" />
