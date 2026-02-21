@@ -1,23 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { ClipboardCheck, Sparkles, Key, Loader2, AlertTriangle } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-
-const GEMINI_KEY_LS = 'gemini_api_key';
+import { ClipboardCheck, Sparkles, ExternalLink } from 'lucide-react';
+import { toast } from '@/hooks/use-toast';
 
 export default function AICoachView() {
   const { data, progress } = useApp();
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem(GEMINI_KEY_LS) || '');
-  const [showKeyInput, setShowKeyInput] = useState(false);
-  const [report, setReport] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (apiKey) localStorage.setItem(GEMINI_KEY_LS, apiKey);
-  }, [apiKey]);
+  const [copied, setCopied] = useState(false);
 
   const buildPrompt = () => {
     const topicStats: Record<string, { correct: number; total: number }> = {};
@@ -35,7 +24,6 @@ export default function AICoachView() {
       }
     });
 
-    // Calculate Smart Score per topic
     const topicSmartScores = Object.entries(topicStats).map(([topic, s]) => {
       const accuracy = s.total > 0 ? (s.correct / s.total) * 100 : 0;
       const smartScore = ((s.total / (s.total + 10)) * accuracy) + ((10 / (s.total + 10)) * 50);
@@ -46,13 +34,11 @@ export default function AICoachView() {
 
     const weakest = topicSmartScores.slice(0, 3);
     const strongest = [...topicSmartScores].sort((a, b) => b.smartScore - a.smartScore).slice(0, 3);
-
     const overallAccuracy = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
 
     const topicLines = topicSmartScores
       .map(s => `- ${s.topic}: ${s.correct}/${s.total} (דיוק ${s.accuracy}%, Smart Score ${s.smartScore}%)`)
       .join('\n');
-
     const weakestLines = weakest.map(s => `- ${s.topic}: דיוק ${s.accuracy}%, Smart Score ${s.smartScore}%`).join('\n');
     const strongestLines = strongest.map(s => `- ${s.topic}: דיוק ${s.accuracy}%, Smart Score ${s.smartScore}%`).join('\n');
 
@@ -87,29 +73,24 @@ Structure your response in Hebrew:
 Keep it under 250 words. Speak directly to Idan in Hebrew. Use markdown formatting.`;
   };
 
-  const generateReport = async () => {
-    if (!apiKey.trim()) {
-      setShowKeyInput(true);
-      setError('יש להזין מפתח Gemini API כדי לייצר דוח.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
-    setReport('');
-
+  const handleGenerate = async () => {
+    const prompt = buildPrompt();
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      const result = await model.generateContent(buildPrompt());
-      const responseText = result.response.text();
-      if (!responseText) throw new Error('No response from Gemini.');
-      setReport(responseText);
-    } catch (err: any) {
-      console.error('Gemini SDK error:', err);
-      setError(err.message || 'שגיאה בחיבור ל-API.');
-    } finally {
-      setLoading(false);
+      await navigator.clipboard.writeText(prompt);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 4000);
+      window.open('https://gemini.google.com/app', '_blank', 'noopener,noreferrer');
+      toast({
+        title: '✅ הנתונים הועתקו!',
+        description: 'הדבק אותם עכשיו בחלון של Gemini שנפתח כדי לקבל את הדו״ח.',
+      });
+    } catch (err) {
+      console.error('Clipboard error:', err);
+      toast({
+        title: 'שגיאה',
+        description: 'לא הצלחנו להעתיק ללוח. נסה שוב.',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -127,76 +108,22 @@ Keep it under 250 words. Speak directly to Idan in Hebrew. Use markdown formatti
             </p>
           </div>
         </div>
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-8">
           <button
-            onClick={generateReport}
-            disabled={loading}
-            className="bg-primary-foreground text-foreground font-bold px-6 py-3 rounded-xl shadow-lg hover:opacity-90 transition flex items-center gap-2 disabled:opacity-50"
+            onClick={handleGenerate}
+            className="bg-primary-foreground text-foreground font-bold px-6 py-3 rounded-xl shadow-lg hover:opacity-90 transition flex items-center gap-2"
           >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-            {loading ? 'מייצר דוח...' : '📋 הפק דו״ח מטות'}
-          </button>
-          <button
-            onClick={() => setShowKeyInput(!showKeyInput)}
-            className="bg-primary-foreground/20 text-primary-foreground font-medium px-4 py-3 rounded-xl hover:bg-primary-foreground/30 transition flex items-center gap-2 text-sm"
-          >
-            <Key className="w-4 h-4" />
-            {apiKey ? 'עדכן מפתח API' : 'הגדר מפתח API'}
+            {copied ? <ClipboardCheck className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
+            {copied ? 'הועתק! הדבק ב-Gemini ←' : '📋 הפק דו״ח מטות'}
+            <ExternalLink className="w-4 h-4 ml-1" />
           </button>
         </div>
       </div>
 
-      {/* API Key Input */}
-      {showKeyInput && (
-        <div className="soft-card bg-card border border-border p-6 mb-6">
-          <label className="text-sm font-bold text-foreground mb-2 block">Gemini API Key</label>
-          <p className="text-xs text-muted-foreground mb-3">
-            קבל מפתח חינמי מ-{' '}
-            <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary underline">
-              Google AI Studio
-            </a>
-          </p>
-          <input
-            type="password"
-            value={apiKey}
-            onChange={e => setApiKey(e.target.value)}
-            placeholder="AIza..."
-            className="w-full p-3 border border-border rounded-xl bg-background text-foreground outline-none focus:border-primary transition font-mono text-sm"
-            dir="ltr"
-          />
-          <button
-            onClick={() => { localStorage.setItem(GEMINI_KEY_LS, apiKey); setShowKeyInput(false); setError(''); }}
-            className="mt-3 bg-primary text-primary-foreground px-5 py-2 rounded-lg text-sm font-bold hover:opacity-90 transition"
-          >
-            שמור מפתח
-          </button>
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="bg-destructive/10 border border-destructive/20 text-destructive p-4 rounded-xl mb-6 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 flex-shrink-0 mt-0.5" />
-          <p className="text-sm">{error}</p>
-        </div>
-      )}
-
-      {/* Report */}
-      {report ? (
-        <div className="soft-card bg-card border border-border p-8">
-          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2">
-            <ClipboardCheck className="w-5 h-5 text-primary" /> דו״ח פרופ׳ מטות
-          </h3>
-          <div className="markdown-content bidi-text text-foreground leading-relaxed">
-            <ReactMarkdown>{report}</ReactMarkdown>
-          </div>
-        </div>
-      ) : !loading && (
-        <div className="text-center py-12 text-muted-foreground">
-          <p className="text-lg font-light">לחץ על הכפתור למעלה כדי לקבל סקירת ביצועים מפרופ׳ מטות.</p>
-          {!apiKey && <p className="text-sm mt-2 text-warning">⚠️ יש להגדיר מפתח Gemini API תחילה.</p>}
-        </div>
-      )}
+      <div className="text-center py-12 text-muted-foreground">
+        <p className="text-lg font-light">לחץ על הכפתור למעלה — הנתונים שלך יועתקו וחלון Gemini ייפתח.</p>
+        <p className="text-sm mt-2 opacity-70">הדבק את הטקסט בצ׳אט של Gemini כדי לקבל את הדו״ח.</p>
+      </div>
     </div>
   );
 }
