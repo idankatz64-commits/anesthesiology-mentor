@@ -30,7 +30,7 @@ export default function NotebookView() {
     if (!qData) return;
     const text = `Serial: ${qData[KEYS.REF_ID]} | Question ID: ${id} | ${qData[KEYS.QUESTION]}`;
     navigator.clipboard.writeText(text);
-    window.open('https://notebooklm.google.com/', '_blank');
+    window.open('https://notebooklm.google.com/', '_blank', 'noopener,noreferrer');
     toast({ title: 'Copied!', description: 'הועתק ללוח. NotebookLM נפתח בטאב חדש.' });
   };
 
