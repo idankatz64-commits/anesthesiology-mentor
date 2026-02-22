@@ -2,3 +2,6 @@ project_id = "agmcauhjhfwksrjllxar"
 
 [functions.matot-report]
 verify_jwt = false
+
+[functions.sync-questions]
+verify_jwt = false
