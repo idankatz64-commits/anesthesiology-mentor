@@ -1,6 +1,7 @@
 import { AppProvider, useApp } from '@/contexts/AppContext';
 import Sidebar from '@/components/Sidebar';
 import MobileHeader from '@/components/MobileHeader';
+import MobileBottomNav from '@/components/MobileBottomNav';
 import TopNav from '@/components/TopNav';
 import WelcomeModal from '@/components/WelcomeModal';
 import HomeView from '@/components/views/HomeView';
@@ -26,7 +27,7 @@ function AppContent() {
         <Sidebar />
         <MobileHeader />
 
-        <main className="flex-grow overflow-y-auto p-4 md:p-10 pt-20 md:pt-10 relative bg-background bg-grid-pattern transition-colors duration-300">
+        <main className="flex-grow overflow-y-auto p-4 md:p-10 pt-20 md:pt-10 pb-24 md:pb-10 relative bg-background bg-grid-pattern transition-colors duration-300">
           {loading && (
             <div className="absolute inset-0 bg-background/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
               <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
@@ -48,6 +49,7 @@ function AppContent() {
           {currentView === 'admin' && <AdminView />}
         </main>
 
+        <MobileBottomNav />
         <WelcomeModal />
       </div>
     </div>

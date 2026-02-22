@@ -1,0 +1,42 @@
+import { useApp } from '@/contexts/AppContext';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck } from 'lucide-react';
+import { type ViewId } from '@/lib/types';
+
+const bottomNav: { id: ViewId; label: string; icon: React.ReactNode }[] = [
+  { id: 'home', label: 'ראשי', icon: <Heart className="w-5 h-5" /> },
+  { id: 'setup-practice', label: 'תרגול', icon: <BookOpen className="w-5 h-5" /> },
+  { id: 'setup-exam', label: 'בחינה', icon: <Timer className="w-5 h-5" /> },
+  { id: 'stats', label: 'סטטיסטיקה', icon: <BarChart3 className="w-5 h-5" /> },
+  { id: 'notebook', label: 'מחברת', icon: <StickyNote className="w-5 h-5" /> },
+];
+
+export default function MobileBottomNav() {
+  const { currentView, navigate } = useApp();
+
+  return (
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-30 bg-card/80 backdrop-blur-xl border-t border-border">
+      <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-l from-transparent via-primary/30 to-transparent" />
+      <div className="flex items-center justify-around px-1 py-2 safe-bottom">
+        {bottomNav.map(item => {
+          const isActive = currentView === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => navigate(item.id)}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all min-w-0 flex-1
+                ${isActive
+                  ? 'text-primary'
+                  : 'text-muted-foreground'
+                }`}
+            >
+              <div className={`p-1 rounded-lg transition-all ${isActive ? 'bg-primary/15 shadow-[0_0_8px_hsl(var(--primary)/0.3)]' : ''}`}>
+                {item.icon}
+              </div>
+              <span className="text-[10px] font-medium truncate w-full text-center">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+    </nav>
+  );
+}
