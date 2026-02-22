@@ -15,6 +15,7 @@ import WeeklyPlanView from '@/components/views/WeeklyPlanView';
 import AICoachView from '@/components/views/AICoachView';
 import FlashcardView from '@/components/views/FlashcardView';
 import AdminView from '@/components/views/AdminView';
+import FormulaSheetView from '@/components/views/FormulaSheetView';
 import { Loader2 } from 'lucide-react';
 
 function AppContent() {
@@ -47,6 +48,7 @@ function AppContent() {
           {currentView === 'ai-coach' && <AICoachView />}
           {currentView === 'flashcards' && <FlashcardView />}
           {currentView === 'admin' && <AdminView />}
+          {currentView === 'formula-sheet' && <FormulaSheetView />}
         </main>
 
         <MobileBottomNav />

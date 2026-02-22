@@ -1,0 +1,962 @@
+[
+  {
+    "id": "cpp_neuro",
+    "chapter": "Ch. 10",
+    "category": "Neuroanesthesia",
+    "name": "Cerebral Perfusion Pressure",
+    "equation": "CPP = MAP - ICP",
+    "variables": "MAP=mean arterial pressure; ICP=intracranial pressure",
+    "unit": "mmHg",
+    "clinicalNote": "Target >60 mmHg in TBI"
+  },
+  {
+    "id": "cbf",
+    "chapter": "Ch. 10",
+    "category": "Neuroanesthesia",
+    "name": "Cerebral Blood Flow",
+    "equation": "CBF = CPP / CVR",
+    "variables": "CPP=cerebral perfusion pressure; CVR=cerebrovascular resistance",
+    "unit": "mL/100g/min",
+    "clinicalNote": "Normal ~50 mL/100g/min"
+  },
+  {
+    "id": "monroe_kellie",
+    "chapter": "Ch. 10",
+    "category": "Neuroanesthesia",
+    "name": "Monroe-Kellie Doctrine",
+    "equation": "V_brain + V_blood + V_CSF = constant",
+    "variables": "V_brain; V_blood; V_CSF=intracranial compartment volumes",
+    "unit": "mL",
+    "clinicalNote": "Fixed intracranial volume"
+  },
+  {
+    "id": "doppler_velocity",
+    "chapter": "Ch. 10",
+    "category": "Neuroanesthesia",
+    "name": "Doppler Velocity",
+    "equation": "V = (fd × c) / (2 × ft × cosθ)",
+    "variables": "fd=Doppler shift; c=speed of sound; ft=transmitted frequency; θ=insonation angle",
+    "unit": "m/s",
+    "clinicalNote": "TCD blood flow measurement"
+  },
+  {
+    "id": "alveolar_gas",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "Alveolar Gas Equation",
+    "equation": "PAO₂ = FiO₂ × (PB - PH₂O) - PaCO₂/RQ",
+    "variables": "FiO₂=fraction inspired O₂; PB=760 mmHg; PH₂O=47 mmHg; RQ=0.8",
+    "unit": "mmHg",
+    "clinicalNote": "Normal PAO₂ ~100 mmHg on room air"
+  },
+  {
+    "id": "aa_gradient",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "A-a Gradient",
+    "equation": "A-a = PAO₂ - PaO₂",
+    "variables": "PAO₂=alveolar O₂; PaO₂=arterial O₂",
+    "unit": "mmHg",
+    "clinicalNote": "Normal 5-15 mmHg; increases with age"
+  },
+  {
+    "id": "cao2",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "Arterial O₂ Content",
+    "equation": "CaO₂ = (Hb × 1.34 × SaO₂) + (0.003 × PaO₂)",
+    "variables": "Hb=hemoglobin; 1.34=Hüfner constant; SaO₂=arterial saturation",
+    "unit": "mL O₂/dL",
+    "clinicalNote": "Normal 16-22 mL O₂/dL"
+  },
+  {
+    "id": "do2",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "O₂ Delivery",
+    "equation": "DO₂ = CO × CaO₂ × 10",
+    "variables": "CO=cardiac output; CaO₂=arterial O₂ content",
+    "unit": "mL O₂/min",
+    "clinicalNote": "Normal 800-1200 mL O₂/min"
+  },
+  {
+    "id": "vo2",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "O₂ Consumption",
+    "equation": "VO₂ = CO × (CaO₂ - CvO₂) × 10",
+    "variables": "CO=cardiac output; CaO₂/CvO₂=arterial/venous O₂ content",
+    "unit": "mL O₂/min",
+    "clinicalNote": "Normal 200-300 mL O₂/min"
+  },
+  {
+    "id": "o2er",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "O₂ Extraction Ratio",
+    "equation": "O₂ER = (CaO₂ - CvO₂) / CaO₂",
+    "variables": "CaO₂=arterial O₂ content; CvO₂=venous O₂ content",
+    "unit": "ratio",
+    "clinicalNote": "Normal 0.22-0.30"
+  },
+  {
+    "id": "shunt",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "Shunt Equation",
+    "equation": "Qs/Qt = (CcO₂ - CaO₂) / (CcO₂ - CvO₂)",
+    "variables": "CcO₂=pulmonary capillary O₂; CaO₂=arterial O₂; CvO₂=venous O₂",
+    "unit": "ratio",
+    "clinicalNote": "Normal <5%; >25% significant"
+  },
+  {
+    "id": "minute_vent",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "Minute Ventilation",
+    "equation": "MV = VT × RR",
+    "variables": "VT=tidal volume; RR=respiratory rate",
+    "unit": "L/min",
+    "clinicalNote": "Normal 5-8 L/min"
+  },
+  {
+    "id": "alveolar_vent",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "Alveolar Ventilation",
+    "equation": "VA = (VT - VD) × RR",
+    "variables": "VT=tidal volume; VD=dead space; RR=respiratory rate",
+    "unit": "L/min",
+    "clinicalNote": "Normal ~4.2 L/min"
+  },
+  {
+    "id": "rq",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "Respiratory Quotient",
+    "equation": "RQ = VCO₂ / VO₂",
+    "variables": "VCO₂=CO₂ production; VO₂=O₂ consumption",
+    "unit": "ratio",
+    "clinicalNote": "Normal 0.8; carbs=1.0; fat=0.7"
+  },
+  {
+    "id": "time_constant",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "Time Constant",
+    "equation": "τ = R × C",
+    "variables": "R=airway resistance; C=compliance",
+    "unit": "sec",
+    "clinicalNote": "3τ = 95% equilibration"
+  },
+  {
+    "id": "hagen_poiseuille",
+    "chapter": "Ch. 12",
+    "category": "Respiratory Physiology",
+    "name": "Hagen-Poiseuille",
+    "equation": "Q = (π × ΔP × r⁴) / (8 × η × L)",
+    "variables": "Q=flow; ΔP=pressure; r=radius; η=viscosity; L=length",
+    "unit": "mL/sec",
+    "clinicalNote": "Flow ∝ r⁴"
+  },
+  {
+    "id": "pf_ratio",
+    "chapter": "Ch. 75",
+    "category": "Respiratory Physiology",
+    "name": "P/F Ratio",
+    "equation": "P/F = PaO₂ / FiO₂",
+    "variables": "PaO₂=arterial O₂; FiO₂=fraction inspired O₂",
+    "unit": "mmHg",
+    "clinicalNote": "<300 ALI; <200 ARDS"
+  },
+  {
+    "id": "oi",
+    "chapter": "Ch. 75",
+    "category": "Respiratory Physiology",
+    "name": "Oxygenation Index",
+    "equation": "OI = (FiO₂ × MAPaw × 100) / PaO₂",
+    "variables": "FiO₂; MAPaw=mean airway pressure; PaO₂",
+    "unit": "unitless",
+    "clinicalNote": ">40 severe; used in neonates"
+  },
+  {
+    "id": "co_fick",
+    "chapter": "Ch. 13",
+    "category": "Cardiac Physiology",
+    "name": "Cardiac Output (Fick)",
+    "equation": "CO = VO₂ / (CaO₂ - CvO₂)",
+    "variables": "VO₂=O₂ consumption; CaO₂/CvO₂=arterial/venous O₂ content",
+    "unit": "L/min",
+    "clinicalNote": "Gold standard; Normal 4-8 L/min"
+  },
+  {
+    "id": "sv",
+    "chapter": "Ch. 13",
+    "category": "Cardiac Physiology",
+    "name": "Stroke Volume",
+    "equation": "SV = CO / HR",
+    "variables": "CO=cardiac output; HR=heart rate",
+    "unit": "mL/beat",
+    "clinicalNote": "Normal 60-100 mL/beat"
+  },
+  {
+    "id": "ef",
+    "chapter": "Ch. 13",
+    "category": "Cardiac Physiology",
+    "name": "Ejection Fraction",
+    "equation": "EF = (EDV - ESV) / EDV × 100",
+    "variables": "EDV=end-diastolic volume; ESV=end-systolic volume",
+    "unit": "%",
+    "clinicalNote": "Normal 55-70%"
+  },
+  {
+    "id": "map",
+    "chapter": "Ch. 13",
+    "category": "Cardiac Physiology",
+    "name": "Mean Arterial Pressure",
+    "equation": "MAP = DBP + 1/3 × (SBP - DBP)",
+    "variables": "DBP=diastolic; SBP=systolic blood pressure",
+    "unit": "mmHg",
+    "clinicalNote": "Normal 70-105 mmHg"
+  },
+  {
+    "id": "svr",
+    "chapter": "Ch. 32",
+    "category": "Cardiac Physiology",
+    "name": "Systemic Vascular Resistance",
+    "equation": "SVR = (MAP - CVP) / CO × 80",
+    "variables": "MAP=mean arterial; CVP=central venous; CO=cardiac output",
+    "unit": "dynes·s/cm⁵",
+    "clinicalNote": "Normal 800-1200"
+  },
+  {
+    "id": "pvr",
+    "chapter": "Ch. 32",
+    "category": "Cardiac Physiology",
+    "name": "Pulmonary Vascular Resistance",
+    "equation": "PVR = (mPAP - PCWP) / CO × 80",
+    "variables": "mPAP=mean pulmonary pressure; PCWP=wedge pressure; CO=cardiac output",
+    "unit": "dynes·s/cm⁵",
+    "clinicalNote": "Normal <250"
+  },
+  {
+    "id": "ci",
+    "chapter": "Ch. 32",
+    "category": "Cardiac Physiology",
+    "name": "Cardiac Index",
+    "equation": "CI = CO / BSA",
+    "variables": "CO=cardiac output; BSA=body surface area",
+    "unit": "L/min/m²",
+    "clinicalNote": "Normal 2.5-4.0"
+  },
+  {
+    "id": "svi",
+    "chapter": "Ch. 21",
+    "category": "Cardiac Physiology",
+    "name": "Stroke Volume Index",
+    "equation": "SVI = SV / BSA",
+    "variables": "SV=stroke volume; BSA=body surface area",
+    "unit": "mL/beat/m²",
+    "clinicalNote": "Normal 33-47"
+  },
+  {
+    "id": "svri",
+    "chapter": "Ch. 22",
+    "category": "Cardiac Physiology",
+    "name": "SVRI",
+    "equation": "SVRI = (MAP - CVP) / CI × 80",
+    "variables": "MAP=mean arterial; CVP=central venous; CI=cardiac index",
+    "unit": "dynes·s/cm⁵/m²",
+    "clinicalNote": "Normal 1970-2390"
+  },
+  {
+    "id": "cpp_coronary",
+    "chapter": "Ch. 13",
+    "category": "Cardiac Physiology",
+    "name": "Coronary Perfusion Pressure",
+    "equation": "CPP = DBP - LVEDP",
+    "variables": "DBP=aortic diastolic; LVEDP=LV end-diastolic pressure",
+    "unit": "mmHg",
+    "clinicalNote": "Normal >50 mmHg"
+  },
+  {
+    "id": "rpp",
+    "chapter": "Ch. 13",
+    "category": "Cardiac Physiology",
+    "name": "Rate-Pressure Product",
+    "equation": "RPP = HR × SBP",
+    "variables": "HR=heart rate; SBP=systolic blood pressure",
+    "unit": "mmHg·beats/min",
+    "clinicalNote": "Myocardial O₂ demand; normal <12000"
+  },
+  {
+    "id": "laplace",
+    "chapter": "Ch. 13",
+    "category": "Cardiac Physiology",
+    "name": "LaPlace's Law",
+    "equation": "P = 2T / r",
+    "variables": "P=transmural pressure; T=wall tension; r=radius",
+    "unit": "variable",
+    "clinicalNote": "Wall tension ∝ pressure × radius"
+  },
+  {
+    "id": "bsa",
+    "chapter": "Ch. 32",
+    "category": "Cardiac Physiology",
+    "name": "Body Surface Area (DuBois)",
+    "equation": "BSA = 0.007184 × W^0.425 × H^0.725",
+    "variables": "W=weight (kg); H=height (cm)",
+    "unit": "m²",
+    "clinicalNote": "Normal ~1.7 m²"
+  },
+  {
+    "id": "meld",
+    "chapter": "Ch. 14",
+    "category": "GI & Hepatic",
+    "name": "MELD Score",
+    "equation": "MELD = 3.78×ln(bili) + 11.2×ln(INR) + 9.57×ln(Cr) + 6.43",
+    "variables": "bili=bilirubin (mg/dL); INR; Cr=creatinine (mg/dL)",
+    "unit": "points",
+    "clinicalNote": "Liver transplant priority; range 6-40"
+  },
+  {
+    "id": "child_pugh",
+    "chapter": "Ch. 14",
+    "category": "GI & Hepatic",
+    "name": "Child-Pugh Score",
+    "equation": "Score = bilirubin + albumin + INR + ascites + encephalopathy",
+    "variables": "Each parameter scored 1-3",
+    "unit": "points",
+    "clinicalNote": "A(5-6); B(7-9); C(10-15)"
+  },
+  {
+    "id": "cockcroft",
+    "chapter": "Ch. 15",
+    "category": "Renal",
+    "name": "Cockcroft-Gault",
+    "equation": "CrCl = [(140-age) × weight] / (72 × SCr) [×0.85 female]",
+    "variables": "Age (yr); weight (kg); SCr=serum creatinine (mg/dL)",
+    "unit": "mL/min",
+    "clinicalNote": "Estimates GFR"
+  },
+  {
+    "id": "fena",
+    "chapter": "Ch. 28",
+    "category": "Renal",
+    "name": "Fractional Excretion of Sodium",
+    "equation": "FeNa = (UNa × PCr) / (PNa × UCr) × 100",
+    "variables": "UNa=urine Na; PCr=plasma Cr; PNa=plasma Na; UCr=urine Cr",
+    "unit": "%",
+    "clinicalNote": "<1% prerenal; >2% intrinsic renal"
+  },
+  {
+    "id": "starling",
+    "chapter": "Ch. 15",
+    "category": "Renal",
+    "name": "Starling Equation",
+    "equation": "Jv = Kf × [(Pc-Pi) - σ(πc-πi)]",
+    "variables": "Kf=filtration coefficient; Pc/Pi=hydrostatic pressures; πc/πi=oncotic pressures; σ=reflection coefficient",
+    "unit": "mL/min",
+    "clinicalNote": "Transcapillary fluid exchange"
+  },
+  {
+    "id": "vd",
+    "chapter": "Ch. 16",
+    "category": "Pharmacology",
+    "name": "Volume of Distribution",
+    "equation": "Vd = Dose / Plasma concentration",
+    "variables": "Dose (mg); concentration (mg/L)",
+    "unit": "L or L/kg",
+    "clinicalNote": "Large Vd = lipophilic drug"
+  },
+  {
+    "id": "half_life",
+    "chapter": "Ch. 16",
+    "category": "Pharmacology",
+    "name": "Elimination Half-Life",
+    "equation": "t½ = 0.693 × Vd / CL",
+    "variables": "Vd=volume of distribution; CL=clearance",
+    "unit": "min or hr",
+    "clinicalNote": "Independent of dose"
+  },
+  {
+    "id": "clearance",
+    "chapter": "Ch. 16",
+    "category": "Pharmacology",
+    "name": "Clearance",
+    "equation": "CL = Vd × ke = Dose / AUC",
+    "variables": "Vd=volume of distribution; ke=elimination rate constant; AUC=area under curve",
+    "unit": "mL/min",
+    "clinicalNote": "Rate of drug elimination"
+  },
+  {
+    "id": "loading_dose",
+    "chapter": "Ch. 16",
+    "category": "Pharmacology",
+    "name": "Loading Dose",
+    "equation": "LD = Vd × Cp(target)",
+    "variables": "Vd=volume of distribution; Cp=target plasma concentration",
+    "unit": "mg",
+    "clinicalNote": "Achieves target rapidly"
+  },
+  {
+    "id": "maintenance_dose",
+    "chapter": "Ch. 16",
+    "category": "Pharmacology",
+    "name": "Maintenance Dose",
+    "equation": "MD = CL × Cp(target) × τ",
+    "variables": "CL=clearance; Cp=target concentration; τ=dosing interval",
+    "unit": "mg",
+    "clinicalNote": "Sustains steady-state"
+  },
+  {
+    "id": "bioavailability",
+    "chapter": "Ch. 16",
+    "category": "Pharmacology",
+    "name": "Bioavailability",
+    "equation": "F = AUC_oral / AUC_IV × 100",
+    "variables": "AUC=area under curve for oral vs IV",
+    "unit": "%",
+    "clinicalNote": "IV = 100%"
+  },
+  {
+    "id": "therapeutic_index",
+    "chapter": "Ch. 16",
+    "category": "Pharmacology",
+    "name": "Therapeutic Index",
+    "equation": "TI = LD₅₀ / ED₅₀",
+    "variables": "LD₅₀=lethal dose 50%; ED₅₀=effective dose 50%",
+    "unit": "ratio",
+    "clinicalNote": "Higher = safer drug"
+  },
+  {
+    "id": "mac",
+    "chapter": "Ch. 17",
+    "category": "Inhaled Anesthetics & Gas Laws",
+    "name": "MAC",
+    "equation": "MAC = ED₅₀ for immobility at 1 atm",
+    "variables": "ED₅₀=dose preventing movement in 50%",
+    "unit": "% atm",
+    "clinicalNote": "1.3 MAC = ED₉₅"
+  },
+  {
+    "id": "meyer_overton",
+    "chapter": "Ch. 17",
+    "category": "Inhaled Anesthetics & Gas Laws",
+    "name": "Meyer-Overton Rule",
+    "equation": "MAC × oil/gas partition coefficient ≈ 1.82 atm",
+    "variables": "MAC; oil/gas partition coefficient=lipid solubility",
+    "unit": "atm",
+    "clinicalNote": "Potency ∝ lipid solubility"
+  },
+  {
+    "id": "ideal_gas",
+    "chapter": "Ch. 20",
+    "category": "Inhaled Anesthetics & Gas Laws",
+    "name": "Ideal Gas Law",
+    "equation": "PV = nRT",
+    "variables": "P=pressure; V=volume; n=moles; R=gas constant; T=temperature (K)",
+    "unit": "variable",
+    "clinicalNote": "Fundamental gas behavior"
+  },
+  {
+    "id": "boyle",
+    "chapter": "Ch. 20",
+    "category": "Inhaled Anesthetics & Gas Laws",
+    "name": "Boyle's Law",
+    "equation": "P₁V₁ = P₂V₂",
+    "variables": "P=pressure; V=volume at constant temperature",
+    "unit": "variable",
+    "clinicalNote": "P inversely proportional to V"
+  },
+  {
+    "id": "charles",
+    "chapter": "Ch. 20",
+    "category": "Inhaled Anesthetics & Gas Laws",
+    "name": "Charles's Law",
+    "equation": "V₁/T₁ = V₂/T₂",
+    "variables": "V=volume; T=temperature (Kelvin) at constant pressure",
+    "unit": "variable",
+    "clinicalNote": "V proportional to T"
+  },
+  {
+    "id": "dalton",
+    "chapter": "Ch. 20",
+    "category": "Inhaled Anesthetics & Gas Laws",
+    "name": "Dalton's Law",
+    "equation": "Ptotal = P₁ + P₂ + ... + Pn",
+    "variables": "P=partial pressures of individual gases",
+    "unit": "mmHg",
+    "clinicalNote": "Total = sum of partial pressures"
+  },
+  {
+    "id": "henry",
+    "chapter": "Ch. 20",
+    "category": "Inhaled Anesthetics & Gas Laws",
+    "name": "Henry's Law",
+    "equation": "C = α × P",
+    "variables": "C=dissolved gas concentration; α=solubility coefficient; P=partial pressure",
+    "unit": "variable",
+    "clinicalNote": "Gas solubility ∝ pressure"
+  },
+  {
+    "id": "bohr_dead_space",
+    "chapter": "Ch. 37",
+    "category": "Monitoring & Echo",
+    "name": "Bohr Dead Space",
+    "equation": "VD/VT = (PaCO₂ - PECO₂) / PaCO₂",
+    "variables": "PaCO₂=arterial CO₂; PECO₂=mixed expired CO₂",
+    "unit": "ratio",
+    "clinicalNote": "Normal 0.20-0.35"
+  },
+  {
+    "id": "static_compliance",
+    "chapter": "Ch. 37",
+    "category": "Monitoring & Echo",
+    "name": "Static Compliance",
+    "equation": "Cstat = VT / (Pplat - PEEP)",
+    "variables": "VT=tidal volume; Pplat=plateau pressure; PEEP",
+    "unit": "mL/cmH₂O",
+    "clinicalNote": "Normal 60-100"
+  },
+  {
+    "id": "dynamic_compliance",
+    "chapter": "Ch. 37",
+    "category": "Monitoring & Echo",
+    "name": "Dynamic Compliance",
+    "equation": "Cdyn = VT / (PIP - PEEP)",
+    "variables": "VT=tidal volume; PIP=peak inspiratory pressure; PEEP",
+    "unit": "mL/cmH₂O",
+    "clinicalNote": "Normal 50-80"
+  },
+  {
+    "id": "airway_resistance",
+    "chapter": "Ch. 37",
+    "category": "Monitoring & Echo",
+    "name": "Airway Resistance",
+    "equation": "Raw = (PIP - Pplat) / Flow",
+    "variables": "PIP=peak pressure; Pplat=plateau pressure; Flow=inspiratory flow",
+    "unit": "cmH₂O/L/sec",
+    "clinicalNote": "Normal 0.5-2.5"
+  },
+  {
+    "id": "bernoulli",
+    "chapter": "Ch. 33",
+    "category": "Monitoring & Echo",
+    "name": "Modified Bernoulli",
+    "equation": "ΔP = 4V²",
+    "variables": "ΔP=pressure gradient; V=peak velocity",
+    "unit": "mmHg",
+    "clinicalNote": "Echo valve gradient estimation"
+  },
+  {
+    "id": "continuity",
+    "chapter": "Ch. 33",
+    "category": "Monitoring & Echo",
+    "name": "Continuity Equation",
+    "equation": "A₁ × V₁ = A₂ × V₂",
+    "variables": "A=cross-sectional area; V=velocity; 1=LVOT; 2=valve",
+    "unit": "cm²",
+    "clinicalNote": "Calculates aortic valve area"
+  },
+  {
+    "id": "gorlin",
+    "chapter": "Ch. 33",
+    "category": "Monitoring & Echo",
+    "name": "Gorlin Formula",
+    "equation": "AVA = CO / (44.3 × SEP × √ΔP)",
+    "variables": "CO=cardiac output; SEP=systolic ejection period; ΔP=gradient",
+    "unit": "cm²",
+    "clinicalNote": "Normal AVA 2.5-3.5 cm²"
+  },
+  {
+    "id": "hakki",
+    "chapter": "Ch. 33",
+    "category": "Monitoring & Echo",
+    "name": "Hakki Formula",
+    "equation": "AVA = CO / √(Peak Gradient)",
+    "variables": "CO=cardiac output; gradient in mmHg",
+    "unit": "cm²",
+    "clinicalNote": "Simplified Gorlin"
+  },
+  {
+    "id": "tof",
+    "chapter": "Ch. 24",
+    "category": "Monitoring & Echo",
+    "name": "TOF Ratio",
+    "equation": "TOF = T4 / T1",
+    "variables": "T4=4th twitch amplitude; T1=1st twitch amplitude",
+    "unit": "ratio",
+    "clinicalNote": "≥0.9 adequate NMB recovery"
+  },
+  {
+    "id": "rcri",
+    "chapter": "Ch. 27",
+    "category": "Monitoring & Echo",
+    "name": "RCRI (Lee Index)",
+    "equation": "RCRI = sum of 6 risk factors",
+    "variables": "High-risk surgery; IHD; CHF; CVA/TIA; insulin DM; Cr>2 mg/dL",
+    "unit": "points",
+    "clinicalNote": "0=3.9% risk; ≥3=11% cardiac risk"
+  },
+  {
+    "id": "gcs",
+    "chapter": "Ch. 80",
+    "category": "Monitoring & Echo",
+    "name": "Glasgow Coma Scale",
+    "equation": "GCS = Eye(1-4) + Verbal(1-5) + Motor(1-6)",
+    "variables": "Eye; Verbal; Motor responses",
+    "unit": "points",
+    "clinicalNote": "≤8 severe TBI; consider intubation"
+  },
+  {
+    "id": "hh",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Henderson-Hasselbalch",
+    "equation": "pH = 6.1 + log(HCO₃⁻ / (0.03 × PaCO₂))",
+    "variables": "HCO₃⁻ (mEq/L); PaCO₂ (mmHg); 0.03=CO₂ solubility",
+    "unit": "pH",
+    "clinicalNote": "Normal 7.35-7.45"
+  },
+  {
+    "id": "ag",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Anion Gap",
+    "equation": "AG = Na⁺ - (Cl⁻ + HCO₃⁻)",
+    "variables": "All in mEq/L",
+    "unit": "mEq/L",
+    "clinicalNote": "Normal 8-12 mEq/L"
+  },
+  {
+    "id": "ag_corrected",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Corrected AG (albumin)",
+    "equation": "AGc = AG + 2.5 × (4.0 - albumin)",
+    "variables": "Albumin in g/dL; 4.0=normal albumin",
+    "unit": "mEq/L",
+    "clinicalNote": "Adjust when hypoalbuminemia"
+  },
+  {
+    "id": "delta_delta",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Delta-Delta Ratio",
+    "equation": "Δ/Δ = (AG - 12) / (24 - HCO₃⁻)",
+    "variables": "AG=calculated; 12=normal AG; 24=normal HCO₃⁻",
+    "unit": "ratio",
+    "clinicalNote": "<1 NAGMA; 1-2 pure HAGMA; >2 met alkalosis"
+  },
+  {
+    "id": "winters",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Winter's Formula",
+    "equation": "Expected PaCO₂ = 1.5 × HCO₃⁻ + 8 (±2)",
+    "variables": "HCO₃⁻=measured bicarbonate",
+    "unit": "mmHg",
+    "clinicalNote": "Compensation: metabolic acidosis"
+  },
+  {
+    "id": "met_alk_comp",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Metabolic Alkalosis Compensation",
+    "equation": "Expected PaCO₂ = 0.7 × HCO₃⁻ + 21 (±2)",
+    "variables": "HCO₃⁻=measured bicarbonate",
+    "unit": "mmHg",
+    "clinicalNote": "Max compensation ~55 mmHg"
+  },
+  {
+    "id": "acute_resp_acid",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Acute Respiratory Acidosis",
+    "equation": "Expected HCO₃⁻ = 24 + 1 × [(PaCO₂ - 40) / 10]",
+    "variables": "PaCO₂=arterial CO₂",
+    "unit": "mEq/L",
+    "clinicalNote": "HCO₃⁻ rises 1 per 10 CO₂"
+  },
+  {
+    "id": "chronic_resp_acid",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Chronic Respiratory Acidosis",
+    "equation": "Expected HCO₃⁻ = 24 + 3.5 × [(PaCO₂ - 40) / 10]",
+    "variables": "PaCO₂=arterial CO₂",
+    "unit": "mEq/L",
+    "clinicalNote": "HCO₃⁻ rises 3.5 per 10 CO₂"
+  },
+  {
+    "id": "acute_resp_alk",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Acute Respiratory Alkalosis",
+    "equation": "Expected HCO₃⁻ = 24 - 2 × [(40 - PaCO₂) / 10]",
+    "variables": "PaCO₂=arterial CO₂",
+    "unit": "mEq/L",
+    "clinicalNote": "HCO₃⁻ falls 2 per 10 CO₂"
+  },
+  {
+    "id": "chronic_resp_alk",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Chronic Respiratory Alkalosis",
+    "equation": "Expected HCO₃⁻ = 24 - 5 × [(40 - PaCO₂) / 10]",
+    "variables": "PaCO₂=arterial CO₂",
+    "unit": "mEq/L",
+    "clinicalNote": "HCO₃⁻ falls 5 per 10 CO₂"
+  },
+  {
+    "id": "osmolality",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Plasma Osmolality",
+    "equation": "Osm = 2×Na⁺ + Glucose/18 + BUN/2.8",
+    "variables": "Na⁺ (mEq/L); Glucose (mg/dL); BUN (mg/dL)",
+    "unit": "mOsm/kg",
+    "clinicalNote": "Normal 275-295"
+  },
+  {
+    "id": "osmolar_gap",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Osmolar Gap",
+    "equation": "OG = Measured Osm - Calculated Osm",
+    "variables": "Measured vs calculated serum osmolality",
+    "unit": "mOsm/kg",
+    "clinicalNote": "Normal <10; elevated in toxic alcohols"
+  },
+  {
+    "id": "fwd",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Free Water Deficit",
+    "equation": "FWD = TBW × [(Na⁺/140) - 1]",
+    "variables": "TBW=0.6×weight(kg); Na⁺=measured sodium",
+    "unit": "L",
+    "clinicalNote": "Correction of hypernatremia"
+  },
+  {
+    "id": "corrected_na",
+    "chapter": "Ch. 43",
+    "category": "Acid-Base & Fluids",
+    "name": "Corrected Na⁺ (hyperglycemia)",
+    "equation": "Corrected Na⁺ = Na⁺ + 1.6 × [(Glucose - 100) / 100]",
+    "variables": "Na⁺ (mEq/L); Glucose (mg/dL)",
+    "unit": "mEq/L",
+    "clinicalNote": "Add 1.6 per 100 mg/dL glucose rise"
+  },
+  {
+    "id": "corrected_ca",
+    "chapter": "Ch. 43",
+    "category": "Acid-Base & Fluids",
+    "name": "Corrected Ca²⁺ (albumin)",
+    "equation": "Corrected Ca²⁺ = Ca²⁺ + 0.8 × (4.0 - albumin)",
+    "variables": "Ca²⁺ (mg/dL); albumin (g/dL)",
+    "unit": "mg/dL",
+    "clinicalNote": "Adjust for hypoalbuminemia"
+  },
+  {
+    "id": "sid",
+    "chapter": "Ch. 44",
+    "category": "Acid-Base & Fluids",
+    "name": "Strong Ion Difference",
+    "equation": "SID = (Na⁺+K⁺+Ca²⁺+Mg²⁺) - (Cl⁻+lactate)",
+    "variables": "All strong ions in mEq/L",
+    "unit": "mEq/L",
+    "clinicalNote": "Normal 38-42; Stewart approach"
+  },
+  {
+    "id": "ebv",
+    "chapter": "Ch. 45",
+    "category": "Transfusion & Coagulation",
+    "name": "Estimated Blood Volume",
+    "equation": "EBV = Weight (kg) × mL/kg",
+    "variables": "Neonates 80-90; infants 80; adults 70 mL/kg",
+    "unit": "mL",
+    "clinicalNote": "Basis for MABL calculation"
+  },
+  {
+    "id": "mabl",
+    "chapter": "Ch. 45",
+    "category": "Transfusion & Coagulation",
+    "name": "Maximum Allowable Blood Loss",
+    "equation": "MABL = EBV × (Hct_i - Hct_min) / Hct_i",
+    "variables": "EBV; Hct_i=initial hematocrit; Hct_min=minimum acceptable",
+    "unit": "mL",
+    "clinicalNote": "Guides transfusion trigger"
+  },
+  {
+    "id": "inr",
+    "chapter": "Ch. 46",
+    "category": "Transfusion & Coagulation",
+    "name": "INR",
+    "equation": "INR = (Patient PT / Mean Normal PT)^ISI",
+    "variables": "PT=prothrombin time; ISI=international sensitivity index",
+    "unit": "ratio",
+    "clinicalNote": "Normal ~1.0; therapeutic 2-3"
+  },
+  {
+    "id": "parkland",
+    "chapter": "Ch. 11",
+    "category": "Transfusion & Coagulation",
+    "name": "Parkland Formula (Burns)",
+    "equation": "Fluid = 4 × Weight(kg) × %TBSA burned",
+    "variables": "Weight (kg); %TBSA=% total body surface burned; half in first 8hr",
+    "unit": "mL/24hr",
+    "clinicalNote": "Burns resuscitation; LR preferred"
+  },
+  {
+    "id": "bmi",
+    "chapter": "Ch. 54",
+    "category": "Special Populations",
+    "name": "BMI",
+    "equation": "BMI = Weight(kg) / Height²(m)",
+    "variables": "Weight (kg); Height (m)",
+    "unit": "kg/m²",
+    "clinicalNote": "Normal 18.5-24.9; >30 obese"
+  },
+  {
+    "id": "ibw_male",
+    "chapter": "Ch. 72",
+    "category": "Special Populations",
+    "name": "Ideal Body Weight (male)",
+    "equation": "IBW = 50 + 2.3 × (height_in - 60)",
+    "variables": "Height in inches",
+    "unit": "kg",
+    "clinicalNote": "Ventilator tidal volume dosing"
+  },
+  {
+    "id": "ibw_female",
+    "chapter": "Ch. 72",
+    "category": "Special Populations",
+    "name": "Ideal Body Weight (female)",
+    "equation": "IBW = 45.5 + 2.3 × (height_in - 60)",
+    "variables": "Height in inches",
+    "unit": "kg",
+    "clinicalNote": "Ventilator tidal volume dosing"
+  },
+  {
+    "id": "abw",
+    "chapter": "Ch. 54",
+    "category": "Special Populations",
+    "name": "Adjusted Body Weight",
+    "equation": "ABW = IBW + 0.4 × (TBW - IBW)",
+    "variables": "IBW=ideal; TBW=total body weight",
+    "unit": "kg",
+    "clinicalNote": "Aminoglycoside dosing in obese"
+  },
+  {
+    "id": "lbw_male",
+    "chapter": "Ch. 54",
+    "category": "Special Populations",
+    "name": "Lean Body Weight (male)",
+    "equation": "LBW = 1.1×W - 128×(W/H)²",
+    "variables": "W=weight (kg); H=height (cm)",
+    "unit": "kg",
+    "clinicalNote": "Drug dosing obese patients"
+  },
+  {
+    "id": "lbw_female",
+    "chapter": "Ch. 54",
+    "category": "Special Populations",
+    "name": "Lean Body Weight (female)",
+    "equation": "LBW = 1.07×W - 148×(W/H)²",
+    "variables": "W=weight (kg); H=height (cm)",
+    "unit": "kg",
+    "clinicalNote": "Drug dosing obese patients"
+  },
+  {
+    "id": "peds_weight",
+    "chapter": "Ch. 72",
+    "category": "Special Populations",
+    "name": "Pediatric Weight Estimation",
+    "equation": "W = (Age+4)×2 [1-5yr]; W = Age×3+7 [6-12yr]",
+    "variables": "Age in years",
+    "unit": "kg",
+    "clinicalNote": "Emergency weight estimation"
+  },
+  {
+    "id": "ett_uncuffed",
+    "chapter": "Ch. 72",
+    "category": "Special Populations",
+    "name": "ETT Size (uncuffed)",
+    "equation": "ETT = (Age/4) + 4",
+    "variables": "Age in years",
+    "unit": "mm ID",
+    "clinicalNote": "Children >1 year"
+  },
+  {
+    "id": "ett_cuffed",
+    "chapter": "Ch. 72",
+    "category": "Special Populations",
+    "name": "ETT Size (cuffed)",
+    "equation": "ETT = (Age/4) + 3",
+    "variables": "Age in years",
+    "unit": "mm ID",
+    "clinicalNote": "Children >1 year"
+  },
+  {
+    "id": "ett_depth",
+    "chapter": "Ch. 72",
+    "category": "Special Populations",
+    "name": "ETT Insertion Depth",
+    "equation": "Depth = ETT size × 3 or (Age/2) + 12",
+    "variables": "ETT internal diameter; Age in years",
+    "unit": "cm",
+    "clinicalNote": "Oral intubation depth"
+  },
+  {
+    "id": "fluids_421",
+    "chapter": "Ch. 72",
+    "category": "Special Populations",
+    "name": "Maintenance Fluid (4-2-1 Rule)",
+    "equation": "Rate = 4(first 10kg) + 2(next 10kg) + 1(each kg >20)",
+    "variables": "Weight in kg",
+    "unit": "mL/hr",
+    "clinicalNote": "Holliday-Segar formula"
+  },
+  {
+    "id": "apgar",
+    "chapter": "Ch. 58",
+    "category": "Special Populations",
+    "name": "Apgar Score",
+    "equation": "Apgar = Appearance + Pulse + Grimace + Activity + Respiration",
+    "variables": "Each component scored 0-2",
+    "unit": "points",
+    "clinicalNote": "Assessed at 1 and 5 min"
+  },
+  {
+    "id": "defib",
+    "chapter": "Ch. 82",
+    "category": "Special Populations",
+    "name": "Defibrillation Energy",
+    "equation": "Peds: 2 J/kg → 4 J/kg; Adults: 120-200 J (biphasic)",
+    "variables": "Weight (kg) for pediatric",
+    "unit": "Joules",
+    "clinicalNote": "Increase to 4 J/kg if no response"
+  },
+  {
+    "id": "ecmo_flow",
+    "chapter": "Ch. 81",
+    "category": "Special Populations",
+    "name": "ECMO Flow",
+    "equation": "Flow = CI × BSA (target 2.2-2.4 L/min/m²)",
+    "variables": "CI=cardiac index; BSA=body surface area",
+    "unit": "L/min",
+    "clinicalNote": "VA-ECMO flow estimation"
+  },
+  {
+    "id": "nernst",
+    "chapter": "Ch. 25",
+    "category": "Special Populations",
+    "name": "Nernst Equation",
+    "equation": "E = (RT/zF) × ln([ion]_out/[ion]_in)",
+    "variables": "R=gas constant; T=temp(K); z=valence; F=Faraday constant",
+    "unit": "mV",
+    "clinicalNote": "Equilibrium membrane potential"
+  }
+]
