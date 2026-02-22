@@ -25,7 +25,7 @@ export default function WeeklyPlanView() {
         </button>
       </header>
 
-      <div className="bg-card p-6 rounded-2xl border border-border mb-8 shadow-sm">
+      <div className="glass-card p-6 rounded-2xl mb-8 shadow-sm card-accent-top">
         <p className="text-foreground text-sm leading-relaxed bidi-text">
           התוכנית נוצרת אוטומטית על בסיס הביצועים שלך. האלגוריתם משלב בין <b>3 הנושאים החלשים ביותר שלך</b> (לצורך חיזוק) לבין <b>3 נושאים עם שאלות חדשות</b> שטרם ראית.
         </p>
@@ -39,7 +39,7 @@ export default function WeeklyPlanView() {
             return (
               <div
                 key={i}
-                className={`p-6 rounded-2xl border bg-card relative overflow-hidden ${
+                className={`p-6 rounded-2xl border bg-card relative overflow-hidden hover-glow transition-all ${
                   isWeak ? 'border-destructive/20' :
                   isNew ? 'border-info/20' :
                   'border-success/20'

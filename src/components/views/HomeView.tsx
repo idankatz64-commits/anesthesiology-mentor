@@ -64,13 +64,11 @@ export default function HomeView() {
     startSession(selected, selected.length, 'practice');
   };
 
-  // Simulation Exam - 120 random questions
   const handleSimulation = () => {
     if (!data.length) return;
     startSession(data, 120, 'simulation');
   };
 
-  // Spaced Repetition - due questions
   const handleSpacedRepetition = async () => {
     setLoadingDue(true);
     try {
@@ -107,7 +105,7 @@ export default function HomeView() {
         {/* Smart Practice */}
         <div
           onClick={handleSmartPractice}
-          className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden"
+          className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group relative overflow-hidden"
         >
           <div className="absolute -right-10 -top-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
           <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
@@ -120,10 +118,10 @@ export default function HomeView() {
         {/* Simulation Exam */}
         <div
           onClick={handleSimulation}
-          className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden"
+          className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group relative overflow-hidden"
         >
-          <div className="absolute -left-10 -top-10 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl" />
-          <div className="w-12 h-12 bg-orange-500 text-white rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
+          <div className="absolute -left-10 -top-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
+          <div className="w-12 h-12 bg-primary/80 text-primary-foreground rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
             <FileCheck className="w-6 h-6" />
           </div>
           <h3 className="font-bold text-lg mb-1 text-foreground">מבחן סימולציה</h3>
@@ -133,9 +131,9 @@ export default function HomeView() {
         {/* Spaced Repetition */}
         <div
           onClick={handleSpacedRepetition}
-          className={`soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`}
+          className={`soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`}
         >
-          <div className="w-12 h-12 bg-info/10 text-info rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 bg-info/15 text-info rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
             <CalendarClock className="w-6 h-6" />
           </div>
           <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה מרווחת</h3>
@@ -145,9 +143,9 @@ export default function HomeView() {
         {/* Flashcards */}
         <div
           onClick={() => navigate('flashcards')}
-          className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group relative overflow-hidden"
+          className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group relative overflow-hidden"
         >
-          <div className="absolute -left-10 -bottom-10 w-24 h-24 bg-accent/20 rounded-full blur-2xl" />
+          <div className="absolute -left-10 -bottom-10 w-24 h-24 bg-accent/10 rounded-full blur-2xl" />
           <div className="w-12 h-12 bg-accent text-accent-foreground rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
             <Layers className="w-6 h-6" />
           </div>
@@ -155,7 +153,7 @@ export default function HomeView() {
           <p className="text-sm text-muted-foreground font-light">כרטיסיות Anki – צפה בשאלה, חשוב, והצג תשובה.</p>
         </div>
 
-        <div onClick={() => navigate('setup-practice')} className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
+        <div onClick={() => navigate('setup-practice')} className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group">
           <div className="w-12 h-12 bg-muted text-primary rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
             <Dumbbell className="w-6 h-6" />
           </div>
@@ -164,35 +162,35 @@ export default function HomeView() {
         </div>
 
         {/* Mistakes */}
-        <div onClick={() => navigate('setup-practice')} className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
-          <div className="w-12 h-12 bg-destructive/10 text-destructive rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+        <div onClick={() => navigate('setup-practice')} className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group">
+          <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
             <RotateCcw className="w-6 h-6" />
           </div>
           <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה על טעויות</h3>
           <p className="text-sm text-muted-foreground font-light">
-            יש לך <span className="text-destructive font-medium">{mistakes}</span> טעויות פתוחות
+            יש לך <span className="text-destructive font-medium matrix-text">{mistakes}</span> טעויות פתוחות
           </p>
         </div>
 
         {/* Favorites */}
-        <div onClick={() => navigate('setup-practice')} className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
-          <div className="w-12 h-12 bg-warning/10 text-warning rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
+        <div onClick={() => navigate('setup-practice')} className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group">
+          <div className="w-12 h-12 bg-warning/15 text-warning rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
             <Star className="w-6 h-6" />
           </div>
           <h3 className="font-semibold text-lg mb-1 text-foreground">מועדפים</h3>
           <p className="text-sm text-muted-foreground font-light">
-            <span className="text-warning font-medium">{favsCount}</span> שאלות שסימנת
+            <span className="text-warning font-medium matrix-text">{favsCount}</span> שאלות שסימנת
           </p>
         </div>
 
         {/* Notebook */}
-        <div onClick={() => navigate('notebook')} className="soft-card bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 transition-all cursor-pointer group">
+        <div onClick={() => navigate('notebook')} className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group">
           <div className="w-12 h-12 bg-warning-muted text-warning rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
             <StickyNote className="w-6 h-6" />
           </div>
           <h3 className="font-semibold text-lg mb-1 text-foreground">המחברת שלי</h3>
           <p className="text-sm text-muted-foreground font-light">
-            צפייה ב-<span className="text-warning font-medium">{notesCount}</span> הערות
+            צפייה ב-<span className="text-warning font-medium matrix-text">{notesCount}</span> הערות
           </p>
         </div>
       </div>
@@ -201,16 +199,16 @@ export default function HomeView() {
       <div className="mb-12">
         <h3 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-widest px-1">סטטוס מאגר שאלות</h3>
         <div className="grid grid-cols-3 gap-6">
-          <div className="soft-card bg-card border border-border p-5 text-center">
-            <div className="text-3xl font-bold text-foreground">{data.length}</div>
+          <div className="soft-card bg-card border border-border p-5 text-center card-accent-top">
+            <div className="text-3xl font-bold text-foreground matrix-text">{data.length}</div>
             <div className="text-xs text-muted-foreground font-medium mt-1">סה"כ שאלות</div>
           </div>
-          <div className="soft-card p-5 text-center bg-success-muted border border-success/20">
-            <div className="text-3xl font-bold text-success">{withExp}</div>
+          <div className="soft-card p-5 text-center bg-success-muted border border-success/20 card-accent-top">
+            <div className="text-3xl font-bold text-success matrix-text">{withExp}</div>
             <div className="text-xs text-success/70 font-medium mt-1">כוללות הסבר</div>
           </div>
-          <div className="soft-card p-5 text-center bg-warning-muted border border-warning/20">
-            <div className="text-3xl font-bold text-warning">{withoutExp}</div>
+          <div className="soft-card p-5 text-center bg-warning-muted border border-warning/20 card-accent-top">
+            <div className="text-3xl font-bold text-warning matrix-text">{withoutExp}</div>
             <div className="text-xs text-warning/70 font-medium mt-1">ללא הסבר</div>
           </div>
         </div>

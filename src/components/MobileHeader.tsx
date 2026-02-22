@@ -21,7 +21,8 @@ export default function MobileHeader() {
 
   return (
     <>
-      <div className="md:hidden fixed top-0 left-0 right-0 bg-card/90 backdrop-blur-md h-16 border-b border-border z-30 flex items-center justify-between px-4">
+      <div className="md:hidden fixed top-0 left-0 right-0 bg-card/60 backdrop-blur-xl h-16 border-b border-border z-30 flex items-center justify-between px-4">
+        <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-l from-transparent via-primary/30 to-transparent" />
         <div className="font-semibold flex items-center gap-2 text-foreground">
           <Heart className="w-5 h-5 text-primary" />
           סימולטור הרדמה
@@ -37,8 +38,8 @@ export default function MobileHeader() {
       </div>
 
       {menuOpen && (
-        <div className="fixed inset-0 bg-foreground/20 z-40 md:hidden backdrop-blur-sm" onClick={() => setMenuOpen(false)}>
-          <div className="absolute right-0 top-0 bottom-0 w-72 bg-card shadow-2xl p-4 space-y-2" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-background/40 z-40 md:hidden backdrop-blur-sm" onClick={() => setMenuOpen(false)}>
+          <div className="absolute right-0 top-0 bottom-0 w-72 glass-card shadow-2xl p-4 space-y-2" onClick={e => e.stopPropagation()}>
             <div className="flex justify-end mb-4">
               <button onClick={() => setMenuOpen(false)} className="text-muted-foreground p-2">
                 <X className="w-5 h-5" />
@@ -48,7 +49,7 @@ export default function MobileHeader() {
               <button
                 key={item.id}
                 onClick={() => { navigate(item.id); setMenuOpen(false); }}
-                className="w-full text-right p-4 font-medium border-b border-border text-foreground hover:bg-muted transition rounded-lg"
+                className="w-full text-right p-4 font-medium border-b border-border text-foreground hover:bg-muted hover:text-primary transition rounded-lg"
               >
                 {item.emoji} {item.label}
               </button>

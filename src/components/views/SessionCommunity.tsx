@@ -31,7 +31,7 @@ export function GlobalQuestionStats({ questionId }: GlobalQuestionStatsProps) {
     <div className={`flex items-center gap-2 mt-4 px-4 py-3 rounded-xl border text-sm font-medium ${colorClasses}`}>
       <Users className="w-4 h-4" />
       <span>
-        רק <span className="font-bold text-lg">{rate}%</span> מהמשתמשים ענו נכון על שאלה זו
+        רק <span className="font-bold text-lg matrix-text">{rate}%</span> מהמשתמשים ענו נכון על שאלה זו
         <span className="text-xs opacity-70 mr-1">({stats.total_users} משתמשים)</span>
       </span>
     </div>
@@ -115,7 +115,6 @@ export function CommunityNotes({ questionId }: CommunityNotesProps) {
         💬 הערות קהילה ({notes.length})
       </h4>
 
-      {/* Add note */}
       <div className="flex gap-2 mb-4">
         <input
           type="text"
@@ -130,13 +129,12 @@ export function CommunityNotes({ questionId }: CommunityNotesProps) {
         <button
           onClick={handleSubmit}
           disabled={!newNote.trim() || sending}
-          className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition disabled:opacity-50"
+          className="bg-primary text-primary-foreground px-4 py-2 rounded-xl text-sm font-bold hover:opacity-90 transition disabled:opacity-50 hover-glow"
         >
           <Send className="w-4 h-4" />
         </button>
       </div>
 
-      {/* Notes list */}
       {notes.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-2">אין הערות עדיין. היה הראשון!</p>
       ) : (
@@ -146,7 +144,7 @@ export function CommunityNotes({ questionId }: CommunityNotesProps) {
               <div className="flex-grow">
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-primary text-xs">@{note.author_display}</span>
-                  <span className="text-xs text-muted-foreground">{formatDate(note.created_at)}</span>
+                  <span className="text-xs text-muted-foreground matrix-text">{formatDate(note.created_at)}</span>
                 </div>
                 <p className="text-foreground text-sm leading-relaxed">{note.note_text}</p>
               </div>

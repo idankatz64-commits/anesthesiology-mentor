@@ -36,10 +36,10 @@ export default function Sidebar() {
   const pct = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
 
   return (
-    <aside className="w-72 bg-card border-l border-border flex-col shadow-sm z-20 hidden md:flex transition-colors duration-300">
+    <aside className="w-72 glass-card border-l flex-col shadow-lg z-20 hidden md:flex transition-colors duration-300">
       {/* Header */}
       <div className="p-8 border-b border-border flex items-center gap-4">
-        <div className="bg-primary/10 text-primary p-3 rounded-2xl shadow-sm transition-colors">
+        <div className="bg-primary/15 text-primary p-3 rounded-2xl shadow-sm glow-border transition-colors">
           <Heart className="w-5 h-5" />
         </div>
         <div>
@@ -60,7 +60,7 @@ export default function Sidebar() {
               onClick={() => navigate(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm transition-all
                 ${isActive
-                  ? 'bg-primary/10 text-primary font-semibold border-r-[3px] border-primary'
+                  ? 'bg-primary/10 text-primary font-semibold border-r-[3px] border-primary shadow-[inset_0_0_20px_hsl(25_95%_53%/0.05)]'
                   : 'text-muted-foreground hover:bg-muted hover:text-foreground'
                 }`}
             >
@@ -75,7 +75,7 @@ export default function Sidebar() {
       <div className="p-6 space-y-4">
         <button
           onClick={() => setFeedbackOpen(true)}
-          className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition text-xs font-bold"
+          className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition text-xs font-bold"
         >
           <span>דווח על טעות / פידבק</span>
           <MessageSquareWarning className="w-4 h-4 text-primary" />
@@ -93,19 +93,19 @@ export default function Sidebar() {
         )}
         <button
           onClick={toggleTheme}
-          className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition text-xs font-bold"
+          className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition text-xs font-bold"
         >
           <span>מצב תצוגה</span>
           {isDark ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4" />}
         </button>
 
-        <div className="bg-muted p-4 rounded-2xl border border-border transition-colors">
+        <div className="bg-muted/50 p-4 rounded-2xl border border-border transition-colors">
           <div className="flex justify-between items-end mb-2">
             <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">התקדמות</div>
-            <span className="text-xl font-bold text-foreground">{pct}%</span>
+            <span className="text-xl font-bold text-primary matrix-text">{pct}%</span>
           </div>
           <div className="w-full bg-border h-1.5 rounded-full overflow-hidden">
-            <div className="bg-primary h-full rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+            <div className="bg-primary h-full rounded-full transition-all duration-500 shadow-[0_0_8px_hsl(25_95%_53%/0.4)]" style={{ width: `${pct}%` }} />
           </div>
         </div>
       </div>

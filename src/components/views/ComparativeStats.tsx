@@ -74,7 +74,7 @@ export default function ComparativeStats() {
   }
 
   return (
-    <div className="soft-card bg-card border border-border overflow-hidden">
+    <div className="soft-card bg-card border border-border overflow-hidden card-accent-top">
       <div className="p-6 border-b border-border">
         <h3 className="font-bold text-foreground flex items-center gap-2">
           <Users className="w-5 h-5 text-primary" />
@@ -101,29 +101,29 @@ export default function ComparativeStats() {
                 <td className="px-4 py-3 font-medium text-foreground">{row.topic}</td>
                 <td className="px-4 py-3 text-center">
                   {row.myAccuracy !== null ? (
-                    <span className={`font-bold ${row.myAccuracy >= 80 ? 'text-emerald-600 dark:text-emerald-400' : row.myAccuracy >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                    <span className={`font-bold matrix-text ${row.myAccuracy >= 80 ? 'text-success' : row.myAccuracy >= 60 ? 'text-warning' : 'text-destructive'}`}>
                       {row.myAccuracy}%
                     </span>
                   ) : (
                     <span className="text-muted-foreground">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-center font-medium text-muted-foreground">{row.globalAccuracy}%</td>
-                <td className="px-4 py-3 text-center text-muted-foreground">{row.myAnswered}</td>
-                <td className="px-4 py-3 text-center text-muted-foreground">{row.globalUsers}</td>
+                <td className="px-4 py-3 text-center font-medium text-muted-foreground matrix-text">{row.globalAccuracy}%</td>
+                <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{row.myAnswered}</td>
+                <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{row.globalUsers}</td>
                 <td className="px-4 py-3 text-center">
                   {row.diff === null ? (
                     <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">לא נענה</span>
                   ) : row.diff > 5 ? (
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-900/30 px-2 py-1 rounded-full flex items-center gap-1 justify-center">
+                    <span className="text-xs font-bold text-success bg-success/10 px-2 py-1 rounded-full flex items-center gap-1 justify-center">
                       <TrendingUp className="w-3 h-3" /> מעל הממוצע
                     </span>
                   ) : row.diff < -5 ? (
-                    <span className="text-xs font-bold text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-2 py-1 rounded-full flex items-center gap-1 justify-center">
+                    <span className="text-xs font-bold text-destructive bg-destructive/10 px-2 py-1 rounded-full flex items-center gap-1 justify-center">
                       <TrendingDown className="w-3 h-3" /> מתחת לממוצע
                     </span>
                   ) : (
-                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-100 dark:bg-amber-900/30 px-2 py-1 rounded-full flex items-center gap-1 justify-center">
+                    <span className="text-xs font-bold text-warning bg-warning/10 px-2 py-1 rounded-full flex items-center gap-1 justify-center">
                       <Minus className="w-3 h-3" /> בממוצע
                     </span>
                   )}

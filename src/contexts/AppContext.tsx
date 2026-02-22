@@ -103,9 +103,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [currentView, setCurrentView] = useState<ViewId>('home');
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
-    if (saved === 'dark') return true;
     if (saved === 'light') return false;
-    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+    return true; // Default to dark
   });
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
 
@@ -114,8 +113,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const dataRef = useRef(data);
   dataRef.current = data;
 
-  // Apply dark mode class
+  // Apply theme class - dark is default, light is opt-in
   useEffect(() => {
+    document.documentElement.classList.toggle('light', !isDark);
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);

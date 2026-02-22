@@ -2,6 +2,7 @@
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Crimson+Text&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -9,6 +10,71 @@
 
 @layer base {
   :root {
+    --background: 230 25% 5%;
+    --foreground: 213 31% 91%;
+
+    --card: 232 25% 8%;
+    --card-foreground: 213 31% 91%;
+
+    --popover: 232 25% 8%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary: 25 95% 53%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 232 20% 14%;
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 232 20% 14%;
+    --muted-foreground: 215 20% 55%;
+
+    --accent: 25 95% 53%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 232 20% 16%;
+    --input: 232 20% 16%;
+    --ring: 25 95% 53%;
+
+    --radius: 1rem;
+
+    /* Custom semantic tokens */
+    --brand: 25 95% 53%;
+    --brand-foreground: 0 0% 100%;
+    --brand-muted: 25 95% 10%;
+
+    --success: 160 84% 39%;
+    --success-foreground: 0 0% 100%;
+    --success-muted: 160 40% 10%;
+
+    --warning: 45 93% 47%;
+    --warning-foreground: 0 0% 100%;
+    --warning-muted: 45 60% 10%;
+
+    --info: 199 89% 48%;
+    --info-foreground: 0 0% 100%;
+
+    /* Glow effects */
+    --glow-primary: 0 0 20px hsl(25 95% 53% / 0.3);
+    --glow-success: 0 0 20px hsl(160 84% 39% / 0.3);
+    --glow-destructive: 0 0 20px hsl(0 72% 51% / 0.3);
+
+    --sidebar-background: 232 25% 6%;
+    --sidebar-foreground: 215 20% 55%;
+    --sidebar-border: 232 20% 12%;
+    --sidebar-primary: 25 95% 53%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 232 20% 12%;
+    --sidebar-accent-foreground: 25 95% 63%;
+    --sidebar-ring: 25 95% 53%;
+    --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-serif: "Crimson Text", ui-serif, Georgia, serif;
+    --font-mono: "JetBrains Mono", "Space Mono", ui-monospace, monospace;
+  }
+
+  .light {
     --background: 210 20% 98%;
     --foreground: 215 28% 17%;
 
@@ -18,7 +84,7 @@
     --popover: 0 0% 100%;
     --popover-foreground: 215 28% 17%;
 
-    --primary: 234 89% 74%;
+    --primary: 25 95% 53%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 210 40% 96%;
@@ -27,7 +93,7 @@
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
 
-    --accent: 234 89% 74%;
+    --accent: 25 95% 53%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
@@ -35,94 +101,38 @@
 
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 234 89% 74%;
+    --ring: 25 95% 53%;
 
-    --radius: 1rem;
-
-    /* Custom semantic tokens */
-    --brand: 234 89% 54%;
+    --brand: 25 95% 53%;
     --brand-foreground: 0 0% 100%;
-    --brand-muted: 234 89% 96%;
+    --brand-muted: 25 89% 96%;
 
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
     --success-muted: 160 60% 95%;
 
-    --warning: 38 92% 50%;
+    --warning: 45 93% 47%;
     --warning-foreground: 0 0% 100%;
-    --warning-muted: 38 92% 95%;
+    --warning-muted: 45 92% 95%;
 
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
+
+    --glow-primary: 0 0 15px hsl(25 95% 53% / 0.2);
+    --glow-success: 0 0 15px hsl(160 84% 39% / 0.2);
+    --glow-destructive: 0 0 15px hsl(0 84% 60% / 0.2);
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 215 16% 47%;
     --sidebar-border: 210 20% 95%;
-    --sidebar-primary: 234 89% 54%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 96%;
-    --sidebar-accent-foreground: 234 89% 54%;
-    --sidebar-ring: 234 89% 74%;
-    --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
-    --font-serif: "Crimson Text", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
-    --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
-  }
-
-  .dark {
-    --background: 222 47% 4%;
-    --foreground: 210 40% 87%;
-
-    --card: 217 33% 10%;
-    --card-foreground: 210 40% 87%;
-
-    --popover: 217 33% 10%;
-    --popover-foreground: 210 40% 87%;
-
-    --primary: 25 95% 53%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 87%;
-
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-
-    --accent: 25 95% 53%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 25 95% 53%;
-
-    --brand: 25 95% 53%;
-    --brand-foreground: 0 0% 100%;
-    --brand-muted: 25 95% 10%;
-
-    --success: 160 84% 39%;
-    --success-foreground: 0 0% 100%;
-    --success-muted: 160 60% 10%;
-
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    --warning-muted: 38 92% 10%;
-
-    --info: 199 89% 48%;
-    --info-foreground: 0 0% 100%;
-
-    --sidebar-background: 222 47% 6%;
-    --sidebar-foreground: 215 20% 65%;
-    --sidebar-border: 217 33% 12%;
     --sidebar-primary: 25 95% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 12%;
-    --sidebar-accent-foreground: 25 95% 63%;
+    --sidebar-accent: 210 40% 96%;
+    --sidebar-accent-foreground: 25 95% 53%;
     --sidebar-ring: 25 95% 53%;
-    --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
-    --font-serif: "Crimson Text", ui-serif, Georgia, Cambria, Times New Roman, Times, serif;
-    --font-mono: "Space Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
+    --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-serif: "Crimson Text", ui-serif, Georgia, serif;
+    --font-mono: "JetBrains Mono", "Space Mono", ui-monospace, monospace;
   }
 }
 
@@ -143,10 +153,10 @@
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(var(--muted-foreground) / 0.3); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.5); }
+::-webkit-scrollbar-thumb { background: hsl(var(--primary) / 0.2); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.4); }
 
 /* Animations */
 @keyframes fadeIn {
@@ -160,12 +170,54 @@
   100% { transform: scale(1); }
 }
 
+@keyframes glowPulse {
+  0%, 100% { box-shadow: var(--glow-primary); }
+  50% { box-shadow: 0 0 30px hsl(var(--primary) / 0.5); }
+}
+
+@keyframes borderShimmer {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes gridFade {
+  0%, 100% { opacity: 0.03; }
+  50% { opacity: 0.06; }
+}
+
 .fade-in {
   animation: fadeIn 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .star-pop {
   animation: starPop 0.3s ease-out;
+}
+
+.glow-pulse {
+  animation: glowPulse 2s ease-in-out infinite;
+}
+
+/* Glass card utility */
+.glass-card {
+  @apply bg-card/80 backdrop-blur-xl border border-border;
+}
+
+/* Glow border utility */
+.glow-border {
+  box-shadow: var(--glow-primary);
+}
+
+/* Matrix-style monospace text for data */
+.matrix-text {
+  font-family: 'JetBrains Mono', 'Space Mono', monospace;
+}
+
+/* Background grid pattern */
+.bg-grid-pattern {
+  background-image:
+    linear-gradient(hsl(var(--primary) / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(var(--primary) / 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
 
 /* RTL BiDi fix for mixed Hebrew/English content */
@@ -202,7 +254,7 @@
 }
 
 .markdown-content code {
-  @apply bg-muted text-pink-500 dark:text-pink-400 px-1.5 py-0.5 rounded text-sm;
+  @apply bg-muted text-primary px-1.5 py-0.5 rounded text-sm;
 }
 
 .markdown-content a {
@@ -235,4 +287,24 @@
 }
 .tag-chip:hover {
   @apply -translate-y-0.5;
+}
+
+/* Futuristic card with gradient top accent */
+.card-accent-top {
+  position: relative;
+  overflow: hidden;
+}
+.card-accent-top::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, hsl(var(--primary)), hsl(var(--primary) / 0.3), transparent);
+}
+
+/* Hover glow effect */
+.hover-glow:hover {
+  box-shadow: var(--glow-primary);
 }

@@ -17,7 +17,6 @@ type TopicStat = {
 type SortKey = 'topic' | 'totalInDb' | 'totalAnswered' | 'correct' | 'wrong' | 'accuracy' | 'smartScore';
 
 function calcSmartScore(answered: number, accuracy: number): number {
-  // Bayesian weighted average: pulls toward 50% prior when sample is small
   return Math.round(((answered / (answered + 10)) * accuracy) + ((10 / (answered + 10)) * 50));
 }
 
@@ -30,8 +29,6 @@ export default function StatsView() {
   const stats = useMemo(() => {
     let totalUnique = 0, correctUnique = 0, totalAttempts = 0;
     const topicMap: Record<string, { totalAnswered: number; correct: number; wrong: number }> = {};
-
-    // Count questions per topic in the database
     const topicDbCount: Record<string, number> = {};
     data.forEach(q => {
       const t = q[KEYS.TOPIC] || 'Uncategorized';
@@ -42,7 +39,6 @@ export default function StatsView() {
       totalUnique++;
       if (h.lastResult === 'correct') correctUnique++;
       totalAttempts += h.answered;
-
       const q = data.find(x => x[KEYS.ID] === id);
       if (q) {
         const t = q[KEYS.TOPIC] || 'Uncategorized';
@@ -83,7 +79,6 @@ export default function StatsView() {
     return filtered;
   }, [stats.topicData, searchTerm, sortKey, sortAsc]);
 
-  // Chart data sorted weakest to strongest by smartScore
   const chartData = useMemo(() => {
     return [...stats.topicData]
       .filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()))
@@ -96,9 +91,15 @@ export default function StatsView() {
   };
 
   const getBarColor = (score: number) => {
-    if (score >= 80) return 'bg-emerald-500';
-    if (score >= 60) return 'bg-amber-500';
-    return 'bg-red-500';
+    if (score >= 80) return 'bg-success';
+    if (score >= 60) return 'bg-warning';
+    return 'bg-destructive';
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-success';
+    if (score >= 60) return 'text-warning';
+    return 'text-destructive';
   };
 
   const handleExport = () => {
@@ -152,20 +153,16 @@ export default function StatsView() {
         <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
       </div>
 
-      {/* Custom CSS Horizontal Bar Chart */}
+      {/* Bar Chart */}
       {chartData.length > 0 && (
-        <div className="soft-card bg-card border border-border p-6 mb-10">
+        <div className="soft-card bg-card border border-border p-6 mb-10 card-accent-top">
           <h3 className="font-bold text-foreground mb-6">Smart Score לפי נושא (חלש → חזק)</h3>
           <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
             {chartData.map(entry => (
               <div key={entry.topic}>
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-sm font-medium text-foreground truncate max-w-[60%]">{entry.topic}</span>
-                  <span className={`text-sm font-bold ${
-                    entry.smartScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
-                    entry.smartScore >= 60 ? 'text-amber-600 dark:text-amber-400' :
-                    'text-red-600 dark:text-red-400'
-                  }`}>{entry.smartScore}%</span>
+                  <span className={`text-sm font-bold matrix-text ${getScoreColor(entry.smartScore)}`}>{entry.smartScore}%</span>
                 </div>
                 <div className="w-full bg-muted rounded-full h-5 overflow-hidden">
                   <div
@@ -179,9 +176,9 @@ export default function StatsView() {
         </div>
       )}
 
-      {/* Advanced Data Table */}
+      {/* Data Table */}
       {filteredTopics.length > 0 && (
-        <div className="soft-card bg-card border border-border overflow-hidden mb-10">
+        <div className="soft-card bg-card border border-border overflow-hidden mb-10 card-accent-top">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -199,17 +196,17 @@ export default function StatsView() {
                 {filteredTopics.map(t => (
                   <tr key={t.topic} className="border-b border-border hover:bg-muted/30 transition">
                     <td className="px-4 py-3 font-medium text-foreground">{t.topic}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">{t.totalInDb}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">{t.totalAnswered}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">{t.correct}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground">{t.wrong}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{t.totalInDb}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{t.totalAnswered}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{t.correct}</td>
+                    <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{t.wrong}</td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`font-bold ${t.accuracy >= 80 ? 'text-emerald-600 dark:text-emerald-400' : t.accuracy >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                      <span className={`font-bold matrix-text ${getScoreColor(t.accuracy)}`}>
                         {t.accuracy}%
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`font-black text-base ${t.smartScore >= 80 ? 'text-emerald-600 dark:text-emerald-400' : t.smartScore >= 60 ? 'text-amber-600 dark:text-amber-400' : 'text-red-600 dark:text-red-400'}`}>
+                      <span className={`font-black text-base matrix-text ${getScoreColor(t.smartScore)}`}>
                         {t.smartScore}%
                       </span>
                     </td>
@@ -227,16 +224,15 @@ export default function StatsView() {
         </div>
       )}
 
-      {/* Comparative Stats - Group Ranking */}
       <div className="mb-10">
         <ComparativeStats />
       </div>
 
       {/* Import/Export */}
-      <div className="soft-card bg-card border border-border p-8">
+      <div className="soft-card bg-card border border-border p-8 card-accent-top">
         <h3 className="font-bold mb-6 text-foreground flex items-center gap-3">💾 ניהול נתונים וגיבוי</h3>
         <div className="flex flex-col md:flex-row gap-4">
-          <button onClick={handleExport} className="bg-primary/10 text-primary border border-primary/20 px-6 py-3 rounded-xl font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2">
+          <button onClick={handleExport} className="bg-primary/10 text-primary border border-primary/20 px-6 py-3 rounded-xl font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2 hover-glow">
             <Download className="w-4 h-4" /> שמור גיבוי לקובץ
           </button>
           <label className="bg-card text-foreground border border-border px-6 py-3 rounded-xl font-bold hover:bg-muted transition flex items-center justify-center gap-2 cursor-pointer">
@@ -251,8 +247,8 @@ export default function StatsView() {
 
 function SummaryCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
   return (
-    <div className="soft-card bg-card border border-border p-5">
-      <div className={`text-2xl font-black ${accent ? 'text-primary' : 'text-foreground'}`}>{value}</div>
+    <div className="soft-card bg-card border border-border p-5 card-accent-top">
+      <div className={`text-2xl font-black matrix-text ${accent ? 'text-primary' : 'text-foreground'}`}>{value}</div>
       <div className="text-xs text-muted-foreground mt-1 font-medium">{label}</div>
     </div>
   );

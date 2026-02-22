@@ -108,9 +108,10 @@ Keep it under 250 words. Speak directly to Idan in Hebrew. Use markdown formatti
 
   return (
     <div className="fade-in max-w-3xl mx-auto">
-      <div className="bg-gradient-to-br from-destructive/80 to-primary rounded-3xl p-10 text-primary-foreground shadow-2xl mb-10 border border-transparent">
-        <div className="flex items-start gap-6">
-          <div className="bg-primary-foreground/20 p-4 rounded-2xl backdrop-blur-sm">
+      <div className="bg-gradient-to-br from-destructive/60 to-primary/80 rounded-3xl p-10 text-primary-foreground shadow-2xl mb-10 border border-primary/20 relative overflow-hidden">
+        <div className="absolute inset-0 bg-grid-pattern opacity-10" />
+        <div className="relative flex items-start gap-6">
+          <div className="bg-primary-foreground/20 p-4 rounded-2xl backdrop-blur-sm border border-primary-foreground/10">
             <ClipboardCheck className="w-10 h-10" />
           </div>
           <div>
@@ -120,11 +121,11 @@ Keep it under 250 words. Speak directly to Idan in Hebrew. Use markdown formatti
             </p>
           </div>
         </div>
-        <div className="mt-8">
+        <div className="mt-8 relative">
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="bg-primary-foreground text-foreground font-bold px-6 py-3 rounded-xl shadow-lg hover:opacity-90 transition flex items-center gap-2 disabled:opacity-50"
+            className="bg-primary-foreground text-foreground font-bold px-6 py-3 rounded-xl shadow-lg hover:opacity-90 transition flex items-center gap-2 disabled:opacity-50 hover-glow"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
             {loading ? 'מפיק דו״ח...' : '📋 הפק דו״ח מטות'}
@@ -133,7 +134,7 @@ Keep it under 250 words. Speak directly to Idan in Hebrew. Use markdown formatti
       </div>
 
       {report ? (
-        <div className="soft-card bg-card border border-border p-8 prose prose-sm dark:prose-invert max-w-none" dir="rtl">
+        <div className="soft-card bg-card border border-border p-8 prose prose-sm prose-invert max-w-none card-accent-top" dir="rtl">
           <ReactMarkdown>{report}</ReactMarkdown>
         </div>
       ) : !loading ? (
