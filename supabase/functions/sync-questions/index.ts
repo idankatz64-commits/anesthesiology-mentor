@@ -105,17 +105,35 @@ Deno.serve(async (req) => {
     const questions: Record<string, unknown>[] = [];
     const now = new Date().toISOString();
 
+    const seenIds = new Set<string>();
+    let skippedCount = 0;
+
     for (const row of rawRows) {
-      const qText = row["question"] || row["questiontext"] || row["q"];
-      const correct = row["correct"] || row["correctanswer"] || row["ans"];
-      if (!qText || !correct) continue;
+      const qText = row["question"] || row["questiontext"] || row["q"] || "";
+      const correct = row["correct"] || row["correctanswer"] || row["ans"] || "";
+
+      // Skip rows with no question text
+      if (!qText.trim()) {
+        skippedCount++;
+        continue;
+      }
 
       const normalizedCorrect = normalizeAnswer(correct);
-      if (!normalizedCorrect || !["A", "B", "C", "D"].includes(normalizedCorrect)) continue;
+      // Accept any non-empty correct value (don't require A/B/C/D)
+      const finalCorrect = normalizedCorrect || correct.trim().toUpperCase();
 
       let id = row["serial_question_number#"] || row["serial"] || row["id"];
-      if (!id) id = hashId(qText);
+      if (!id || !String(id).trim()) id = hashId(qText);
       id = String(id).trim();
+
+      // Skip duplicate IDs within same sync
+      if (seenIds.has(id)) {
+        // Append a suffix to make it unique
+        let suffix = 2;
+        while (seenIds.has(id + "_" + suffix)) suffix++;
+        id = id + "_" + suffix;
+      }
+      seenIds.add(id);
 
       const refId = row["questionid"] || row["question_id"] || row["ref_id"] || "N/A";
       const institution = row["institution"] || row["source"] || "N/A";
@@ -128,7 +146,7 @@ Deno.serve(async (req) => {
         b: row["optionb"] || row["b"] || row["option b"] || "",
         c: row["optionc"] || row["c"] || row["option c"] || "",
         d: row["optiond"] || row["d"] || row["option d"] || "",
-        correct: normalizedCorrect,
+        correct: finalCorrect || "",
         explanation: row["explanation"] || row["explanation_correct"] || "",
         topic: row["topic_main"] || row["topic"] || row["main topic"] || "",
         year: row["year"] || "",
@@ -141,6 +159,8 @@ Deno.serve(async (req) => {
         synced_at: now,
       });
     }
+
+    console.log(`Parsed ${rawRows.length} CSV rows, produced ${questions.length} questions, skipped ${skippedCount} empty rows`);
 
     if (questions.length === 0) {
       return new Response(
