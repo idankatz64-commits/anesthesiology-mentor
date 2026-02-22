@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, LogOut, User, ChevronDown } from 'lucide-react';
+import { LogIn, LogOut, User, ChevronDown, BookOpen } from 'lucide-react';
 import type { User as SupaUser } from '@supabase/supabase-js';
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 
 export default function TopNav() {
   const [user, setUser] = useState<SupaUser | null>(null);
@@ -31,12 +32,28 @@ export default function TopNav() {
       {/* Gradient accent line at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-l from-transparent via-primary/30 to-transparent" />
 
-      <div className="font-bold text-foreground text-sm flex items-center gap-2">
-        <span className="text-primary">●</span>
-        סימולטור הרדמה
+      <div className="flex flex-col items-center absolute left-1/2 -translate-x-1/2">
+        <span className="font-bold text-foreground text-sm flex items-center gap-2">
+          <span className="text-primary">●</span>
+          Anesthesia Simulator
+        </span>
+        <span className="text-[10px] text-muted-foreground font-light hidden md:block">Simulator for Stage 1 Anesthesia, Intensive Care and Pain Medicine</span>
       </div>
 
       <div className="flex items-center gap-3">
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => window.open('https://notebooklm.google.com/', '_blank', 'noopener,noreferrer')}
+                className="text-muted-foreground hover:text-primary transition p-2 rounded-lg hover:bg-primary/10"
+              >
+                <BookOpen className="w-4 h-4" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent>Open NotebookLM</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
         {!user ? (
           <>
             <button

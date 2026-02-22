@@ -1,13 +1,11 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Search, Trash2, Copy } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Search, Trash2 } from 'lucide-react';
 
 export default function NotebookView() {
   const { data, progress, deleteNote, startSession } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
-  const { toast } = useToast();
 
   const noteIds = Object.keys(progress.notes);
   const filtered = noteIds.filter(id => {
@@ -21,17 +19,6 @@ export default function NotebookView() {
 
   const reviewFromNote = (id: string) => {
     const q = data.find(d => d[KEYS.ID] === id);
-    if (!q) return;
-    startSession([q], 1, 'practice');
-  };
-
-  const handleSendToNotebookLM = (id: string) => {
-    const qData = data.find(d => d[KEYS.ID] === id);
-    if (!qData) return;
-    const text = `Serial: ${qData[KEYS.REF_ID]} | Question ID: ${id} | ${qData[KEYS.QUESTION]}`;
-    navigator.clipboard.writeText(text);
-    window.open('https://notebooklm.google.com/', '_blank', 'noopener,noreferrer');
-    toast({ title: 'Copied!', description: 'הועתק ללוח. NotebookLM נפתח בטאב חדש.' });
   };
 
   return (
@@ -66,13 +53,6 @@ export default function NotebookView() {
             return (
               <div key={id} className="soft-card bg-card border border-border p-6 relative hover:shadow-lg hover-glow transition group card-accent-top">
                 <div className="absolute top-4 left-4 flex items-center gap-2">
-                  <button
-                    onClick={() => handleSendToNotebookLM(id)}
-                    className="text-primary hover:text-primary/80 transition"
-                    title="Send to NotebookLM"
-                  >
-                    <Copy className="w-4 h-4" />
-                  </button>
                   <button
                     onClick={() => { if (confirm('למחוק את ההערה?')) deleteNote(id); }}
                     className="text-muted-foreground hover:text-destructive transition"
