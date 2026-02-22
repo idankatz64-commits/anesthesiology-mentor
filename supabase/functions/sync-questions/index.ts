@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { parse } from "https://deno.land/std@0.224.0/csv/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -29,64 +30,6 @@ function hashId(str: string): string {
   return Math.abs(h).toString(16).substring(0, 6).toUpperCase();
 }
 
-function parseCSV(text: string): Record<string, string>[] {
-  const rows: Record<string, string>[] = [];
-  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
-
-  // Parse all fields respecting quoted multi-line fields
-  const allFields: string[][] = [];
-  let currentRow: string[] = [];
-  let currentField = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < normalized.length; i++) {
-    const ch = normalized[i];
-
-    if (inQuotes) {
-      if (ch === '"' && normalized[i + 1] === '"') {
-        currentField += '"';
-        i++;
-      } else if (ch === '"') {
-        inQuotes = false;
-      } else {
-        currentField += ch;
-      }
-    } else {
-      if (ch === '"') {
-        inQuotes = true;
-      } else if (ch === ',') {
-        currentRow.push(currentField);
-        currentField = "";
-      } else if (ch === '\n') {
-        currentRow.push(currentField);
-        currentField = "";
-        allFields.push(currentRow);
-        currentRow = [];
-      } else {
-        currentField += ch;
-      }
-    }
-  }
-  // Push last field and row
-  currentRow.push(currentField);
-  if (currentRow.some(f => f.trim())) allFields.push(currentRow);
-
-  if (allFields.length < 2) return [];
-
-  const headers = allFields[0].map(h => h.trim().toLowerCase());
-
-  for (let i = 1; i < allFields.length; i++) {
-    const values = allFields[i];
-    const row: Record<string, string> = {};
-    headers.forEach((h, idx) => {
-      if (h) row[h] = (values[idx] || "").trim();
-    });
-    rows.push(row);
-  }
-
-  return rows;
-}
-
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -104,7 +47,29 @@ Deno.serve(async (req) => {
       throw new Error(`Failed to fetch CSV: ${csvRes.status}`);
     }
     const csvText = await csvRes.text();
-    const rawRows = parseCSV(csvText);
+
+    // Use Deno's standard CSV parser which correctly handles quoted multi-line fields
+    const rawRows = parse(csvText, {
+      skipFirstRow: true,
+      columns: undefined, // auto-detect from first row
+    });
+
+    // Log headers for debugging
+    if (rawRows.length > 0) {
+      const headers = Object.keys(rawRows[0]);
+      console.log(`CSV headers (${headers.length}):`, headers.join(", "));
+    }
+
+    // Normalize headers to lowercase
+    const rows: Record<string, string>[] = rawRows.map((row: Record<string, string>) => {
+      const normalized: Record<string, string> = {};
+      for (const [key, value] of Object.entries(row)) {
+        normalized[key.trim().toLowerCase()] = (value || "").trim();
+      }
+      return normalized;
+    });
+
+    console.log(`Parsed ${rows.length} CSV rows`);
 
     // Process rows
     const questions: Record<string, unknown>[] = [];
@@ -113,7 +78,7 @@ Deno.serve(async (req) => {
     const seenIds = new Set<string>();
     let skippedCount = 0;
 
-    for (const row of rawRows) {
+    for (const row of rows) {
       const qText = row["question"] || row["questiontext"] || row["q"] || "";
       const correct = row["correct"] || row["correctanswer"] || row["ans"] || "";
 
@@ -124,7 +89,6 @@ Deno.serve(async (req) => {
       }
 
       const normalizedCorrect = normalizeAnswer(correct);
-      // Accept any non-empty correct value (don't require A/B/C/D)
       const finalCorrect = normalizedCorrect || correct.trim().toUpperCase();
 
       let id = row["serial_question_number#"] || row["serial"] || row["id"];
@@ -133,7 +97,6 @@ Deno.serve(async (req) => {
 
       // Skip duplicate IDs within same sync
       if (seenIds.has(id)) {
-        // Append a suffix to make it unique
         let suffix = 2;
         while (seenIds.has(id + "_" + suffix)) suffix++;
         id = id + "_" + suffix;
@@ -165,7 +128,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`Parsed ${rawRows.length} CSV rows, produced ${questions.length} questions, skipped ${skippedCount} empty rows`);
+    console.log(`Produced ${questions.length} questions, skipped ${skippedCount} empty rows`);
 
     if (questions.length === 0) {
       return new Response(
@@ -174,9 +137,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Upsert in batches of 100
+    // Upsert in batches of 200
     let upserted = 0;
-    const batchSize = 100;
+    const batchSize = 200;
     for (let i = 0; i < questions.length; i += batchSize) {
       const batch = questions.slice(i, i + batchSize);
       const { error } = await supabase
