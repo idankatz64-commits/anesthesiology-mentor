@@ -4,8 +4,9 @@ import { KEYS, type ConfidenceLevel } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import {
   X, Flag, Star, ChevronRight, ChevronLeft, SkipForward, BookOpen,
-  StickyNote, Tag, Plus, ExternalLink, Copy, Send,
+  StickyNote, Tag, Plus, ExternalLink, Copy, Send, Calculator,
 } from 'lucide-react';
+import FormulaCalculatorPanel from '@/components/FormulaCalculatorPanel';
 import { useToast } from '@/hooks/use-toast';
 import { GlobalQuestionStats, CommunityNotes } from './SessionCommunity';
 
@@ -50,7 +51,8 @@ export default function SessionView() {
   const [showNote, setShowNote] = useState(false);
   const [tagInput, setTagInput] = useState('');
   const [timerSeconds, setTimerSeconds] = useState(0);
-  const [simTimerSeconds, setSimTimerSeconds] = useState(3 * 60 * 60); // 3 hours countdown
+  const [simTimerSeconds, setSimTimerSeconds] = useState(3 * 60 * 60);
+  const [calcOpen, setCalcOpen] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   const isSimulation = mode === 'simulation';
@@ -268,6 +270,13 @@ export default function SessionView() {
             <span className="flex items-center gap-1.5">📅 <span className="text-foreground">{qData[KEYS.YEAR]}</span></span>
           </div>
           <div className="flex items-center gap-3">
+            <button
+              onClick={() => setCalcOpen(true)}
+              className="text-muted-foreground hover:text-primary transition flex items-center gap-1.5 text-xs font-bold bg-muted px-3 py-1.5 rounded-lg hover:bg-primary/10"
+              title="Formula Calculator"
+            >
+              <Calculator className="w-3.5 h-3.5" /> Σ
+            </button>
             {!isSimulation && (
               <button
                 onClick={handleSendToNotebookLM}
@@ -492,6 +501,8 @@ export default function SessionView() {
           </button>
         </div>
       </div>
+
+      <FormulaCalculatorPanel open={calcOpen} onClose={() => setCalcOpen(false)} />
     </div>
   );
 }
