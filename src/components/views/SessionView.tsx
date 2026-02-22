@@ -168,12 +168,6 @@ export default function SessionView() {
     setTagInput('');
   };
 
-  const handleSendToNotebookLM = () => {
-    const text = `Serial: ${serialNumber} | Question ID: ${questionId} | ${qData[KEYS.QUESTION]}`;
-    navigator.clipboard.writeText(text);
-    window.open('https://notebooklm.google.com/', '_blank', 'noopener,noreferrer');
-    toast({ title: 'Copied!', description: 'הועתק ללוח. NotebookLM נפתח בטאב חדש.' });
-  };
 
   const formatTime = (s: number) =>
     `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
@@ -277,15 +271,6 @@ export default function SessionView() {
             >
               <Calculator className="w-3.5 h-3.5" /> Σ
             </button>
-            {!isSimulation && (
-              <button
-                onClick={handleSendToNotebookLM}
-                className="text-primary hover:text-primary/80 transition flex items-center gap-1.5 text-xs font-bold bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20"
-                title="Send to NotebookLM"
-              >
-                <Copy className="w-3 h-3" /> NotebookLM
-              </button>
-            )}
             <button onClick={() => toggleFavorite(serialNumber)} className="transition">
               <Star className={`w-5 h-5 ${isFav ? 'fill-warning text-warning' : 'text-muted-foreground hover:text-warning'}`} />
             </button>

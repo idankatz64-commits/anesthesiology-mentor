@@ -45,7 +45,7 @@ export default function TopNav() {
           <Tooltip>
             <TooltipTrigger asChild>
               <button
-                onClick={() => window.open('https://notebooklm.google.com/', '_blank', 'noopener,noreferrer')}
+                onClick={() => window.open('https://notebooklm.google.com/notebook/4df9facd-84c4-4651-8551-6c0f335ce652', '_blank', 'noopener,noreferrer')}
                 className="text-muted-foreground hover:text-primary transition p-2 rounded-lg hover:bg-primary/10"
               >
                 <BookOpen className="w-4 h-4" />
