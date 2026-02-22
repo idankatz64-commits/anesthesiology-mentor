@@ -7,6 +7,7 @@ import {
   StickyNote, Tag, Plus, ExternalLink, Copy, Send,
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { GlobalQuestionStats, CommunityNotes } from './SessionCommunity';
 
 /** Parse URLs and <a> tags inside explanation text into clickable links */
 function ExplanationRenderer({ text }: { text: string }) {
@@ -40,7 +41,7 @@ function ExplanationRenderer({ text }: { text: string }) {
 export default function SessionView() {
   const {
     session, progress, navigate, setAnswer, setConfidence, setSessionIndex,
-    toggleFlag, skipQuestion, updateHistory, updateSpacedRepetition, toggleFavorite,
+    toggleFlag, skipQuestion, updateHistory, updateSpacedRepetition, syncAnswerToDb, toggleFavorite,
     saveNote, setRating, addTag, removeTag,
   } = useApp();
   const { toast } = useToast();
@@ -110,6 +111,7 @@ export default function SessionView() {
     const isCorrect = savedAns === correctAns;
     updateHistory(serialNumber, isCorrect);
     updateSpacedRepetition(serialNumber, isCorrect, level);
+    syncAnswerToDb(serialNumber, isCorrect, qData[KEYS.TOPIC]);
   };
 
   const handleNext = () => {
@@ -147,11 +149,12 @@ export default function SessionView() {
   };
 
   const handleSubmitSimulation = () => {
-    // Update history for all answered questions
     quiz.forEach((q, i) => {
       const userAns = answers[i];
       if (userAns) {
-        updateHistory(q[KEYS.ID], userAns === q[KEYS.CORRECT]);
+        const isCorrect = userAns === q[KEYS.CORRECT];
+        updateHistory(q[KEYS.ID], isCorrect);
+        syncAnswerToDb(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
       }
     });
     navigate('results');
@@ -432,14 +435,21 @@ export default function SessionView() {
                 <ExplanationRenderer text={qData[KEYS.EXPLANATION] || 'אין הסבר'} />
               </div>
             </div>
+
+            {/* Global question success rate */}
+            <GlobalQuestionStats questionId={serialNumber} />
+
             <a
               href={`https://www.google.com/search?q=Miller's+Anesthesia+10th+edition+page+${qData[KEYS.MILLER]}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-xs text-primary bg-primary/10 hover:bg-primary/20 px-4 py-2 rounded-full font-medium transition flex items-center gap-2 w-fit"
+              className="text-xs text-primary bg-primary/10 hover:bg-primary/20 px-4 py-2 rounded-full font-medium transition flex items-center gap-2 w-fit mt-4"
             >
               <BookOpen className="w-3 h-3" /> Miller Page: {qData[KEYS.MILLER]}
             </a>
+
+            {/* Community Notes */}
+            <CommunityNotes questionId={serialNumber} />
           </div>
         )}
 

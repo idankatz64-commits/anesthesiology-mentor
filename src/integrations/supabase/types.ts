@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      community_notes: {
+        Row: {
+          author_display: string
+          created_at: string
+          id: string
+          note_text: string
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          author_display: string
+          created_at?: string
+          id?: string
+          note_text: string
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          author_display?: string
+          created_at?: string
+          id?: string
+          note_text?: string
+          question_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       spaced_repetition: {
         Row: {
           confidence: string | null
@@ -39,6 +66,39 @@ export type Database = {
           last_correct?: boolean | null
           next_review_date?: string
           question_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_answers: {
+        Row: {
+          answered_count: number
+          correct_count: number
+          id: string
+          is_correct: boolean
+          question_id: string
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answered_count?: number
+          correct_count?: number
+          id?: string
+          is_correct: boolean
+          question_id: string
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answered_count?: number
+          correct_count?: number
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          topic?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -76,7 +136,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_global_topic_stats: {
+        Args: never
+        Returns: {
+          avg_accuracy: number
+          topic: string
+          total_users: number
+        }[]
+      }
+      get_question_success_rate: {
+        Args: { qid: string }
+        Returns: {
+          correct_users: number
+          success_rate: number
+          total_users: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

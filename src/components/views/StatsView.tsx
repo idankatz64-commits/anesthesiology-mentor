@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Search, Download, Upload, ArrowUpDown } from 'lucide-react';
+import ComparativeStats from './ComparativeStats';
 
 type TopicStat = {
   topic: string;
@@ -225,6 +226,11 @@ export default function StatsView() {
           <p className="text-lg font-light">אין עדיין נתונים. התחל לתרגל כדי לראות סטטיסטיקות!</p>
         </div>
       )}
+
+      {/* Comparative Stats - Group Ranking */}
+      <div className="mb-10">
+        <ComparativeStats />
+      </div>
 
       {/* Import/Export */}
       <div className="soft-card bg-card border border-border p-8">

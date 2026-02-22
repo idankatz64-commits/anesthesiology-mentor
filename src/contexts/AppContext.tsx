@@ -32,6 +32,7 @@ interface AppContextType {
   skipQuestion: (index: number) => void;
   updateHistory: (id: string, isCorrect: boolean) => void;
   updateSpacedRepetition: (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel) => void;
+  syncAnswerToDb: (questionId: string, isCorrect: boolean, topic: string) => void;
   
   // Progress actions
   toggleFavorite: (id: string) => void;
@@ -234,6 +235,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const incrementScore = useCallback(() => {
     setSession(prev => ({ ...prev, score: prev.score + 1 }));
+  }, []);
+
+  const syncAnswerToDb = useCallback(async (questionId: string, isCorrect: boolean, topic: string) => {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    if (!authSession?.user) return;
+
+    const { data: existing } = await supabase
+      .from('user_answers')
+      .select('answered_count, correct_count')
+      .eq('user_id', authSession.user.id)
+      .eq('question_id', questionId)
+      .maybeSingle();
+
+    const answeredCount = (existing?.answered_count || 0) + 1;
+    const correctCount = (existing?.correct_count || 0) + (isCorrect ? 1 : 0);
+
+    await supabase.from('user_answers').upsert({
+      user_id: authSession.user.id,
+      question_id: questionId,
+      topic: topic || null,
+      is_correct: isCorrect,
+      answered_count: answeredCount,
+      correct_count: correctCount,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id,question_id' });
   }, []);
 
   const toggleFavorite = useCallback((id: string) => {
@@ -459,7 +485,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
     navigate, toggleTheme, closeWelcome, saveProgress: saveProgressFn,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
-    updateHistory, updateSpacedRepetition,
+    updateHistory, updateSpacedRepetition, syncAnswerToDb,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
     generateWeeklyPlan, getFilteredQuestions, getDueQuestions,
