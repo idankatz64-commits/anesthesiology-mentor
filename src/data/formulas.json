@@ -1,0 +1,280 @@
+{
+  "categories": [
+    {
+      "id": "cardiac",
+      "label": "Cardiac & Hemodynamics",
+      "formulas": [
+        {
+          "id": "svr",
+          "name": "Systemic Vascular Resistance (SVR)",
+          "expression": "((MAP - CVP) / CO) * 80",
+          "unit": "dyne·s/cm⁵",
+          "inputs": [
+            { "id": "MAP", "label": "MAP (mmHg)", "default": 90 },
+            { "id": "CVP", "label": "CVP (mmHg)", "default": 5 },
+            { "id": "CO", "label": "Cardiac Output (L/min)", "default": 5 }
+          ]
+        },
+        {
+          "id": "pvr",
+          "name": "Pulmonary Vascular Resistance (PVR)",
+          "expression": "((MPAP - PAWP) / CO) * 80",
+          "unit": "dyne·s/cm⁵",
+          "inputs": [
+            { "id": "MPAP", "label": "MPAP (mmHg)", "default": 20 },
+            { "id": "PAWP", "label": "PAWP (mmHg)", "default": 10 },
+            { "id": "CO", "label": "Cardiac Output (L/min)", "default": 5 }
+          ]
+        },
+        {
+          "id": "co_echo",
+          "name": "Cardiac Output (Echo/Doppler)",
+          "expression": "pi * (LVOT_D / 2)^2 * VTI * HR / 1000",
+          "unit": "L/min",
+          "note": "LVOT diameter in cm, VTI in cm",
+          "inputs": [
+            { "id": "LVOT_D", "label": "LVOT Diameter (cm)", "default": 2 },
+            { "id": "VTI", "label": "VTI (cm)", "default": 20 },
+            { "id": "HR", "label": "Heart Rate (bpm)", "default": 70 }
+          ]
+        },
+        {
+          "id": "co_fick",
+          "name": "Cardiac Output (Fick Principle)",
+          "expression": "VO2 / (CaO2 - CvO2)",
+          "unit": "L/min",
+          "inputs": [
+            { "id": "VO2", "label": "O₂ Consumption (mL/min)", "default": 250 },
+            { "id": "CaO2", "label": "Arterial O₂ Content (mL/dL)", "default": 20 },
+            { "id": "CvO2", "label": "Venous O₂ Content (mL/dL)", "default": 15 }
+          ]
+        },
+        {
+          "id": "ef",
+          "name": "Ejection Fraction (EF)",
+          "expression": "((LVEDV - LVESV) / LVEDV) * 100",
+          "unit": "%",
+          "inputs": [
+            { "id": "LVEDV", "label": "LVEDV (mL)", "default": 120 },
+            { "id": "LVESV", "label": "LVESV (mL)", "default": 50 }
+          ]
+        },
+        {
+          "id": "svo2",
+          "name": "Mixed Venous Saturation (SvO₂)",
+          "expression": "SaO2 - (VO2 / (CO * 1.36 * Hgb))",
+          "unit": "%",
+          "inputs": [
+            { "id": "SaO2", "label": "SaO₂ (%)", "default": 98 },
+            { "id": "VO2", "label": "O₂ Consumption (mL/min)", "default": 250 },
+            { "id": "CO", "label": "Cardiac Output (L/min)", "default": 5 },
+            { "id": "Hgb", "label": "Hemoglobin (g/dL)", "default": 12 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "respiratory",
+      "label": "Respiratory",
+      "formulas": [
+        {
+          "id": "pao2",
+          "name": "Alveolar O₂ Tension (PAO₂)",
+          "expression": "(FiO2 * 713) - (PaCO2 / 0.8)",
+          "unit": "mmHg",
+          "note": "Assumes Patm=760, PH₂O=47, so Patm-PH₂O=713",
+          "inputs": [
+            { "id": "FiO2", "label": "FiO₂ (fraction, e.g. 0.21)", "default": 0.21 },
+            { "id": "PaCO2", "label": "PaCO₂ (mmHg)", "default": 40 }
+          ]
+        },
+        {
+          "id": "cao2",
+          "name": "O₂ Content (CaO₂)",
+          "expression": "(SaO2 / 100 * Hgb * 1.34) + (0.003 * PaO2)",
+          "unit": "mL/dL",
+          "inputs": [
+            { "id": "SaO2", "label": "SaO₂ (%)", "default": 98 },
+            { "id": "Hgb", "label": "Hemoglobin (g/dL)", "default": 12 },
+            { "id": "PaO2", "label": "PaO₂ (mmHg)", "default": 95 }
+          ]
+        },
+        {
+          "id": "do2",
+          "name": "O₂ Delivery (DO₂)",
+          "expression": "CaO2 * CO * 10",
+          "unit": "mL/min",
+          "inputs": [
+            { "id": "CaO2", "label": "CaO₂ (mL/dL)", "default": 20 },
+            { "id": "CO", "label": "Cardiac Output (L/min)", "default": 5 }
+          ]
+        },
+        {
+          "id": "vo2",
+          "name": "Global O₂ Uptake (VO₂)",
+          "expression": "10 * CO * (CaO2 - CvO2)",
+          "unit": "mL/min",
+          "inputs": [
+            { "id": "CO", "label": "Cardiac Output (L/min)", "default": 5 },
+            { "id": "CaO2", "label": "CaO₂ (mL/dL)", "default": 20 },
+            { "id": "CvO2", "label": "CvO₂ (mL/dL)", "default": 15 }
+          ]
+        },
+        {
+          "id": "dead_space",
+          "name": "Physiologic Dead Space (Vd/Vt)",
+          "expression": "(PaCO2 - PeCO2) / PaCO2",
+          "unit": "ratio",
+          "inputs": [
+            { "id": "PaCO2", "label": "PaCO₂ (mmHg)", "default": 40 },
+            { "id": "PeCO2", "label": "PeCO₂ - Mixed Expired (mmHg)", "default": 28 }
+          ]
+        },
+        {
+          "id": "shunt",
+          "name": "Shunt Fraction (Qs/Qt)",
+          "expression": "(1 - SaO2) / (1 - SvO2)",
+          "unit": "ratio",
+          "inputs": [
+            { "id": "SaO2", "label": "SaO₂ (fraction)", "default": 0.98 },
+            { "id": "SvO2", "label": "SvO₂ (fraction)", "default": 0.75 }
+          ]
+        },
+        {
+          "id": "ahi",
+          "name": "Apnea-Hypopnea Index (AHI)",
+          "expression": "(apnea + hypopnea) / total_sleep",
+          "unit": "events/hr",
+          "inputs": [
+            { "id": "apnea", "label": "Apnea events", "default": 10 },
+            { "id": "hypopnea", "label": "Hypopnea events", "default": 15 },
+            { "id": "total_sleep", "label": "Total sleep time (hr)", "default": 7 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "acid_base",
+      "label": "Acid-Base & Fluids",
+      "formulas": [
+        {
+          "id": "hh",
+          "name": "Henderson-Hasselbalch (pH)",
+          "expression": "6.1 + log10(HCO3 / (PCO2 * 0.03))",
+          "unit": "pH",
+          "inputs": [
+            { "id": "HCO3", "label": "HCO₃⁻ (mEq/L)", "default": 24 },
+            { "id": "PCO2", "label": "PCO₂ (mmHg)", "default": 40 }
+          ]
+        },
+        {
+          "id": "ag_simple",
+          "name": "Anion Gap (Simple)",
+          "expression": "Na - Cl - HCO3",
+          "unit": "mEq/L",
+          "note": "Normal: 12–14 mEq/L",
+          "inputs": [
+            { "id": "Na", "label": "Na⁺ (mEq/L)", "default": 140 },
+            { "id": "Cl", "label": "Cl⁻ (mEq/L)", "default": 104 },
+            { "id": "HCO3", "label": "HCO₃⁻ (mEq/L)", "default": 24 }
+          ]
+        },
+        {
+          "id": "ag_corrected",
+          "name": "Anion Gap (Albumin-Corrected)",
+          "expression": "(Na - Cl - HCO3) + 0.25 * (4 - albumin)",
+          "unit": "mEq/L",
+          "note": "Albumin in g/dL. Normal albumin = 4 g/dL",
+          "inputs": [
+            { "id": "Na", "label": "Na⁺ (mEq/L)", "default": 140 },
+            { "id": "Cl", "label": "Cl⁻ (mEq/L)", "default": 104 },
+            { "id": "HCO3", "label": "HCO₃⁻ (mEq/L)", "default": 24 },
+            { "id": "albumin", "label": "Albumin (g/dL)", "default": 4 }
+          ]
+        },
+        {
+          "id": "delta_ratio",
+          "name": "Delta Ratio",
+          "expression": "(AG - 12) / (24 - HCO3)",
+          "unit": "ratio",
+          "note": "<0.4: Hyperchloremic normal AG | <1: High AG + normal AG | 1–2: Pure AG | >2: High AG + metabolic alkalosis",
+          "inputs": [
+            { "id": "AG", "label": "Anion Gap (mEq/L)", "default": 18 },
+            { "id": "HCO3", "label": "HCO₃⁻ (mEq/L)", "default": 18 }
+          ]
+        },
+        {
+          "id": "free_water",
+          "name": "Free Water Deficit",
+          "expression": "0.6 * weight * ((Na / 140) - 1)",
+          "unit": "L",
+          "inputs": [
+            { "id": "weight", "label": "Weight (kg)", "default": 70 },
+            { "id": "Na", "label": "Na⁺ (mEq/L)", "default": 155 }
+          ]
+        },
+        {
+          "id": "mabl",
+          "name": "Maximal Allowable Blood Loss (MABL)",
+          "expression": "EBV * (startHCT - targetHCT) / startHCT",
+          "unit": "mL",
+          "note": "EBV: ~70 mL/kg adults, ~80 mL/kg children",
+          "inputs": [
+            { "id": "EBV", "label": "EBV (mL)", "default": 4900 },
+            { "id": "startHCT", "label": "Starting HCT (%)", "default": 38 },
+            { "id": "targetHCT", "label": "Target HCT (%)", "default": 24 }
+          ]
+        },
+        {
+          "id": "osmolarity",
+          "name": "Plasma Osmolarity",
+          "expression": "2 * Na + 2 * K + glucose / 18 + BUN / 2.8",
+          "unit": "mOsm/L",
+          "note": "Normal: 285–295 mOsm/L",
+          "inputs": [
+            { "id": "Na", "label": "Na⁺ (mEq/L)", "default": 140 },
+            { "id": "K", "label": "K⁺ (mEq/L)", "default": 4 },
+            { "id": "glucose", "label": "Glucose (mg/dL)", "default": 90 },
+            { "id": "BUN", "label": "BUN (mg/dL)", "default": 14 }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pharmacology",
+      "label": "Pharmacology",
+      "formulas": [
+        {
+          "id": "vd",
+          "name": "Volume of Distribution (Vd)",
+          "expression": "dose / concentration",
+          "unit": "L",
+          "inputs": [
+            { "id": "dose", "label": "Dose (mg)", "default": 100 },
+            { "id": "concentration", "label": "Plasma Concentration (mg/L)", "default": 2 }
+          ]
+        },
+        {
+          "id": "half_life",
+          "name": "Half-Life (T½)",
+          "expression": "0.693 * Vd / CL",
+          "unit": "min",
+          "inputs": [
+            { "id": "Vd", "label": "Volume of Distribution (L)", "default": 20 },
+            { "id": "CL", "label": "Clearance (L/min)", "default": 1 }
+          ]
+        },
+        {
+          "id": "therapeutic_index",
+          "name": "Therapeutic Index",
+          "expression": "LD50 / ED50",
+          "unit": "ratio",
+          "inputs": [
+            { "id": "LD50", "label": "LD₅₀", "default": 100 },
+            { "id": "ED50", "label": "ED₅₀", "default": 10 }
+          ]
+        }
+      ]
+    }
+  ]
+}
