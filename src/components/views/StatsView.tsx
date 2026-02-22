@@ -1,8 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Search, Download, Upload, ArrowUpDown } from 'lucide-react';
 import ComparativeStats from './ComparativeStats';
+import { supabase } from '@/integrations/supabase/client';
+import {
+  BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip,
+  ResponsiveContainer, ReferenceLine,
+} from 'recharts';
 
 type TopicStat = {
   topic: string;
@@ -16,8 +21,32 @@ type TopicStat = {
 
 type SortKey = 'topic' | 'totalInDb' | 'totalAnswered' | 'correct' | 'wrong' | 'accuracy' | 'smartScore';
 
+type DailyData = { date: string; count: number; correct: number; rate: number };
+
 function calcSmartScore(answered: number, accuracy: number): number {
   return Math.round(((answered / (answered + 10)) * accuracy) + ((10 / (answered + 10)) * 50));
+}
+
+function linearRegression(data: { x: number; y: number }[]) {
+  const n = data.length;
+  if (n < 2) return null;
+  const sumX = data.reduce((s, d) => s + d.x, 0);
+  const sumY = data.reduce((s, d) => s + d.y, 0);
+  const sumXY = data.reduce((s, d) => s + d.x * d.y, 0);
+  const sumX2 = data.reduce((s, d) => s + d.x * d.x, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  if (denom === 0) return null;
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
+}
+
+function GroupAvgPlaceholder() {
+  return (
+    <p className="text-xs text-muted-foreground mt-2 italic">
+      ממוצע קבוצתי: -- (יהיה זמין כשמשתמשים נוספים יצטרפו)
+    </p>
+  );
 }
 
 export default function StatsView() {
@@ -25,6 +54,79 @@ export default function StatsView() {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('smartScore');
   const [sortAsc, setSortAsc] = useState(true);
+  const [dailyData, setDailyData] = useState<DailyData[]>([]);
+
+  // Fetch daily activity from Supabase
+  useEffect(() => {
+    const fetchDaily = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 13);
+      const startStr = startDate.toISOString().split('T')[0];
+
+      const { data: rows } = await supabase
+        .from('user_answers')
+        .select('updated_at, is_correct')
+        .eq('user_id', session.user.id)
+        .gte('updated_at', startStr + 'T00:00:00Z');
+
+      // Build 14-day buckets
+      const buckets: Record<string, { count: number; correct: number }> = {};
+      for (let i = 0; i < 14; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - (13 - i));
+        const key = d.toISOString().split('T')[0];
+        buckets[key] = { count: 0, correct: 0 };
+      }
+
+      (rows || []).forEach((r: any) => {
+        const day = new Date(r.updated_at).toISOString().split('T')[0];
+        if (buckets[day]) {
+          buckets[day].count++;
+          if (r.is_correct) buckets[day].correct++;
+        }
+      });
+
+      setDailyData(
+        Object.entries(buckets).map(([date, v]) => ({
+          date,
+          count: v.count,
+          correct: v.correct,
+          rate: v.count > 0 ? Math.round((v.correct / v.count) * 100) : 0,
+        }))
+      );
+    };
+    fetchDaily();
+  }, []);
+
+  // Trend line data
+  const trendData = useMemo(() => {
+    const activeDays = dailyData.filter(d => d.count > 0);
+    if (activeDays.length < 2) return dailyData.map(d => ({ ...d, trend: undefined as number | undefined }));
+    const points = activeDays.map((d, i) => ({ x: dailyData.indexOf(d), y: d.rate }));
+    const reg = linearRegression(points);
+    if (!reg) return dailyData.map(d => ({ ...d, trend: undefined as number | undefined }));
+    return dailyData.map((d, i) => ({
+      ...d,
+      trend: Math.max(0, Math.min(100, Math.round(reg.intercept + reg.slope * i))),
+    }));
+  }, [dailyData]);
+
+  // Success rate with color segments
+  const rateSegments = useMemo(() => {
+    return trendData.map((d, i) => {
+      const prev = i > 0 ? trendData[i - 1] : null;
+      let color = 'hsl(var(--muted-foreground))';
+      if (prev && prev.count > 0 && d.count > 0) {
+        if (d.rate > prev.rate) color = 'hsl(var(--success))';
+        else if (d.rate < prev.rate) color = 'hsl(var(--destructive))';
+      }
+      return { ...d, segmentColor: color };
+    });
+  }, [trendData]);
 
   const stats = useMemo(() => {
     let totalUnique = 0, correctUnique = 0, totalAttempts = 0;
@@ -129,6 +231,11 @@ export default function StatsView() {
     e.target.value = '';
   };
 
+  const formatDateLabel = (d: string) => {
+    const date = new Date(d + 'T00:00:00');
+    return `${date.getDate()}/${date.getMonth() + 1}`;
+  };
+
   return (
     <div className="fade-in max-w-6xl mx-auto">
       <h2 className="text-3xl font-bold mb-8 text-foreground">הסטטיסטיקה שלי</h2>
@@ -139,6 +246,48 @@ export default function StatsView() {
         <SummaryCard label="שאלות ייחודיות" value={`${stats.totalUnique} / ${data.length}`} />
         <SummaryCard label="כיסוי מאגר" value={`${stats.coverage}%`} accent />
         <SummaryCard label="דיוק כללי" value={`${stats.accuracy}%`} accent />
+      </div>
+
+      {/* NEW: Daily Question Completion */}
+      <div className="soft-card bg-card border border-border p-6 mb-10 card-accent-top">
+        <h3 className="font-bold text-foreground mb-4">שאלות שהושלמו ליום (14 ימים אחרונים)</h3>
+        <ResponsiveContainer width="100%" height={220}>
+          <BarChart data={dailyData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="date" tickFormatter={formatDateLabel} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+            <ReTooltip
+              contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }}
+              labelFormatter={formatDateLabel}
+              formatter={(v: number) => [v, 'שאלות']}
+            />
+            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+        <GroupAvgPlaceholder />
+      </div>
+
+      {/* NEW: Daily Success Rate */}
+      <div className="soft-card bg-card border border-border p-6 mb-10 card-accent-top">
+        <h3 className="font-bold text-foreground mb-4">אחוז הצלחה יומי (מעקב שיפור)</h3>
+        <ResponsiveContainer width="100%" height={220}>
+          <LineChart data={rateSegments} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <XAxis dataKey="date" tickFormatter={formatDateLabel} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
+            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} unit="%" />
+            <ReTooltip
+              contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }}
+              labelFormatter={formatDateLabel}
+              formatter={(v: number, name: string) => {
+                if (name === 'trend') return [v + '%', 'קו מגמה'];
+                return [v + '%', 'אחוז הצלחה'];
+              }}
+            />
+            <Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} connectNulls={false} />
+            <Line type="monotone" dataKey="trend" stroke="hsl(var(--info, 210 100% 50%))" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
+          </LineChart>
+        </ResponsiveContainer>
+        <GroupAvgPlaceholder />
       </div>
 
       {/* Search */}
@@ -173,6 +322,7 @@ export default function StatsView() {
               </div>
             ))}
           </div>
+          <GroupAvgPlaceholder />
         </div>
       )}
 
@@ -272,3 +422,4 @@ function ThHeader({ label, sortKey, currentKey, asc, onSort }: {
     </th>
   );
 }
+
