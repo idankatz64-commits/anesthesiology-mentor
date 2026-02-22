@@ -33,8 +33,6 @@ export default function QuoteSplash() {
 
   if (!quote || phase === 'hidden' || phase === 'gone') return null;
 
-  const imageUrl = `https://source.unsplash.com/1600x900/?${encodeURIComponent(quote.imageQuery)}`;
-
   return (
     <>
       <style>{`
@@ -63,11 +61,7 @@ export default function QuoteSplash() {
         tabIndex={0}
         onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') dismiss(); }}
       >
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url(${imageUrl})` }}
-        />
-        <div className="absolute inset-0 bg-black/60" />
+        <div className="absolute inset-0" style={{ background: quote.gradient }} />
 
         <div className="relative z-10 max-w-2xl mx-auto px-6 text-center">
           <p
