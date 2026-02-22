@@ -4,6 +4,7 @@ import MobileHeader from '@/components/MobileHeader';
 import MobileBottomNav from '@/components/MobileBottomNav';
 import TopNav from '@/components/TopNav';
 import WelcomeModal from '@/components/WelcomeModal';
+import QuoteSplash from '@/components/QuoteSplash';
 import HomeView from '@/components/views/HomeView';
 import SetupView from '@/components/views/SetupView';
 import SessionView from '@/components/views/SessionView';
@@ -53,6 +54,7 @@ function AppContent() {
 
         <MobileBottomNav />
         <WelcomeModal />
+        <QuoteSplash />
       </div>
     </div>
   );
