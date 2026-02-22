@@ -129,25 +129,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Auto-sync from Google Sheets on mount, then fetch from DB
   useEffect(() => {
+    let cancelled = false;
     const init = async () => {
-      setSyncStatus('syncing');
-      try {
-        await syncQuestionsFromSheet();
-        setSyncStatus('done');
-        setLastSyncTime(new Date().toISOString());
-      } catch (e) {
-        console.warn('Auto-sync failed, loading from DB anyway:', e);
-        setSyncStatus('error');
-      }
+      // First try to load from DB immediately (fast)
       try {
         const questions = await fetchQuestions();
-        setData(questions);
+        if (!cancelled) setData(questions);
       } catch (e) {
-        console.error('Failed to fetch questions:', e);
+        console.warn('Initial DB fetch failed, will retry after sync:', e);
       }
-      setLoading(false);
+      if (!cancelled) setLoading(false);
+
+      // Then sync in background (slower)
+      if (!cancelled) setSyncStatus('syncing');
+      try {
+        const result = await syncQuestionsFromSheet();
+        if (!cancelled) {
+          setSyncStatus('done');
+          setLastSyncTime(result.synced_at);
+          // Refetch after sync to get updated data
+          const questions = await fetchQuestions();
+          if (!cancelled) setData(questions);
+        }
+      } catch (e) {
+        console.warn('Auto-sync failed:', e);
+        if (!cancelled) setSyncStatus('error');
+      }
     };
     init();
+    return () => { cancelled = true; };
   }, []);
 
   // Realtime subscription for questions table
@@ -523,7 +533,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const questions = await fetchQuestions();
       setData(questions);
       setSyncStatus('done');
-      return { count: result.count };
+      return { count: questions.length };
     } catch (e) {
       console.error('Manual sync failed:', e);
       setSyncStatus('error');
