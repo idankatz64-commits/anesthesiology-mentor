@@ -30,56 +30,61 @@ function hashId(str: string): string {
 }
 
 function parseCSV(text: string): Record<string, string>[] {
-  const lines = text.split("\n");
-  if (lines.length < 2) return [];
-
-  // Parse header, handling quoted fields
-  const headers = parseCSVLine(lines[0]).map((h) => h.trim().toLowerCase());
   const rows: Record<string, string>[] = [];
+  const normalized = text.replace(/\r\n/g, "\n").replace(/\r/g, "\n");
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim();
-    if (!line) continue;
-    const values = parseCSVLine(line);
+  // Parse all fields respecting quoted multi-line fields
+  const allFields: string[][] = [];
+  let currentRow: string[] = [];
+  let currentField = "";
+  let inQuotes = false;
+
+  for (let i = 0; i < normalized.length; i++) {
+    const ch = normalized[i];
+
+    if (inQuotes) {
+      if (ch === '"' && normalized[i + 1] === '"') {
+        currentField += '"';
+        i++;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        currentField += ch;
+      }
+    } else {
+      if (ch === '"') {
+        inQuotes = true;
+      } else if (ch === ',') {
+        currentRow.push(currentField);
+        currentField = "";
+      } else if (ch === '\n') {
+        currentRow.push(currentField);
+        currentField = "";
+        allFields.push(currentRow);
+        currentRow = [];
+      } else {
+        currentField += ch;
+      }
+    }
+  }
+  // Push last field and row
+  currentRow.push(currentField);
+  if (currentRow.some(f => f.trim())) allFields.push(currentRow);
+
+  if (allFields.length < 2) return [];
+
+  const headers = allFields[0].map(h => h.trim().toLowerCase());
+
+  for (let i = 1; i < allFields.length; i++) {
+    const values = allFields[i];
     const row: Record<string, string> = {};
     headers.forEach((h, idx) => {
       if (h) row[h] = (values[idx] || "").trim();
     });
     rows.push(row);
   }
-  return rows;
-}
 
-function parseCSVLine(line: string): string[] {
-  const result: string[] = [];
-  let current = "";
-  let inQuotes = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
-    if (inQuotes) {
-      if (ch === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          current += '"';
-          i++;
-        } else {
-          inQuotes = false;
-        }
-      } else {
-        current += ch;
-      }
-    } else {
-      if (ch === '"') {
-        inQuotes = true;
-      } else if (ch === ",") {
-        result.push(current);
-        current = "";
-      } else {
-        current += ch;
-      }
-    }
-  }
-  result.push(current);
-  return result;
+  return rows;
 }
 
 Deno.serve(async (req) => {
@@ -169,9 +174,9 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Upsert in batches of 500
+    // Upsert in batches of 100
     let upserted = 0;
-    const batchSize = 500;
+    const batchSize = 100;
     for (let i = 0; i < questions.length; i += batchSize) {
       const batch = questions.slice(i, i + batchSize);
       const { error } = await supabase
