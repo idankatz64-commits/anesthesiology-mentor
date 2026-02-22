@@ -20,12 +20,19 @@ export function GlobalQuestionStats({ questionId }: GlobalQuestionStatsProps) {
 
   if (!stats) return null;
 
+  const rate = stats.success_rate;
+  const colorClasses = rate < 30
+    ? 'bg-destructive/10 border-destructive/20 text-destructive'
+    : rate < 70
+      ? 'bg-warning/10 border-warning/20 text-warning'
+      : 'bg-success/10 border-success/20 text-success';
+
   return (
-    <div className="flex items-center gap-2 mt-4 px-4 py-2.5 bg-muted/50 rounded-xl border border-border text-sm">
-      <Users className="w-4 h-4 text-primary" />
-      <span className="text-muted-foreground">
-        <span className="font-bold text-foreground">{stats.success_rate}%</span> מהמשתמשים צדקו בשאלה זו
-        <span className="text-xs text-muted-foreground/70 mr-1">({stats.total_users} משתמשים)</span>
+    <div className={`flex items-center gap-2 mt-4 px-4 py-3 rounded-xl border text-sm font-medium ${colorClasses}`}>
+      <Users className="w-4 h-4" />
+      <span>
+        רק <span className="font-bold text-lg">{rate}%</span> מהמשתמשים ענו נכון על שאלה זו
+        <span className="text-xs opacity-70 mr-1">({stats.total_users} משתמשים)</span>
       </span>
     </div>
   );

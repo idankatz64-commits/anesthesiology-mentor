@@ -3,6 +3,7 @@ import { useApp } from '@/contexts/AppContext';
 import { KEYS, type Question, type ConfidenceLevel } from '@/lib/types';
 import { ArrowRight, BookOpen, RotateCcw, Layers, Brain, AlertTriangle, Sparkles, Check } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { GlobalQuestionStats } from './SessionCommunity';
 
 type FlashcardMode = 'topics' | 'mistakes' | 'smart';
 
@@ -359,6 +360,7 @@ export default function FlashcardView() {
                 📖 Miller: {current[KEYS.MILLER]}{current[KEYS.CHAPTER] ? `, Chapter ${current[KEYS.CHAPTER]}` : ''}
               </div>
             )}
+            <GlobalQuestionStats questionId={current[KEYS.ID]} />
             <div className="mt-6">
               <p className="text-sm text-muted-foreground text-center mb-3 font-medium">עד כמה ידעת?</p>
               <div className="grid grid-cols-3 gap-3">
