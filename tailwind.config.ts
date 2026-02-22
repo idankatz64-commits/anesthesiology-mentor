@@ -98,6 +98,15 @@ export default {
   				DEFAULT: 'hsl(var(--info))',
   				foreground: 'hsl(var(--info-foreground))'
   			},
+  			matrix: {
+  				DEFAULT: 'hsl(var(--matrix))',
+  				foreground: 'hsl(var(--matrix-foreground))',
+  				muted: 'hsl(var(--matrix-muted))'
+  			},
+  			feature: {
+  				DEFAULT: 'hsl(var(--feature))',
+  				foreground: 'hsl(var(--feature-foreground))'
+  			},
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',

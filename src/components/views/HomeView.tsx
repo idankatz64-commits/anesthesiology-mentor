@@ -94,7 +94,7 @@ export default function HomeView() {
         </div>
         <button
           onClick={resetAllData}
-          className="group bg-card border border-border text-muted-foreground hover:text-destructive hover:border-destructive/30 text-sm px-5 py-3 rounded-xl transition-all shadow-sm hover:shadow-md flex items-center gap-2"
+          className="group liquid-glass text-muted-foreground hover:text-destructive text-sm px-5 py-3 transition-all flex items-center gap-2"
         >
           <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
           אפס היסטוריה והתחל מחדש
@@ -105,111 +105,137 @@ export default function HomeView() {
         {/* Smart Practice */}
         <div
           onClick={handleSmartPractice}
-          className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group relative overflow-hidden"
+          className="liquid-glass p-6 cursor-pointer group"
         >
-          <div className="absolute -right-10 -top-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
-          <div className="w-12 h-12 bg-primary text-primary-foreground rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
-            <Brain className="w-6 h-6" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
+              <Brain className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">Smart Practice</h3>
+            <p className="text-sm text-muted-foreground font-light">אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה.</p>
           </div>
-          <h3 className="font-bold text-lg mb-1 text-foreground">Smart Practice (AI)</h3>
-          <p className="text-sm text-muted-foreground font-light">אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה.</p>
         </div>
 
         {/* Simulation Exam */}
         <div
           onClick={handleSimulation}
-          className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group relative overflow-hidden"
+          className="liquid-glass p-6 cursor-pointer group"
         >
-          <div className="absolute -left-10 -top-10 w-24 h-24 bg-primary/10 rounded-full blur-2xl" />
-          <div className="w-12 h-12 bg-primary/80 text-primary-foreground rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
-            <FileCheck className="w-6 h-6" />
+          <div className="absolute inset-0 bg-gradient-to-br from-feature/8 to-transparent rounded-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="w-12 h-12 bg-feature/15 text-feature rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-feature)' }}>
+              <FileCheck className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">מבחן סימולציה</h3>
+            <p className="text-sm text-muted-foreground font-light">120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי.</p>
           </div>
-          <h3 className="font-bold text-lg mb-1 text-foreground">מבחן סימולציה</h3>
-          <p className="text-sm text-muted-foreground font-light">120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי.</p>
         </div>
 
         {/* Spaced Repetition */}
         <div
           onClick={handleSpacedRepetition}
-          className={`soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`}
+          className={`liquid-glass p-6 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`}
         >
-          <div className="w-12 h-12 bg-info/15 text-info rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
-            <CalendarClock className="w-6 h-6" />
+          <div className="absolute inset-0 bg-gradient-to-br from-info/8 to-transparent rounded-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="w-12 h-12 bg-info/15 text-info rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <CalendarClock className="w-6 h-6" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה מרווחת</h3>
+            <p className="text-sm text-muted-foreground font-light">שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS.</p>
           </div>
-          <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה מרווחת</h3>
-          <p className="text-sm text-muted-foreground font-light">שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS.</p>
         </div>
 
         {/* Flashcards */}
         <div
           onClick={() => navigate('flashcards')}
-          className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group relative overflow-hidden"
+          className="liquid-glass p-6 cursor-pointer group"
         >
-          <div className="absolute -left-10 -bottom-10 w-24 h-24 bg-accent/10 rounded-full blur-2xl" />
-          <div className="w-12 h-12 bg-accent text-accent-foreground rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform shadow-lg">
-            <Layers className="w-6 h-6" />
+          <div className="absolute inset-0 bg-gradient-to-br from-matrix/8 to-transparent rounded-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="w-12 h-12 bg-matrix/15 text-matrix rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-matrix)' }}>
+              <Layers className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">תרגול כרטיסיות</h3>
+            <p className="text-sm text-muted-foreground font-light">כרטיסיות Anki – צפה בשאלה, חשוב, והצג תשובה.</p>
           </div>
-          <h3 className="font-bold text-lg mb-1 text-foreground">תרגול כרטיסיות</h3>
-          <p className="text-sm text-muted-foreground font-light">כרטיסיות Anki – צפה בשאלה, חשוב, והצג תשובה.</p>
         </div>
 
-        <div onClick={() => navigate('setup-practice')} className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group">
-          <div className="w-12 h-12 bg-muted text-primary rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
-            <Dumbbell className="w-6 h-6" />
+        <div onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group">
+          <div className="relative">
+            <div className="w-12 h-12 bg-muted text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Dumbbell className="w-6 h-6" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1 text-foreground">תרגול מותאם</h3>
+            <p className="text-sm text-muted-foreground font-light">בחר נושאים, מקורות ומספר שאלות באופן ידני.</p>
           </div>
-          <h3 className="font-semibold text-lg mb-1 text-foreground">תרגול מותאם</h3>
-          <p className="text-sm text-muted-foreground font-light">בחר נושאים, מקורות ומספר שאלות באופן ידני.</p>
         </div>
 
         {/* Mistakes */}
-        <div onClick={() => navigate('setup-practice')} className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group">
-          <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
-            <RotateCcw className="w-6 h-6" />
+        <div onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group">
+          <div className="absolute inset-0 bg-gradient-to-br from-destructive/6 to-transparent rounded-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <RotateCcw className="w-6 h-6" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה על טעויות</h3>
+            <p className="text-sm text-muted-foreground font-light">
+              יש לך <span className="matrix-text font-medium">{mistakes}</span> טעויות פתוחות
+            </p>
           </div>
-          <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה על טעויות</h3>
-          <p className="text-sm text-muted-foreground font-light">
-            יש לך <span className="text-destructive font-medium matrix-text">{mistakes}</span> טעויות פתוחות
-          </p>
         </div>
 
         {/* Favorites */}
-        <div onClick={() => navigate('setup-practice')} className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group">
-          <div className="w-12 h-12 bg-warning/15 text-warning rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
-            <Star className="w-6 h-6" />
+        <div onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group">
+          <div className="absolute inset-0 bg-gradient-to-br from-warning/6 to-transparent rounded-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="w-12 h-12 bg-warning/15 text-warning rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <Star className="w-6 h-6" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1 text-foreground">מועדפים</h3>
+            <p className="text-sm text-muted-foreground font-light">
+              <span className="matrix-text font-medium">{favsCount}</span> שאלות שסימנת
+            </p>
           </div>
-          <h3 className="font-semibold text-lg mb-1 text-foreground">מועדפים</h3>
-          <p className="text-sm text-muted-foreground font-light">
-            <span className="text-warning font-medium matrix-text">{favsCount}</span> שאלות שסימנת
-          </p>
         </div>
 
         {/* Notebook */}
-        <div onClick={() => navigate('notebook')} className="soft-card card-accent-top bg-card border border-border p-6 hover:shadow-lg hover:-translate-y-1 hover-glow transition-all cursor-pointer group">
-          <div className="w-12 h-12 bg-warning-muted text-warning rounded-xl flex items-center justify-center text-xl mb-4 group-hover:scale-110 transition-transform">
-            <StickyNote className="w-6 h-6" />
+        <div onClick={() => navigate('notebook')} className="liquid-glass p-6 cursor-pointer group">
+          <div className="absolute inset-0 bg-gradient-to-br from-warning/6 to-transparent rounded-2xl pointer-events-none" />
+          <div className="relative">
+            <div className="w-12 h-12 bg-warning-muted text-warning rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <StickyNote className="w-6 h-6" />
+            </div>
+            <h3 className="font-semibold text-lg mb-1 text-foreground">המחברת שלי</h3>
+            <p className="text-sm text-muted-foreground font-light">
+              צפייה ב-<span className="matrix-text font-medium">{notesCount}</span> הערות
+            </p>
           </div>
-          <h3 className="font-semibold text-lg mb-1 text-foreground">המחברת שלי</h3>
-          <p className="text-sm text-muted-foreground font-light">
-            צפייה ב-<span className="text-warning font-medium matrix-text">{notesCount}</span> הערות
-          </p>
         </div>
       </div>
 
       {/* DB Status */}
       <div className="mb-12">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-widest px-1">סטטוס מאגר שאלות</h3>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-widest px-1 matrix-title">סטטוס מאגר שאלות</h3>
         <div className="grid grid-cols-3 gap-6">
-          <div className="soft-card bg-card border border-border p-5 text-center card-accent-top">
-            <div className="text-3xl font-bold text-foreground matrix-text">{data.length}</div>
+          <div className="liquid-glass p-5 text-center">
+            <div className="text-3xl font-bold matrix-text">{data.length}</div>
             <div className="text-xs text-muted-foreground font-medium mt-1">סה"כ שאלות</div>
           </div>
-          <div className="soft-card p-5 text-center bg-success-muted border border-success/20 card-accent-top">
-            <div className="text-3xl font-bold text-success matrix-text">{withExp}</div>
-            <div className="text-xs text-success/70 font-medium mt-1">כוללות הסבר</div>
+          <div className="liquid-glass p-5 text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-success/8 to-transparent rounded-2xl pointer-events-none" />
+            <div className="relative">
+              <div className="text-3xl font-bold text-success matrix-text">{withExp}</div>
+              <div className="text-xs text-success/70 font-medium mt-1">כוללות הסבר</div>
+            </div>
           </div>
-          <div className="soft-card p-5 text-center bg-warning-muted border border-warning/20 card-accent-top">
-            <div className="text-3xl font-bold text-warning matrix-text">{withoutExp}</div>
-            <div className="text-xs text-warning/70 font-medium mt-1">ללא הסבר</div>
+          <div className="liquid-glass p-5 text-center">
+            <div className="absolute inset-0 bg-gradient-to-br from-warning/8 to-transparent rounded-2xl pointer-events-none" />
+            <div className="relative">
+              <div className="text-3xl font-bold text-warning matrix-text">{withoutExp}</div>
+              <div className="text-xs text-warning/70 font-medium mt-1">ללא הסבר</div>
+            </div>
           </div>
         </div>
       </div>
