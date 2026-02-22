@@ -187,23 +187,23 @@ export default function SessionView() {
     let base = 'w-full text-right p-5 rounded-2xl border transition relative flex items-center group ';
 
     if (isSimulation) {
-      if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30';
+      if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]';
       return base + 'bg-card border-border hover:border-primary/30 hover:shadow-sm';
     }
 
     if (isReviewMode) {
-      if (opt === correctAns) return base + 'bg-success-muted border-success/30 text-success';
-      if (opt === savedAns && savedAns !== correctAns) return base + 'bg-destructive/10 border-destructive/30 text-destructive';
+      if (opt === correctAns) return base + 'bg-success/10 border-success/30 text-success shadow-[0_0_15px_hsl(160_84%_39%/0.1)]';
+      if (opt === savedAns && savedAns !== correctAns) return base + 'bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_15px_hsl(0_72%_51%/0.1)]';
       return base + 'opacity-60 bg-muted border-border';
     }
 
     if (isPracticeRevealed) {
-      if (opt === correctAns) return base + 'bg-success-muted border-success/30 text-success';
-      if (opt === savedAns) return base + 'bg-destructive/10 border-destructive/30 text-destructive';
+      if (opt === correctAns) return base + 'bg-success/10 border-success/30 text-success shadow-[0_0_15px_hsl(160_84%_39%/0.1)]';
+      if (opt === savedAns) return base + 'bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_15px_hsl(0_72%_51%/0.1)]';
       return base + 'opacity-50 border-border';
     }
 
-    if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30';
+    if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]';
     return base + 'bg-card border-border hover:border-primary/30 hover:shadow-sm';
   };
 
@@ -243,7 +243,7 @@ export default function SessionView() {
             </button>
           )}
         </div>
-        <span className="text-muted-foreground text-sm font-medium bg-card px-3 py-1 rounded-lg border border-border">
+        <span className="text-muted-foreground text-sm font-medium bg-card px-3 py-1 rounded-lg border border-border matrix-text">
           שאלה {index + 1} מתוך {quiz.length}
         </span>
         <button onClick={handleExit} className="text-muted-foreground hover:text-destructive text-sm font-medium px-3 py-1 rounded-lg hover:bg-destructive/10 transition">
@@ -252,12 +252,12 @@ export default function SessionView() {
       </div>
 
       {/* Progress Bar */}
-      <div className="w-full bg-border h-2.5 rounded-full mb-8 overflow-hidden">
-        <div className="bg-primary h-full transition-all duration-500 rounded-full" style={{ width: `${((index + 1) / quiz.length) * 100}%` }} />
+      <div className="w-full bg-muted h-2.5 rounded-full mb-8 overflow-hidden">
+        <div className="bg-primary h-full transition-all duration-500 rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]" style={{ width: `${((index + 1) / quiz.length) * 100}%` }} />
       </div>
 
       {/* Question Card */}
-      <div className="soft-card bg-card border border-border overflow-hidden relative">
+      <div className="soft-card bg-card border border-border overflow-hidden relative card-accent-top">
         {/* Meta bar */}
         <div className="bg-muted/50 px-8 py-4 border-b border-border flex flex-wrap gap-4 text-xs text-muted-foreground font-medium justify-between items-center">
           <div className="flex flex-wrap gap-4 items-center">

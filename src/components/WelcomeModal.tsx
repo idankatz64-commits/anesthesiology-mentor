@@ -7,10 +7,10 @@ export default function WelcomeModal() {
   if (!showWelcome) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-foreground/30 backdrop-blur-sm fade-in">
-      <div className="bg-card w-full max-w-lg rounded-3xl shadow-2xl p-8 border border-border text-center relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-primary to-info" />
-        <div className="mb-6 bg-primary/10 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-primary text-3xl shadow-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/40 backdrop-blur-sm fade-in">
+      <div className="glass-card w-full max-w-lg rounded-3xl shadow-2xl p-8 text-center relative overflow-hidden card-accent-top">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-primary/50 to-transparent" />
+        <div className="mb-6 bg-primary/15 w-20 h-20 rounded-full flex items-center justify-center mx-auto text-primary text-3xl shadow-sm border border-primary/20">
           <GraduationCap className="w-10 h-10" />
         </div>
         <h2 className="text-2xl font-bold text-foreground mb-4">ברוכים הבאים לסימולטור הרדמה - איכילוב</h2>
@@ -23,7 +23,7 @@ export default function WelcomeModal() {
         </div>
         <button
           onClick={closeWelcome}
-          className="w-full bg-gradient-to-r from-primary to-info text-primary-foreground font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+          className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all hover-glow"
         >
           התחל לתרגל
         </button>

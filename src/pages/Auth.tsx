@@ -77,24 +77,28 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
-      <div className="w-full max-w-md space-y-8">
+    <div className="min-h-screen bg-background bg-grid-pattern flex items-center justify-center p-4" dir="rtl">
+      {/* Radial glow behind the card */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div className="w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
+      </div>
+
+      <div className="w-full max-w-md space-y-8 relative z-10">
         <div className="text-center space-y-3">
-          <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+          <div className="mx-auto w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center border border-primary/20 glow-border">
             <GraduationCap className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-2xl font-bold text-foreground">סימולטור הרדמה</h1>
           <p className="text-muted-foreground text-sm">איכילוב – הכנה למבחני בורד</p>
         </div>
 
-        <div className="bg-card rounded-2xl border border-border p-6 space-y-6 shadow-lg">
-          {/* Email/Password form FIRST */}
+        <div className="glass-card rounded-2xl p-6 space-y-6 shadow-lg card-accent-top">
           <form onSubmit={handleEmailAuth} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">אימייל</Label>
               <div className="relative">
                 <Mail className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input id="email" type="email" placeholder="you@example.com" dir="ltr" className="pr-10"
+                <Input id="email" type="email" placeholder="you@example.com" dir="ltr" className="pr-10 bg-muted/50 border-border"
                   value={email} onChange={e => setEmail(e.target.value)} required />
               </div>
             </div>
@@ -102,11 +106,11 @@ export default function Auth() {
               <Label htmlFor="password">סיסמה</Label>
               <div className="relative">
                 <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input id="password" type="password" placeholder="••••••••" dir="ltr" className="pr-10"
+                <Input id="password" type="password" placeholder="••••••••" dir="ltr" className="pr-10 bg-muted/50 border-border"
                   value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
               </div>
             </div>
-            <Button type="submit" className="w-full h-11" disabled={loading}>
+            <Button type="submit" className="w-full h-11 hover-glow" disabled={loading}>
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isLogin ? 'התחבר' : 'הרשם'}
             </Button>
           </form>
@@ -116,14 +120,14 @@ export default function Auth() {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="bg-card px-3 text-muted-foreground">או התחבר עם</span>
+              <span className="bg-card/80 px-3 text-muted-foreground">או התחבר עם</span>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <Button
               variant="outline"
-              className="h-11 text-sm gap-2"
+              className="h-11 text-sm gap-2 bg-muted/30 border-border hover:bg-muted/60"
               onClick={handleGoogleSignIn}
               disabled={googleLoading}
             >
@@ -142,7 +146,7 @@ export default function Auth() {
 
             <Button
               variant="outline"
-              className="h-11 text-sm gap-2"
+              className="h-11 text-sm gap-2 bg-muted/30 border-border hover:bg-muted/60"
               onClick={handleAppleSignIn}
               disabled={appleLoading}
             >

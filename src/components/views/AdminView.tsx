@@ -69,7 +69,7 @@ export default function AdminView() {
       )}
 
       {!loading && !error && (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm card-accent-top">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -87,7 +87,7 @@ export default function AdminView() {
                   </tr>
                 ) : rows.map(row => (
                   <tr key={row.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap">{formatDate(row.created_at)}</td>
+                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap matrix-text">{formatDate(row.created_at)}</td>
                     <td className="px-4 py-3 text-xs font-mono text-muted-foreground max-w-[120px] truncate" title={row.user_id}>
                       {row.user_id.slice(0, 8)}…
                     </td>

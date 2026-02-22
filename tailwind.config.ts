@@ -114,39 +114,57 @@ export default {
   			md: 'calc(var(--radius) - 2px)',
   			sm: 'calc(var(--radius) - 4px)'
   		},
-  		keyframes: {
-  			'accordion-down': {
-  				from: {
-  					height: '0'
-  				},
-  				to: {
-  					height: 'var(--radix-accordion-content-height)'
-  				}
-  			},
-  			'accordion-up': {
-  				from: {
-  					height: 'var(--radix-accordion-content-height)'
-  				},
-  				to: {
-  					height: '0'
-  				}
-  			},
-  			'fade-in': {
-  				from: {
-  					opacity: '0',
-  					transform: 'translateY(10px)'
-  				},
-  				to: {
-  					opacity: '1',
-  					transform: 'translateY(0)'
-  				}
-  			}
-  		},
-  		animation: {
-  			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out',
-  			'fade-in': 'fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1)'
-  		}
+		keyframes: {
+			'accordion-down': {
+				from: {
+					height: '0'
+				},
+				to: {
+					height: 'var(--radix-accordion-content-height)'
+				}
+			},
+			'accordion-up': {
+				from: {
+					height: 'var(--radix-accordion-content-height)'
+				},
+				to: {
+					height: '0'
+				}
+			},
+			'fade-in': {
+				from: {
+					opacity: '0',
+					transform: 'translateY(10px)'
+				},
+				to: {
+					opacity: '1',
+					transform: 'translateY(0)'
+				}
+			},
+			'glow-pulse': {
+				'0%, 100%': {
+					boxShadow: '0 0 20px hsl(25 95% 53% / 0.3)'
+				},
+				'50%': {
+					boxShadow: '0 0 30px hsl(25 95% 53% / 0.5)'
+				}
+			},
+			'border-shimmer': {
+				'0%': {
+					backgroundPosition: '0% 50%'
+				},
+				'100%': {
+					backgroundPosition: '200% 50%'
+				}
+			}
+		},
+		animation: {
+			'accordion-down': 'accordion-down 0.2s ease-out',
+			'accordion-up': 'accordion-up 0.2s ease-out',
+			'fade-in': 'fade-in 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+			'glow-pulse': 'glow-pulse 2s ease-in-out infinite',
+			'border-shimmer': 'border-shimmer 3s linear infinite'
+		}
   	}
   },
   plugins: [require("tailwindcss-animate")],

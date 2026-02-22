@@ -64,7 +64,7 @@ export default function NotebookView() {
             const qData = data.find(d => d[KEYS.ID] === id);
             if (!qData) return null;
             return (
-              <div key={id} className="soft-card bg-card border border-border p-6 relative hover:shadow-lg transition group">
+              <div key={id} className="soft-card bg-card border border-border p-6 relative hover:shadow-lg hover-glow transition group card-accent-top">
                 <div className="absolute top-4 left-4 flex items-center gap-2">
                   <button
                     onClick={() => handleSendToNotebookLM(id)}
@@ -80,7 +80,7 @@ export default function NotebookView() {
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="text-xs font-bold text-warning mb-2">#{id} | {qData[KEYS.TOPIC]}</div>
+                <div className="text-xs font-bold text-warning mb-2 matrix-text">#{id} | {qData[KEYS.TOPIC]}</div>
                 <div
                   onClick={() => reviewFromNote(id)}
                   className="text-foreground font-medium mb-3 line-clamp-2 group-hover:text-primary transition cursor-pointer bidi-text"

@@ -27,8 +27,12 @@ export default function TopNav() {
   const displayName = user?.user_metadata?.full_name || user?.email || '';
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-14 bg-card/95 backdrop-blur-md border-b border-border z-50 flex items-center justify-between px-4 md:px-8" dir="rtl">
-      <div className="font-bold text-foreground text-sm">
+    <div className="fixed top-0 left-0 right-0 h-14 bg-card/60 backdrop-blur-xl border-b border-border z-50 flex items-center justify-between px-4 md:px-8" dir="rtl">
+      {/* Gradient accent line at bottom */}
+      <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-l from-transparent via-primary/30 to-transparent" />
+
+      <div className="font-bold text-foreground text-sm flex items-center gap-2">
+        <span className="text-primary">●</span>
         סימולטור הרדמה
       </div>
 
@@ -44,7 +48,7 @@ export default function TopNav() {
             </button>
             <button
               onClick={() => navigate('/auth')}
-              className="text-sm font-medium bg-primary text-primary-foreground px-4 py-1.5 rounded-lg hover:opacity-90 transition"
+              className="text-sm font-medium bg-primary text-primary-foreground px-4 py-1.5 rounded-lg hover:opacity-90 transition shadow-md hover-glow"
             >
               הרשם
             </button>
@@ -55,7 +59,7 @@ export default function TopNav() {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="flex items-center gap-2 text-sm text-foreground hover:bg-muted px-3 py-1.5 rounded-lg transition"
             >
-              <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-primary/15 text-primary flex items-center justify-center border border-primary/20 hover:border-primary/50 transition">
                 <User className="w-4 h-4" />
               </div>
               <span className="max-w-[150px] truncate text-xs font-medium">{displayName}</span>
@@ -65,7 +69,7 @@ export default function TopNav() {
             {dropdownOpen && (
               <>
                 <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                <div className="absolute left-0 top-full mt-1 w-48 bg-card border border-border rounded-xl shadow-lg z-50 py-1" dir="rtl">
+                <div className="absolute left-0 top-full mt-1 w-48 glass-card rounded-xl shadow-lg z-50 py-1" dir="rtl">
                   <div className="px-4 py-2 text-xs text-muted-foreground border-b border-border truncate">
                     {user.email}
                   </div>
