@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck, Moon, Sun, MessageSquareWarning } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck, Moon, Sun, MessageSquareWarning, ShieldAlert } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import FeedbackModal from './FeedbackModal';
+import { supabase } from '@/integrations/supabase/client';
 
 const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'home', label: 'ראשי', icon: <Heart className="w-5 h-5" /> },
@@ -18,6 +19,13 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
 export default function Sidebar() {
   const { currentView, navigate, isDark, toggleTheme, progress, data } = useApp();
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsAdmin(session?.user?.email === 'idankatz64@gmail.com');
+    });
+  }, []);
 
   let totalCorrect = 0;
   let totalAnswered = 0;
@@ -72,6 +80,17 @@ export default function Sidebar() {
           <span>דווח על טעות / פידבק</span>
           <MessageSquareWarning className="w-4 h-4 text-primary" />
         </button>
+        {isAdmin && (
+          <button
+            onClick={() => navigate('admin')}
+            className={`w-full flex items-center justify-between p-3 rounded-xl transition text-xs font-bold ${
+              currentView === 'admin' ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-muted text-muted-foreground hover:bg-muted/80'
+            }`}
+          >
+            <span>ניהול מערכת</span>
+            <ShieldAlert className="w-4 h-4" />
+          </button>
+        )}
         <button
           onClick={toggleTheme}
           className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition text-xs font-bold"
