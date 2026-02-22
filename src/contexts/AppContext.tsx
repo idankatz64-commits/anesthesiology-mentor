@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { fetchQuestions } from '@/lib/csvService';
+import { fetchQuestions, syncQuestionsFromSheet } from '@/lib/csvService';
 import {
   KEYS, LS_KEY, WELCOME_KEY,
   type Question, type UserProgress, type SessionState,
@@ -52,6 +52,11 @@ interface AppContextType {
   
   // Plan
   generateWeeklyPlan: (force?: boolean) => void;
+  
+  // Sync
+  syncStatus: 'idle' | 'syncing' | 'done' | 'error';
+  lastSyncTime: string | null;
+  triggerSync: () => Promise<{ count: number } | null>;
   
   // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
@@ -107,6 +112,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return true; // Default to dark
   });
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'done' | 'error'>('idle');
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
 
   const progressRef = useRef(progress);
   progressRef.current = progress;
@@ -120,12 +127,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
-  // Fetch data on mount
+  // Auto-sync from Google Sheets on mount, then fetch from DB
   useEffect(() => {
-    fetchQuestions()
-      .then(setData)
-      .catch(console.error)
-      .finally(() => setLoading(false));
+    const init = async () => {
+      setSyncStatus('syncing');
+      try {
+        await syncQuestionsFromSheet();
+        setSyncStatus('done');
+        setLastSyncTime(new Date().toISOString());
+      } catch (e) {
+        console.warn('Auto-sync failed, loading from DB anyway:', e);
+        setSyncStatus('error');
+      }
+      try {
+        const questions = await fetchQuestions();
+        setData(questions);
+      } catch (e) {
+        console.error('Failed to fetch questions:', e);
+      }
+      setLoading(false);
+    };
+    init();
+  }, []);
+
+  // Realtime subscription for questions table
+  useEffect(() => {
+    const channel = supabase
+      .channel('questions-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, () => {
+        // Refetch all questions on any change
+        fetchQuestions().then(setData).catch(console.error);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   const saveProgressFn = useCallback(() => {
@@ -481,8 +515,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const triggerSync = useCallback(async () => {
+    setSyncStatus('syncing');
+    try {
+      const result = await syncQuestionsFromSheet();
+      setLastSyncTime(result.synced_at);
+      const questions = await fetchQuestions();
+      setData(questions);
+      setSyncStatus('done');
+      return { count: result.count };
+    } catch (e) {
+      console.error('Manual sync failed:', e);
+      setSyncStatus('error');
+      return null;
+    }
+  }, []);
+
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
+    syncStatus, lastSyncTime, triggerSync,
     navigate, toggleTheme, closeWelcome, saveProgress: saveProgressFn,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
     updateHistory, updateSpacedRepetition, syncAnswerToDb,

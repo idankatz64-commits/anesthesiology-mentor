@@ -1,14 +1,16 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, LogOut, User, ChevronDown, BookOpen } from 'lucide-react';
+import { LogIn, LogOut, User, ChevronDown, BookOpen, RefreshCw } from 'lucide-react';
 import type { User as SupaUser } from '@supabase/supabase-js';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
+import { useApp } from '@/contexts/AppContext';
 
 export default function TopNav() {
   const [user, setUser] = useState<SupaUser | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
+  const { syncStatus } = useApp();
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -41,6 +43,17 @@ export default function TopNav() {
       </div>
 
       <div className="flex items-center gap-3">
+        {syncStatus === 'syncing' && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-2 py-1 rounded-lg bg-muted/50">
+                <RefreshCw className="w-3 h-3 animate-spin text-primary" />
+                <span className="hidden md:inline">מסנכרן...</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>מסנכרן שאלות מ-Google Sheets</TooltipContent>
+          </Tooltip>
+        )}
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

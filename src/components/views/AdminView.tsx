@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/contexts/AppContext';
-import { ShieldAlert, ArrowRight, Loader2 } from 'lucide-react';
+import { ShieldAlert, ArrowRight, Loader2, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
 
 interface FeedbackRow {
   id: string;
@@ -14,10 +14,11 @@ interface FeedbackRow {
 }
 
 export default function AdminView() {
-  const { navigate } = useApp();
+  const { navigate, triggerSync, syncStatus, lastSyncTime, data } = useApp();
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [syncResult, setSyncResult] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -38,6 +39,16 @@ export default function AdminView() {
     })();
   }, []);
 
+  const handleSync = async () => {
+    setSyncResult(null);
+    const result = await triggerSync();
+    if (result) {
+      setSyncResult(`סונכרנו ${result.count} שאלות בהצלחה`);
+    } else {
+      setSyncResult('שגיאה בסנכרון');
+    }
+  };
+
   const formatDate = (d: string) => {
     const date = new Date(d);
     return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' }) +
@@ -52,60 +63,100 @@ export default function AdminView() {
         </button>
         <div className="flex items-center gap-3">
           <ShieldAlert className="w-5 h-5 text-destructive" />
-          <h2 className="text-xl font-bold text-foreground">ניהול מערכת — פידבקים</h2>
+          <h2 className="text-xl font-bold text-foreground">ניהול מערכת</h2>
         </div>
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-8 h-8 text-primary animate-spin" />
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-destructive/10 text-destructive border border-destructive/20 rounded-xl p-6 text-center font-medium">
-          {error}
-        </div>
-      )}
-
-      {!loading && !error && (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm card-accent-top">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-muted/50 border-b border-border">
-                  <th className="text-right px-4 py-3 font-bold text-muted-foreground">תאריך</th>
-                  <th className="text-right px-4 py-3 font-bold text-muted-foreground">משתמש (ID)</th>
-                  <th className="text-right px-4 py-3 font-bold text-muted-foreground">שאלה / הקשר</th>
-                  <th className="text-right px-4 py-3 font-bold text-muted-foreground">טקסט</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.length === 0 ? (
-                  <tr>
-                    <td colSpan={4} className="text-center py-12 text-muted-foreground">אין פידבקים עדיין.</td>
-                  </tr>
-                ) : rows.map(row => (
-                  <tr key={row.id} className="border-b border-border hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap matrix-text">{formatDate(row.created_at)}</td>
-                    <td className="px-4 py-3 text-xs font-mono text-muted-foreground max-w-[120px] truncate" title={row.user_id}>
-                      {row.user_id.slice(0, 8)}…
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {row.question_id && <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Q#{row.question_id}</span>}
-                      {row.page_context && <span className="text-muted-foreground mr-2">{row.page_context}</span>}
-                    </td>
-                    <td className="px-4 py-3 text-foreground max-w-xs">{row.feedback_text}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="px-4 py-3 bg-muted/30 border-t border-border text-xs text-muted-foreground">
-            סה״כ {rows.length} פידבקים
+      {/* Sync Section */}
+      <div className="bg-card border border-border rounded-2xl p-6 mb-6 shadow-sm">
+        <h3 className="font-bold text-foreground mb-4 text-lg">סנכרון שאלות</h3>
+        <div className="flex flex-wrap items-center gap-4">
+          <button
+            onClick={handleSync}
+            disabled={syncStatus === 'syncing'}
+            className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 shadow-md"
+          >
+            {syncStatus === 'syncing' ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <RefreshCw className="w-4 h-4" />
+            )}
+            {syncStatus === 'syncing' ? 'מסנכרן...' : 'סנכרן שאלות'}
+          </button>
+          <div className="text-sm text-muted-foreground">
+            {data.length > 0 && <span>{data.length} שאלות בבסיס הנתונים</span>}
           </div>
         </div>
-      )}
+        {syncResult && (
+          <div className={`mt-3 flex items-center gap-2 text-sm font-medium ${syncResult.includes('שגיאה') ? 'text-destructive' : 'text-green-500'}`}>
+            {syncResult.includes('שגיאה') ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+            {syncResult}
+          </div>
+        )}
+        {lastSyncTime && (
+          <p className="mt-2 text-xs text-muted-foreground">
+            סנכרון אחרון: {formatDate(lastSyncTime)}
+          </p>
+        )}
+      </div>
+
+      {/* Feedback Section */}
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="font-bold text-foreground text-lg">פידבקים</h3>
+        </div>
+
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 text-primary animate-spin" />
+          </div>
+        )}
+
+        {error && (
+          <div className="bg-destructive/10 text-destructive border-t border-destructive/20 p-6 text-center font-medium">
+            {error}
+          </div>
+        )}
+
+        {!loading && !error && (
+          <>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-muted/50 border-b border-border">
+                    <th className="text-right px-4 py-3 font-bold text-muted-foreground">תאריך</th>
+                    <th className="text-right px-4 py-3 font-bold text-muted-foreground">משתמש (ID)</th>
+                    <th className="text-right px-4 py-3 font-bold text-muted-foreground">שאלה / הקשר</th>
+                    <th className="text-right px-4 py-3 font-bold text-muted-foreground">טקסט</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.length === 0 ? (
+                    <tr>
+                      <td colSpan={4} className="text-center py-12 text-muted-foreground">אין פידבקים עדיין.</td>
+                    </tr>
+                  ) : rows.map(row => (
+                    <tr key={row.id} className="border-b border-border hover:bg-muted/30 transition-colors">
+                      <td className="px-4 py-3 text-muted-foreground text-xs whitespace-nowrap matrix-text">{formatDate(row.created_at)}</td>
+                      <td className="px-4 py-3 text-xs font-mono text-muted-foreground max-w-[120px] truncate" title={row.user_id}>
+                        {row.user_id.slice(0, 8)}…
+                      </td>
+                      <td className="px-4 py-3 text-xs">
+                        {row.question_id && <span className="bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">Q#{row.question_id}</span>}
+                        {row.page_context && <span className="text-muted-foreground mr-2">{row.page_context}</span>}
+                      </td>
+                      <td className="px-4 py-3 text-foreground max-w-xs">{row.feedback_text}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="px-4 py-3 bg-muted/30 border-t border-border text-xs text-muted-foreground">
+              סה״כ {rows.length} פידבקים
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

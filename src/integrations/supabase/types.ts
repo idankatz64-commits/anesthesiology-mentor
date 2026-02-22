@@ -41,6 +41,69 @@ export type Database = {
         }
         Relationships: []
       }
+      questions: {
+        Row: {
+          a: string | null
+          b: string | null
+          c: string | null
+          chapter: number | null
+          correct: string
+          d: string | null
+          explanation: string | null
+          id: string
+          kind: string | null
+          media_link: string | null
+          media_type: string | null
+          miller: string | null
+          question: string
+          ref_id: string | null
+          source: string | null
+          synced_at: string
+          topic: string | null
+          year: string | null
+        }
+        Insert: {
+          a?: string | null
+          b?: string | null
+          c?: string | null
+          chapter?: number | null
+          correct: string
+          d?: string | null
+          explanation?: string | null
+          id: string
+          kind?: string | null
+          media_link?: string | null
+          media_type?: string | null
+          miller?: string | null
+          question: string
+          ref_id?: string | null
+          source?: string | null
+          synced_at?: string
+          topic?: string | null
+          year?: string | null
+        }
+        Update: {
+          a?: string | null
+          b?: string | null
+          c?: string | null
+          chapter?: number | null
+          correct?: string
+          d?: string | null
+          explanation?: string | null
+          id?: string
+          kind?: string | null
+          media_link?: string | null
+          media_type?: string | null
+          miller?: string | null
+          question?: string
+          ref_id?: string | null
+          source?: string | null
+          synced_at?: string
+          topic?: string | null
+          year?: string | null
+        }
+        Relationships: []
+      }
       spaced_repetition: {
         Row: {
           confidence: string | null
