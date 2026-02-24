@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          created_at: string | null
+          email: string
+          id: string
+          role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email: string
+          id: string
+          role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email?: string
+          id?: string
+          role?: string | null
+        }
+        Relationships: []
+      }
+      categories: {
+        Row: {
+          created_at: string | null
+          id: string
+          topic_main: string
+          topic_num: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          topic_main: string
+          topic_num?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          topic_main?: string
+          topic_num?: number | null
+        }
+        Relationships: []
+      }
       community_notes: {
         Row: {
           author_display: string

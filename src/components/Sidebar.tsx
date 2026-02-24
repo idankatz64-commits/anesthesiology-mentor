@@ -5,6 +5,7 @@ import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import FeedbackModal from './FeedbackModal';
 import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
 
 const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'home', label: 'ראשי', icon: <Heart className="w-5 h-5" /> },
@@ -23,8 +24,14 @@ export default function Sidebar() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsAdmin(session?.user?.email === 'idankatz64@gmail.com');
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) return;
+      const { data } = await supabase
+        .from('admin_users')
+        .select('id')
+        .eq('id', session.user.id)
+        .maybeSingle();
+      setIsAdmin(!!data);
     });
   }, []);
 
@@ -82,15 +89,13 @@ export default function Sidebar() {
           <MessageSquareWarning className="w-4 h-4 text-primary" />
         </button>
         {isAdmin && (
-          <button
-            onClick={() => navigate('admin')}
-            className={`w-full flex items-center justify-between p-3 rounded-xl transition text-xs font-bold ${
-              currentView === 'admin' ? 'bg-destructive/10 text-destructive border border-destructive/20' : 'bg-muted text-muted-foreground hover:bg-muted/80'
-            }`}
+          <Link
+            to="/admin"
+            className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition text-xs font-bold"
           >
-            <span>ניהול מערכת</span>
+            <span>Admin</span>
             <ShieldAlert className="w-4 h-4" />
-          </button>
+          </Link>
         )}
         <button
           onClick={toggleTheme}
