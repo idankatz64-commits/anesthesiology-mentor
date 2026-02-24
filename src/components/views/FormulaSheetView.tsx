@@ -1,9 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Copy, Check } from 'lucide-react';
+import { Search, Copy, Check, Loader2 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import formulasData from '@/data/formulas-reference.json';
+import { supabase } from '@/integrations/supabase/client';
 
 interface Formula {
   id: string;
@@ -15,8 +15,6 @@ interface Formula {
   unit: string;
   clinicalNote: string;
 }
-
-const formulas: Formula[] = formulasData as Formula[];
 
 const categoryColors: Record<string, string> = {
   'Neuroanesthesia': 'bg-purple-500/15 text-purple-400 border-purple-500/20',
@@ -52,11 +50,45 @@ export default function FormulaSheetView() {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [formulas, setFormulas] = useState<Formula[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFormulas = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('formulas')
+        .select('id, chapter, category, formula_name, equation, variables, unit, clinical_note')
+        .order('category')
+        .order('formula_name');
+
+      if (error) {
+        console.error('Error fetching formulas:', error);
+        setLoading(false);
+        return;
+      }
+
+      setFormulas(
+        (data || []).map((row) => ({
+          id: row.id,
+          chapter: row.chapter,
+          category: row.category,
+          name: row.formula_name,
+          equation: row.equation,
+          variables: row.variables,
+          unit: row.unit,
+          clinicalNote: row.clinical_note,
+        }))
+      );
+      setLoading(false);
+    };
+    fetchFormulas();
+  }, []);
 
   const categories = useMemo(() => {
     const cats = [...new Set(formulas.map(f => f.category))];
     return ['All', ...cats];
-  }, []);
+  }, [formulas]);
 
   const filtered = useMemo(() => {
     let result = formulas;
@@ -72,7 +104,7 @@ export default function FormulaSheetView() {
       );
     }
     return result;
-  }, [search, activeCategory]);
+  }, [search, activeCategory, formulas]);
 
   const grouped = useMemo(() => {
     const map: Record<string, Formula[]> = {};
@@ -89,6 +121,14 @@ export default function FormulaSheetView() {
     toast({ title: 'Copied!', description: formula.equation, duration: 1500 });
     setTimeout(() => setCopiedId(null), 1500);
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
