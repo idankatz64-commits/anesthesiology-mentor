@@ -26,11 +26,7 @@ export default function Sidebar() {
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session?.user) return;
-      const { data } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('id', session.user.id)
-        .maybeSingle();
+      const { data } = await supabase.rpc('is_admin', { _user_id: session.user.id });
       setIsAdmin(!!data);
     });
   }, []);
