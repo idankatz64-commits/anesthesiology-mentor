@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
-import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X } from 'lucide-react';
+import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X, Download } from 'lucide-react';
+import Papa from 'papaparse';
 
 interface QuestionRow {
   id: string;
@@ -48,6 +49,40 @@ export default function QuestionEditorTab() {
   // Delete state
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const allRows: QuestionRow[] = [];
+      let from = 0;
+      const batchSize = 1000;
+      while (true) {
+        const { data, error } = await supabase
+          .from('questions')
+          .select('id, ref_id, question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type, media_link')
+          .range(from, from + batchSize - 1);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        allRows.push(...(data as QuestionRow[]));
+        if (data.length < batchSize) break;
+        from += batchSize;
+      }
+      const csv = Papa.unparse(allRows);
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `questions_export_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`יוצאו ${allRows.length} שאלות בהצלחה`);
+    } catch (err: any) {
+      toast.error('שגיאה בייצוא: ' + err.message);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Fetch topics for filter
   useEffect(() => {
@@ -192,6 +227,10 @@ export default function QuestionEditorTab() {
             ))}
           </SelectContent>
         </Select>
+        <Button variant="outline" onClick={handleExport} disabled={exporting}>
+          {exporting ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Download className="w-4 h-4 ml-1" />}
+          ייצוא CSV
+        </Button>
       </div>
 
       {/* Table */}
