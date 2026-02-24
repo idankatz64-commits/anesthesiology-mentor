@@ -94,6 +94,7 @@ export type Database = {
           explanation: string | null
           id: string
           kind: string | null
+          manually_edited: boolean
           media_link: string | null
           media_type: string | null
           miller: string | null
@@ -114,6 +115,7 @@ export type Database = {
           explanation?: string | null
           id: string
           kind?: string | null
+          manually_edited?: boolean
           media_link?: string | null
           media_type?: string | null
           miller?: string | null
@@ -134,6 +136,7 @@ export type Database = {
           explanation?: string | null
           id?: string
           kind?: string | null
+          manually_edited?: boolean
           media_link?: string | null
           media_type?: string | null
           miller?: string | null

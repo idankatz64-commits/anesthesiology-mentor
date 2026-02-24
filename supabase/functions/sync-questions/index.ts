@@ -137,11 +137,22 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Get manually edited question IDs to skip them
+    const { data: editedRows } = await supabase
+      .from("questions")
+      .select("id")
+      .eq("manually_edited", true);
+    const editedIds = new Set((editedRows || []).map((r: { id: string }) => r.id));
+    console.log(`Skipping ${editedIds.size} manually edited questions`);
+
+    // Filter out manually edited questions
+    const toUpsert = questions.filter((q: any) => !editedIds.has(q.id));
+
     // Upsert in batches of 200
     let upserted = 0;
     const batchSize = 200;
-    for (let i = 0; i < questions.length; i += batchSize) {
-      const batch = questions.slice(i, i + batchSize);
+    for (let i = 0; i < toUpsert.length; i += batchSize) {
+      const batch = toUpsert.slice(i, i + batchSize);
       const { error } = await supabase
         .from("questions")
         .upsert(batch, { onConflict: "id" });
