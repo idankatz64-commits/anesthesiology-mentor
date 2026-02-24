@@ -83,6 +83,42 @@ export type Database = {
         }
         Relationships: []
       }
+      formulas: {
+        Row: {
+          category: string
+          chapter: string
+          clinical_note: string
+          created_at: string
+          equation: string
+          formula_name: string
+          id: string
+          unit: string
+          variables: string
+        }
+        Insert: {
+          category: string
+          chapter: string
+          clinical_note?: string
+          created_at?: string
+          equation: string
+          formula_name: string
+          id: string
+          unit: string
+          variables: string
+        }
+        Update: {
+          category?: string
+          chapter?: string
+          clinical_note?: string
+          created_at?: string
+          equation?: string
+          formula_name?: string
+          id?: string
+          unit?: string
+          variables?: string
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           a: string | null
