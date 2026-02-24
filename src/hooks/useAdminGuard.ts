@@ -16,10 +16,7 @@ export function useAdminGuard() {
       }
 
       const { data, error } = await supabase
-        .from('admin_users')
-        .select('id')
-        .eq('id', session.user.id)
-        .maybeSingle();
+        .rpc('is_admin', { _user_id: session.user.id });
 
       if (error || !data) {
         navigate('/', { replace: true });
