@@ -4,6 +4,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Source+Code+Pro&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -81,9 +83,9 @@
     --sidebar-accent: 260 20% 12%;
     --sidebar-accent-foreground: 25 95% 63%;
     --sidebar-ring: 25 95% 53%;
-    --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
     --font-serif: "Crimson Text", ui-serif, Georgia, serif;
-    --font-mono: "JetBrains Mono", "Space Mono", ui-monospace, monospace;
+    --font-mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
     --font-matrix: "Share Tech Mono", "JetBrains Mono", monospace;
   }
 
@@ -156,6 +158,10 @@
     --font-serif: "Crimson Text", ui-serif, Georgia, serif;
     --font-mono: "JetBrains Mono", "Space Mono", ui-monospace, monospace;
     --font-matrix: "Share Tech Mono", "JetBrains Mono", monospace;
+  }
+  .dark {
+    --font-sans: "DM Sans", ui-sans-serif, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+    --font-mono: "Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, Courier New, monospace;
   }
 }
 
