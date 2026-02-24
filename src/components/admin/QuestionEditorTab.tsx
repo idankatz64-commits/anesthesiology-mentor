@@ -58,10 +58,18 @@ export default function QuestionEditorTab() {
       let from = 0;
       const batchSize = 1000;
       while (true) {
-        const { data, error } = await supabase
+        let query = supabase
           .from('questions')
-          .select('id, ref_id, question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type, media_link')
-          .range(from, from + batchSize - 1);
+          .select('id, ref_id, question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type, media_link');
+
+        if (searchTerm.trim()) {
+          query = query.or(`question.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%,ref_id.ilike.%${searchTerm}%`);
+        }
+        if (topicFilter && topicFilter !== '__all__') {
+          query = query.eq('topic', topicFilter);
+        }
+
+        const { data, error } = await query.range(from, from + batchSize - 1);
         if (error) throw error;
         if (!data || data.length === 0) break;
         allRows.push(...(data as QuestionRow[]));
