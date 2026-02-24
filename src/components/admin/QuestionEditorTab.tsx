@@ -129,6 +129,7 @@ export default function QuestionEditorTab() {
           chapter: editForm.chapter,
           media_type: editForm.media_type,
           media_link: editForm.media_link,
+          manually_edited: true,
         })
         .eq('id', editQuestion.id);
 
