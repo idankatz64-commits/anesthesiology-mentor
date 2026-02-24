@@ -1,17 +1,19 @@
 import { useState } from 'react';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 import { Link } from 'react-router-dom';
-import { Loader2, FileEdit, Users, Upload, ArrowRight, ShieldAlert } from 'lucide-react';
+import { Loader2, FileEdit, Users, Upload, ArrowRight, ShieldAlert, FlaskConical } from 'lucide-react';
 import QuestionEditorTab from '@/components/admin/QuestionEditorTab';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import ImportQuestionsTab from '@/components/admin/ImportQuestionsTab';
+import FormulaManagementTab from '@/components/admin/FormulaManagementTab';
 
-type AdminTab = 'question-editor' | 'user-management' | 'import-questions';
+type AdminTab = 'question-editor' | 'user-management' | 'import-questions' | 'formula-management';
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'question-editor', label: 'Question Editor', icon: <FileEdit className="w-5 h-5" /> },
   { id: 'user-management', label: 'User Management', icon: <Users className="w-5 h-5" /> },
   { id: 'import-questions', label: 'Import Questions', icon: <Upload className="w-5 h-5" /> },
+  { id: 'formula-management', label: 'Formula Management', icon: <FlaskConical className="w-5 h-5" /> },
 ];
 
 export default function AdminDashboard() {
@@ -74,6 +76,7 @@ export default function AdminDashboard() {
           {activeTab === 'question-editor' && <QuestionEditorTab />}
           {activeTab === 'user-management' && <UserManagementTab />}
           {activeTab === 'import-questions' && <ImportQuestionsTab />}
+          {activeTab === 'formula-management' && <FormulaManagementTab />}
         </div>
       </main>
     </div>
