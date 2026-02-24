@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { Loader2, FileEdit, Users, Upload, ArrowRight, ShieldAlert } from 'lucide-react';
 import QuestionEditorTab from '@/components/admin/QuestionEditorTab';
 import UserManagementTab from '@/components/admin/UserManagementTab';
+import ImportQuestionsTab from '@/components/admin/ImportQuestionsTab';
 
 type AdminTab = 'question-editor' | 'user-management' | 'import-questions';
 
@@ -72,12 +73,7 @@ export default function AdminDashboard() {
         <div className="max-w-5xl mx-auto fade-in">
           {activeTab === 'question-editor' && <QuestionEditorTab />}
           {activeTab === 'user-management' && <UserManagementTab />}
-          {activeTab === 'import-questions' && (
-            <div className="glass-card rounded-2xl p-8">
-              <h2 className="text-xl font-bold text-foreground mb-2">Import Questions</h2>
-              <p className="text-muted-foreground">ייבוא שאלות — בקרוב.</p>
-            </div>
-          )}
+          {activeTab === 'import-questions' && <ImportQuestionsTab />}
         </div>
       </main>
     </div>
