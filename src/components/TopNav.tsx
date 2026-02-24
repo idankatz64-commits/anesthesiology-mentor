@@ -35,12 +35,12 @@ export default function TopNav() {
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-l from-transparent via-primary/30 to-transparent" />
 
       <div className="flex flex-col items-center absolute left-1/2 -translate-x-1/2">
-        <span className="font-bold text-foreground flex items-center gap-2 py-0 ml-0 text-xs mr-[20px]">
+        
 
-AnS Simulator<span className="text-primary">
-          </span>
-          Anesthesia Simulator
-        </span>
+
+
+
+
         <span className="text-muted-foreground font-light hidden md:block text-base">Simulator for Stage 1 Anesthesia, Intensive Care and Pain Medicine</span>
       </div>
 
