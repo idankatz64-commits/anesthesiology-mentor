@@ -3,6 +3,7 @@ import { useAdminGuard } from '@/hooks/useAdminGuard';
 import { Link } from 'react-router-dom';
 import { Loader2, FileEdit, Users, Upload, ArrowRight, ShieldAlert } from 'lucide-react';
 import QuestionEditorTab from '@/components/admin/QuestionEditorTab';
+import UserManagementTab from '@/components/admin/UserManagementTab';
 
 type AdminTab = 'question-editor' | 'user-management' | 'import-questions';
 
@@ -70,12 +71,7 @@ export default function AdminDashboard() {
       <main className="flex-1 p-8 overflow-y-auto">
         <div className="max-w-5xl mx-auto fade-in">
           {activeTab === 'question-editor' && <QuestionEditorTab />}
-          {activeTab === 'user-management' && (
-            <div className="glass-card rounded-2xl p-8">
-              <h2 className="text-xl font-bold text-foreground mb-2">User Management</h2>
-              <p className="text-muted-foreground">ניהול משתמשים — בקרוב.</p>
-            </div>
-          )}
+          {activeTab === 'user-management' && <UserManagementTab />}
           {activeTab === 'import-questions' && (
             <div className="glass-card rounded-2xl p-8">
               <h2 className="text-xl font-bold text-foreground mb-2">Import Questions</h2>
