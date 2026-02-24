@@ -35,6 +35,45 @@ export type Database = {
         }
         Relationships: []
       }
+      calculator_formulas: {
+        Row: {
+          category_id: string
+          category_label: string
+          created_at: string
+          expression: string
+          formula_name: string
+          id: string
+          inputs: Json
+          note: string | null
+          sort_order: number
+          unit: string
+        }
+        Insert: {
+          category_id: string
+          category_label: string
+          created_at?: string
+          expression: string
+          formula_name: string
+          id: string
+          inputs?: Json
+          note?: string | null
+          sort_order?: number
+          unit: string
+        }
+        Update: {
+          category_id?: string
+          category_label?: string
+          created_at?: string
+          expression?: string
+          formula_name?: string
+          id?: string
+          inputs?: Json
+          note?: string | null
+          sort_order?: number
+          unit?: string
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string | null
