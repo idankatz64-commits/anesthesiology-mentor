@@ -163,6 +163,7 @@ function BulkCsvImport() {
   const [fileName, setFileName] = useState<string | null>(null);
   const [parsedRows, setParsedRows] = useState<Record<string, string>[]>([]);
   const [headers, setHeaders] = useState<string[]>([]);
+  const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
 
@@ -178,6 +179,24 @@ function BulkCsvImport() {
       complete: (results) => {
         const rows = results.data as Record<string, string>[];
         if (rows.length === 0) { toast.error('קובץ CSV ריק'); return; }
+
+        // Validate required columns exist
+        const cols = Object.keys(rows[0]).map(c => c.trim().toLowerCase());
+        const hasQuestion = cols.some(c => ['question', 'questiontext'].includes(c));
+        const hasCorrect = cols.some(c => ['correct', 'correctanswer'].includes(c));
+        const missing: string[] = [];
+        if (!hasQuestion) missing.push('question / QuestionText');
+        if (!hasCorrect) missing.push('correct / CorrectAnswer');
+
+        if (missing.length > 0) {
+          toast.error(`עמודות חובה חסרות: ${missing.join(', ')}`);
+          setValidationErrors(missing);
+          setHeaders(Object.keys(rows[0]));
+          setParsedRows([]);
+          return;
+        }
+
+        setValidationErrors([]);
         setHeaders(Object.keys(rows[0]));
         setParsedRows(rows);
         toast.success(`נטענו ${rows.length} שורות מהקובץ`);
@@ -277,6 +296,7 @@ function BulkCsvImport() {
     setHeaders([]);
     setFileName(null);
     setResult(null);
+    setValidationErrors([]);
     if (fileRef.current) fileRef.current.value = '';
   };
 
@@ -313,6 +333,20 @@ function BulkCsvImport() {
           <p className="font-semibold mb-1">מיפוי עמודות אוטומטי:</p>
           <p>question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type, media_link</p>
           <p className="mt-1">נתמכים גם: QuestionText, OptionA-D, CorrectAnswer, Topic_MAIN, institution, Miller_Page</p>
+        </div>
+      )}
+
+      {/* Validation errors */}
+      {validationErrors.length > 0 && (
+        <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-destructive">
+            <AlertCircle className="w-4 h-4" />
+            <span>עמודות חובה חסרות בקובץ:</span>
+          </div>
+          <ul className="list-disc list-inside text-xs text-destructive space-y-1 mr-6">
+            {validationErrors.map((e, i) => <li key={i}>{e}</li>)}
+          </ul>
+          <p className="text-xs text-muted-foreground">עמודות שנמצאו: {headers.join(', ')}</p>
         </div>
       )}
 
