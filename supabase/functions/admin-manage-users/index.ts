@@ -39,11 +39,18 @@ Deno.serve(async (req) => {
     if (action === "add") {
       if (!email) throw new Error("Email is required");
 
-      // Find auth user by email using admin API
-      const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-      if (listError) throw new Error("Failed to list users: " + listError.message);
-
-      const targetUser = users.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+      // Find auth user by email using admin API with pagination
+      let targetUser = null;
+      let page = 1;
+      const perPage = 100;
+      while (!targetUser) {
+        const { data: { users: batch }, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+        if (listError) throw new Error("Failed to list users: " + listError.message);
+        if (!batch || batch.length === 0) break;
+        targetUser = batch.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+        if (batch.length < perPage) break;
+        page++;
+      }
       if (!targetUser) {
         throw new Error("משתמש עם אימייל זה לא נמצא במערכת. המשתמש חייב להירשם קודם.");
       }
