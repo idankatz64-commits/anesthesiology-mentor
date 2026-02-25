@@ -160,16 +160,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
-  // Realtime subscription for questions table
+  // Realtime subscription for questions table (debounced to prevent fetch storms)
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
     const channel = supabase
       .channel('questions-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, () => {
-        // Refetch all questions on any change
-        fetchQuestions().then(setData).catch(console.error);
+        // Debounce: wait 3s after last change before refetching
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          fetchQuestions().then(setData).catch(console.error);
+        }, 3000);
       })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const saveProgressFn = useCallback(() => {
