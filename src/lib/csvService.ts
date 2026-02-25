@@ -7,12 +7,12 @@ export async function fetchQuestions(retries = 3): Promise<Question[]> {
     try {
       const allQuestions: Question[] = [];
       let from = 0;
-      const batchSize = 1000;
+      const batchSize = 500;
 
       while (true) {
         const { data, error } = await supabase
           .from('questions')
-          .select('*')
+          .select('id,ref_id,question,a,b,c,d,correct,explanation,topic,year,source,miller,chapter,media_type,media_link,kind')
           .range(from, from + batchSize - 1);
 
         if (error) throw error;
