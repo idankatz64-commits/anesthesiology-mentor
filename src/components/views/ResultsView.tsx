@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { RotateCcw, ChevronDown, ChevronUp, BookOpen, ExternalLink } from 'lucide-react';
@@ -67,8 +67,15 @@ export default function ResultsView() {
       details.push({ q, userAns, correctAns, isCorrect });
     });
 
-    // Update history for exam mode (not simulation - already done on submit)
-    if (mode === 'exam') {
+    const pct = quiz.length > 0 ? Math.round((score / quiz.length) * 100) : 0;
+    return { score, pct, details };
+  }, [quiz, answers]);
+
+  // Update history for exam mode (side effect moved out of useMemo)
+  const historyUpdated = useRef(false);
+  useEffect(() => {
+    if (mode === 'exam' && !historyUpdated.current) {
+      historyUpdated.current = true;
       quiz.forEach((q, i) => {
         const userAns = answers[i];
         if (userAns) {
@@ -76,10 +83,7 @@ export default function ResultsView() {
         }
       });
     }
-
-    const pct = quiz.length > 0 ? Math.round((score / quiz.length) * 100) : 0;
-    return { score, pct, details };
-  }, [quiz, answers, mode]);
+  }, [mode, quiz, answers, updateHistory]);
 
   const handleRestart = () => {
     startSession(quiz, quiz.length, 'practice');

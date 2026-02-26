@@ -538,13 +538,14 @@ export default function SessionView() {
                           setSavingCorrectAnswer(true);
                           const { error } = await supabase
                             .from('questions')
-                            .update({ correct: correctAnswerDraft })
+                            .update({ correct: correctAnswerDraft, manually_edited: true })
                             .eq('id', serialNumber);
                           setSavingCorrectAnswer(false);
                           if (error) {
                             toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
                           } else {
                             qData[KEYS.CORRECT] = correctAnswerDraft;
+                            sessionStorage.removeItem('questions_cache');
                             setEditingCorrectAnswer(false);
                             setShowConfirmSave(false);
                             toast({ title: 'התשובה הנכונה עודכנה ✅' });
@@ -617,13 +618,14 @@ export default function SessionView() {
                         setSavingExplanation(true);
                         const { error } = await supabase
                           .from('questions')
-                          .update({ explanation: explanationDraft })
+                          .update({ explanation: explanationDraft, manually_edited: true })
                           .eq('id', serialNumber);
                         setSavingExplanation(false);
                         if (error) {
                           toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
                         } else {
                           qData[KEYS.EXPLANATION] = explanationDraft;
+                          sessionStorage.removeItem('questions_cache');
                           setEditingExplanation(false);
                           toast({ title: 'ההסבר עודכן ✅' });
                         }
@@ -672,8 +674,10 @@ export default function SessionView() {
                         chapter: chapterVal,
                         miller: String(chapterVal),
                         topic: chapterName,
+                        manually_edited: true,
                       }).eq('id', serialNumber);
                       if (!error) {
+                        sessionStorage.removeItem('questions_cache');
                         (qData as any)[KEYS.CHAPTER] = chapterVal;
                         (qData as any)[KEYS.MILLER] = String(chapterVal);
                         (qData as any)[KEYS.TOPIC] = chapterName;
