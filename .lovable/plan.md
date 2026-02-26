@@ -1,39 +1,48 @@
 
 
-# Fix N/A# Display — Add Unclassified Questions Banner
+# Dashboard Design Improvements
 
 ## Overview
-The treemap already excludes `N/A#` from rendering (line 76 in TopicTreemap.tsx). The remaining work is to add a dedicated "unclassified questions" banner below the treemap that shows stats for these questions, with an admin-only "classify" button.
+Three visual changes to the statistics dashboard: gradient treemap colors, enlarged forgetting risk tile, and removal of the 90-day activity heatmap.
 
 ## Changes
 
-### 1. Modify `TopicTreemap.tsx` — Accept and display unclassified banner
+### 1. Gradient Treemap Colors (S&P 500 Style)
+**File: `src/components/stats/TopicTreemap.tsx`**
 
-Add new props to `TopicTreemap`:
-- `unclassifiedData`: `TopicStat | undefined` — the N/A# entry extracted from topicData
-- `isAdmin`: `boolean` — controls whether the "classify" button appears
+Replace the 4-step `getTreemapColor` function with a smooth gradient interpolation, matching the S&P 500 heatmap style (deep red -> light red -> neutral -> light green -> deep green).
 
-Below the treemap (inside both collapsed and expanded views), render a slim banner:
-- **Style**: `bg-white/5 border border-dashed border-white/10 rounded-lg px-4 py-2.5 h-12 flex items-center justify-between`
-- **Left side text** (RTL): `⚠️ שאלות ללא סיווג פרק: {count} שאלות | כיסוי: {coverage}% | דיוק: {accuracy}%`
-- **Right side** (admin only): Small button "סווג שאלות" that navigates to `/admin`
-- Only shown when unclassifiedData exists and has questions
+- Score 0-40: Deep red (#8B0000) to red (#CC0000)
+- Score 40-55: Red (#CC0000) to dark orange/neutral (#4A4A4A)
+- Score 55-70: Neutral (#4A4A4A) to green (#2E7D32)
+- Score 70-100: Green (#2E7D32) to deep green (#00C853)
 
-### 2. Modify `StatsView.tsx` — Extract N/A# data and pass it down
+Replace the discrete legend with a smooth gradient bar legend.
 
-- Import `useIsAdmin` hook
-- Import `useNavigate` from react-router-dom
-- Compute unclassified stats from `stats.topicData` by finding the entry where `topic` includes `N/A` or equals `#N/A`
-- Pass `unclassifiedData` and `isAdmin` to `TopicTreemap`
+Also apply the same gradient logic to the `ForgettingRiskTile.tsx` treemap (`getRiskColor`).
 
-### Technical Details
+### 2. Enlarge Forgetting Risk Tile + Remove ERI Satellites
+**File: `src/components/stats/ERITile.tsx`**
 
-**Files to modify:**
+Remove the "satellites" section (lines 93-101) — the three small pills showing accuracy, coverage, and streak below the ERI ring. These are redundant with the "main KPIs" gauges on the right column.
+
+**File: `src/components/views/StatsView.tsx`**
+
+The freed space allows the Forgetting Risk tile to naturally expand. No layout change needed since it already fills available space via `flex flex-col gap-4`.
+
+### 3. Remove 90-Day Activity Heatmap
+**File: `src/components/views/StatsView.tsx`**
+
+Remove the "90 day activity" heatmap block (lines 113-117) from the left column. The current display is too sparse and doesn't add value. The left column will contain only the WeakZoneMapTile.
+
+Remove the `HeatmapGrid` and `HeatmapLegend` imports, and `dailyData90` from the destructured stats data (if not used elsewhere).
+
+## Summary of File Changes
+
 | File | Change |
 |------|--------|
-| `src/components/stats/TopicTreemap.tsx` | Add unclassified banner below treemap in both collapsed/expanded views |
-| `src/components/views/StatsView.tsx` | Extract N/A# data, pass isAdmin and unclassified stats to TopicTreemap |
+| `src/components/stats/TopicTreemap.tsx` | Replace `getTreemapColor` with smooth gradient interpolation; update legend to gradient bar |
+| `src/components/stats/ForgettingRiskTile.tsx` | Replace `getRiskColor` with smooth gradient interpolation |
+| `src/components/stats/ERITile.tsx` | Remove satellite pills (accuracy/coverage/streak) below ERI ring |
+| `src/components/views/StatsView.tsx` | Remove 90-day heatmap section from left column |
 
-**No new files or database changes needed.**
-
-The `useIsAdmin` hook already exists at `src/hooks/useIsAdmin.ts` and returns a boolean. The navigate button will use `useNavigate()` from react-router-dom to go to `/admin`.
