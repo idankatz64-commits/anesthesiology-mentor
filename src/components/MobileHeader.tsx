@@ -3,6 +3,8 @@ import { useApp } from '@/contexts/AppContext';
 import { Heart, Moon, Sun, Menu, X, MessageSquareWarning } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import FeedbackModal from './FeedbackModal';
+import { motion, AnimatePresence } from 'framer-motion';
+import { springGentle } from '@/lib/animations';
 
 const mobileNav: { id: ViewId; label: string; emoji: string }[] = [
   { id: 'home', label: 'ראשי', emoji: '🏠' },
@@ -37,32 +39,52 @@ export default function MobileHeader() {
         </div>
       </div>
 
-      {menuOpen && (
-        <div className="fixed inset-0 bg-background/40 z-40 md:hidden backdrop-blur-sm" onClick={() => setMenuOpen(false)}>
-          <div className="absolute right-0 top-0 bottom-0 w-72 glass-card shadow-2xl p-4 space-y-2" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-end mb-4">
-              <button onClick={() => setMenuOpen(false)} className="text-muted-foreground p-2">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {mobileNav.map(item => (
-              <button
-                key={item.id}
-                onClick={() => { navigate(item.id); setMenuOpen(false); }}
-                className="w-full text-right p-4 font-medium border-b border-border text-foreground hover:bg-muted hover:text-primary transition rounded-lg"
-              >
-                {item.emoji} {item.label}
-              </button>
-            ))}
-            <button
-              onClick={() => { setFeedbackOpen(true); setMenuOpen(false); }}
-              className="w-full text-right p-4 font-medium border-b border-border text-primary hover:bg-muted transition rounded-lg flex items-center gap-2 justify-end"
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            className="fixed inset-0 z-40 md:hidden"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-background/40 backdrop-blur-sm"
+              onClick={() => setMenuOpen(false)}
+            />
+            <motion.div
+              className="absolute right-0 top-0 bottom-0 w-72 glass-card shadow-2xl p-4 space-y-2"
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={springGentle}
+              style={{ willChange: 'transform' }}
+              onClick={e => e.stopPropagation()}
             >
-              דווח על טעות / פידבק <MessageSquareWarning className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
+              <div className="flex justify-end mb-4">
+                <button onClick={() => setMenuOpen(false)} className="text-muted-foreground p-2">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              {mobileNav.map(item => (
+                <button
+                  key={item.id}
+                  onClick={() => { navigate(item.id); setMenuOpen(false); }}
+                  className="w-full text-right p-4 font-medium border-b border-border text-foreground hover:bg-muted hover:text-primary transition rounded-lg"
+                >
+                  {item.emoji} {item.label}
+                </button>
+              ))}
+              <button
+                onClick={() => { setFeedbackOpen(true); setMenuOpen(false); }}
+                className="w-full text-right p-4 font-medium border-b border-border text-primary hover:bg-muted transition rounded-lg flex items-center gap-2 justify-end"
+              >
+                דווח על טעות / פידבק <MessageSquareWarning className="w-4 h-4" />
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </>
   );

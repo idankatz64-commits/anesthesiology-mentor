@@ -6,6 +6,7 @@ import { KEYS } from '@/lib/types';
 import FeedbackModal from './FeedbackModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'home', label: 'ראשי', icon: <Heart className="w-5 h-5" /> },
@@ -53,7 +54,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-grow p-4 space-y-1 overflow-y-auto">
+      <nav className="flex-grow p-4 space-y-1 overflow-y-auto relative">
         {navItems.map(item => {
           const isActive = currentView === item.id || 
             (item.id === 'setup-practice' && currentView === 'setup-practice') ||
@@ -62,14 +63,28 @@ export default function Sidebar() {
             <button
               key={item.id}
               onClick={() => navigate(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm transition-all
+              className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm transition-all relative
                 ${isActive
-                  ? 'bg-primary/10 text-primary font-semibold border-r-[3px] border-primary shadow-[inset_0_0_20px_hsl(25_95%_53%/0.05)]'
-                  : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                  ? 'text-primary font-semibold'
+                  : 'text-muted-foreground hover:text-foreground'
                 }`}
             >
-              {item.icon}
-              {item.label}
+              {isActive && (
+                <motion.div
+                  layoutId="sidebar-active"
+                  className="absolute inset-0 bg-primary/10 border-r-[3px] border-primary rounded-xl shadow-[inset_0_0_20px_hsl(25_95%_53%/0.05)]"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  style={{ willChange: 'transform' }}
+                />
+              )}
+              <motion.span
+                className="relative z-10 flex items-center gap-3"
+                whileHover={{ x: -4 }}
+                transition={{ duration: 0.15 }}
+              >
+                {item.icon}
+                {item.label}
+              </motion.span>
             </button>
           );
         })}
@@ -107,7 +122,12 @@ export default function Sidebar() {
             <span className="text-xl font-bold text-primary matrix-text">{pct}%</span>
           </div>
           <div className="w-full bg-border h-1.5 rounded-full overflow-hidden">
-            <div className="bg-primary h-full rounded-full transition-all duration-500 shadow-[0_0_8px_hsl(25_95%_53%/0.4)]" style={{ width: `${pct}%` }} />
+            <motion.div
+              className="bg-primary h-full rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]"
+              initial={{ width: 0 }}
+              animate={{ width: `${pct}%` }}
+              transition={{ duration: 0.8, ease: 'easeOut' }}
+            />
           </div>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
+import { motion } from 'framer-motion';
 
 const bottomNav: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'home', label: 'ראשי', icon: <Heart className="w-5 h-5" /> },
@@ -23,16 +24,21 @@ export default function MobileBottomNav() {
             <button
               key={item.id}
               onClick={() => navigate(item.id)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all min-w-0 flex-1
-                ${isActive
-                  ? 'text-primary'
-                  : 'text-muted-foreground'
-                }`}
+              className={`flex flex-col items-center gap-0.5 px-2 py-1.5 rounded-xl transition-all min-w-0 flex-1 relative
+                ${isActive ? 'text-primary' : 'text-muted-foreground'}`}
             >
-              <div className={`p-1 rounded-lg transition-all ${isActive ? 'bg-primary/15 shadow-[0_0_8px_hsl(var(--primary)/0.3)]' : ''}`}>
+              {isActive && (
+                <motion.div
+                  layoutId="tab-indicator"
+                  className="absolute inset-0 bg-primary/10 rounded-xl"
+                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  style={{ willChange: 'transform' }}
+                />
+              )}
+              <div className={`p-1 rounded-lg transition-all relative z-10 ${isActive ? 'shadow-[0_0_8px_hsl(var(--primary)/0.3)]' : ''}`}>
                 {item.icon}
               </div>
-              <span className="text-[10px] font-medium truncate w-full text-center">{item.label}</span>
+              <span className="text-[10px] font-medium truncate w-full text-center relative z-10">{item.label}</span>
             </button>
           );
         })}

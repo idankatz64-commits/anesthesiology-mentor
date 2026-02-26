@@ -68,6 +68,13 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '' 
               layoutId={uniqueId}
               transition={spring}
               className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10"
+              drag="y"
+              dragConstraints={{ top: 0 }}
+              dragElastic={0.2}
+              onDragEnd={(_, info) => {
+                if (info.offset.y > 100) setOpen(false);
+              }}
+              style={{ willChange: 'transform' }}
             >
               <button
                 onClick={(e) => { e.stopPropagation(); setOpen(false); }}

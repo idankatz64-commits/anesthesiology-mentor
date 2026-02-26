@@ -1,4 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { springGentle } from '@/lib/animations';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS, type ConfidenceLevel } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
@@ -230,7 +232,7 @@ export default function SessionView() {
   };
 
   return (
-    <div className="fade-in max-w-3xl mx-auto pb-24" ref={mainRef}>
+    <div className="max-w-3xl mx-auto pb-24" ref={mainRef} style={{ minHeight: '60vh' }}>
       {/* Top Bar */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
@@ -275,7 +277,12 @@ export default function SessionView() {
 
       {/* Progress Bar */}
       <div className="w-full bg-muted h-2.5 rounded-full mb-8 overflow-hidden">
-        <div className="bg-primary h-full transition-all duration-500 rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]" style={{ width: `${((index + 1) / quiz.length) * 100}%` }} />
+        <motion.div
+          className="bg-primary h-full rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]"
+          layout
+          style={{ width: `${((index + 1) / quiz.length) * 100}%` }}
+          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        />
       </div>
 
       {/* Question Card */}
