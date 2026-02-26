@@ -4,6 +4,10 @@ import { KEYS } from '@/lib/types';
 import { RotateCcw, ChevronDown, ChevronUp, BookOpen, ExternalLink } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
+function isHtmlContent(text: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(text);
+}
+
 function ExplanationRenderer({ text }: { text: string }) {
   let processed = text.replace(
     /<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
@@ -29,6 +33,19 @@ function ExplanationRenderer({ text }: { text: string }) {
       {processed}
     </ReactMarkdown>
   );
+}
+
+function SmartExplanation({ text }: { text: string }) {
+  if (isHtmlContent(text)) {
+    return (
+      <div
+        className="text-sm text-foreground bidi-text prose prose-sm max-w-none"
+        style={{ lineHeight: '1.8' }}
+        dangerouslySetInnerHTML={{ __html: text }}
+      />
+    );
+  }
+  return <ExplanationRenderer text={text} />;
 }
 
 export default function ResultsView() {
@@ -181,7 +198,7 @@ export default function ResultsView() {
                     <div className="bg-muted/50 p-6 rounded-xl border border-border">
                       <strong className="text-foreground text-xs block mb-3">💡 הסבר:</strong>
                       <div className="text-sm text-foreground bidi-text markdown-content" style={{ lineHeight: '1.8' }}>
-                        <ExplanationRenderer text={d.q[KEYS.EXPLANATION]} />
+                        <SmartExplanation text={d.q[KEYS.EXPLANATION]} />
                       </div>
                     </div>
                   )}

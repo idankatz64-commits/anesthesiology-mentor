@@ -9,11 +9,35 @@ import {
   StickyNote, Tag, Plus, ExternalLink, Copy, Send, Calculator, Pencil, Check,
 } from 'lucide-react';
 import FormulaCalculatorPanel from '@/components/FormulaCalculatorPanel';
+import RichTextEditor from '@/components/RichTextEditor';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { GlobalQuestionStats, CommunityNotes } from './SessionCommunity';
 import { getChapterDisplay, resolveChapterName } from '@/data/millerChapters';
+
+/** Detect if content contains HTML tags */
+function isHtmlContent(text: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(text);
+}
+
+/** Smart renderer: HTML content via dangerouslySetInnerHTML, plain text via ExplanationRenderer */
+function SmartContent({ text }: { text: string }) {
+  if (isHtmlContent(text)) {
+    return (
+      <div
+        className="markdown-content bidi-text text-base prose prose-sm max-w-none text-foreground"
+        style={{ lineHeight: '1.8' }}
+        dangerouslySetInnerHTML={{ __html: text }}
+      />
+    );
+  }
+  return (
+    <div className="markdown-content bidi-text text-base" style={{ lineHeight: '1.8' }}>
+      <ExplanationRenderer text={text} />
+    </div>
+  );
+}
 
 /** Parse URLs and <a> tags inside explanation text into clickable links */
 function ExplanationRenderer({ text }: { text: string }) {
@@ -443,13 +467,15 @@ export default function SessionView() {
                   <StickyNote className="w-3 h-3" />
                   {noteText ? 'ערוך הערה אישית (קיים)' : 'הוסף הערה אישית'}
                 </button>
-                {showNote && (
-                  <textarea
-                    value={noteText}
-                    onChange={e => saveNote(serialNumber, e.target.value)}
-                    className="w-full mt-2 p-4 bg-muted border border-border rounded-xl text-sm outline-none focus:border-primary resize-y min-h-[80px] text-foreground"
-                    placeholder="הקלד הערה..."
-                  />
+              {showNote && (
+                  <div className="mt-2">
+                    <RichTextEditor
+                      content={noteText}
+                      onChange={(html) => saveNote(serialNumber, html)}
+                      placeholder="הקלד הערה..."
+                      minHeight="80px"
+                    />
+                  </div>
                 )}
               </div>
             </div>
@@ -573,11 +599,10 @@ export default function SessionView() {
               </strong>
               {editingExplanation ? (
                 <div className="space-y-3">
-                  <textarea
-                    value={explanationDraft}
-                    onChange={e => setExplanationDraft(e.target.value)}
-                    className="w-full p-4 bg-muted border border-border rounded-xl text-sm outline-none focus:border-primary resize-y min-h-[120px] text-foreground font-normal"
-                    dir="auto"
+                  <RichTextEditor
+                    content={explanationDraft}
+                    onChange={setExplanationDraft}
+                    minHeight="120px"
                   />
                   <div className="flex gap-2 justify-end">
                     <button
@@ -610,9 +635,7 @@ export default function SessionView() {
                   </div>
                 </div>
               ) : (
-                <div className="markdown-content bidi-text text-base" style={{ lineHeight: '1.8' }}>
-                  <ExplanationRenderer text={qData[KEYS.EXPLANATION] || 'אין הסבר'} />
-                </div>
+                <SmartContent text={qData[KEYS.EXPLANATION] || 'אין הסבר'} />
               )}
             </div>
 
