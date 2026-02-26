@@ -115,19 +115,22 @@ export default function ForgettingRiskTile({ risks }: Props) {
           <span className="text-sm text-muted-foreground font-semibold flex items-center gap-1.5">
             <AlertTriangle className="w-4 h-4" /> סיכון שכחה
           </span>
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="mt-3 flex flex-col gap-2 w-full">
             {risks.length === 0 ? (
               <p className="text-xs text-muted-foreground/50">אין נושאים בסיכון כרגע</p>
             ) : (
-              risks.slice(0, 3).map(r => (
-                <span key={r.topic} className="inline-flex items-center gap-1.5 text-[10px] px-2.5 py-1 rounded-full border" style={{
-                  borderColor: getRiskColor(r.risk) + '40',
-                  backgroundColor: getRiskColor(r.risk) + '15',
-                  color: getRiskColor(r.risk),
+              risks.slice(0, 4).map(r => (
+                <div key={r.topic} className="flex items-center justify-between w-full rounded-lg px-3 py-2" style={{
+                  backgroundColor: getRiskColor(r.risk) + '12',
+                  borderRight: `3px solid ${getRiskColor(r.risk)}`,
                 }}>
-                  {r.topic.length > 15 ? r.topic.slice(0, 15) + '…' : r.topic}
-                  <span className="font-black" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{r.risk.toFixed(1)}</span>
-                </span>
+                  <span className="text-xs font-medium text-foreground truncate flex-1 text-right">
+                    {r.topic}
+                  </span>
+                  <span className="text-xs font-black mr-3 shrink-0" style={{ color: getRiskColor(r.risk), fontFamily: "'Share Tech Mono', monospace" }}>
+                    {r.risk.toFixed(1)}
+                  </span>
+                </div>
               ))
             )}
           </div>
