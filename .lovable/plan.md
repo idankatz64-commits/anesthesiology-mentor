@@ -1,111 +1,146 @@
 
-# Statistics Dashboard — Final Layout v4
+# iOS-style Animations — Full App Implementation
 
 ## Overview
-Complete restructuring of the stats page into a 4-row layout: question bank status bar, 3-column main dashboard panel (gauges + ERI + stats), full-width accuracy chart, and topic heatmap + table. Removes the separate KPI row and ComparativeStats tile from the main flow.
+Add a comprehensive framer-motion animation system across the entire app: page transitions, card stagger effects, tap feedback, question session animations, iOS-style modal sheets, sidebar/nav animations, and micro-interactions. framer-motion is already installed.
 
 ---
 
-## ROW 1 — Question Bank Status Bar
-**File: `src/components/views/StatsView.tsx`**
+## Phase 1 — Animation Foundation
 
-Add a compact 3-tile status bar at the top (copied from HomeView pattern):
-- Tile 1: "ללא הסבר" count (orange)
-- Tile 2: "כוללות הסבר" count (green)
-- Tile 3: "סה״כ שאלות" count (primary)
-- Uses `data` from `useApp()` and counts `KEYS.EXPLANATION`
-- Style: `grid-cols-3`, compact `p-3`, monospace numbers, dark card bg
+### New file: `src/lib/animations.ts`
+- Export all spring configs (`spring`, `springGentle`, `springBouncy`)
+- Export animation variants: `fadeUp`, `scaleIn`, `slideFromRight`, `staggerContainer`
+- Export a `useReducedMotion` hook that checks `prefers-reduced-motion` and returns zero-duration overrides
 
----
-
-## ROW 2 — 3-Column Main Dashboard Panel
-**File: `src/components/views/StatsView.tsx`**
-
-Layout: `grid grid-cols-1 md:grid-cols-3 gap-4`
-
-### LEFT Column (1/3)
-**Top section: Weak Zone Gauges (stacked vertically)**
-- Reuse existing `GaugeDial` from `WeakZoneMapTile.tsx` but render 3 gauges stacked vertically instead of side-by-side
-- Order: Green (Mastered) on top, Yellow (Not Learned), Red (Dead Zone) at bottom
-- Each gauge shows count + "X% of bank" below
-
-**Bottom section: GitHub Heatmap**
-- Extract `HeatmapGrid` + `HeatmapLegend` from `StreakTile.tsx` and render directly
-- 90-day data, compact cell size (10px)
-
-Both sections wrapped in a single card container.
-
-### CENTER Column (1/3) — ERI Hero
-**File: `src/components/stats/ERITile.tsx` — modify**
-- Increase ring to 240px
-- Keep the existing click-to-expand radar chart behavior
-- Satellite pills remain below: Accuracy | Coverage | Streak
-
-### RIGHT Column (1/3)
-**New component or inline in StatsView**
-
-**Top section: 3 Gauge Dials for KPI stats**
-- Accuracy gauge (blue `#60A5FA`): shows `eri.accuracy`%
-- Coverage gauge (orange `#F97316`): shows `eri.coverage`%  
-- Streak gauge (fire `#FB923C`): shows `streak` days
-- Same `GaugeDial` SVG component, stacked vertically
-- Each gauge: max = 100 for accuracy/coverage, max = 30 for streak
-
-**Bottom section: Forgetting Risk**
-- Compact: title + top 3 risk topic pills with scores
-- Pulsing border if risk > 2.0
-- Click expands to full Treemap view (existing behavior)
+### `src/App.tsx`
+- Wrap `<Routes>` in `<AnimatePresence mode="wait">`
+- No changes to route definitions
 
 ---
 
-## ROW 3 — Accuracy Trend Chart (full width)
-**File: `src/components/stats/LearningVelocityTile.tsx` — modify**
-- Title: "מגמת דיוק לאורך זמן"
-- Increase min height to 320px
-- Already filters zero-activity days and has 7-day/14-day moving averages
-- Increase all font sizes to min 13px (axis ticks, legend)
-- Tooltip already shows: date, daily accuracy, 7d avg, 14d avg, question count
-- Reference line at 70% already exists
+## Phase 2 — Page Transitions
+
+### `src/pages/Index.tsx`
+- Wrap the view-switching section in `<AnimatePresence mode="wait">`
+- Each view gets a `<motion.div key={currentView}>` wrapper with `slideFromRight` variants
+- Outgoing view slides left + fades; incoming slides from right
+
+### `src/pages/Auth.tsx`, `src/pages/AdminDashboard.tsx`
+- Wrap root element in `motion.div` with `fadeUp` variants
 
 ---
 
-## ROW 4 — Topic Heatmap + Table (full width)
-### Treemap
-**File: `src/components/stats/TopicTreemap.tsx` — modify**
-- Filter out topics named "N/A#" from treemap data (add `.filter(t => t.topic !== 'N/A#')`)
-- Keep all other topics including in table data
-- Everything else stays the same
+## Phase 3 — Home Page Cards
 
-### Table
-**File: `src/components/stats/TopicPerformanceTable.tsx` — modify**
-- Add "במאגר" (totalInDb) column to the existing columns
-- Already has: topic, Smart Score, accuracy, correct, wrong, answered
-- Already shows 5 rows default with expand button
-- Already sortable and clickable for practice
+### `src/components/views/HomeView.tsx`
+- Wrap the cards grid in `motion.div` with `staggerContainer` variants
+- Each card becomes `motion.div` with `fadeUp` + stagger (70ms apart)
+- Add `whileHover={{ scale: 1.02 }}` and `whileTap={{ scale: 0.97 }}` to every clickable card
+- Add `style={{ willChange: 'transform' }}` for GPU acceleration
 
 ---
 
-## ROW 5+ — Remaining tiles
-- ComparativeStats (Group Position) stays as a full-width tile below the table
-- Study Heatmap (StreakTile) is removed as standalone tile since the heatmap is now in the left column of ROW 2
-- Import/Export stays at the bottom
+## Phase 4 — Question Session Animations
+
+### `src/components/views/SessionView.tsx`
+- Wrap the question card area in `<AnimatePresence mode="wait">`
+- Each question gets `<motion.div key={index}>` with `slideFromRight` variant
+- Answer selection feedback:
+  - Correct: animate `scale(1.03)` + green border flash via a small state-driven `motion.div`
+  - Wrong: shake animation using `motion.div animate={{ x: [0, -8, 8, -6, 6, 0] }}` with 400ms duration
+  - Unselected: `animate={{ opacity: 0.4 }}` transition
+- Explanation panel: `motion.div` with `initial={{ opacity: 0, y: 60 }}` and `springGentle`
+- Progress bar: replace inner div with `motion.div` using `layout` prop for smooth width transitions
+
+---
+
+## Phase 5 — Modals & Overlays
+
+### `src/components/WelcomeModal.tsx`
+- Backdrop: `motion.div` fade in/out
+- Panel: slide up from `y: "100%"` with `springGentle`, exit back down
+- Add drag-to-dismiss: `drag="y"`, `dragConstraints={{ top: 0 }}`, close on `offset.y > 100`
+
+### `src/components/FeedbackModal.tsx`
+- Same iOS sheet pattern: backdrop fade + panel slide-up + drag-to-dismiss
+
+### `src/components/stats/AnimatedStatsTile.tsx`
+- Already uses `layoutId` and framer-motion — verify `willChange: 'transform'` is set
+- Add drag-to-dismiss on the expanded overlay
+
+---
+
+## Phase 6 — Sidebar & Navigation
+
+### `src/components/Sidebar.tsx`
+- Nav items: on hover, animate `x: -4` (RTL, so shifts right visually) + bg fade
+- Active indicator: add a `motion.div` with `layoutId="sidebar-active"` that slides between nav items as a background highlight
+
+### `src/components/MobileBottomNav.tsx`
+- Add `motion.div` with `layoutId="tab-indicator"` for the active tab background — slides horizontally between tabs
+
+### Mobile sidebar (if applicable via MobileHeader):
+- Animate open/close with `initial={{ x: "100%" }}` (RTL) / `animate={{ x: 0 }}`
+
+---
+
+## Phase 7 — Micro-interactions
+
+### `src/components/ui/button.tsx`
+- Wrap the rendered element in `motion.button` / `motion.div` (when not `asChild`)
+- Add `whileTap={{ scale: 0.96 }}` and `whileHover={{ scale: 1.01 }}`
+- Skip animation when `asChild` is true (can't wrap Slot in motion)
+
+### Count-up animation for KPI numbers
+- Create a small `AnimatedNumber` component using `useMotionValue`, `useSpring`, `useTransform`
+- Duration ~1200ms with `springGentle`
+- Use in `StatsView.tsx` for the status bar numbers and in `ERITile.tsx` for the ERI value
+
+### Loading states
+- Create `AnimatedSkeleton` component: `motion.div` with `animate={{ opacity: [0.4, 0.8, 0.4] }}` and `repeat: Infinity`
+- Replace the main loading spinner in `Index.tsx` with a pulsing skeleton
+
+---
+
+## Phase 8 — Performance & Polish
+
+### GPU acceleration
+- All animated cards/modals get `style={{ willChange: 'transform' }}`
+
+### Reduced motion
+- `useReducedMotion` hook in `animations.ts` checks `prefers-reduced-motion`
+- When true: all spring durations become 0, disabling physics
+- Apply at the top level in `Index.tsx` and pass down or use per-component
+
+### No layout shift
+- Add explicit `min-height` to animated containers (question card area, home cards grid, stats tiles)
 
 ---
 
 ## Files Summary
 
-| File | Changes |
-|------|---------|
-| `src/components/views/StatsView.tsx` | Complete layout restructure: status bar, 3-col panel, chart, treemap+table, group position, export |
-| `src/components/stats/ERITile.tsx` | Increase ring size to 240px |
-| `src/components/stats/LearningVelocityTile.tsx` | Font size increase to 13px, height to 320px |
-| `src/components/stats/TopicTreemap.tsx` | Filter out "N/A#" topics from treemap |
-| `src/components/stats/TopicPerformanceTable.tsx` | Add "במאגר" column |
-| `src/components/stats/WeakZoneMapTile.tsx` | Extract GaugeDial as named export for reuse; modify collapsed layout to vertical stack |
+| File | Action |
+|------|--------|
+| `src/lib/animations.ts` | **New** — central animation config + hooks |
+| `src/App.tsx` | Add AnimatePresence around Routes |
+| `src/pages/Index.tsx` | AnimatePresence for view switching, loading skeleton |
+| `src/pages/Auth.tsx` | Page entrance animation |
+| `src/pages/AdminDashboard.tsx` | Page entrance animation |
+| `src/components/views/HomeView.tsx` | Stagger cards, tap/hover feedback |
+| `src/components/views/SessionView.tsx` | Question slide, answer feedback, progress bar layout animation |
+| `src/components/WelcomeModal.tsx` | iOS sheet slide-up + drag dismiss |
+| `src/components/FeedbackModal.tsx` | iOS sheet slide-up + drag dismiss |
+| `src/components/stats/AnimatedStatsTile.tsx` | Add drag dismiss + willChange |
+| `src/components/Sidebar.tsx` | Active indicator layoutId, hover animations |
+| `src/components/MobileBottomNav.tsx` | Tab indicator layoutId |
+| `src/components/ui/button.tsx` | whileTap/whileHover micro-interaction |
+| `src/components/views/StatsView.tsx` | AnimatedNumber for KPI values |
+| `src/components/stats/ERITile.tsx` | AnimatedNumber for ERI ring |
 
 ## Technical Notes
-- `GaugeDial` component will be extracted from `WeakZoneMapTile.tsx` and exported so it can be reused in the right column for Accuracy/Coverage/Streak gauges
-- The StreakTile's `HeatmapGrid` and `HeatmapLegend` will be extracted as named exports for reuse in the left column
-- No new dependencies needed
-- No Supabase query changes
-- Dark/light mode maintained via existing Tailwind `dark:` variants
+- framer-motion is already installed (v12.34.3)
+- `layoutId` values will be namespaced: `sidebar-active`, `tab-indicator`, `tile-{id}`, `question-card`
+- All `AnimatePresence` children will have explicit `key` props
+- The `Button` component animation only applies when `asChild` is false (Slot doesn't support motion props)
+- RTL layout means "slide from right" is visually "slide from left" — animation directions adjusted accordingly
