@@ -1,122 +1,153 @@
 
 
-# Statistics Dashboard — Visual & Data Improvements
+# Statistics Dashboard — Complete Redesign v3
 
 ## Overview
-Five targeted improvements to the statistics dashboard: enhanced Learning Velocity chart with moving averages, GitHub-style streak heatmap (90 days), visual Weak Zone matrix, gap metrics in the Comparative Stats tile, and a bento grid layout with varied tile sizes.
+A 7-phase overhaul transforming the stats dashboard into a TradingView/Bloomberg-inspired terminal with an ERI hero centerpiece, S&P-style treemap heatmaps, gauge dials, and refined charts. All existing data queries remain unchanged.
 
-## 1. Learning Velocity Chart — Complete Overhaul
-**File: `src/components/stats/LearningVelocityTile.tsx`**
+---
 
-- Filter out zero-activity days from chart data (don't plot points where `count === 0`)
-- Compute 7-day and 14-day moving averages from the daily data in the component
-- Add three `<Line>` elements: daily accuracy (thin orange dots), 7-day MA (smooth solid orange), 14-day MA (dashed blue)
-- Add a `<ReferenceLine y={70}` dashed gray with label "target exam"
-- Add `<Legend>` with Hebrew labels: "daily accuracy | 7-day avg | 14-day avg"
-- Update title to: "trend accuracy over time — moving averages"
-- Set chart container min height to 280px
-- In expanded view: same chart but taller (400px) with `trendData30` and full legend
+## Phase 1 — ERI Hero + Layout Restructure
 
-**File: `src/components/stats/useStatsData.ts`**
-- No changes needed — moving averages computed locally in the tile component from existing daily data
+### 1.1 ERI Centerpiece (`ERITile.tsx` -- full rewrite)
+- Remove the current small KPI card format
+- Create a large hero section at the top of the dashboard (not inside `AnimatedStatsTile`)
+- 200px SVG ring centered, showing `value%` inside + Hebrew label ("ready / good / partially ready")
+- Three satellite stat pills arranged in a row below the ring: Accuracy | Coverage | Streak
+- Each pill: monospace number, small label, color-coded
+- On click: still expands to the radar chart detail view via `AnimatedStatsTile`
 
-## 2. Study Streak — GitHub-style Heatmap (90 days)
-**File: `src/components/stats/StreakTile.tsx`**
+### 1.2 Layout (`StatsView.tsx` -- restructure)
+- Background: `bg-[#0D0F14]` applied to the container
+- Borders: `border-white/[0.06]`
+- Remove Row 1 (4 KPI cards) -- ERI becomes hero, Accuracy/Coverage/Streak become satellite pills
+- New layout:
+  - **Hero**: ERI ring with satellites (full width)
+  - **Row 1**: Learning Velocity (2/3) + Weak Zones gauges (1/3)
+  - **Row 2**: Topic Treemap Heatmap (full width)
+  - **Row 3**: Compact topic table (2/3) + Forgetting Risk (1/3)
+  - **Row 4**: Group Position table (full width)
+  - **Row 5**: Study Heatmap (full width)
+  - **Row 6**: Import/Export
 
-- Replace current calendar grid with a GitHub contribution heatmap
-- Extend data requirement to 90 days (will need `dailyData90`)
-- Grid: 13 columns (weeks) x 7 rows (days), small squares ~12px
-- Color scale based on question count:
-  - 0: `bg-gray-100 dark:bg-gray-800`
-  - 1-5: light orange (`bg-orange-200 dark:bg-orange-900/50`)
-  - 6-15: medium orange (`bg-orange-400 dark:bg-orange-600`)
-  - 16+: deep orange (`bg-orange-600 dark:bg-orange-500`)
-- Tooltip on hover showing date, question count, and accuracy
-- Below grid: legend strip "less to more" with color squares
-- Collapsed view: compact 90-day heatmap
-- Expanded view: larger squares with more detail
+---
 
-**File: `src/components/stats/useStatsData.ts`**
-- Extend the daily data fetch from 30 days to 90 days
-- Add `dailyData90` to the return value
-- Keep `dailyData30` and `dailyData14` as slices of the 90-day data
+## Phase 2 — Topic Performance Treemap
 
-**File: `src/components/views/StatsView.tsx`**
-- Pass `dailyData90` to `StreakTile`
+### 2.1 New Treemap Component (`TopicTreemap.tsx` -- new file)
+- Import `Treemap` from `recharts`
+- Data: `topicData` array mapped to `{ name: topic, size: totalInDb, smartScore, accuracy, coverage, totalAnswered }`
+- Custom content renderer for each rectangle:
+  - Background color based on Smart Score: <50% deep red `#8B0000`, 50-65% orange `#B8520A`, 65-75% yellow `#A89000`, >75% green `#1A6B3C`
+  - Show topic name + Smart Score % inside (hide if rect area is small)
+- Custom tooltip: topic | Smart Score | accuracy | coverage | attempts
+- Wrapped in `AnimatedStatsTile` for expand behavior
+- Click on a rectangle starts practice for that topic
 
-## 3. Weak Zone Map — Visual Matrix
-**File: `src/components/stats/WeakZoneMapTile.tsx`**
+### 2.2 Compact Table Below (`TopicPerformanceTable.tsx` -- modify)
+- Default sort: lowest Smart Score first (ascending)
+- Show 5 rows by default
+- Columns: topic | Smart Score (color badge) | accuracy | coverage | attempts
+- Remove inline expansion (donut/bar charts) -- simplify to just the table
+- "Expand to full table (N topics)" button with animation
+- Keep search functionality
 
-**Collapsed view** — 3-column visual layout:
-- Dead Zone (red): count badge + top 3 topic names as pill tags (group questions by topic, show top 3 topics)
-- Studied Not Learned (yellow): count badge + horizontal mini bar showing topic distribution (proportional segments per topic)
-- Mastered (green): count badge + small progress ring showing % of total question bank
+---
 
-**Expanded view** — questions grouped by topic:
-- Each zone section contains collapsible topic rows (using simple state toggle with framer-motion)
-- Click topic header to reveal its questions
-- "Start practice on this zone" button for red and yellow zones only
-- Uses `@radix-ui/react-collapsible` (already installed) for topic accordion
+## Phase 3 — Group Position Table
 
-**Data additions**: Group weak zone question IDs by topic using the `data` array from AppContext
+### `ComparativeStats.tsx` -- modify
+- Add 5-row default view showing topics with largest deviation from group average
+- Add columns: topic | your accuracy | group avg | gap (+/-%) | questions to close gap
+- Gap badge at top: "Gap from overall average: -X% | ~N more correct answers needed"
+- "Expand to full table" button
+- Remove heatmap -- clean table only
+- Questions-to-close-gap per row: `ceil(abs(diff) / 100 * myAnswered)`
 
-## 4. Position in Group — Gap Metrics
-**File: `src/components/views/ComparativeStats.tsx`**
+---
 
-Add two summary KPI cards above the existing table:
-- **"Gap from average"**: Compute overall user accuracy vs overall group average. Display as `+X%` (green) or `-X%` (red)
-- **"Questions to close gap"**: Formula: `gap_questions = (group_avg - user_accuracy) / 100 * avg_total_attempts`. Display as "approximately N more correct answers to reach group average". Show 0 or a checkmark if user is above average.
+## Phase 4 — Forgetting Risk with Treemap Expansion
 
-These appear as two small cards in a flex row above the table, inside the existing ComparativeStats component.
+### `ForgettingRiskTile.tsx` -- rewrite
+**Collapsed:**
+- Title with warning icon + top 3 at-risk topics as colored pills (risk score next to each)
+- Pulsing border animation (`animate-pulse` on border) if any topic has risk > 2.0
 
-## 5. Bento Grid Layout
-**File: `src/components/views/StatsView.tsx`**
+**Expanded (via AnimatedStatsTile):**
+- Full-screen overlay with recharts `Treemap`:
+  - Size = `daysSince` (days since last attempt)
+  - Color = risk score: <0.5 green `#1A6B3C`, 0.5-1.5 yellow `#A89000`, 1.5-2.5 orange `#B8520A`, >2.5 red `#8B0000`
+  - Custom renderer showing topic name + risk score
+- Below treemap: sorted list with "Start practice" button per topic
 
-Reorganize the grid layout:
-- **Row 1**: 4 equal KPI cards — unchanged (`grid-cols-2 lg:grid-cols-4`)
-- **Row 2**: Learning Velocity 2/3 width + Weak Zone 1/3 width tall
-  - Use `grid-cols-1 md:grid-cols-3`, Velocity spans `md:col-span-2`, Weak Zone `md:col-span-1`
-  - Move Forgetting Risk tile elsewhere or merge into Row 4
-- **Row 3**: Study Heatmap full width (`col-span-full`, shorter height)
-- **Row 4**: Topic table 2/3 + Group Position 1/3
-  - Use `grid-cols-1 md:grid-cols-3`, Table spans `md:col-span-2`, ComparativeStats `md:col-span-1`
-- All tiles: `rounded-2xl`, consistent padding, subtle border
+---
 
-Forgetting Risk tile moves to Row 2 as a third element below (or alternatively placed in Row 4 alongside Group Position). Given the bento spec mentions only 3 tiles in Row 2, Forgetting Risk can sit between Row 2 and Row 3 as a standalone medium tile, or be merged into the Weak Zone expanded view.
+## Phase 5 — Accuracy Trend Chart Fix
 
-## Technical Details
+### `LearningVelocityTile.tsx` -- modify
+- Already filters zero-activity days and has moving averages -- verify and fix:
+  - Ensure X-axis only shows dates with activity (filter `chartData` to exclude `count === 0` days entirely from the array, not just null the values)
+  - Moving averages: already implemented (7-day solid orange, 14-day dashed blue)
+  - Reference line at 70%: already implemented
+  - Legend: already present
+- Increase font sizes: axis labels to 12px min, legend to 13px
+- Chart height: already 280px collapsed, 400px expanded -- good
+- Enhance tooltip: show date, daily accuracy, 7-day MA, 14-day MA, question count
 
-### Moving Average Computation (in LearningVelocityTile)
-```text
-For each day with data:
-  ma7 = average of last 7 non-zero days' rates
-  ma14 = average of last 14 non-zero days' rates
-Filter: only include data points where count > 0
-```
+---
 
-### Heatmap Data Structure
-```text
-90 days -> array of { date, count, correct, rate }
-Render as CSS grid: grid-template-columns: repeat(13, 1fr)
-Fill column-first (each column = 1 week, 7 rows = Sun-Sat)
-```
+## Phase 6 — Weak Zones Gauge Dials
 
-### Gap Metrics Formula
-```text
-user_overall_accuracy = sum(correct) / sum(answered) across all topics
-group_overall_accuracy = weighted avg of global topic accuracies
-gap = group_overall_accuracy - user_overall_accuracy
-gap_questions = max(0, gap / 100 * user_total_attempts)
-```
+### `WeakZoneMapTile.tsx` -- rewrite
+**Collapsed: 3 gauge dials side by side**
+- Each gauge is a semicircular SVG arc (speedometer style):
+  - Red gauge: "Dead Zone" -- needle position = count, arc in red
+  - Yellow gauge: "Studied Not Learned" -- needle in yellow
+  - Green gauge: "Mastered" -- needle in green
+- Below each gauge: large count number + % of total bank
+- Use SVG paths for the semicircle arcs and needle
+
+**Expanded:**
+- Three sections with collapsible topic groups (keep existing expanded logic)
+- "Start practice on this zone" button for red and yellow
+
+---
+
+## Phase 7 — Study Activity Heatmap
+
+### `StreakTile.tsx` -- minor adjustments
+- Already implemented as GitHub-style 90-day heatmap -- keep as is
+- Verify color scheme matches spec (0=gray, 1-5=light orange, 6-15=medium, 16+=deep)
+- Already has tooltip and legend -- verified correct
+- Move to its own full-width row in the layout
+
+---
 
 ## Files Summary
 
-| File | Action |
-|------|--------|
-| `src/components/stats/LearningVelocityTile.tsx` | Rewrite chart with MAs, legend, reference line |
-| `src/components/stats/StreakTile.tsx` | Replace calendar with GitHub heatmap |
-| `src/components/stats/WeakZoneMapTile.tsx` | Visual matrix collapsed + grouped expanded |
-| `src/components/stats/useStatsData.ts` | Extend to 90-day daily data |
-| `src/components/views/ComparativeStats.tsx` | Add gap metric KPI cards |
-| `src/components/views/StatsView.tsx` | Bento grid layout reorganization |
+| File | Action | Phase |
+|------|--------|-------|
+| `src/components/views/StatsView.tsx` | Restructure layout, ERI hero | 1 |
+| `src/components/stats/ERITile.tsx` | Rewrite as hero centerpiece | 1 |
+| `src/components/stats/TopicTreemap.tsx` | **New** -- Treemap heatmap | 2 |
+| `src/components/stats/TopicPerformanceTable.tsx` | Simplify to compact table | 2 |
+| `src/components/views/ComparativeStats.tsx` | Add per-row gap, 5-row default | 3 |
+| `src/components/stats/ForgettingRiskTile.tsx` | Treemap expansion + pulse | 4 |
+| `src/components/stats/LearningVelocityTile.tsx` | Font size fixes, tooltip | 5 |
+| `src/components/stats/WeakZoneMapTile.tsx` | Gauge dials | 6 |
+| `src/components/stats/StreakTile.tsx` | No changes (already done) | 7 |
+| `src/components/stats/AccuracyTile.tsx` | Remove (merged into ERI hero) | 1 |
+| `src/components/stats/CoverageTile.tsx` | Remove (merged into ERI hero) | 1 |
+
+---
+
+## Technical Notes
+
+- `recharts` Treemap is already available (verified in node_modules)
+- No new dependencies needed
+- All data flows from existing `useStatsData` hook
+- Gauge dials use raw SVG (semicircle arc + rotating needle line)
+- Treemap custom content: use `contentStyle` prop or custom `<rect>` + `<text>` elements via the `content` prop
+- The AccuracyTile and CoverageTile components become unused (their data feeds into ERI hero satellites)
+- Pulsing border on ForgettingRisk: conditional class `animate-pulse` on the tile's outer border when max risk > 2.0
 
