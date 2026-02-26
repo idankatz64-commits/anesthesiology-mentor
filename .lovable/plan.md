@@ -1,48 +1,54 @@
 
 
-# Dashboard Design Improvements
+# בדיקת באגים גלובלית -- שמירה, התקדמות ועריכה
 
-## Overview
-Three visual changes to the statistics dashboard: gradient treemap colors, enlarged forgetting risk tile, and removal of the 90-day activity heatmap.
+## באגים שנמצאו
 
-## Changes
+### 1. באג קריטי: עריכות אדמין בתוך סשן לא מסומנות כ-`manually_edited`
+**חומרה: גבוהה**
 
-### 1. Gradient Treemap Colors (S&P 500 Style)
-**File: `src/components/stats/TopicTreemap.tsx`**
+כשאדמין עורך הסבר, תשובה נכונה, או פרק מתוך מסך הסשן (`SessionView.tsx`), העדכון לא כולל `manually_edited: true`. המשמעות: הסנכרון הבא מ-Google Sheets ידרוס את השינויים.
 
-Replace the 4-step `getTreemapColor` function with a smooth gradient interpolation, matching the S&P 500 heatmap style (deep red -> light red -> neutral -> light green -> deep green).
+- שורות 539-542: עדכון תשובה נכונה -- חסר `manually_edited: true`
+- שורות 619-620: עדכון הסבר -- חסר `manually_edited: true`
+- שורות 671-675: עדכון פרק -- חסר `manually_edited: true`
 
-- Score 0-40: Deep red (#8B0000) to red (#CC0000)
-- Score 40-55: Red (#CC0000) to dark orange/neutral (#4A4A4A)
-- Score 55-70: Neutral (#4A4A4A) to green (#2E7D32)
-- Score 70-100: Green (#2E7D32) to deep green (#00C853)
+**תיקון:** הוסף `manually_edited: true` לכל שלושת קריאות ה-`update` של שאלות ב-`SessionView.tsx`.
 
-Replace the discrete legend with a smooth gradient bar legend.
+---
 
-Also apply the same gradient logic to the `ForgettingRiskTile.tsx` treemap (`getRiskColor`).
+### 2. באג: עריכות אדמין משנות את האובייקט ישירות (mutation)
+**חומרה: בינונית**
 
-### 2. Enlarge Forgetting Risk Tile + Remove ERI Satellites
-**File: `src/components/stats/ERITile.tsx`**
+בשורות 547, 626, 677-679, הקוד משנה ישירות את `qData` (למשל `qData[KEYS.CORRECT] = correctAnswerDraft`). זו מוטציה ישירה של אובייקט בתוך מערך ה-`data` של React, בלי לעבור דרך `setState`. השינוי נראה באופן מקומי, אבל:
+- אם הקומפוננטה עושה re-render ממקור אחר, השינוי עלול להיעלם
+- זה מפר את עקרונות React של immutability
 
-Remove the "satellites" section (lines 93-101) — the three small pills showing accuracy, coverage, and streak below the ERI ring. These are redundant with the "main KPIs" gauges on the right column.
+**תיקון:** לאחר שמירה מוצלחת ל-DB, לעדכן את ה-cache ב-`sessionStorage` ולרענן את ה-`data` state, או לכל הפחות להשאיר את המוטציה הנוכחית (שעובדת בפרקטיקה) אבל גם לנקות את ה-sessionStorage cache כדי שבפעם הבאה הנתונים ייטענו מעודכנים.
 
-**File: `src/components/views/StatsView.tsx`**
+---
 
-The freed space allows the Forgetting Risk tile to naturally expand. No layout change needed since it already fills available space via `flex flex-col gap-4`.
+### 3. באג: `updateHistory` נקרא בתוך `useMemo` ב-ResultsView
+**חומרה: בינונית**
 
-### 3. Remove 90-Day Activity Heatmap
-**File: `src/components/views/StatsView.tsx`**
+ב-`ResultsView.tsx` שורות 71-78, `updateHistory` (שהוא side effect שכותב ל-localStorage) נקרא מתוך `useMemo`. זה:
+- מפר את כללי React (side effects אסורים ב-memo)
+- עלול להיקרא מספר פעמים או לא להיקרא כלל בהתאם ל-React strict mode
+- ב-exam mode, ההיסטוריה נשמרת בכל render מחדש
 
-Remove the "90 day activity" heatmap block (lines 113-117) from the left column. The current display is too sparse and doesn't add value. The left column will contain only the WeakZoneMapTile.
+**תיקון:** להעביר את קריאת `updateHistory` ל-`useEffect` עם dependency על `mode` ו-`quiz`.
 
-Remove the `HeatmapGrid` and `HeatmapLegend` imports, and `dailyData90` from the destructured stats data (if not used elsewhere).
+---
 
-## Summary of File Changes
+## שינויים מתוכננים
 
-| File | Change |
-|------|--------|
-| `src/components/stats/TopicTreemap.tsx` | Replace `getTreemapColor` with smooth gradient interpolation; update legend to gradient bar |
-| `src/components/stats/ForgettingRiskTile.tsx` | Replace `getRiskColor` with smooth gradient interpolation |
-| `src/components/stats/ERITile.tsx` | Remove satellite pills (accuracy/coverage/streak) below ERI ring |
-| `src/components/views/StatsView.tsx` | Remove 90-day heatmap section from left column |
+### קובץ 1: `src/components/views/SessionView.tsx`
+- הוסף `manually_edited: true` לשלושת קריאות `supabase.from('questions').update(...)`:
+  - עדכון תשובה נכונה (שורה ~541)
+  - עדכון הסבר (שורה ~620)
+  - עדכון פרק (שורה ~672)
+- נקה את ה-sessionStorage cache לאחר כל עדכון מוצלח (`sessionStorage.removeItem('questions_cache')`)
+
+### קובץ 2: `src/components/views/ResultsView.tsx`
+- העבר את לוגיקת `updateHistory` עבור exam mode מתוך `useMemo` ל-`useEffect` נפרד שרץ פעם אחת בטעינה
 
