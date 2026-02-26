@@ -1,71 +1,79 @@
 
 
-# Admin Feature: Chapter Number Auto-Complete with Miller's 10th Edition Lookup
+# Rich Text Editor for Explanations and Personal Notes
 
 ## Overview
-Add a Miller's 10th Edition chapter lookup system that auto-resolves chapter numbers to full chapter names. This includes an inline chapter editor during practice sessions (for admins), enhanced chapter display across the app, and a batch update tool in the Admin Dashboard.
+Replace plain `<textarea>` elements with a Tiptap-based rich text editor in two locations: the admin explanation editor and the personal notes field. Add a compact toolbar with Bold, Underline, Bullet List, Numbered List, and RTL/LTR toggle.
 
 ---
 
-## 1. Create Miller Chapters Data File
+## 1. Install Tiptap Dependencies
 
-**New file: `src/data/millerChapters.ts`**
+Add packages:
+- `@tiptap/react`
+- `@tiptap/starter-kit` (includes bold, italic, lists, headings, etc.)
+- `@tiptap/extension-underline`
 
-- Export `MILLER_CHAPTERS: Record<number, string>` with all 87 chapters from Miller's Anesthesia 10th Edition
-- Export `MILLER_CHAPTER_NAMES: Record<string, string>` for special text-based entries (e.g., "ACLS")
-- Export a helper function `getChapterDisplay(chapter: number | string | null): string` that returns:
-  - `"N/A"` for null/undefined/0
-  - `"Ch. {N} -- {Name}"` for valid numbers 1-87
-  - The text value for special entries like "ACLS"
-  - `"Chapter not found"` for invalid numbers
+Note: Text direction will be handled via a custom toolbar button that sets `dir` attribute, rather than `@tiptap/extension-text-direction` which doesn't exist as a standalone package. We'll use a simple `toggleAttribute` approach.
 
 ---
 
-## 2. Inline Chapter Editor in Practice/Exam Sessions (Admin Only)
+## 2. Create Reusable RichTextEditor Component
+
+**New file: `src/components/RichTextEditor.tsx`**
+
+A reusable component that wraps Tiptap's `useEditor` and `EditorContent`:
+
+- **Props**: `content: string`, `onChange: (html: string) => void`, `placeholder?: string`, `minHeight?: string`, `editable?: boolean`
+- **Toolbar** (shown only when `editable`): 5 buttons styled to match dark theme
+  - **B** -- Toggle bold (`Ctrl+B`)
+  - **U** -- Toggle underline (`Ctrl+U`)
+  - Bullet list icon
+  - Numbered list icon
+  - RTL/LTR toggle button (sets `dir` attribute on the editor root)
+- Active buttons get a highlighted state (e.g., `bg-primary/20 text-primary`)
+- Editor content area styled with `bg-muted border border-border rounded-xl` to match existing textarea styles
+- On content change, calls `onChange` with the HTML string
+
+---
+
+## 3. Integrate into Admin Explanation Editor
 
 **Modified file: `src/components/views/SessionView.tsx`**
 
-In the feedback section (line ~610), next to the existing "Miller Page" link, add an admin-only inline chapter editor:
-
-- Small input field (~60px wide) pre-filled with the current chapter number
-- As the admin types a valid number (1-87): instantly show the resolved chapter name in muted text beside the input
-- If number is invalid: show "chapter not found" in red
-- Accept "ACLS" as text input, resolving to "ACLS"
-- On blur or Enter: save the chapter number to the `questions` table via Supabase
-- Show a brief checkmark indicator on successful save
-- Update `qData[KEYS.CHAPTER]` locally so the change is visible immediately
-
-New state variables: `editingChapter`, `chapterDraft`, `savingChapter`
+Replace the `<textarea>` at lines 576-581 with the `RichTextEditor` component:
+- Pass `explanationDraft` as initial content
+- On change, update `explanationDraft` state
+- Save button sends HTML string to Supabase `explanation` column (same as before)
+- In read-only mode, render explanation HTML using `dangerouslySetInnerHTML` instead of the current `ExplanationRenderer` (which handles markdown). We'll keep `ExplanationRenderer` as a fallback for legacy plain-text explanations by detecting if content contains HTML tags.
 
 ---
 
-## 3. Enhanced Chapter Display Across the App
+## 4. Integrate into Personal Notes Field
 
-**Helper usage via `getChapterDisplay()`:**
+**Modified file: `src/components/views/SessionView.tsx`**
 
-Replace raw chapter number display in these locations:
+Replace the notes `<textarea>` at lines 447-452 with `RichTextEditor`:
+- Pass `noteText` as initial content
+- On change, call `saveNote(serialNumber, html)`
+- Notes are saved as HTML strings to the existing progress store
 
-- **SessionView.tsx** (meta bar, ~line 291): Add chapter display next to topic/year
-- **QuestionEditorTab.tsx** (edit dialog): Add chapter name preview next to chapter input field
-- **HeatmapGrid / useStatsData.ts** (chapter coverage): Show chapter names in tooltips
-- **ResultsView / ReviewView**: Show chapter name if chapter data is displayed
+**Modified file: `src/components/views/NotebookView.tsx`**
 
-The pattern is: wherever `chapter` is shown, use `getChapterDisplay(q.chapter)` to render the full name.
+Update the note display at line 70-72 to render HTML:
+- Replace `{progress.notes[id]}` with `dangerouslySetInnerHTML={{ __html: progress.notes[id] }}`
+- Keep the existing styling classes
 
 ---
 
-## 4. Admin Dashboard: Batch Chapter Update Tab
+## 5. Smart Rendering for Mixed Content
 
-**Modified file: `src/components/admin/QuestionEditorTab.tsx`**
+Since existing explanations are plain text (some with markdown), the read-only renderer will:
+- Check if content contains HTML tags (`<p>`, `<strong>`, `<ul>`, etc.)
+- If HTML: render with `dangerouslySetInnerHTML`
+- If plain text: use existing `ExplanationRenderer` (markdown-based)
 
-Add a "Update Chapters" section (collapsible) at the top of the Question Editor tab:
-
-- Filter to show only questions where `chapter IS NULL OR chapter = 0`
-- Table columns: Question ID | Question preview (truncated) | Chapter input | Auto-resolved name | Save button
-- Each row has a small number input that auto-resolves the chapter name as the admin types
-- Individual save button per row that updates the `questions` table
-- "Save All" button at the bottom to batch-update all modified rows in a single pass
-- Success/error toast notifications for each operation
+This ensures backward compatibility with all existing content.
 
 ---
 
@@ -74,15 +82,15 @@ Add a "Update Chapters" section (collapsible) at the top of the Question Editor 
 ### Files to Create
 | File | Purpose |
 |------|---------|
-| `src/data/millerChapters.ts` | Chapter lookup data + helper function |
+| `src/components/RichTextEditor.tsx` | Reusable Tiptap editor with toolbar |
 
 ### Files to Modify
 | File | Change |
 |------|--------|
-| `src/components/views/SessionView.tsx` | Add inline chapter editor in feedback section + chapter display in meta bar |
-| `src/components/admin/QuestionEditorTab.tsx` | Add chapter name preview in edit dialog + batch update section |
-| `src/components/stats/useStatsData.ts` | Use chapter names in coverage data |
+| `src/components/views/SessionView.tsx` | Replace textareas with RichTextEditor for explanation and notes |
+| `src/components/views/NotebookView.tsx` | Render notes as HTML |
+| `src/components/views/ResultsView.tsx` | Render explanation HTML in results |
 
 ### No Database Changes Required
-The `questions` table already has a `chapter` column (integer, nullable, default 0). All updates use the existing admin RLS policies.
+Explanation and notes fields already store strings. HTML strings are fully compatible.
 
