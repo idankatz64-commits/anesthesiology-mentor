@@ -1,4 +1,5 @@
-import { useState, useEffect, useId } from 'react';
+import { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import {
@@ -50,7 +51,6 @@ function getLabel(value: number) {
 
 export default function ERITile({ value, accuracy, coverage, criticalAvg, consistency, streak }: ERITileProps) {
   const [open, setOpen] = useState(false);
-  const uniqueId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -80,9 +80,9 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
   return (
     <>
       <motion.div
-        layoutId={uniqueId}
         onClick={() => setOpen(true)}
         whileHover={{ scale: 1.01 }}
+        whileTap={{ scale: 0.98 }}
         transition={spring}
         className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl cursor-pointer hover:border-orange-500/30 hover:shadow-[0_0_30px_rgba(249,115,22,0.08)] transition-shadow h-full"
       >
@@ -102,54 +102,59 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
         </div>
       </motion.div>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4"
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
-          >
-            <motion.div className="absolute inset-0 bg-black/70 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+      {createPortal(
+        <AnimatePresence>
+          {open && (
             <motion.div
-              layoutId={uniqueId}
-              transition={spring}
-              className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10"
+              className="fixed inset-0 z-[9999] flex items-center justify-center p-4"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
             >
-              <button onClick={(e) => { e.stopPropagation(); setOpen(false); }} className="absolute top-4 left-4 w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition z-20">
-                <X className="w-4 h-4" />
-              </button>
-              <h3 className="text-lg font-bold text-foreground mb-6">מדד מוכנות למבחן (ERI)</h3>
-              <div className="flex flex-col md:flex-row items-center gap-8">
-                <ERIRing value={value} size={180} />
-                <div className="flex-1 w-full" style={{ height: 300 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart data={radarData}>
-                      <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-                      <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#6B7280', fontSize: 10 }} />
-                      <Radar dataKey="val" stroke="#F97316" fill="#F97316" fillOpacity={0.25} strokeWidth={2} />
-                    </RadarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-                {[
-                  { label: 'דיוק', val: accuracy, weight: '25%' },
-                  { label: 'כיסוי', val: coverage, weight: '25%' },
-                  { label: 'נושאים קריטיים', val: criticalAvg, weight: '30%' },
-                  { label: 'עקביות', val: consistency, weight: '20%' },
-                ].map(item => (
-                  <div key={item.label} className="bg-muted/30 rounded-lg p-3 text-center">
-                    <div className="text-xl font-bold text-foreground">{item.val}%</div>
-                    <div className="text-[10px] text-muted-foreground">{item.label} ({item.weight})</div>
+              <motion.div className="absolute inset-0 bg-black/70 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+              <motion.div
+                initial={{ opacity: 0, scale: 0.92, y: 30 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={spring}
+                className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10"
+              >
+                <button onClick={(e) => { e.stopPropagation(); setOpen(false); }} className="absolute top-4 left-4 w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition z-20">
+                  <X className="w-4 h-4" />
+                </button>
+                <h3 className="text-lg font-bold text-foreground mb-6">מדד מוכנות למבחן (ERI)</h3>
+                <div className="flex flex-col md:flex-row items-center gap-8">
+                  <ERIRing value={value} size={180} />
+                  <div className="flex-1 w-full" style={{ height: 300 }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                      <RadarChart data={radarData}>
+                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                        <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+                        <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#6B7280', fontSize: 10 }} />
+                        <Radar dataKey="val" stroke="#F97316" fill="#F97316" fillOpacity={0.25} strokeWidth={2} />
+                      </RadarChart>
+                    </ResponsiveContainer>
                   </div>
-                ))}
-              </div>
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+                  {[
+                    { label: 'דיוק', val: accuracy, weight: '25%' },
+                    { label: 'כיסוי', val: coverage, weight: '25%' },
+                    { label: 'נושאים קריטיים', val: criticalAvg, weight: '30%' },
+                    { label: 'עקביות', val: consistency, weight: '20%' },
+                  ].map(item => (
+                    <div key={item.label} className="bg-muted/30 rounded-lg p-3 text-center">
+                      <div className="text-xl font-bold text-foreground">{item.val}%</div>
+                      <div className="text-[10px] text-muted-foreground">{item.label} ({item.weight})</div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
             </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          )}
+        </AnimatePresence>,
+        document.body
+      )}
     </>
   );
 }
