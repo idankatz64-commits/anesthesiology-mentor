@@ -67,9 +67,10 @@ export default function NotebookView() {
                 >
                   {qData[KEYS.QUESTION]}
                 </div>
-                <div className="bg-muted/50 p-4 rounded-xl border border-border text-sm text-foreground whitespace-pre-wrap font-light bidi-text">
-                  {progress.notes[id]}
-                </div>
+                <div
+                  className="bg-muted/50 p-4 rounded-xl border border-border text-sm text-foreground whitespace-pre-wrap font-light bidi-text"
+                  dangerouslySetInnerHTML={{ __html: progress.notes[id] }}
+                />
               </div>
             );
           })}
