@@ -121,7 +121,7 @@ export default function StatsView() {
           streak={streak}
         />
 
-        {/* RIGHT — KPI Gauges + Forgetting Risk */}
+        {/* RIGHT — KPI Gauges */}
         <div className="flex flex-col gap-4">
           <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-5">
             <span className="text-xs text-muted-foreground font-medium mb-3 block">מדדים עיקריים</span>
@@ -131,8 +131,12 @@ export default function StatsView() {
               <GaugeDial value={streak} max={30} color="#FB923C" label="🔥 רצף" pct={Math.min(100, Math.round((streak / 30) * 100))} unit=" ימים" />
             </div>
           </div>
-          <ForgettingRiskTile risks={forgettingRisk} />
         </div>
+      </motion.div>
+
+      {/* ROW 2.5 — Forgetting Risk (full width) */}
+      <motion.div variants={itemVariants}>
+        <ForgettingRiskTile risks={forgettingRisk} />
       </motion.div>
 
       {/* ROW 3 — Accuracy Trend Chart (full width) */}
