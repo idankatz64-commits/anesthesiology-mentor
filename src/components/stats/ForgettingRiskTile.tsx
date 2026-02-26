@@ -31,19 +31,25 @@ function interpolateColor(c1: string, c2: string, t: number) {
 }
 
 function getRiskColor(risk: number) {
-  // Inverted: high risk = red, low risk = green
+  // Logarithmic mapping: spread low values more, compress high values
+  // Risk range 0-3.5 → normalized 0-1 via log scale
+  const maxRisk = 3.5;
+  const clamped = Math.max(0, Math.min(maxRisk, risk));
+  // log1p gives better spread for low values
+  const t = Math.log1p(clamped) / Math.log1p(maxRisk); // 0..1
+
   const stops = [
     { at: 0, color: '#00C853' },
-    { at: 0.5, color: '#2E7D32' },
-    { at: 1.5, color: '#4A4A4A' },
-    { at: 2.5, color: '#CC0000' },
-    { at: 3.5, color: '#8B0000' },
+    { at: 0.25, color: '#2E7D32' },
+    { at: 0.45, color: '#4A4A4A' },
+    { at: 0.65, color: '#CC0000' },
+    { at: 1.0, color: '#8B0000' },
   ];
-  const clamped = Math.max(0, Math.min(3.5, risk));
+
   for (let i = 0; i < stops.length - 1; i++) {
-    if (clamped <= stops[i + 1].at) {
-      const t = (clamped - stops[i].at) / (stops[i + 1].at - stops[i].at);
-      return interpolateColor(stops[i].color, stops[i + 1].color, t);
+    if (t <= stops[i + 1].at) {
+      const localT = (t - stops[i].at) / (stops[i + 1].at - stops[i].at);
+      return interpolateColor(stops[i].color, stops[i + 1].color, localT);
     }
   }
   return stops[stops.length - 1].color;
