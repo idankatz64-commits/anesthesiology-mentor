@@ -28,7 +28,7 @@ function ERIRing({ value, size = 240 }: {value: number;size?: number;}) {
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" strokeWidth={strokeWidth} opacity={0.1} />
         <circle
           cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
           strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
@@ -36,7 +36,7 @@ function ERIRing({ value, size = 240 }: {value: number;size?: number;}) {
 
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-5xl font-black text-destructive-foreground bg-muted font-mono" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
+        <span className="text-5xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
         <span className="text-xs text-muted-foreground font-medium mt-1">{getLabel(value)}</span>
       </div>
     </div>);
@@ -84,7 +84,7 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl cursor-pointer hover:border-orange-500/30 hover:shadow-[0_0_30px_rgba(249,115,22,0.08)] transition-shadow h-full">
+        className="bg-card border border-border rounded-xl cursor-pointer hover:border-primary/30 hover:shadow-lg transition-shadow h-full">
 
         <div className="flex flex-col items-center py-6 px-4">
           <ERIRing value={value} size={240} />
@@ -93,7 +93,7 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
           {/* Satellite pills */}
           <div className="flex items-center gap-4 mt-4">
             {satellites.map((s) =>
-            <div key={s.label} className="flex flex-col items-center bg-muted/20 dark:bg-white/[0.04] rounded-lg px-4 py-2 border border-border dark:border-white/[0.06]">
+            <div key={s.label} className="flex flex-col items-center bg-muted/20 rounded-lg px-4 py-2 border border-border">
                 <span className="text-lg font-black" style={{ fontFamily: "'Share Tech Mono', monospace", color: s.color }}>{s.value}</span>
                 <span className="text-[9px] text-muted-foreground">{s.label}</span>
               </div>
@@ -111,13 +111,13 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
             transition={{ duration: 0.2 }}
             onClick={(e) => {if (e.target === e.currentTarget) setOpen(false);}}>
 
-              <motion.div className="absolute inset-0 bg-black/70 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+              <motion.div className="absolute inset-0 bg-black/50 dark:bg-black/70 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
               <motion.div
               initial={{ opacity: 0, scale: 0.92, y: 30 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={spring}
-              className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10">
+              className="bg-card border border-border rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10">
 
                 <button onClick={(e) => {e.stopPropagation();setOpen(false);}} className="absolute top-4 left-4 w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition z-20">
                   <X className="w-4 h-4" />

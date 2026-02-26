@@ -84,9 +84,9 @@ const RiskTooltip = ({ active, payload }: any) => {
   const d = payload[0]?.payload;
   if (!d) return null;
   return (
-    <div className="bg-card dark:bg-[#1a1d28] border border-border dark:border-white/[0.1] rounded-lg px-3 py-2 text-xs shadow-xl" dir="rtl">
+    <div className="bg-card border border-border rounded-lg px-3 py-2 text-xs shadow-xl" dir="rtl">
       <div className="font-bold text-foreground mb-1">{d.topic}</div>
-      <div className="text-muted-foreground">סיכון: <span className="font-bold text-orange-400">{d.risk.toFixed(1)}</span></div>
+      <div className="text-muted-foreground">סיכון: <span className="font-bold text-primary">{d.risk.toFixed(1)}</span></div>
       <div className="text-muted-foreground">ימים מאז: <span className="font-bold text-foreground">{d.daysSince}</span></div>
       <div className="text-muted-foreground">דיוק: <span className="font-bold text-foreground">{d.accuracy}%</span></div>
     </div>
@@ -173,7 +173,7 @@ export default function ForgettingRiskTile({ risks }: Props) {
                 </div>
                 <div className="flex items-center gap-3 shrink-0">
                   <span className="text-lg font-black" style={{ color: getRiskColor(r.risk), fontFamily: "'Share Tech Mono', monospace" }}>{r.risk.toFixed(1)}</span>
-                  <button onClick={(e) => { e.stopPropagation(); handlePractice(r.topic); }} className="text-[10px] bg-orange-500/20 text-orange-400 px-3 py-1.5 rounded-lg hover:bg-orange-500/30 transition font-bold">
+                  <button onClick={(e) => { e.stopPropagation(); handlePractice(r.topic); }} className="text-[10px] bg-primary/20 text-primary px-3 py-1.5 rounded-lg hover:bg-primary/30 transition font-bold">
                     התחל תרגול
                   </button>
                 </div>
