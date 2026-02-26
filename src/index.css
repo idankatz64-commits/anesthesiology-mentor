@@ -41,37 +41,37 @@
 
     --radius: 1rem;
 
-    /* Matrix green */
-    --matrix: 142 70% 45%;
+    /* Data blue — for all statistics and neutral numbers */
+    --matrix: 217 92% 76%;
     --matrix-foreground: 0 0% 100%;
-    --matrix-muted: 142 40% 10%;
+    --matrix-muted: 217 40% 12%;
 
     /* Custom semantic tokens */
     --brand: 25 95% 53%;
     --brand-foreground: 0 0% 100%;
     --brand-muted: 25 95% 10%;
 
-    --success: 160 84% 39%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 160 40% 10%;
+    --success-muted: 142 40% 10%;
 
     --warning: 45 93% 47%;
     --warning-foreground: 0 0% 100%;
     --warning-muted: 45 60% 10%;
 
-    --info: 199 89% 48%;
+    --info: 217 92% 76%;
     --info-foreground: 0 0% 100%;
 
-    /* Purple accent (ExamAI-inspired) */
-    --feature: 270 70% 55%;
+    /* Feature — same as primary (no purple) */
+    --feature: 25 95% 53%;
     --feature-foreground: 0 0% 100%;
 
     /* Glow effects */
     --glow-primary: 0 0 20px hsl(25 95% 53% / 0.3);
-    --glow-success: 0 0 20px hsl(160 84% 39% / 0.3);
+    --glow-success: 0 0 20px hsl(142 71% 45% / 0.3);
     --glow-destructive: 0 0 20px hsl(0 72% 51% / 0.3);
-    --glow-matrix: 0 0 20px hsl(142 70% 45% / 0.35);
-    --glow-feature: 0 0 20px hsl(270 70% 55% / 0.3);
+    --glow-matrix: 0 0 20px hsl(217 92% 76% / 0.25);
+    --glow-feature: 0 0 20px hsl(25 95% 53% / 0.3);
 
     --sidebar-background: 260 28% 5%;
     --sidebar-foreground: 220 15% 50%;
@@ -116,33 +116,33 @@
     --input: 250 25% 90%;
     --ring: 25 95% 53%;
 
-    --matrix: 142 70% 40%;
+    --matrix: 217 92% 60%;
     --matrix-foreground: 0 0% 100%;
-    --matrix-muted: 142 40% 94%;
+    --matrix-muted: 217 40% 94%;
 
     --brand: 25 95% 53%;
     --brand-foreground: 0 0% 100%;
     --brand-muted: 25 89% 96%;
 
-    --success: 160 84% 39%;
+    --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
-    --success-muted: 160 60% 95%;
+    --success-muted: 142 60% 95%;
 
     --warning: 45 93% 47%;
     --warning-foreground: 0 0% 100%;
     --warning-muted: 45 92% 95%;
 
-    --info: 199 89% 48%;
+    --info: 217 92% 60%;
     --info-foreground: 0 0% 100%;
 
-    --feature: 270 70% 55%;
+    --feature: 25 95% 53%;
     --feature-foreground: 0 0% 100%;
 
     --glow-primary: 0 0 15px hsl(25 95% 53% / 0.2);
-    --glow-success: 0 0 15px hsl(160 84% 39% / 0.2);
+    --glow-success: 0 0 15px hsl(142 71% 45% / 0.2);
     --glow-destructive: 0 0 15px hsl(0 84% 60% / 0.2);
-    --glow-matrix: 0 0 15px hsl(142 70% 40% / 0.2);
-    --glow-feature: 0 0 15px hsl(270 70% 55% / 0.2);
+    --glow-matrix: 0 0 15px hsl(217 92% 60% / 0.2);
+    --glow-feature: 0 0 15px hsl(25 95% 53% / 0.2);
 
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 250 12% 45%;
@@ -255,7 +255,7 @@
   box-shadow: var(--glow-primary);
 }
 
-/* Matrix-style monospace text for data — green tinted */
+/* Data-blue monospace text for statistics and numbers */
 .matrix-text {
   font-family: var(--font-matrix), monospace;
   color: hsl(var(--matrix));

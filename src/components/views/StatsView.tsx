@@ -284,7 +284,7 @@ export default function StatsView() {
               }}
             />
             <Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} connectNulls={false} />
-            <Line type="monotone" dataKey="trend" stroke="hsl(var(--info, 210 100% 50%))" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
+            <Line type="monotone" dataKey="trend" stroke="hsl(var(--info))" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
           </LineChart>
         </ResponsiveContainer>
         <GroupAvgPlaceholder />

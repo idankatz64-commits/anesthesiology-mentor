@@ -17,33 +17,33 @@ interface Formula {
 }
 
 const categoryColors: Record<string, string> = {
-  'Neuroanesthesia': 'bg-purple-500/15 text-purple-400 border-purple-500/20',
-  'Respiratory Physiology': 'bg-sky-500/15 text-sky-400 border-sky-500/20',
-  'Cardiovascular': 'bg-red-500/15 text-red-400 border-red-500/20',
-  'Renal & Fluids': 'bg-teal-500/15 text-teal-400 border-teal-500/20',
-  'Pharmacology': 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-  'Hematology': 'bg-rose-500/15 text-rose-400 border-rose-500/20',
-  'Obstetric Anesthesia': 'bg-pink-500/15 text-pink-400 border-pink-500/20',
-  'Pediatric Anesthesia': 'bg-green-500/15 text-green-400 border-green-500/20',
-  'Regional Anesthesia': 'bg-indigo-500/15 text-indigo-400 border-indigo-500/20',
-  'Physics & Equipment': 'bg-slate-500/15 text-slate-400 border-slate-500/20',
-  'Pain Medicine': 'bg-orange-500/15 text-orange-400 border-orange-500/20',
-  'Statistics & EBM': 'bg-cyan-500/15 text-cyan-400 border-cyan-500/20',
+  'Neuroanesthesia': 'bg-primary/15 text-primary border-primary/20',
+  'Respiratory Physiology': 'bg-primary/15 text-primary border-primary/20',
+  'Cardiovascular': 'bg-destructive/15 text-destructive border-destructive/20',
+  'Renal & Fluids': 'bg-info/15 text-info border-info/20',
+  'Pharmacology': 'bg-primary/15 text-primary border-primary/20',
+  'Hematology': 'bg-destructive/15 text-destructive border-destructive/20',
+  'Obstetric Anesthesia': 'bg-primary/15 text-primary border-primary/20',
+  'Pediatric Anesthesia': 'bg-success/15 text-success border-success/20',
+  'Regional Anesthesia': 'bg-info/15 text-info border-info/20',
+  'Physics & Equipment': 'bg-muted text-muted-foreground border-border',
+  'Pain Medicine': 'bg-primary/15 text-primary border-primary/20',
+  'Statistics & EBM': 'bg-info/15 text-info border-info/20',
 };
 
 const categoryHeaderColors: Record<string, string> = {
-  'Neuroanesthesia': 'bg-purple-500/10 border-purple-500/20',
-  'Respiratory Physiology': 'bg-sky-500/10 border-sky-500/20',
-  'Cardiovascular': 'bg-red-500/10 border-red-500/20',
-  'Renal & Fluids': 'bg-teal-500/10 border-teal-500/20',
-  'Pharmacology': 'bg-amber-500/10 border-amber-500/20',
-  'Hematology': 'bg-rose-500/10 border-rose-500/20',
-  'Obstetric Anesthesia': 'bg-pink-500/10 border-pink-500/20',
-  'Pediatric Anesthesia': 'bg-green-500/10 border-green-500/20',
-  'Regional Anesthesia': 'bg-indigo-500/10 border-indigo-500/20',
-  'Physics & Equipment': 'bg-slate-500/10 border-slate-500/20',
-  'Pain Medicine': 'bg-orange-500/10 border-orange-500/20',
-  'Statistics & EBM': 'bg-cyan-500/10 border-cyan-500/20',
+  'Neuroanesthesia': 'bg-primary/10 border-primary/20',
+  'Respiratory Physiology': 'bg-primary/10 border-primary/20',
+  'Cardiovascular': 'bg-destructive/10 border-destructive/20',
+  'Renal & Fluids': 'bg-info/10 border-info/20',
+  'Pharmacology': 'bg-primary/10 border-primary/20',
+  'Hematology': 'bg-destructive/10 border-destructive/20',
+  'Obstetric Anesthesia': 'bg-primary/10 border-primary/20',
+  'Pediatric Anesthesia': 'bg-success/10 border-success/20',
+  'Regional Anesthesia': 'bg-info/10 border-info/20',
+  'Physics & Equipment': 'bg-muted/50 border-border',
+  'Pain Medicine': 'bg-primary/10 border-primary/20',
+  'Statistics & EBM': 'bg-info/10 border-info/20',
 };
 
 export default function FormulaSheetView() {
@@ -217,7 +217,7 @@ export default function FormulaSheetView() {
                       onClick={() => copyEquation(f)}
                       className="p-1.5 rounded-lg hover:bg-muted transition-colors text-muted-foreground shrink-0"
                     >
-                      {copiedId === f.id ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      {copiedId === f.id ? <Check className="w-4 h-4 text-success" /> : <Copy className="w-4 h-4" />}
                     </button>
                   </div>
                   <div className="font-mono text-xs bg-muted/50 px-3 py-2 rounded-lg text-foreground break-all">{f.equation}</div>
@@ -271,7 +271,7 @@ function CategoryGroup({ category, items, copiedId, onCopy }: {
               onClick={() => onCopy(f)}
               className="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg hover:bg-muted transition-all text-muted-foreground"
             >
-              {copiedId === f.id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+              {copiedId === f.id ? <Check className="w-3.5 h-3.5 text-success" /> : <Copy className="w-3.5 h-3.5" />}
             </button>
           </td>
         </tr>

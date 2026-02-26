@@ -209,9 +209,9 @@ export default function SessionView() {
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
           <span className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
-            isSimulation ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 border-orange-200 dark:border-orange-800' :
-            mode === 'practice' ? 'bg-info/10 text-info border-info/20' :
-            isExam ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-200 dark:border-purple-800' :
+            isSimulation ? 'bg-primary/10 text-primary border-primary/20' :
+            mode === 'practice' ? 'bg-primary/10 text-primary border-primary/20' :
+            isExam ? 'bg-primary/10 text-primary border-primary/20' :
             'bg-warning/10 text-warning border-warning/20'
           }`}>
             {isSimulation ? 'סימולציה' : mode === 'practice' ? 'תרגול' : isExam ? 'בחינה' : 'תחקור'}

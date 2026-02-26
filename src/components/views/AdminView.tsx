@@ -88,7 +88,7 @@ export default function AdminView() {
           </div>
         </div>
         {syncResult && (
-          <div className={`mt-3 flex items-center gap-2 text-sm font-medium ${syncResult.includes('שגיאה') ? 'text-destructive' : 'text-green-500'}`}>
+          <div className={`mt-3 flex items-center gap-2 text-sm font-medium ${syncResult.includes('שגיאה') ? 'text-destructive' : 'text-success'}`}>
             {syncResult.includes('שגיאה') ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
             {syncResult}
           </div>

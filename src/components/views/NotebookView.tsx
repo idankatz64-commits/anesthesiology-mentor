@@ -60,14 +60,14 @@ export default function NotebookView() {
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-                <div className="text-xs font-bold text-warning mb-2 matrix-text">#{id} | {qData[KEYS.TOPIC]}</div>
+                <div className="text-xs font-bold text-primary mb-2 matrix-text">#{id} | {qData[KEYS.TOPIC]}</div>
                 <div
                   onClick={() => reviewFromNote(id)}
                   className="text-foreground font-medium mb-3 line-clamp-2 group-hover:text-primary transition cursor-pointer bidi-text"
                 >
                   {qData[KEYS.QUESTION]}
                 </div>
-                <div className="bg-warning/5 p-4 rounded-xl border border-warning/10 text-sm text-foreground whitespace-pre-wrap font-light bidi-text">
+                <div className="bg-muted/50 p-4 rounded-xl border border-border text-sm text-foreground whitespace-pre-wrap font-light bidi-text">
                   {progress.notes[id]}
                 </div>
               </div>

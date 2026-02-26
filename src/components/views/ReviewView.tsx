@@ -72,7 +72,7 @@ export default function ReviewView() {
         </button>
         <button
           onClick={handleSubmitExam}
-          className="bg-gradient-to-r from-primary to-info text-primary-foreground px-10 py-4 rounded-xl font-bold shadow-xl hover:-translate-y-0.5 transition flex items-center gap-3"
+          className="bg-gradient-to-r from-[hsl(25,95%,53%)] to-[hsl(30,93%,58%)] text-primary-foreground px-10 py-4 rounded-xl font-bold shadow-xl hover:-translate-y-0.5 transition flex items-center gap-3"
         >
           ✅ הגש מבחן וקבל ציון
         </button>
