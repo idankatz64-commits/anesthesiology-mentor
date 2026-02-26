@@ -3,7 +3,12 @@ import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { staggerContainer, fadeUp, cardHoverTap } from '@/lib/animations';
+import { cardHoverTap } from '@/lib/animations';
+
+const containerVariant = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } },
+};
 
 const cardVariant = {
   hidden: { opacity: 0, y: 16 },
@@ -158,9 +163,9 @@ export default function HomeView() {
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
         style={{ minHeight: 300 }}
-        variants={staggerContainer}
+        variants={containerVariant}
         initial="hidden"
-        animate="animate"
+        animate="visible"
       >
         {/* Smart Practice */}
         <motion.div variants={cardVariant} {...cardHoverTap} onClick={handleSmartPractice} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
