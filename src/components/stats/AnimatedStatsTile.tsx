@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode, useId } from 'react';
+import { useState, useEffect, ReactNode } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -12,7 +12,6 @@ const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
 export default function AnimatedStatsTile({ collapsed, expanded, className = '' }: AnimatedStatsTileProps) {
   const [open, setOpen] = useState(false);
-  const uniqueId = useId();
 
   useEffect(() => {
     if (!open) return;
@@ -23,7 +22,6 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '' 
     return () => window.removeEventListener('keydown', handler);
   }, [open]);
 
-  // Prevent body scroll when expanded
   useEffect(() => {
     if (open) {
       document.body.style.overflow = 'hidden';
@@ -36,9 +34,9 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '' 
   return (
     <>
       <motion.div
-        layoutId={uniqueId}
         onClick={() => setOpen(true)}
         whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         transition={spring}
         className={`bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl cursor-pointer transition-shadow duration-200 hover:border-orange-500/30 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] ${className}`}
       >
@@ -65,14 +63,16 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '' 
 
             {/* Content */}
             <motion.div
-              layoutId={uniqueId}
+              initial={{ opacity: 0, scale: 0.92, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
               transition={spring}
               className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10"
               drag="y"
-              dragConstraints={{ top: 0 }}
+              dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={0.2}
               onDragEnd={(_, info) => {
-                if (info.offset.y > 100) setOpen(false);
+                if (Math.abs(info.offset.y) > 100) setOpen(false);
               }}
               style={{ willChange: 'transform' }}
             >
