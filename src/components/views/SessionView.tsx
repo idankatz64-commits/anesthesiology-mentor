@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { GlobalQuestionStats, CommunityNotes } from './SessionCommunity';
-import { getChapterDisplay, resolveChapterName } from '@/data/millerChapters';
+import { getChapterDisplay, resolveChapterName, MILLER_CHAPTERS } from '@/data/millerChapters';
 
 /** Detect if content contains HTML tags */
 function isHtmlContent(text: string): boolean {
@@ -667,9 +667,16 @@ export default function SessionView() {
                       if (!valid) return;
                       setSavingChapter('saving');
                       const chapterVal = chapterDraft.trim().toUpperCase() === 'ACLS' ? 0 : parseInt(chapterDraft, 10);
-                      const { error } = await supabase.from('questions').update({ chapter: chapterVal }).eq('id', serialNumber);
+                      const chapterName = MILLER_CHAPTERS[chapterVal] || '';
+                      const { error } = await supabase.from('questions').update({
+                        chapter: chapterVal,
+                        miller: String(chapterVal),
+                        topic: chapterName,
+                      }).eq('id', serialNumber);
                       if (!error) {
                         (qData as any)[KEYS.CHAPTER] = chapterVal;
+                        (qData as any)[KEYS.MILLER] = String(chapterVal);
+                        (qData as any)[KEYS.TOPIC] = chapterName;
                         setSavingChapter('saved');
                         setChapterDraft('');
                         setTimeout(() => setSavingChapter('idle'), 2000);
