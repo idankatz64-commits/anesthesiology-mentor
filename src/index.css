@@ -317,7 +317,8 @@
 }
 
 .markdown-content p {
-  @apply mb-2 leading-relaxed;
+  @apply mb-2;
+  line-height: 1.8;
 }
 
 /* Soft card component */

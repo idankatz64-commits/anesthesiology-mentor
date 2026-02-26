@@ -178,9 +178,9 @@ export default function ResultsView() {
 
                   {/* Explanation */}
                   {d.q[KEYS.EXPLANATION] && (
-                    <div className="bg-muted/50 p-4 rounded-xl border border-border">
-                      <strong className="text-foreground text-xs block mb-2">💡 הסבר:</strong>
-                      <div className="text-sm text-foreground bidi-text markdown-content">
+                    <div className="bg-muted/50 p-6 rounded-xl border border-border">
+                      <strong className="text-foreground text-xs block mb-3">💡 הסבר:</strong>
+                      <div className="text-sm text-foreground bidi-text markdown-content" style={{ lineHeight: '1.8' }}>
                         <ExplanationRenderer text={d.q[KEYS.EXPLANATION]} />
                       </div>
                     </div>
@@ -191,7 +191,7 @@ export default function ResultsView() {
                       href={`https://www.google.com/search?q=Miller's+Anesthesia+10th+edition+page+${d.q[KEYS.MILLER]}`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-primary bg-primary/10 hover:bg-primary/20 px-3 py-1.5 rounded-full font-medium transition flex items-center gap-2 w-fit"
+                      className="text-xs text-muted-foreground bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-full font-medium transition flex items-center gap-2 w-fit border border-border"
                     >
                       <BookOpen className="w-3 h-3" /> Miller Page: {d.q[KEYS.MILLER]}
                     </a>
