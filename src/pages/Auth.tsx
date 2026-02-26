@@ -19,10 +19,7 @@ export default function Auth() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) navigate('/', { replace: true });
-    });
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) navigate('/', { replace: true });
     });
     return () => subscription.unsubscribe();
