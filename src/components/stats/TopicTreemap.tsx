@@ -11,11 +11,43 @@ interface Props {
   isAdmin?: boolean;
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
+function hexToRgb(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return [r, g, b];
+}
+
+function interpolateColor(c1: string, c2: string, t: number) {
+  const [r1, g1, b1] = hexToRgb(c1);
+  const [r2, g2, b2] = hexToRgb(c2);
+  const r = Math.round(lerp(r1, r2, t));
+  const g = Math.round(lerp(g1, g2, t));
+  const b = Math.round(lerp(b1, b2, t));
+  return `rgb(${r},${g},${b})`;
+}
+
 function getTreemapColor(score: number) {
-  if (score > 75) return '#1A6B3C';
-  if (score > 65) return '#A89000';
-  if (score >= 50) return '#B8520A';
-  return '#8B0000';
+  // S&P 500 style gradient: deep red → red → neutral → green → deep green
+  const stops = [
+    { at: 0, color: '#8B0000' },
+    { at: 40, color: '#CC0000' },
+    { at: 55, color: '#4A4A4A' },
+    { at: 70, color: '#2E7D32' },
+    { at: 100, color: '#00C853' },
+  ];
+  const clamped = Math.max(0, Math.min(100, score));
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (clamped <= stops[i + 1].at) {
+      const t = (clamped - stops[i].at) / (stops[i + 1].at - stops[i].at);
+      return interpolateColor(stops[i].color, stops[i + 1].color, t);
+    }
+  }
+  return stops[stops.length - 1].color;
 }
 
 function isUnclassifiedTopic(topic: string) {
@@ -143,18 +175,12 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
             </ResponsiveContainer>
           </div>
           {/* Legend */}
-          <div className="flex items-center gap-3 mt-3 justify-center">
-            {[
-              { label: '<50%', color: '#8B0000' },
-              { label: '50-65%', color: '#B8520A' },
-              { label: '65-75%', color: '#A89000' },
-              { label: '>75%', color: '#1A6B3C' },
-            ].map(l => (
-              <span key={l.label} className="flex items-center gap-1 text-[9px] text-muted-foreground">
-                <span className="w-2.5 h-2.5 rounded-sm inline-block" style={{ backgroundColor: l.color }} />
-                {l.label}
-              </span>
-            ))}
+          <div className="flex items-center gap-2 mt-3 justify-center">
+            <span className="text-[9px] text-muted-foreground">0%</span>
+            <div className="h-2.5 w-40 rounded-full" style={{
+              background: 'linear-gradient(to right, #8B0000, #CC0000, #4A4A4A, #2E7D32, #00C853)',
+            }} />
+            <span className="text-[9px] text-muted-foreground">100%</span>
           </div>
           {unclassifiedBanner}
         </div>
@@ -178,18 +204,12 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
               </Treemap>
             </ResponsiveContainer>
           </div>
-          <div className="flex items-center gap-4 mt-4 justify-center">
-            {[
-              { label: '<50% — חלש', color: '#8B0000' },
-              { label: '50-65% — בינוני', color: '#B8520A' },
-              { label: '65-75% — טוב', color: '#A89000' },
-              { label: '>75% — מצוין', color: '#1A6B3C' },
-            ].map(l => (
-              <span key={l.label} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                <span className="w-3 h-3 rounded-sm inline-block" style={{ backgroundColor: l.color }} />
-                {l.label}
-              </span>
-            ))}
+          <div className="flex items-center gap-2 mt-4 justify-center">
+            <span className="text-[10px] text-muted-foreground">חלש 0%</span>
+            <div className="h-3 w-48 rounded-full" style={{
+              background: 'linear-gradient(to right, #8B0000, #CC0000, #4A4A4A, #2E7D32, #00C853)',
+            }} />
+            <span className="text-[10px] text-muted-foreground">100% מצוין</span>
           </div>
           {unclassifiedBanner}
         </div>

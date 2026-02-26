@@ -89,16 +89,6 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
         <div className="flex flex-col items-center py-6 px-4">
           <ERIRing value={value} size={240} />
           <p className="text-[10px] text-muted-foreground/50 mt-2">מדד מוכנות למבחן</p>
-
-          {/* Satellite pills */}
-          <div className="flex items-center gap-4 mt-4">
-            {satellites.map(s => (
-              <div key={s.label} className="flex flex-col items-center bg-muted/20 dark:bg-white/[0.04] rounded-lg px-4 py-2 border border-border dark:border-white/[0.06]">
-                <span className="text-lg font-black" style={{ fontFamily: "'Share Tech Mono', monospace", color: s.color }}>{s.value}</span>
-                <span className="text-[9px] text-muted-foreground">{s.label}</span>
-              </div>
-            ))}
-          </div>
         </div>
       </motion.div>
 

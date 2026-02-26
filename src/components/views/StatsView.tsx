@@ -12,7 +12,6 @@ import LearningVelocityTile from '@/components/stats/LearningVelocityTile';
 import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import GaugeDial from '@/components/stats/GaugeDial';
-import { HeatmapGrid, HeatmapLegend } from '@/components/stats/HeatmapGrid';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 const containerVariants = {
@@ -32,7 +31,7 @@ export default function StatsView() {
   const { data, progress, importData, startSession } = useApp();
   const {
     stats, eri, streak, weakZones,
-    forgettingRisk, dailyData90,
+    forgettingRisk,
     trendData14, trendData30,
   } = useStatsData();
 
@@ -110,11 +109,6 @@ export default function StatsView() {
         {/* LEFT — Weak Zones + Heatmap */}
         <div className="flex flex-col gap-4">
           <WeakZoneMapTile zones={weakZones} />
-          <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-4">
-            <span className="text-[10px] text-muted-foreground font-medium block mb-2">פעילות 90 יום</span>
-            <HeatmapGrid dailyData={dailyData90} cellSize={10} gap={2} />
-            <HeatmapLegend />
-          </div>
         </div>
 
         {/* CENTER — ERI Hero */}
