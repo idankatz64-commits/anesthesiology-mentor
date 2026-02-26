@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Users, Send, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -7,7 +7,7 @@ interface GlobalQuestionStatsProps {
   questionId: string;
 }
 
-export function GlobalQuestionStats({ questionId }: GlobalQuestionStatsProps) {
+export const GlobalQuestionStats = forwardRef<HTMLDivElement, GlobalQuestionStatsProps>(function GlobalQuestionStats({ questionId }, ref) {
   const [stats, setStats] = useState<{ total_users: number; success_rate: number } | null>(null);
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export function GlobalQuestionStats({ questionId }: GlobalQuestionStatsProps) {
       : 'bg-success/10 border-success/20 text-success';
 
   return (
-    <div className={`flex items-center gap-2 mt-4 px-4 py-3 rounded-xl border text-sm font-medium ${colorClasses}`}>
+    <div ref={ref} className={`flex items-center gap-2 mt-4 px-4 py-3 rounded-xl border text-sm font-medium ${colorClasses}`}>
       <Users className="w-4 h-4" />
       <span>
         רק <span className="font-bold text-lg matrix-text">{rate}%</span> מהמשתמשים ענו נכון על שאלה זו
@@ -36,13 +36,13 @@ export function GlobalQuestionStats({ questionId }: GlobalQuestionStatsProps) {
       </span>
     </div>
   );
-}
+});
 
 interface CommunityNotesProps {
   questionId: string;
 }
 
-export function CommunityNotes({ questionId }: CommunityNotesProps) {
+export const CommunityNotes = forwardRef<HTMLDivElement, CommunityNotesProps>(function CommunityNotes({ questionId }, ref) {
   const { toast } = useToast();
   const [notes, setNotes] = useState<Array<{ id: string; note_text: string; author_display: string; created_at: string; user_id: string }>>([]);
   const [newNote, setNewNote] = useState('');
@@ -110,7 +110,7 @@ export function CommunityNotes({ questionId }: CommunityNotesProps) {
   };
 
   return (
-    <div className="mt-6 p-6 bg-muted/30 rounded-2xl border border-border">
+    <div ref={ref} className="mt-6 p-6 bg-muted/30 rounded-2xl border border-border">
       <h4 className="font-bold text-foreground mb-4 flex items-center gap-2 text-sm">
         💬 הערות קהילה ({notes.length})
       </h4>
@@ -159,4 +159,4 @@ export function CommunityNotes({ questionId }: CommunityNotesProps) {
       )}
     </div>
   );
-}
+});
