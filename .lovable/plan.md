@@ -1,146 +1,88 @@
 
-# iOS-style Animations — Full App Implementation
+
+# Admin Feature: Chapter Number Auto-Complete with Miller's 10th Edition Lookup
 
 ## Overview
-Add a comprehensive framer-motion animation system across the entire app: page transitions, card stagger effects, tap feedback, question session animations, iOS-style modal sheets, sidebar/nav animations, and micro-interactions. framer-motion is already installed.
+Add a Miller's 10th Edition chapter lookup system that auto-resolves chapter numbers to full chapter names. This includes an inline chapter editor during practice sessions (for admins), enhanced chapter display across the app, and a batch update tool in the Admin Dashboard.
 
 ---
 
-## Phase 1 — Animation Foundation
+## 1. Create Miller Chapters Data File
 
-### New file: `src/lib/animations.ts`
-- Export all spring configs (`spring`, `springGentle`, `springBouncy`)
-- Export animation variants: `fadeUp`, `scaleIn`, `slideFromRight`, `staggerContainer`
-- Export a `useReducedMotion` hook that checks `prefers-reduced-motion` and returns zero-duration overrides
+**New file: `src/data/millerChapters.ts`**
 
-### `src/App.tsx`
-- Wrap `<Routes>` in `<AnimatePresence mode="wait">`
-- No changes to route definitions
-
----
-
-## Phase 2 — Page Transitions
-
-### `src/pages/Index.tsx`
-- Wrap the view-switching section in `<AnimatePresence mode="wait">`
-- Each view gets a `<motion.div key={currentView}>` wrapper with `slideFromRight` variants
-- Outgoing view slides left + fades; incoming slides from right
-
-### `src/pages/Auth.tsx`, `src/pages/AdminDashboard.tsx`
-- Wrap root element in `motion.div` with `fadeUp` variants
+- Export `MILLER_CHAPTERS: Record<number, string>` with all 87 chapters from Miller's Anesthesia 10th Edition
+- Export `MILLER_CHAPTER_NAMES: Record<string, string>` for special text-based entries (e.g., "ACLS")
+- Export a helper function `getChapterDisplay(chapter: number | string | null): string` that returns:
+  - `"N/A"` for null/undefined/0
+  - `"Ch. {N} -- {Name}"` for valid numbers 1-87
+  - The text value for special entries like "ACLS"
+  - `"Chapter not found"` for invalid numbers
 
 ---
 
-## Phase 3 — Home Page Cards
+## 2. Inline Chapter Editor in Practice/Exam Sessions (Admin Only)
 
-### `src/components/views/HomeView.tsx`
-- Wrap the cards grid in `motion.div` with `staggerContainer` variants
-- Each card becomes `motion.div` with `fadeUp` + stagger (70ms apart)
-- Add `whileHover={{ scale: 1.02 }}` and `whileTap={{ scale: 0.97 }}` to every clickable card
-- Add `style={{ willChange: 'transform' }}` for GPU acceleration
+**Modified file: `src/components/views/SessionView.tsx`**
 
----
+In the feedback section (line ~610), next to the existing "Miller Page" link, add an admin-only inline chapter editor:
 
-## Phase 4 — Question Session Animations
+- Small input field (~60px wide) pre-filled with the current chapter number
+- As the admin types a valid number (1-87): instantly show the resolved chapter name in muted text beside the input
+- If number is invalid: show "chapter not found" in red
+- Accept "ACLS" as text input, resolving to "ACLS"
+- On blur or Enter: save the chapter number to the `questions` table via Supabase
+- Show a brief checkmark indicator on successful save
+- Update `qData[KEYS.CHAPTER]` locally so the change is visible immediately
 
-### `src/components/views/SessionView.tsx`
-- Wrap the question card area in `<AnimatePresence mode="wait">`
-- Each question gets `<motion.div key={index}>` with `slideFromRight` variant
-- Answer selection feedback:
-  - Correct: animate `scale(1.03)` + green border flash via a small state-driven `motion.div`
-  - Wrong: shake animation using `motion.div animate={{ x: [0, -8, 8, -6, 6, 0] }}` with 400ms duration
-  - Unselected: `animate={{ opacity: 0.4 }}` transition
-- Explanation panel: `motion.div` with `initial={{ opacity: 0, y: 60 }}` and `springGentle`
-- Progress bar: replace inner div with `motion.div` using `layout` prop for smooth width transitions
+New state variables: `editingChapter`, `chapterDraft`, `savingChapter`
 
 ---
 
-## Phase 5 — Modals & Overlays
+## 3. Enhanced Chapter Display Across the App
 
-### `src/components/WelcomeModal.tsx`
-- Backdrop: `motion.div` fade in/out
-- Panel: slide up from `y: "100%"` with `springGentle`, exit back down
-- Add drag-to-dismiss: `drag="y"`, `dragConstraints={{ top: 0 }}`, close on `offset.y > 100`
+**Helper usage via `getChapterDisplay()`:**
 
-### `src/components/FeedbackModal.tsx`
-- Same iOS sheet pattern: backdrop fade + panel slide-up + drag-to-dismiss
+Replace raw chapter number display in these locations:
 
-### `src/components/stats/AnimatedStatsTile.tsx`
-- Already uses `layoutId` and framer-motion — verify `willChange: 'transform'` is set
-- Add drag-to-dismiss on the expanded overlay
+- **SessionView.tsx** (meta bar, ~line 291): Add chapter display next to topic/year
+- **QuestionEditorTab.tsx** (edit dialog): Add chapter name preview next to chapter input field
+- **HeatmapGrid / useStatsData.ts** (chapter coverage): Show chapter names in tooltips
+- **ResultsView / ReviewView**: Show chapter name if chapter data is displayed
 
----
-
-## Phase 6 — Sidebar & Navigation
-
-### `src/components/Sidebar.tsx`
-- Nav items: on hover, animate `x: -4` (RTL, so shifts right visually) + bg fade
-- Active indicator: add a `motion.div` with `layoutId="sidebar-active"` that slides between nav items as a background highlight
-
-### `src/components/MobileBottomNav.tsx`
-- Add `motion.div` with `layoutId="tab-indicator"` for the active tab background — slides horizontally between tabs
-
-### Mobile sidebar (if applicable via MobileHeader):
-- Animate open/close with `initial={{ x: "100%" }}` (RTL) / `animate={{ x: 0 }}`
+The pattern is: wherever `chapter` is shown, use `getChapterDisplay(q.chapter)` to render the full name.
 
 ---
 
-## Phase 7 — Micro-interactions
+## 4. Admin Dashboard: Batch Chapter Update Tab
 
-### `src/components/ui/button.tsx`
-- Wrap the rendered element in `motion.button` / `motion.div` (when not `asChild`)
-- Add `whileTap={{ scale: 0.96 }}` and `whileHover={{ scale: 1.01 }}`
-- Skip animation when `asChild` is true (can't wrap Slot in motion)
+**Modified file: `src/components/admin/QuestionEditorTab.tsx`**
 
-### Count-up animation for KPI numbers
-- Create a small `AnimatedNumber` component using `useMotionValue`, `useSpring`, `useTransform`
-- Duration ~1200ms with `springGentle`
-- Use in `StatsView.tsx` for the status bar numbers and in `ERITile.tsx` for the ERI value
+Add a "Update Chapters" section (collapsible) at the top of the Question Editor tab:
 
-### Loading states
-- Create `AnimatedSkeleton` component: `motion.div` with `animate={{ opacity: [0.4, 0.8, 0.4] }}` and `repeat: Infinity`
-- Replace the main loading spinner in `Index.tsx` with a pulsing skeleton
+- Filter to show only questions where `chapter IS NULL OR chapter = 0`
+- Table columns: Question ID | Question preview (truncated) | Chapter input | Auto-resolved name | Save button
+- Each row has a small number input that auto-resolves the chapter name as the admin types
+- Individual save button per row that updates the `questions` table
+- "Save All" button at the bottom to batch-update all modified rows in a single pass
+- Success/error toast notifications for each operation
 
 ---
 
-## Phase 8 — Performance & Polish
+## Technical Details
 
-### GPU acceleration
-- All animated cards/modals get `style={{ willChange: 'transform' }}`
+### Files to Create
+| File | Purpose |
+|------|---------|
+| `src/data/millerChapters.ts` | Chapter lookup data + helper function |
 
-### Reduced motion
-- `useReducedMotion` hook in `animations.ts` checks `prefers-reduced-motion`
-- When true: all spring durations become 0, disabling physics
-- Apply at the top level in `Index.tsx` and pass down or use per-component
-
-### No layout shift
-- Add explicit `min-height` to animated containers (question card area, home cards grid, stats tiles)
-
----
-
-## Files Summary
-
-| File | Action |
+### Files to Modify
+| File | Change |
 |------|--------|
-| `src/lib/animations.ts` | **New** — central animation config + hooks |
-| `src/App.tsx` | Add AnimatePresence around Routes |
-| `src/pages/Index.tsx` | AnimatePresence for view switching, loading skeleton |
-| `src/pages/Auth.tsx` | Page entrance animation |
-| `src/pages/AdminDashboard.tsx` | Page entrance animation |
-| `src/components/views/HomeView.tsx` | Stagger cards, tap/hover feedback |
-| `src/components/views/SessionView.tsx` | Question slide, answer feedback, progress bar layout animation |
-| `src/components/WelcomeModal.tsx` | iOS sheet slide-up + drag dismiss |
-| `src/components/FeedbackModal.tsx` | iOS sheet slide-up + drag dismiss |
-| `src/components/stats/AnimatedStatsTile.tsx` | Add drag dismiss + willChange |
-| `src/components/Sidebar.tsx` | Active indicator layoutId, hover animations |
-| `src/components/MobileBottomNav.tsx` | Tab indicator layoutId |
-| `src/components/ui/button.tsx` | whileTap/whileHover micro-interaction |
-| `src/components/views/StatsView.tsx` | AnimatedNumber for KPI values |
-| `src/components/stats/ERITile.tsx` | AnimatedNumber for ERI ring |
+| `src/components/views/SessionView.tsx` | Add inline chapter editor in feedback section + chapter display in meta bar |
+| `src/components/admin/QuestionEditorTab.tsx` | Add chapter name preview in edit dialog + batch update section |
+| `src/components/stats/useStatsData.ts` | Use chapter names in coverage data |
 
-## Technical Notes
-- framer-motion is already installed (v12.34.3)
-- `layoutId` values will be namespaced: `sidebar-active`, `tab-indicator`, `tile-{id}`, `question-card`
-- All `AnimatePresence` children will have explicit `key` props
-- The `Button` component animation only applies when `asChild` is false (Slot doesn't support motion props)
-- RTL layout means "slide from right" is visually "slide from left" — animation directions adjusted accordingly
+### No Database Changes Required
+The `questions` table already has a `chapter` column (integer, nullable, default 0). All updates use the existing admin RLS policies.
+
