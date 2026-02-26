@@ -10,11 +10,43 @@ interface Props {
   risks: ForgettingRisk[];
 }
 
+function lerp(a: number, b: number, t: number) {
+  return a + (b - a) * t;
+}
+
+function hexToRgb(hex: string) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return [r, g, b];
+}
+
+function interpolateColor(c1: string, c2: string, t: number) {
+  const [r1, g1, b1] = hexToRgb(c1);
+  const [r2, g2, b2] = hexToRgb(c2);
+  const r = Math.round(lerp(r1, r2, t));
+  const g = Math.round(lerp(g1, g2, t));
+  const b = Math.round(lerp(b1, b2, t));
+  return `rgb(${r},${g},${b})`;
+}
+
 function getRiskColor(risk: number) {
-  if (risk > 2.5) return '#8B0000';
-  if (risk > 1.5) return '#B8520A';
-  if (risk > 0.5) return '#A89000';
-  return '#1A6B3C';
+  // Inverted: high risk = red, low risk = green
+  const stops = [
+    { at: 0, color: '#00C853' },
+    { at: 0.5, color: '#2E7D32' },
+    { at: 1.5, color: '#4A4A4A' },
+    { at: 2.5, color: '#CC0000' },
+    { at: 3.5, color: '#8B0000' },
+  ];
+  const clamped = Math.max(0, Math.min(3.5, risk));
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (clamped <= stops[i + 1].at) {
+      const t = (clamped - stops[i].at) / (stops[i + 1].at - stops[i].at);
+      return interpolateColor(stops[i].color, stops[i + 1].color, t);
+    }
+  }
+  return stops[stops.length - 1].color;
 }
 
 function RiskTreemapContent(props: any) {
