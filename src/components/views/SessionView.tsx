@@ -63,6 +63,7 @@ export default function SessionView() {
   const [correctAnswerDraft, setCorrectAnswerDraft] = useState('');
   const [savingCorrectAnswer, setSavingCorrectAnswer] = useState(false);
   const [showConfirmSave, setShowConfirmSave] = useState(false);
+  const [showExitDialog, setShowExitDialog] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   const isSimulation = mode === 'simulation';
@@ -158,18 +159,20 @@ export default function SessionView() {
 
   const handleExit = () => {
     if (isReviewMode) { navigate('results'); return; }
-    const choice = window.confirm('לשמור את ההתקדמות ולהמשיך מאוחר יותר?');
-    if (choice) {
-      saveSessionToDb(timerSeconds, simTimerSeconds).then(() => {
-        toast({ title: 'הסשן נשמר ✅', description: 'תוכל להמשיך מאוחר יותר מדף הבית.' });
-        navigate('home');
-      });
-    } else {
-      if (window.confirm('לצאת בלי לשמור?')) {
-        clearSavedSession();
-        navigate('home');
-      }
-    }
+    setShowExitDialog(true);
+  };
+
+  const handleSaveAndExit = async () => {
+    await saveSessionToDb(timerSeconds, simTimerSeconds);
+    toast({ title: 'הסשן נשמר ✅', description: 'תוכל להמשיך מאוחר יותר מדף הבית.' });
+    setShowExitDialog(false);
+    navigate('home');
+  };
+
+  const handleExitWithoutSaving = () => {
+    clearSavedSession();
+    setShowExitDialog(false);
+    navigate('home');
   };
 
   const handleSubmitSimulation = () => {
@@ -658,6 +661,36 @@ export default function SessionView() {
       </div>
 
       <FormulaCalculatorPanel open={calcOpen} onClose={() => setCalcOpen(false)} />
+
+      {/* Exit Dialog */}
+      {showExitDialog && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="liquid-glass max-w-md w-full p-6 space-y-4">
+            <h3 className="text-lg font-bold text-foreground text-center">לצאת מהסשן?</h3>
+            <p className="text-sm text-muted-foreground text-center">תוכל לשמור את ההתקדמות ולהמשיך מאוחר יותר, או לצאת בלי לשמור.</p>
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={handleSaveAndExit}
+                className="w-full bg-primary text-primary-foreground px-5 py-3 rounded-xl font-bold text-sm hover:opacity-90 transition"
+              >
+                💾 שמור וצא
+              </button>
+              <button
+                onClick={handleExitWithoutSaving}
+                className="w-full bg-destructive/15 text-destructive px-5 py-3 rounded-xl font-bold text-sm hover:bg-destructive/25 transition"
+              >
+                🚪 צא בלי לשמור
+              </button>
+              <button
+                onClick={() => setShowExitDialog(false)}
+                className="w-full text-muted-foreground px-5 py-3 rounded-xl text-sm hover:bg-muted transition"
+              >
+                ביטול — המשך לתרגל
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
