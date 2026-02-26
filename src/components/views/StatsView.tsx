@@ -11,7 +11,7 @@ import LearningVelocityTile from '@/components/stats/LearningVelocityTile';
 import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import GaugeDial from '@/components/stats/GaugeDial';
-import { HeatmapGrid, HeatmapLegend } from '@/components/stats/HeatmapGrid';
+
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -30,7 +30,7 @@ export default function StatsView() {
   const { data, progress, importData, startSession } = useApp();
   const {
     stats, eri, streak, weakZones,
-    forgettingRisk, dailyData90,
+    forgettingRisk,
     trendData14, trendData30
   } = useStatsData();
 
@@ -102,17 +102,10 @@ export default function StatsView() {
 
       {/* ROW 2 — Main 3-Column Dashboard Panel */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {/* LEFT — Weak Zones + Heatmap */}
-        <div className="flex flex-col gap-4">
-          <WeakZoneMapTile zones={weakZones} />
-          <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-4">
-            <span className="text-[10px] text-muted-foreground font-medium block mb-2">פעילות 90 יום</span>
-            <HeatmapGrid dailyData={dailyData90} cellSize={10} gap={2} />
-            <HeatmapLegend />
-          </div>
-        </div>
+        {/* LEFT — Weak Zones */}
+        <WeakZoneMapTile zones={weakZones} />
 
-        {/* CENTER — ERI Hero */}
+        {/* CENTER — ERI Hero (compact) */}
         <ERITile
           value={eri.value}
           accuracy={eri.accuracy}
@@ -121,19 +114,20 @@ export default function StatsView() {
           consistency={eri.consistency}
           streak={streak} />
 
-
-        {/* RIGHT — KPI Gauges + Forgetting Risk */}
-        <div className="flex flex-col gap-4">
-          <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-5 text-primary py-0 text-lg px-[15px] font-mono font-bold">
-            <span className="text-xs text-muted-foreground font-medium mb-3 block">מדדים עיקריים</span>
-            <div className="flex flex-col items-center gap-2">
-              <GaugeDial value={eri.accuracy} max={100} color="#60A5FA" label="🔵 דיוק" pct={eri.accuracy} unit="%" />
-              <GaugeDial value={eri.coverage} max={100} color="#F97316" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
-              <GaugeDial value={streak} max={30} color="#FB923C" label="🔥 רצף" pct={Math.min(100, Math.round(streak / 30 * 100))} unit=" ימים" />
-            </div>
+        {/* RIGHT — KPI Gauges */}
+        <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-5 text-primary py-0 text-lg px-[15px] font-mono font-bold">
+          <span className="text-xs text-muted-foreground font-medium mb-3 block">מדדים עיקריים</span>
+          <div className="flex flex-col items-center gap-2">
+            <GaugeDial value={eri.accuracy} max={100} color="#60A5FA" label="🔵 דיוק" pct={eri.accuracy} unit="%" />
+            <GaugeDial value={eri.coverage} max={100} color="#F97316" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
+            <GaugeDial value={streak} max={30} color="#FB923C" label="🔥 רצף" pct={Math.min(100, Math.round(streak / 30 * 100))} unit=" ימים" />
           </div>
-          <ForgettingRiskTile risks={forgettingRisk} />
         </div>
+      </motion.div>
+
+      {/* ROW 2.5 — Forgetting Risk (full width) */}
+      <motion.div variants={itemVariants}>
+        <ForgettingRiskTile risks={forgettingRisk} />
       </motion.div>
 
       {/* ROW 3 — Accuracy Trend Chart (full width) */}
