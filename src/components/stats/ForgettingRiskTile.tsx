@@ -1,4 +1,4 @@
-import StatsTile from './StatsTile';
+import AnimatedStatsTile from './AnimatedStatsTile';
 import type { ForgettingRisk } from './useStatsData';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
@@ -19,7 +19,7 @@ export default function ForgettingRiskTile({ risks }: Props) {
   };
 
   return (
-    <StatsTile
+    <AnimatedStatsTile
       collapsed={
         <div className="p-5">
           <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
@@ -41,16 +41,16 @@ export default function ForgettingRiskTile({ risks }: Props) {
       }
       expanded={
         <div>
-          <h3 className="text-lg font-bold text-white mb-4">סיכון שכחה — כל הנושאים</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">סיכון שכחה — כל הנושאים</h3>
           <p className="text-xs text-muted-foreground mb-4">ציון = (ימים מהניסיון האחרון / 7) × (1 - דיוק). ככל שהציון גבוה יותר, הסיכון גדול יותר.</p>
           {risks.length === 0 ? (
             <p className="text-sm text-muted-foreground">אין נתונים עדיין</p>
           ) : (
             <div className="space-y-2 max-h-[60vh] overflow-y-auto">
               {risks.map(r => (
-                <div key={r.topic} className="flex items-center justify-between bg-white/5 rounded-lg px-4 py-3">
+                <div key={r.topic} className="flex items-center justify-between bg-muted/30 rounded-lg px-4 py-3">
                   <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-white truncate">{r.topic}</div>
+                    <div className="text-sm font-medium text-foreground truncate">{r.topic}</div>
                     <div className="text-[10px] text-muted-foreground">
                       {r.daysSince} ימים מאז • דיוק {r.accuracy}%
                     </div>
