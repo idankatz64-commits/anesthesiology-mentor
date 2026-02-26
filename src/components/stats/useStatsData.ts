@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
+import { getChapterDisplay } from '@/data/millerChapters';
 
 export type TopicStat = {
   topic: string;
@@ -271,6 +272,7 @@ export function useStatsData() {
       .sort((a, b) => a - b)
       .map(ch => ({
         chapter: ch,
+        chapterName: getChapterDisplay(ch),
         total: chapterTotal[ch],
         answered: chapterAnswered[ch] || 0,
         pct: chapterTotal[ch] > 0 ? Math.round(((chapterAnswered[ch] || 0) / chapterTotal[ch]) * 100) : 0,
