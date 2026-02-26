@@ -64,14 +64,14 @@ function VelocityChart({ data, height }: { data: DayPoint[]; height: number }) {
     <ResponsiveContainer width="100%" height={height}>
       <LineChart data={chartData} margin={{ top: 10, right: 10, left: -15, bottom: 5 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-        <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} />
-        <YAxis domain={[0, 100]} unit="%" tick={{ fill: '#6B7280', fontSize: 12 }} axisLine={false} tickLine={false} />
+        <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: '#6B7280', fontSize: 13 }} axisLine={false} tickLine={false} />
+        <YAxis domain={[0, 100]} unit="%" tick={{ fill: '#6B7280', fontSize: 13 }} axisLine={false} tickLine={false} />
         <Tooltip content={<CustomTooltip />} />
         <ReferenceLine y={70} stroke="#6B7280" strokeDasharray="8 4" strokeWidth={1} label={{ value: 'יעד מבחן', position: 'insideTopRight', fill: '#6B7280', fontSize: 11 }} />
         <Line type="monotone" dataKey="rate" stroke="#FB923C" strokeWidth={1} dot={{ r: 2, fill: '#FB923C' }} name="דיוק יומי" connectNulls={false} />
         <Line type="monotone" dataKey="ma7" stroke="#F97316" strokeWidth={2.5} dot={false} name="ממוצע 7 יום" connectNulls />
         <Line type="monotone" dataKey="ma14" stroke="#60A5FA" strokeWidth={2} strokeDasharray="6 3" dot={false} name="ממוצע 14 יום" connectNulls />
-        <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 13, paddingBottom: 8 }} />
+        <Legend verticalAlign="top" align="right" iconType="line" wrapperStyle={{ fontSize: 14, paddingBottom: 8 }} />
       </LineChart>
     </ResponsiveContainer>
   );
@@ -84,8 +84,8 @@ export default function LearningVelocityTile({ data, fullData }: Props) {
         <div className="p-5">
           <span className="text-xs text-muted-foreground font-medium">מגמת דיוק לאורך זמן</span>
           <p className="text-[10px] text-muted-foreground/50 mb-2">ממוצעים נעים — ימים פעילים בלבד</p>
-          <div style={{ minHeight: 300 }}>
-            <VelocityChart data={data} height={300} />
+          <div style={{ minHeight: 320 }}>
+            <VelocityChart data={data} height={320} />
           </div>
         </div>
       }

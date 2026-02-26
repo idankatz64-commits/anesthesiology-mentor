@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import AnimatedStatsTile from './AnimatedStatsTile';
+import GaugeDial from './GaugeDial';
 import type { WeakZone } from './useStatsData';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
@@ -8,54 +9,6 @@ import { ChevronDown } from 'lucide-react';
 
 interface Props {
   zones: WeakZone;
-}
-
-/* ── Gauge SVG ────────────────────────────────── */
-function GaugeDial({ value, max, color, label, pct }: { value: number; max: number; color: string; label: string; pct: number }) {
-  const size = 100;
-  const strokeWidth = 8;
-  const radius = (size - strokeWidth) / 2 - 4;
-  const startAngle = -180;
-  const endAngle = 0;
-  const range = endAngle - startAngle;
-
-  // Arc path (semicircle)
-  const polarToCartesian = (cx: number, cy: number, r: number, angleDeg: number) => {
-    const rad = (angleDeg * Math.PI) / 180;
-    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-  };
-
-  const arcPath = (start: number, end: number) => {
-    const s = polarToCartesian(size / 2, size / 2 + 5, radius, start);
-    const e = polarToCartesian(size / 2, size / 2 + 5, radius, end);
-    const largeArc = Math.abs(end - start) > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${radius} ${radius} 0 ${largeArc} 1 ${e.x} ${e.y}`;
-  };
-
-  const fillAngle = max > 0 ? startAngle + (Math.min(value, max) / max) * range : startAngle;
-
-  // Needle
-  const needleAngle = max > 0 ? startAngle + (Math.min(value, max) / max) * range : startAngle;
-  const needleTip = polarToCartesian(size / 2, size / 2 + 5, radius - 12, needleAngle);
-
-  return (
-    <div className="flex flex-col items-center">
-      <svg width={size} height={size / 2 + 15} viewBox={`0 0 ${size} ${size / 2 + 15}`}>
-        {/* Background arc */}
-        <path d={arcPath(startAngle, endAngle)} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} strokeLinecap="round" />
-        {/* Fill arc */}
-        {value > 0 && (
-          <path d={arcPath(startAngle, fillAngle)} fill="none" stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" style={{ filter: `drop-shadow(0 0 4px ${color}40)` }} />
-        )}
-        {/* Needle */}
-        <line x1={size / 2} y1={size / 2 + 5} x2={needleTip.x} y2={needleTip.y} stroke={color} strokeWidth={2} strokeLinecap="round" />
-        <circle cx={size / 2} cy={size / 2 + 5} r={3} fill={color} />
-      </svg>
-      <div className="text-lg font-black text-foreground -mt-1" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}</div>
-      <div className="text-[9px] text-muted-foreground">{label}</div>
-      <div className="text-[8px] text-muted-foreground/50">{pct}% מהמאגר</div>
-    </div>
-  );
 }
 
 export default function WeakZoneMapTile({ zones }: Props) {
@@ -89,10 +42,10 @@ export default function WeakZoneMapTile({ zones }: Props) {
       collapsed={
         <div className="p-5">
           <span className="text-xs text-muted-foreground font-medium mb-4 block">מפת חולשות</span>
-          <div className="flex items-end justify-around">
-            <GaugeDial value={zones.deadZone.length} max={maxGauge} color="#EF4444" label="🔴 אזור מת" pct={deadPct} />
-            <GaugeDial value={zones.studiedNotLearned.length} max={maxGauge} color="#EAB308" label="🟡 לא נרכש" pct={studiedPct} />
+          <div className="flex flex-col items-center gap-2">
             <GaugeDial value={zones.mastered.length} max={maxGauge} color="#22C55E" label="🟢 נרכש" pct={masteredPct} />
+            <GaugeDial value={zones.studiedNotLearned.length} max={maxGauge} color="#EAB308" label="🟡 לא נרכש" pct={studiedPct} />
+            <GaugeDial value={zones.deadZone.length} max={maxGauge} color="#EF4444" label="🔴 אזור מת" pct={deadPct} />
           </div>
         </div>
       }

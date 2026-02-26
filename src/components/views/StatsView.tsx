@@ -5,12 +5,13 @@ import { motion } from 'framer-motion';
 import ComparativeStats from './ComparativeStats';
 import { useStatsData } from '@/components/stats/useStatsData';
 import ERITile from '@/components/stats/ERITile';
-import StreakTile from '@/components/stats/StreakTile';
-import LearningVelocityTile from '@/components/stats/LearningVelocityTile';
 import WeakZoneMapTile from '@/components/stats/WeakZoneMapTile';
 import ForgettingRiskTile from '@/components/stats/ForgettingRiskTile';
+import LearningVelocityTile from '@/components/stats/LearningVelocityTile';
 import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
+import GaugeDial from '@/components/stats/GaugeDial';
+import { HeatmapGrid, HeatmapLegend } from '@/components/stats/HeatmapGrid';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -32,6 +33,9 @@ export default function StatsView() {
     forgettingRisk, dailyData90,
     trendData14, trendData30,
   } = useStatsData();
+
+  const withExp = data.filter(q => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
+  const withoutExp = data.length - withExp;
 
   const handleTopicClick = (topic: string) => {
     const topicQuestions = data.filter(q => q[KEYS.TOPIC] === topic);
@@ -80,8 +84,35 @@ export default function StatsView() {
         <p className="text-xs text-muted-foreground hidden md:block">לחץ על כרטיס לפירוט מלא</p>
       </motion.div>
 
-      {/* Hero — ERI Centerpiece */}
-      <motion.div variants={itemVariants}>
+      {/* ROW 1 — Question Bank Status Bar */}
+      <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3">
+        <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-3 text-center">
+          <div className="text-2xl font-black text-orange-400" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withoutExp}</div>
+          <div className="text-[10px] text-muted-foreground">ללא הסבר</div>
+        </div>
+        <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-3 text-center">
+          <div className="text-2xl font-black text-green-400" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withExp}</div>
+          <div className="text-[10px] text-muted-foreground">כוללות הסבר</div>
+        </div>
+        <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-3 text-center">
+          <div className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{data.length}</div>
+          <div className="text-[10px] text-muted-foreground">סה״כ שאלות</div>
+        </div>
+      </motion.div>
+
+      {/* ROW 2 — Main 3-Column Dashboard Panel */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* LEFT — Weak Zones + Heatmap */}
+        <div className="flex flex-col gap-4">
+          <WeakZoneMapTile zones={weakZones} />
+          <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-4">
+            <span className="text-[10px] text-muted-foreground font-medium block mb-2">פעילות 90 יום</span>
+            <HeatmapGrid dailyData={dailyData90} cellSize={10} gap={2} />
+            <HeatmapLegend />
+          </div>
+        </div>
+
+        {/* CENTER — ERI Hero */}
         <ERITile
           value={eri.value}
           accuracy={eri.accuracy}
@@ -90,49 +121,46 @@ export default function StatsView() {
           consistency={eri.consistency}
           streak={streak}
         />
-      </motion.div>
 
-      {/* Row 1 — Learning Velocity (2/3) + Weak Zones gauges (1/3) */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          <LearningVelocityTile data={trendData14} fullData={trendData30} />
-        </div>
-        <div className="md:col-span-1">
-          <WeakZoneMapTile zones={weakZones} />
-        </div>
-      </motion.div>
-
-      {/* Row 2 — Topic Treemap Heatmap (full width) */}
-      <motion.div variants={itemVariants}>
-        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} />
-      </motion.div>
-
-      {/* Row 3 — Compact topic table (2/3) + Forgetting Risk (1/3) */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
-          <TopicPerformanceTable
-            topicData={stats.topicData}
-            onTopicClick={handleTopicClick}
-            progress={progress}
-            data={data}
-          />
-        </div>
-        <div className="md:col-span-1">
+        {/* RIGHT — KPI Gauges + Forgetting Risk */}
+        <div className="flex flex-col gap-4">
+          <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-5">
+            <span className="text-xs text-muted-foreground font-medium mb-3 block">מדדים עיקריים</span>
+            <div className="flex flex-col items-center gap-2">
+              <GaugeDial value={eri.accuracy} max={100} color="#60A5FA" label="🔵 דיוק" pct={eri.accuracy} unit="%" />
+              <GaugeDial value={eri.coverage} max={100} color="#F97316" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
+              <GaugeDial value={streak} max={30} color="#FB923C" label="🔥 רצף" pct={Math.min(100, Math.round((streak / 30) * 100))} unit=" ימים" />
+            </div>
+          </div>
           <ForgettingRiskTile risks={forgettingRisk} />
         </div>
       </motion.div>
 
-      {/* Row 4 — Group Position (full width) */}
+      {/* ROW 3 — Accuracy Trend Chart (full width) */}
+      <motion.div variants={itemVariants}>
+        <LearningVelocityTile data={trendData14} fullData={trendData30} />
+      </motion.div>
+
+      {/* ROW 4 — Topic Heatmap + Table (full width) */}
+      <motion.div variants={itemVariants}>
+        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} />
+      </motion.div>
+
+      <motion.div variants={itemVariants}>
+        <TopicPerformanceTable
+          topicData={stats.topicData}
+          onTopicClick={handleTopicClick}
+          progress={progress}
+          data={data}
+        />
+      </motion.div>
+
+      {/* ROW 5 — Group Position */}
       <motion.div variants={itemVariants}>
         <ComparativeStats />
       </motion.div>
 
-      {/* Row 5 — Study Heatmap (full width) */}
-      <motion.div variants={itemVariants}>
-        <StreakTile streak={streak} dailyData={dailyData90} />
-      </motion.div>
-
-      {/* Row 6 — Import/Export */}
+      {/* ROW 6 — Import/Export */}
       <motion.div variants={itemVariants} className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-6">
         <h3 className="font-bold mb-4 text-foreground text-sm flex items-center gap-2">💾 ניהול נתונים וגיבוי</h3>
         <div className="flex flex-col sm:flex-row gap-3">

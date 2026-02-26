@@ -1,4 +1,4 @@
-import { useState, useEffect, useId, ReactNode } from 'react';
+import { useState, useEffect, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import {
@@ -17,8 +17,8 @@ interface ERITileProps {
 
 const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
-function ERIRing({ value, size = 200 }: { value: number; size?: number }) {
-  const strokeWidth = 10;
+function ERIRing({ value, size = 240 }: { value: number; size?: number }) {
+  const strokeWidth = 12;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
@@ -35,7 +35,7 @@ function ERIRing({ value, size = 200 }: { value: number; size?: number }) {
         />
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-4xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
+        <span className="text-5xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
         <span className="text-xs text-muted-foreground font-medium mt-1">{getLabel(value)}</span>
       </div>
     </div>
@@ -84,14 +84,14 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
         onClick={() => setOpen(true)}
         whileHover={{ scale: 1.01 }}
         transition={spring}
-        className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl cursor-pointer hover:border-orange-500/30 hover:shadow-[0_0_30px_rgba(249,115,22,0.08)] transition-shadow"
+        className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl cursor-pointer hover:border-orange-500/30 hover:shadow-[0_0_30px_rgba(249,115,22,0.08)] transition-shadow h-full"
       >
-        <div className="flex flex-col items-center py-8 px-4">
-          <ERIRing value={value} size={200} />
+        <div className="flex flex-col items-center py-6 px-4">
+          <ERIRing value={value} size={240} />
           <p className="text-[10px] text-muted-foreground/50 mt-2">מדד מוכנות למבחן</p>
 
           {/* Satellite pills */}
-          <div className="flex items-center gap-4 mt-5">
+          <div className="flex items-center gap-4 mt-4">
             {satellites.map(s => (
               <div key={s.label} className="flex flex-col items-center bg-muted/20 dark:bg-white/[0.04] rounded-lg px-4 py-2 border border-border dark:border-white/[0.06]">
                 <span className="text-lg font-black" style={{ fontFamily: "'Share Tech Mono', monospace", color: s.color }}>{s.value}</span>
