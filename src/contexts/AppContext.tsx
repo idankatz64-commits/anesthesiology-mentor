@@ -160,24 +160,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, []);
 
-  // Realtime subscription for questions table (debounced to prevent fetch storms)
-  useEffect(() => {
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-    const channel = supabase
-      .channel('questions-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'questions' }, () => {
-        // Debounce: wait 3s after last change before refetching
-        if (debounceTimer) clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(() => {
-          fetchQuestions().then(setData).catch(console.error);
-        }, 3000);
-      })
-      .subscribe();
-    return () => {
-      if (debounceTimer) clearTimeout(debounceTimer);
-      supabase.removeChannel(channel);
-    };
-  }, []);
+  // Realtime subscription REMOVED to eliminate persistent WebSocket connections
+  // and reduce Cloud credit consumption. Questions are fetched once on load.
+  // Admin sync operations will reflect on next page refresh.
 
   const saveProgressFn = useCallback(() => {
     localStorage.setItem(LS_KEY, JSON.stringify(progressRef.current));
