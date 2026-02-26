@@ -5,13 +5,12 @@ import { motion } from 'framer-motion';
 import ComparativeStats from './ComparativeStats';
 import { useStatsData } from '@/components/stats/useStatsData';
 import ERITile from '@/components/stats/ERITile';
-import AccuracyTile from '@/components/stats/AccuracyTile';
-import CoverageTile from '@/components/stats/CoverageTile';
 import StreakTile from '@/components/stats/StreakTile';
 import LearningVelocityTile from '@/components/stats/LearningVelocityTile';
 import WeakZoneMapTile from '@/components/stats/WeakZoneMapTile';
 import ForgettingRiskTile from '@/components/stats/ForgettingRiskTile';
 import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
+import TopicTreemap from '@/components/stats/TopicTreemap';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,8 +28,8 @@ const itemVariants = {
 export default function StatsView() {
   const { data, progress, importData, startSession } = useApp();
   const {
-    stats, eri, streak, accuracyTrend, weakZones,
-    forgettingRisk, chapterCoverage, dailyData14, dailyData30, dailyData90,
+    stats, eri, streak, weakZones,
+    forgettingRisk, dailyData90,
     trendData14, trendData30,
   } = useStatsData();
 
@@ -81,26 +80,19 @@ export default function StatsView() {
         <p className="text-xs text-muted-foreground hidden md:block">לחץ על כרטיס לפירוט מלא</p>
       </motion.div>
 
-      {/* Row 1 — 4 KPI Cards */}
-      <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StreakTile streak={streak} dailyData={dailyData90} />
-        <CoverageTile coverage={stats.coverage} chapters={chapterCoverage} />
-        <AccuracyTile
-          accuracy={stats.accuracy}
-          trend={accuracyTrend}
-          sparkData={dailyData14}
-          fullData={trendData30}
-        />
+      {/* Hero — ERI Centerpiece */}
+      <motion.div variants={itemVariants}>
         <ERITile
           value={eri.value}
           accuracy={eri.accuracy}
           coverage={eri.coverage}
           criticalAvg={eri.criticalAvg}
           consistency={eri.consistency}
+          streak={streak}
         />
       </motion.div>
 
-      {/* Row 2 — Velocity (2/3) + Weak Zone (1/3) */}
+      {/* Row 1 — Learning Velocity (2/3) + Weak Zones gauges (1/3) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           <LearningVelocityTile data={trendData14} fullData={trendData30} />
@@ -110,14 +102,12 @@ export default function StatsView() {
         </div>
       </motion.div>
 
-      {/* Row 2.5 — Forgetting Risk (standalone medium) */}
+      {/* Row 2 — Topic Treemap Heatmap (full width) */}
       <motion.div variants={itemVariants}>
-        <ForgettingRiskTile risks={forgettingRisk} />
+        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} />
       </motion.div>
 
-      {/* Row 3 — Study Heatmap full width — integrated in StreakTile above */}
-
-      {/* Row 4 — Topic table (2/3) + Group Position (1/3) */}
+      {/* Row 3 — Compact topic table (2/3) + Forgetting Risk (1/3) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2">
           <TopicPerformanceTable
@@ -128,12 +118,22 @@ export default function StatsView() {
           />
         </div>
         <div className="md:col-span-1">
-          <ComparativeStats />
+          <ForgettingRiskTile risks={forgettingRisk} />
         </div>
       </motion.div>
 
-      {/* Import/Export */}
-      <motion.div variants={itemVariants} className="bg-card border border-border rounded-2xl p-6">
+      {/* Row 4 — Group Position (full width) */}
+      <motion.div variants={itemVariants}>
+        <ComparativeStats />
+      </motion.div>
+
+      {/* Row 5 — Study Heatmap (full width) */}
+      <motion.div variants={itemVariants}>
+        <StreakTile streak={streak} dailyData={dailyData90} />
+      </motion.div>
+
+      {/* Row 6 — Import/Export */}
+      <motion.div variants={itemVariants} className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-6">
         <h3 className="font-bold mb-4 text-foreground text-sm flex items-center gap-2">💾 ניהול נתונים וגיבוי</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <button onClick={handleExport} className="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-orange-500/20 transition flex items-center justify-center gap-2">

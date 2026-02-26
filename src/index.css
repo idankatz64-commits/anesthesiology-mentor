@@ -364,3 +364,12 @@
 .hover-glow:hover {
   box-shadow: var(--glow-primary);
 }
+
+/* Pulsing border for forgetting risk */
+.animate-pulse-border {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+@keyframes pulse-border {
+  0%, 100% { border-color: rgba(249, 115, 22, 0.1); }
+  50% { border-color: rgba(249, 115, 22, 0.4); }
+}
