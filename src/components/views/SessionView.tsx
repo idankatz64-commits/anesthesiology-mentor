@@ -413,7 +413,7 @@ export default function SessionView() {
 
         {/* Feedback - NOT shown in simulation mode */}
         {showFeedback && (
-          <div className="bg-muted/30 border-t border-border p-8 md:p-10 space-y-6">
+          <div className="bg-muted/30 border-t border-border p-5 md:p-10 space-y-6">
             {/* (1) Correct/Wrong indicator */}
             <div className="font-bold text-lg flex items-center gap-2">
               {savedAns === correctAns ? (
