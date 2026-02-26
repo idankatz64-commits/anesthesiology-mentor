@@ -6,7 +6,7 @@ import type { User as SupaUser } from '@supabase/supabase-js';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/AppContext';
 
-const TopNav = forwardRef<HTMLDivElement>(function TopNav(_props, ref) {
+const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>(function TopNav(_props, ref) {
   const [user, setUser] = useState<SupaUser | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
