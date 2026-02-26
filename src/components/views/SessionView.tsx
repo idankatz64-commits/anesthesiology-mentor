@@ -45,7 +45,7 @@ export default function SessionView() {
   const {
     session, progress, navigate, setAnswer, setConfidence, setSessionIndex,
     toggleFlag, skipQuestion, updateHistory, updateSpacedRepetition, syncAnswerToDb, toggleFavorite,
-    saveNote, setRating, addTag, removeTag,
+    saveNote, setRating, addTag, removeTag, saveSessionToDb, clearSavedSession,
   } = useApp();
   const { toast } = useToast();
   const isAdmin = useIsAdmin();
@@ -131,6 +131,7 @@ export default function SessionView() {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
     } else {
+      clearSavedSession();
       if (isReviewMode) navigate('results');
       else if (isSimulation) navigate('results');
       else navigate('review');
@@ -157,7 +158,18 @@ export default function SessionView() {
 
   const handleExit = () => {
     if (isReviewMode) { navigate('results'); return; }
-    if (confirm('לצאת? ההתקדמות לא תישמר.')) navigate('home');
+    const choice = window.confirm('לשמור את ההתקדמות ולהמשיך מאוחר יותר?');
+    if (choice) {
+      saveSessionToDb(timerSeconds, simTimerSeconds).then(() => {
+        toast({ title: 'הסשן נשמר ✅', description: 'תוכל להמשיך מאוחר יותר מדף הבית.' });
+        navigate('home');
+      });
+    } else {
+      if (window.confirm('לצאת בלי לשמור?')) {
+        clearSavedSession();
+        navigate('home');
+      }
+    }
   };
 
   const handleSubmitSimulation = () => {
@@ -169,6 +181,7 @@ export default function SessionView() {
         syncAnswerToDb(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
       }
     });
+    clearSavedSession();
     navigate('results');
   };
 
