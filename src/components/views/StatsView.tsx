@@ -79,22 +79,22 @@ export default function StatsView() {
       animate="visible">
 
       {/* Header */}
-      <motion.div variants={itemVariants} className="flex items-center justify-between">
+      <motion.div variants={itemVariants} className="flex items-center justify-between" dir="rtl">
         <h1 className="text-2xl font-bold text-foreground">דשבורד ביצועים</h1>
         <p className="text-xs text-muted-foreground hidden md:block">לחץ על כרטיס לפירוט מלא</p>
       </motion.div>
 
       {/* ROW 1 — Question Bank Status Bar */}
-      <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3">
-        <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-3 text-center">
-          <div className="text-2xl font-black text-orange-400" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withoutExp}</div>
+      <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3" dir="rtl">
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
+          <div className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withoutExp}</div>
           <div className="text-[10px] text-muted-foreground">ללא הסבר</div>
         </div>
-        <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-3 text-center">
-          <div className="text-2xl font-black text-green-400" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withExp}</div>
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
+          <div className="text-2xl font-black text-primary" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withExp}</div>
           <div className="text-[10px] text-muted-foreground">כוללות הסבר</div>
         </div>
-        <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-3 text-center">
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{data.length}</div>
           <div className="text-[10px] text-muted-foreground">סה״כ שאלות</div>
         </div>
@@ -115,8 +115,8 @@ export default function StatsView() {
           streak={streak} />
 
         {/* RIGHT — KPI Gauges */}
-        <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-5 text-primary py-0 text-lg px-[15px] font-mono font-bold">
-          <span className="text-xs text-muted-foreground font-medium mb-3 block">מדדים עיקריים</span>
+        <div className="bg-card border border-border rounded-xl p-5" dir="rtl">
+          <span className="text-xs text-muted-foreground font-medium mb-3 block text-right">מדדים עיקריים</span>
           <div className="flex flex-col items-center gap-2">
             <GaugeDial value={eri.accuracy} max={100} color="#60A5FA" label="🔵 דיוק" pct={eri.accuracy} unit="%" />
             <GaugeDial value={eri.coverage} max={100} color="#F97316" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
@@ -155,10 +155,10 @@ export default function StatsView() {
       </motion.div>
 
       {/* ROW 6 — Import/Export */}
-      <motion.div variants={itemVariants} className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-6">
+      <motion.div variants={itemVariants} className="bg-card border border-border rounded-xl p-6" dir="rtl">
         <h3 className="font-bold mb-4 text-foreground text-sm flex items-center gap-2">💾 ניהול נתונים וגיבוי</h3>
         <div className="flex flex-col sm:flex-row gap-3">
-          <button onClick={handleExport} className="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-orange-500/20 transition flex items-center justify-center gap-2">
+          <button onClick={handleExport} className="bg-primary/10 text-primary border border-primary/20 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2">
             <Download className="w-4 h-4" /> שמור גיבוי לקובץ
           </button>
           <label className="bg-muted/30 text-foreground border border-border px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-muted/50 transition flex items-center justify-center gap-2 cursor-pointer">
