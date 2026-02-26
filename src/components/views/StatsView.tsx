@@ -1,12 +1,12 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Search, Download, Upload, ArrowUpDown } from 'lucide-react';
+import { Search, Download, Upload, ArrowUpDown, TrendingUp, TrendingDown, Minus, Target, BookOpen, CheckCircle, BarChart3 } from 'lucide-react';
 import ComparativeStats from './ComparativeStats';
 import { supabase } from '@/integrations/supabase/client';
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as ReTooltip,
-  ResponsiveContainer, ReferenceLine,
+  ResponsiveContainer, Area, AreaChart,
 } from 'recharts';
 
 type TopicStat = {
@@ -41,16 +41,95 @@ function linearRegression(data: { x: number; y: number }[]) {
   return { slope, intercept };
 }
 
-function GroupAvgPlaceholder() {
+/* ─── Circular Progress Ring ─── */
+function ProgressRing({ value, size = 160, strokeWidth = 12 }: { value: number; size?: number; strokeWidth?: number }) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (value / 100) * circumference;
+  const color = value >= 70 ? 'hsl(var(--success))' : value >= 50 ? 'hsl(var(--warning))' : 'hsl(var(--destructive))';
+
   return (
-    <p className="text-xs text-muted-foreground mt-2 italic">
-      ממוצע קבוצתי: -- (יהיה זמין כשמשתמשים נוספים יצטרפו)
-    </p>
+    <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke="hsl(var(--muted))" strokeWidth={strokeWidth} />
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none"
+          stroke={color} strokeWidth={strokeWidth}
+          strokeDasharray={circumference} strokeDashoffset={offset}
+          strokeLinecap="round"
+          style={{ transition: 'stroke-dashoffset 1s ease-out' }} />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-black text-foreground">{value}%</span>
+        <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider mt-0.5">מוכנות</span>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Mini Sparkline ─── */
+function MiniSparkline({ data, dataKey, color }: { data: any[]; dataKey: string; color: string }) {
+  return (
+    <ResponsiveContainer width="100%" height={32}>
+      <AreaChart data={data} margin={{ top: 2, right: 0, left: 0, bottom: 2 }}>
+        <defs>
+          <linearGradient id={`spark-${dataKey}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={color} stopOpacity={0.3} />
+            <stop offset="100%" stopColor={color} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+        <Area type="monotone" dataKey={dataKey} stroke={color} strokeWidth={1.5}
+          fill={`url(#spark-${dataKey})`} dot={false} />
+      </AreaChart>
+    </ResponsiveContainer>
+  );
+}
+
+/* ─── KPI Card ─── */
+function KPICard({
+  icon, label, value, trend, sparkData, sparkKey, sparkColor,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string | number;
+  trend?: 'up' | 'down' | 'neutral';
+  sparkData?: any[];
+  sparkKey?: string;
+  sparkColor?: string;
+}) {
+  return (
+    <div className="liquid-glass p-5 flex flex-col justify-between min-h-[140px]">
+      <div className="flex items-start justify-between mb-2">
+        <div className="w-9 h-9 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+          {icon}
+        </div>
+        {trend && (
+          <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-full ${
+            trend === 'up' ? 'bg-success/10 text-success' :
+            trend === 'down' ? 'bg-destructive/10 text-destructive' :
+            'bg-muted text-muted-foreground'
+          }`}>
+            {trend === 'up' ? <TrendingUp className="w-3 h-3" /> :
+             trend === 'down' ? <TrendingDown className="w-3 h-3" /> :
+             <Minus className="w-3 h-3" />}
+          </div>
+        )}
+      </div>
+      <div>
+        <div className="text-2xl font-black text-foreground matrix-text">{value}</div>
+        <div className="text-[11px] text-muted-foreground font-medium mt-0.5">{label}</div>
+      </div>
+      {sparkData && sparkKey && sparkColor && (
+        <div className="mt-2 -mx-1">
+          <MiniSparkline data={sparkData} dataKey={sparkKey} color={sparkColor} />
+        </div>
+      )}
+    </div>
   );
 }
 
 export default function StatsView() {
-  const { data, progress, importData } = useApp();
+  const { data, progress, importData, startSession, navigate } = useApp();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('smartScore');
   const [sortAsc, setSortAsc] = useState(true);
@@ -73,7 +152,6 @@ export default function StatsView() {
         .eq('user_id', session.user.id)
         .gte('updated_at', startStr + 'T00:00:00Z');
 
-      // Build 14-day buckets
       const buckets: Record<string, { count: number; correct: number }> = {};
       for (let i = 0; i < 14; i++) {
         const d = new Date();
@@ -115,19 +193,6 @@ export default function StatsView() {
     }));
   }, [dailyData]);
 
-  // Success rate with color segments
-  const rateSegments = useMemo(() => {
-    return trendData.map((d, i) => {
-      const prev = i > 0 ? trendData[i - 1] : null;
-      let color = 'hsl(var(--muted-foreground))';
-      if (prev && prev.count > 0 && d.count > 0) {
-        if (d.rate > prev.rate) color = 'hsl(var(--success))';
-        else if (d.rate < prev.rate) color = 'hsl(var(--destructive))';
-      }
-      return { ...d, segmentColor: color };
-    });
-  }, [trendData]);
-
   const stats = useMemo(() => {
     let totalUnique = 0, correctUnique = 0, totalAttempts = 0;
     const topicMap: Record<string, { totalAnswered: number; correct: number; wrong: number }> = {};
@@ -167,7 +232,10 @@ export default function StatsView() {
       };
     });
 
-    return { totalUnique, correctUnique, totalAttempts, accuracy, coverage, topicData };
+    // Exam readiness = weighted average of coverage & accuracy
+    const readiness = Math.round(coverage * 0.4 + accuracy * 0.6);
+
+    return { totalUnique, correctUnique, totalAttempts, accuracy, coverage, topicData, readiness };
   }, [data, progress]);
 
   const filteredTopics = useMemo(() => {
@@ -181,27 +249,49 @@ export default function StatsView() {
     return filtered;
   }, [stats.topicData, searchTerm, sortKey, sortAsc]);
 
-  const chartData = useMemo(() => {
-    return [...stats.topicData]
-      .filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()))
-      .sort((a, b) => a.smartScore - b.smartScore);
-  }, [stats.topicData, searchTerm]);
-
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
     else { setSortKey(key); setSortAsc(true); }
   };
 
-  const getBarColor = (score: number) => {
-    if (score >= 80) return 'bg-success';
-    if (score >= 60) return 'bg-warning';
-    return 'bg-destructive';
+  const getScoreColor = (score: number) => {
+    if (score > 70) return 'text-success';
+    if (score >= 50) return 'text-warning';
+    return 'text-destructive';
   };
 
-  const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-success';
-    if (score >= 60) return 'text-warning';
-    return 'text-destructive';
+  const getScoreBg = (score: number) => {
+    if (score > 70) return 'bg-success/15 text-success';
+    if (score >= 50) return 'bg-warning/15 text-warning';
+    return 'bg-destructive/15 text-destructive';
+  };
+
+  // Trend calculation: compare last 7 days vs previous 7 days
+  const accuracyTrend = useMemo<'up' | 'down' | 'neutral'>(() => {
+    if (dailyData.length < 14) return 'neutral';
+    const recent = dailyData.slice(7).filter(d => d.count > 0);
+    const older = dailyData.slice(0, 7).filter(d => d.count > 0);
+    if (recent.length === 0 || older.length === 0) return 'neutral';
+    const recentAvg = recent.reduce((s, d) => s + d.rate, 0) / recent.length;
+    const olderAvg = older.reduce((s, d) => s + d.rate, 0) / older.length;
+    if (recentAvg > olderAvg + 3) return 'up';
+    if (recentAvg < olderAvg - 3) return 'down';
+    return 'neutral';
+  }, [dailyData]);
+
+  const activityTrend = useMemo<'up' | 'down' | 'neutral'>(() => {
+    if (dailyData.length < 14) return 'neutral';
+    const recent = dailyData.slice(7).reduce((s, d) => s + d.count, 0);
+    const older = dailyData.slice(0, 7).reduce((s, d) => s + d.count, 0);
+    if (recent > older + 5) return 'up';
+    if (recent < older - 5) return 'down';
+    return 'neutral';
+  }, [dailyData]);
+
+  const handleTopicClick = (topic: string) => {
+    const topicQuestions = data.filter(q => q[KEYS.TOPIC] === topic);
+    if (topicQuestions.length === 0) return;
+    startSession(topicQuestions, Math.min(topicQuestions.length, 15), 'practice');
   };
 
   const handleExport = () => {
@@ -237,44 +327,112 @@ export default function StatsView() {
   };
 
   return (
-    <div className="fade-in max-w-6xl mx-auto">
-      <h2 className="text-3xl font-bold mb-8 text-foreground">הסטטיסטיקה שלי</h2>
-
-      {/* Summary Row */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <SummaryCard label="סך ניסיונות" value={stats.totalAttempts} />
-        <SummaryCard label="שאלות ייחודיות" value={`${stats.totalUnique} / ${data.length}`} />
-        <SummaryCard label="כיסוי מאגר" value={`${stats.coverage}%`} accent />
-        <SummaryCard label="דיוק כללי" value={`${stats.accuracy}%`} accent />
+    <div className="fade-in max-w-6xl mx-auto space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-3xl font-bold text-foreground">דשבורד ביצועים</h2>
+        <p className="text-sm text-muted-foreground hidden md:block">14 ימים אחרונים</p>
       </div>
 
-      {/* NEW: Daily Question Completion */}
-      <div className="soft-card bg-card border border-border p-6 mb-10 card-accent-top">
-        <h3 className="font-bold text-foreground mb-4">שאלות שהושלמו ליום (14 ימים אחרונים)</h3>
-        <ResponsiveContainer width="100%" height={220}>
-          <BarChart data={dailyData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="date" tickFormatter={formatDateLabel} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-            <YAxis allowDecimals={false} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-            <ReTooltip
-              contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }}
-              labelFormatter={formatDateLabel}
-              formatter={(v: number) => [v, 'שאלות']}
-            />
-            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-          </BarChart>
-        </ResponsiveContainer>
-        <GroupAvgPlaceholder />
+      {/* ─── KPI Cards Row ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KPICard
+          icon={<Target className="w-4 h-4" />}
+          label="דיוק כללי"
+          value={`${stats.accuracy}%`}
+          trend={accuracyTrend}
+          sparkData={dailyData}
+          sparkKey="rate"
+          sparkColor="hsl(var(--primary))"
+        />
+        <KPICard
+          icon={<BarChart3 className="w-4 h-4" />}
+          label="כיסוי מאגר"
+          value={`${stats.coverage}%`}
+          trend={stats.coverage > 50 ? 'up' : 'neutral'}
+          sparkData={dailyData}
+          sparkKey="count"
+          sparkColor="hsl(var(--info))"
+        />
+        <KPICard
+          icon={<BookOpen className="w-4 h-4" />}
+          label="שאלות ייחודיות"
+          value={`${stats.totalUnique} / ${data.length}`}
+          trend={activityTrend}
+        />
+        <KPICard
+          icon={<CheckCircle className="w-4 h-4" />}
+          label="סך ניסיונות"
+          value={stats.totalAttempts}
+          trend={activityTrend}
+        />
       </div>
 
-      {/* NEW: Daily Success Rate */}
-      <div className="soft-card bg-card border border-border p-6 mb-10 card-accent-top">
-        <h3 className="font-bold text-foreground mb-4">אחוז הצלחה יומי (מעקב שיפור)</h3>
-        <ResponsiveContainer width="100%" height={220}>
-          <LineChart data={rateSegments} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="date" tickFormatter={formatDateLabel} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} />
-            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }} unit="%" />
+      {/* ─── Two-Column Middle Section ─── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left: Daily Activity Chart (2/3 width) */}
+        <div className="lg:col-span-2 liquid-glass p-6">
+          <h3 className="font-bold text-foreground mb-1 text-sm">פעילות יומית</h3>
+          <p className="text-xs text-muted-foreground mb-4">שאלות שהושלמו + אחוז הצלחה</p>
+          <ResponsiveContainer width="100%" height={240}>
+            <BarChart data={dailyData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+              <defs>
+                <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.9} />
+                  <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+              <XAxis dataKey="date" tickFormatter={formatDateLabel}
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={false} tickLine={false} />
+              <YAxis allowDecimals={false}
+                tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+                axisLine={false} tickLine={false} />
+              <ReTooltip
+                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }}
+                labelFormatter={formatDateLabel}
+                formatter={(v: number) => [v, 'שאלות']}
+              />
+              <Bar dataKey="count" fill="url(#barGrad)" radius={[6, 6, 0, 0]} maxBarSize={32} />
+            </BarChart>
+          </ResponsiveContainer>
+          <p className="text-xs text-muted-foreground mt-2 italic">
+            ממוצע קבוצתי: -- (יהיה זמין כשמשתמשים נוספים יצטרפו)
+          </p>
+        </div>
+
+        {/* Right: Exam Readiness Ring (1/3 width) */}
+        <div className="liquid-glass p-6 flex flex-col items-center justify-center gap-4">
+          <h3 className="font-bold text-foreground text-sm">מוכנות למבחן</h3>
+          <ProgressRing value={stats.readiness} />
+          <div className="grid grid-cols-2 gap-3 w-full text-center mt-2">
+            <div className="bg-muted/50 rounded-xl p-3">
+              <div className="text-lg font-bold text-foreground matrix-text">{stats.coverage}%</div>
+              <div className="text-[10px] text-muted-foreground">כיסוי</div>
+            </div>
+            <div className="bg-muted/50 rounded-xl p-3">
+              <div className="text-lg font-bold text-foreground matrix-text">{stats.accuracy}%</div>
+              <div className="text-[10px] text-muted-foreground">דיוק</div>
+            </div>
+          </div>
+          <p className="text-[10px] text-muted-foreground text-center">מוכנות = 40% כיסוי + 60% דיוק</p>
+        </div>
+      </div>
+
+      {/* ─── Success Rate Chart ─── */}
+      <div className="liquid-glass p-6">
+        <h3 className="font-bold text-foreground mb-1 text-sm">אחוז הצלחה יומי (מעקב שיפור)</h3>
+        <p className="text-xs text-muted-foreground mb-4">קו מלא = הצלחה, קו מקווקו = מגמה</p>
+        <ResponsiveContainer width="100%" height={200}>
+          <LineChart data={trendData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+            <XAxis dataKey="date" tickFormatter={formatDateLabel}
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              axisLine={false} tickLine={false} />
+            <YAxis domain={[0, 100]}
+              tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
+              unit="%" axisLine={false} tickLine={false} />
             <ReTooltip
               contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }}
               labelFormatter={formatDateLabel}
@@ -283,80 +441,71 @@ export default function StatsView() {
                 return [v + '%', 'אחוז הצלחה'];
               }}
             />
-            <Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3, fill: 'hsl(var(--primary))' }} connectNulls={false} />
-            <Line type="monotone" dataKey="trend" stroke="hsl(var(--info))" strokeWidth={2} strokeDasharray="6 3" dot={false} connectNulls />
+            <Line type="monotone" dataKey="rate" stroke="hsl(var(--primary))" strokeWidth={2}
+              dot={{ r: 3, fill: 'hsl(var(--primary))' }} connectNulls={false} />
+            <Line type="monotone" dataKey="trend" stroke="hsl(var(--info))" strokeWidth={2}
+              strokeDasharray="6 3" dot={false} connectNulls />
           </LineChart>
         </ResponsiveContainer>
-        <GroupAvgPlaceholder />
+        <p className="text-xs text-muted-foreground mt-2 italic">
+          ממוצע קבוצתי: -- (יהיה זמין כשמשתמשים נוספים יצטרפו)
+        </p>
       </div>
 
-      {/* Search */}
-      <div className="relative w-full md:w-1/3 mb-6">
-        <input
-          type="text"
-          value={searchTerm}
-          onChange={e => setSearchTerm(e.target.value)}
-          placeholder="חפש נושא..."
-          className="w-full p-3 pl-10 border border-border rounded-xl bg-card text-foreground outline-none focus:border-primary transition"
-        />
-        <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
-      </div>
-
-      {/* Bar Chart */}
-      {chartData.length > 0 && (
-        <div className="soft-card bg-card border border-border p-6 mb-10 card-accent-top">
-          <h3 className="font-bold text-foreground mb-6">Smart Score לפי נושא (חלש → חזק)</h3>
-          <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
-            {chartData.map(entry => (
-              <div key={entry.topic}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-foreground truncate max-w-[60%]">{entry.topic}</span>
-                  <span className={`text-sm font-bold matrix-text ${getScoreColor(entry.smartScore)}`}>{entry.smartScore}%</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-5 overflow-hidden">
-                  <div
-                    className={`h-full rounded-full transition-all duration-700 ${getBarColor(entry.smartScore)}`}
-                    style={{ width: `${Math.max(entry.smartScore, 2)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+      {/* ─── Topic Performance Table ─── */}
+      <div className="liquid-glass overflow-hidden">
+        <div className="p-5 border-b border-border/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="font-bold text-foreground text-sm">ביצועים לפי נושא</h3>
+            <p className="text-xs text-muted-foreground mt-0.5">לחץ על שורה כדי להתחיל תרגול בנושא</p>
           </div>
-          <GroupAvgPlaceholder />
+          <div className="relative w-full sm:w-56">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              placeholder="חפש נושא..."
+              className="w-full py-2 px-3 pl-9 border border-border rounded-lg bg-card/50 text-foreground text-sm outline-none focus:border-primary transition"
+            />
+            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+          </div>
         </div>
-      )}
 
-      {/* Data Table */}
-      {filteredTopics.length > 0 && (
-        <div className="soft-card bg-card border border-border overflow-hidden mb-10 card-accent-top">
+        {filteredTopics.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="bg-muted/50 border-b border-border text-muted-foreground">
+                <tr className="bg-muted/30 border-b border-border/50 text-muted-foreground">
                   <ThHeader label="נושא" sortKey="topic" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
                   <ThHeader label="במאגר" sortKey="totalInDb" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
                   <ThHeader label="נענו" sortKey="totalAnswered" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
-                  <ThHeader label="נכון" sortKey="correct" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
-                  <ThHeader label="שגוי" sortKey="wrong" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
-                  <ThHeader label="דיוק %" sortKey="accuracy" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
-                  <ThHeader label="Smart Score %" sortKey="smartScore" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="✓" sortKey="correct" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="✗" sortKey="wrong" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="דיוק" sortKey="accuracy" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
+                  <ThHeader label="Smart Score" sortKey="smartScore" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
                 </tr>
               </thead>
               <tbody>
                 {filteredTopics.map(t => (
-                  <tr key={t.topic} className="border-b border-border hover:bg-muted/30 transition">
-                    <td className="px-4 py-3 font-medium text-foreground">{t.topic}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{t.totalInDb}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{t.totalAnswered}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{t.correct}</td>
-                    <td className="px-4 py-3 text-center text-muted-foreground matrix-text">{t.wrong}</td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`font-bold matrix-text ${getScoreColor(t.accuracy)}`}>
+                  <tr
+                    key={t.topic}
+                    onClick={() => handleTopicClick(t.topic)}
+                    className="border-b border-border/30 hover:bg-primary/5 transition-colors cursor-pointer group"
+                  >
+                    <td className="px-4 py-3.5 font-medium text-foreground group-hover:text-primary transition-colors">
+                      {t.topic}
+                    </td>
+                    <td className="px-4 py-3.5 text-center text-muted-foreground matrix-text text-xs">{t.totalInDb}</td>
+                    <td className="px-4 py-3.5 text-center text-muted-foreground matrix-text text-xs">{t.totalAnswered}</td>
+                    <td className="px-4 py-3.5 text-center text-success matrix-text text-xs">{t.correct}</td>
+                    <td className="px-4 py-3.5 text-center text-destructive matrix-text text-xs">{t.wrong}</td>
+                    <td className="px-4 py-3.5 text-center">
+                      <span className={`font-bold matrix-text text-xs ${getScoreColor(t.accuracy)}`}>
                         {t.accuracy}%
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <span className={`font-black text-base matrix-text ${getScoreColor(t.smartScore)}`}>
+                    <td className="px-4 py-3.5 text-center">
+                      <span className={`inline-flex items-center justify-center min-w-[48px] px-2.5 py-1 rounded-full text-xs font-black matrix-text ${getScoreBg(t.smartScore)}`}>
                         {t.smartScore}%
                       </span>
                     </td>
@@ -365,41 +514,29 @@ export default function StatsView() {
               </tbody>
             </table>
           </div>
-        </div>
-      )}
-
-      {filteredTopics.length === 0 && (
-        <div className="text-center py-16 text-muted-foreground">
-          <p className="text-lg font-light">אין עדיין נתונים. התחל לתרגל כדי לראות סטטיסטיקות!</p>
-        </div>
-      )}
-
-      <div className="mb-10">
-        <ComparativeStats />
+        ) : (
+          <div className="text-center py-16 text-muted-foreground">
+            <p className="text-lg font-light">אין עדיין נתונים. התחל לתרגל כדי לראות סטטיסטיקות!</p>
+          </div>
+        )}
       </div>
 
-      {/* Import/Export */}
-      <div className="soft-card bg-card border border-border p-8 card-accent-top">
-        <h3 className="font-bold mb-6 text-foreground flex items-center gap-3">💾 ניהול נתונים וגיבוי</h3>
-        <div className="flex flex-col md:flex-row gap-4">
-          <button onClick={handleExport} className="bg-primary/10 text-primary border border-primary/20 px-6 py-3 rounded-xl font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2 hover-glow">
+      {/* ─── Comparative Stats ─── */}
+      <ComparativeStats />
+
+      {/* ─── Import/Export ─── */}
+      <div className="liquid-glass p-6">
+        <h3 className="font-bold mb-4 text-foreground text-sm flex items-center gap-2">💾 ניהול נתונים וגיבוי</h3>
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button onClick={handleExport} className="bg-primary/10 text-primary border border-primary/20 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2">
             <Download className="w-4 h-4" /> שמור גיבוי לקובץ
           </button>
-          <label className="bg-card text-foreground border border-border px-6 py-3 rounded-xl font-bold hover:bg-muted transition flex items-center justify-center gap-2 cursor-pointer">
+          <label className="bg-card/50 text-foreground border border-border px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-muted transition flex items-center justify-center gap-2 cursor-pointer">
             <Upload className="w-4 h-4" /> טען גיבוי מקובץ
             <input type="file" className="hidden" accept=".json" onChange={handleImport} />
           </label>
         </div>
       </div>
-    </div>
-  );
-}
-
-function SummaryCard({ label, value, accent }: { label: string; value: string | number; accent?: boolean }) {
-  return (
-    <div className="soft-card bg-card border border-border p-5 card-accent-top">
-      <div className={`text-2xl font-black matrix-text ${accent ? 'text-primary' : 'text-foreground'}`}>{value}</div>
-      <div className="text-xs text-muted-foreground mt-1 font-medium">{label}</div>
     </div>
   );
 }
@@ -411,15 +548,14 @@ function ThHeader({ label, sortKey, currentKey, asc, onSort }: {
   const active = currentKey === sortKey;
   return (
     <th
-      className="px-4 py-3 text-xs font-bold cursor-pointer hover:text-foreground transition select-none whitespace-nowrap"
+      className="px-4 py-3 text-[11px] font-bold cursor-pointer hover:text-foreground transition select-none whitespace-nowrap"
       onClick={() => onSort(sortKey)}
     >
       <span className="flex items-center gap-1">
         {label}
-        <ArrowUpDown className={`w-3 h-3 ${active ? 'text-primary' : 'text-muted-foreground/50'}`} />
-        {active && <span className="text-[10px]">{asc ? '↑' : '↓'}</span>}
+        <ArrowUpDown className={`w-3 h-3 ${active ? 'text-primary' : 'text-muted-foreground/40'}`} />
+        {active && <span className="text-[9px]">{asc ? '↑' : '↓'}</span>}
       </span>
     </th>
   );
 }
-
