@@ -6,6 +6,8 @@ import QuestionEditorTab from '@/components/admin/QuestionEditorTab';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import ImportQuestionsTab from '@/components/admin/ImportQuestionsTab';
 import FormulaManagementTab from '@/components/admin/FormulaManagementTab';
+import { motion } from 'framer-motion';
+import { fadeUp } from '@/lib/animations';
 
 type AdminTab = 'question-editor' | 'user-management' | 'import-questions' | 'formula-management';
 
@@ -29,7 +31,14 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background bg-grid-pattern flex" dir="rtl">
+    <motion.div
+      className="min-h-screen bg-background bg-grid-pattern flex"
+      dir="rtl"
+      initial={fadeUp.initial}
+      animate={fadeUp.animate}
+      exit={fadeUp.exit}
+      transition={fadeUp.transition}
+    >
       {/* Sidebar */}
       <aside className="w-64 glass-card border-l border-border flex flex-col shadow-lg">
         <div className="p-6 border-b border-border flex items-center gap-3">
@@ -79,6 +88,6 @@ export default function AdminDashboard() {
           {activeTab === 'formula-management' && <FormulaManagementTab />}
         </div>
       </main>
-    </div>
+    </motion.div>
   );
 }

@@ -17,10 +17,30 @@ import AICoachView from '@/components/views/AICoachView';
 import FlashcardView from '@/components/views/FlashcardView';
 import AdminView from '@/components/views/AdminView';
 import FormulaSheetView from '@/components/views/FormulaSheetView';
-import { Loader2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { slideFromRight } from '@/lib/animations';
 
 function AppContent() {
   const { currentView, loading } = useApp();
+
+  const renderView = () => {
+    switch (currentView) {
+      case 'home': return <HomeView />;
+      case 'setup-practice': return <SetupView mode="practice" />;
+      case 'setup-exam': return <SetupView mode="exam" />;
+      case 'session': return <SessionView />;
+      case 'review': return <ReviewView />;
+      case 'results': return <ResultsView />;
+      case 'stats': return <StatsView />;
+      case 'notebook': return <NotebookView />;
+      case 'weekly-plan': return <WeeklyPlanView />;
+      case 'ai-coach': return <AICoachView />;
+      case 'flashcards': return <FlashcardView />;
+      case 'admin': return <AdminView />;
+      case 'formula-sheet': return <FormulaSheetView />;
+      default: return <HomeView />;
+    }
+  };
 
   return (
     <div className="h-screen flex flex-col overflow-hidden" dir="rtl">
@@ -32,24 +52,34 @@ function AppContent() {
         <main className="flex-grow overflow-y-auto p-4 md:p-10 pt-20 md:pt-10 pb-24 md:pb-10 relative bg-background bg-grid-pattern transition-colors duration-300">
           {loading && (
             <div className="absolute inset-0 bg-background/80 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
-              <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-              <p className="text-muted-foreground font-light tracking-wide">טוען נתונים...</p>
+              <motion.div
+                className="w-16 h-16 rounded-2xl bg-primary/20"
+                animate={{ opacity: [0.4, 0.8, 0.4], scale: [0.95, 1.05, 0.95] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              />
+              <motion.p
+                className="text-muted-foreground font-light tracking-wide mt-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                טוען נתונים...
+              </motion.p>
             </div>
           )}
 
-          {currentView === 'home' && <HomeView />}
-          {currentView === 'setup-practice' && <SetupView mode="practice" />}
-          {currentView === 'setup-exam' && <SetupView mode="exam" />}
-          {currentView === 'session' && <SessionView />}
-          {currentView === 'review' && <ReviewView />}
-          {currentView === 'results' && <ResultsView />}
-          {currentView === 'stats' && <StatsView />}
-          {currentView === 'notebook' && <NotebookView />}
-          {currentView === 'weekly-plan' && <WeeklyPlanView />}
-          {currentView === 'ai-coach' && <AICoachView />}
-          {currentView === 'flashcards' && <FlashcardView />}
-          {currentView === 'admin' && <AdminView />}
-          {currentView === 'formula-sheet' && <FormulaSheetView />}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentView}
+              initial={slideFromRight.initial}
+              animate={slideFromRight.animate}
+              exit={slideFromRight.exit}
+              transition={slideFromRight.transition}
+              style={{ willChange: 'transform', minHeight: '60vh' }}
+            >
+              {renderView()}
+            </motion.div>
+          </AnimatePresence>
         </main>
 
         <MobileBottomNav />

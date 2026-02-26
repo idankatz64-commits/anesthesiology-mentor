@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { staggerContainer, fadeUp, cardHoverTap } from '@/lib/animations';
+
+const cardVariant = {
+  hidden: { opacity: 0, y: 16 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 250, damping: 25, mass: 0.8 } },
+};
 
 export default function HomeView() {
   const { data, progress, navigate, resetAllData, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
@@ -16,7 +23,6 @@ export default function HomeView() {
   const withExp = data.filter(q => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
 
-  // Smart Practice
   const handleSmartPractice = () => {
     if (!data.length) return;
     const topicStats: Record<string, { correct: number; total: number }> = {};
@@ -85,7 +91,7 @@ export default function HomeView() {
   };
 
   return (
-    <div className="fade-in max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <header className="mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
         <div>
           <h2 className="text-3xl font-semibold text-foreground tracking-tight">
@@ -104,7 +110,12 @@ export default function HomeView() {
 
       {/* Resume saved session banner */}
       {!loadingSavedSession && savedSessionInfo && (
-        <div className="mb-8 liquid-glass p-5 border-2 border-primary/30 relative overflow-hidden">
+        <motion.div
+          className="mb-8 liquid-glass p-5 border-2 border-primary/30 relative overflow-hidden"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: 'spring', stiffness: 250, damping: 25 }}
+        >
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative flex items-center justify-between gap-4 flex-wrap">
             <div className="flex-1 min-w-0">
@@ -141,15 +152,18 @@ export default function HomeView() {
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
+        style={{ minHeight: 300 }}
+        variants={staggerContainer}
+        initial="hidden"
+        animate="animate"
+      >
         {/* Smart Practice */}
-        <div
-          onClick={handleSmartPractice}
-          className="liquid-glass p-6 cursor-pointer group"
-        >
+        <motion.div variants={cardVariant} {...cardHoverTap} onClick={handleSmartPractice} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
@@ -158,13 +172,10 @@ export default function HomeView() {
             <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">Smart Practice</h3>
             <p className="text-sm text-muted-foreground font-light">אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה.</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Simulation Exam */}
-        <div
-          onClick={handleSimulation}
-          className="liquid-glass p-6 cursor-pointer group"
-        >
+        <motion.div variants={cardVariant} {...cardHoverTap} onClick={handleSimulation} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
@@ -173,13 +184,10 @@ export default function HomeView() {
             <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">מבחן סימולציה</h3>
             <p className="text-sm text-muted-foreground font-light">120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי.</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Spaced Repetition */}
-        <div
-          onClick={handleSpacedRepetition}
-          className={`liquid-glass p-6 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`}
-        >
+        <motion.div variants={cardVariant} {...cardHoverTap} onClick={handleSpacedRepetition} className={`liquid-glass p-6 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`} style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -188,13 +196,10 @@ export default function HomeView() {
             <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה מרווחת</h3>
             <p className="text-sm text-muted-foreground font-light">שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS.</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Flashcards */}
-        <div
-          onClick={() => navigate('flashcards')}
-          className="liquid-glass p-6 cursor-pointer group"
-        >
+        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('flashcards')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
@@ -203,9 +208,9 @@ export default function HomeView() {
             <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">תרגול כרטיסיות</h3>
             <p className="text-sm text-muted-foreground font-light">כרטיסיות Anki – צפה בשאלה, חשוב, והצג תשובה.</p>
           </div>
-        </div>
+        </motion.div>
 
-        <div onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group">
+        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
             <div className="w-12 h-12 bg-muted text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Dumbbell className="w-6 h-6" />
@@ -213,10 +218,10 @@ export default function HomeView() {
             <h3 className="font-semibold text-lg mb-1 text-foreground">תרגול מותאם</h3>
             <p className="text-sm text-muted-foreground font-light">בחר נושאים, מקורות ומספר שאלות באופן ידני.</p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Mistakes */}
-        <div onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group">
+        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-destructive/6 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -227,10 +232,10 @@ export default function HomeView() {
               יש לך <span className="matrix-text font-medium">{mistakes}</span> טעויות פתוחות
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Favorites */}
-        <div onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group">
+        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -241,10 +246,10 @@ export default function HomeView() {
               <span className="matrix-text font-medium">{favsCount}</span> שאלות שסימנת
             </p>
           </div>
-        </div>
+        </motion.div>
 
         {/* Notebook */}
-        <div onClick={() => navigate('notebook')} className="liquid-glass p-6 cursor-pointer group">
+        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('notebook')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -255,8 +260,8 @@ export default function HomeView() {
               צפייה ב-<span className="matrix-text font-medium">{notesCount}</span> הערות
             </p>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
       {/* DB Status */}
       <div className="mb-12">
