@@ -30,7 +30,7 @@ export default function StatsView() {
   const { data, progress, importData, startSession } = useApp();
   const {
     stats, eri, streak, accuracyTrend, weakZones,
-    forgettingRisk, chapterCoverage, dailyData14, dailyData30,
+    forgettingRisk, chapterCoverage, dailyData14, dailyData30, dailyData90,
     trendData14, trendData30,
   } = useStatsData();
 
@@ -69,7 +69,7 @@ export default function StatsView() {
 
   return (
     <motion.div
-      className="fade-in max-w-6xl mx-auto space-y-6"
+      className="fade-in max-w-6xl mx-auto space-y-5"
       style={{ minHeight: '100vh' }}
       variants={containerVariants}
       initial="hidden"
@@ -81,9 +81,9 @@ export default function StatsView() {
         <p className="text-xs text-muted-foreground hidden md:block">לחץ על כרטיס לפירוט מלא</p>
       </motion.div>
 
-      {/* Row 1 — 4 Static KPI Cards */}
+      {/* Row 1 — 4 KPI Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StreakTile streak={streak} dailyData={dailyData30} />
+        <StreakTile streak={streak} dailyData={dailyData90} />
         <CoverageTile coverage={stats.coverage} chapters={chapterCoverage} />
         <AccuracyTile
           accuracy={stats.accuracy}
@@ -100,36 +100,46 @@ export default function StatsView() {
         />
       </motion.div>
 
-      {/* Row 2 — 3 Expandable Medium Tiles */}
+      {/* Row 2 — Velocity (2/3) + Weak Zone (1/3) */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <LearningVelocityTile data={trendData14} fullData={trendData30} />
+        </div>
+        <div className="md:col-span-1">
+          <WeakZoneMapTile zones={weakZones} />
+        </div>
+      </motion.div>
+
+      {/* Row 2.5 — Forgetting Risk (standalone medium) */}
+      <motion.div variants={itemVariants}>
         <ForgettingRiskTile risks={forgettingRisk} />
-        <WeakZoneMapTile zones={weakZones} />
-        <LearningVelocityTile data={trendData14} fullData={trendData30} />
       </motion.div>
 
-      {/* Row 3 — Full-width Topic Table with inline expansion */}
-      <motion.div variants={itemVariants}>
-        <TopicPerformanceTable
-          topicData={stats.topicData}
-          onTopicClick={handleTopicClick}
-          progress={progress}
-          data={data}
-        />
-      </motion.div>
+      {/* Row 3 — Study Heatmap full width — integrated in StreakTile above */}
 
-      {/* Comparative Stats */}
-      <motion.div variants={itemVariants}>
-        <ComparativeStats />
+      {/* Row 4 — Topic table (2/3) + Group Position (1/3) */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="md:col-span-2">
+          <TopicPerformanceTable
+            topicData={stats.topicData}
+            onTopicClick={handleTopicClick}
+            progress={progress}
+            data={data}
+          />
+        </div>
+        <div className="md:col-span-1">
+          <ComparativeStats />
+        </div>
       </motion.div>
 
       {/* Import/Export */}
-      <motion.div variants={itemVariants} className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-6">
+      <motion.div variants={itemVariants} className="bg-card border border-border rounded-2xl p-6">
         <h3 className="font-bold mb-4 text-foreground text-sm flex items-center gap-2">💾 ניהול נתונים וגיבוי</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <button onClick={handleExport} className="bg-orange-500/10 text-orange-400 border border-orange-500/20 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-orange-500/20 transition flex items-center justify-center gap-2">
             <Download className="w-4 h-4" /> שמור גיבוי לקובץ
           </button>
-          <label className="bg-muted/30 text-foreground border border-border dark:border-white/[0.07] px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-muted/50 transition flex items-center justify-center gap-2 cursor-pointer">
+          <label className="bg-muted/30 text-foreground border border-border px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-muted/50 transition flex items-center justify-center gap-2 cursor-pointer">
             <Upload className="w-4 h-4" /> טען גיבוי מקובץ
             <input type="file" className="hidden" accept=".json" onChange={handleImport} />
           </label>
