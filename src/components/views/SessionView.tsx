@@ -71,6 +71,12 @@ export default function SessionView() {
   const [savingChapter, setSavingChapter] = useState<'idle' | 'saving' | 'saved'>('idle');
   const mainRef = useRef<HTMLDivElement>(null);
 
+  // Reset chapter draft when question changes
+  useEffect(() => {
+    setChapterDraft('');
+    setSavingChapter('idle');
+  }, [index]);
+
   const isSimulation = mode === 'simulation';
   const isExam = mode === 'exam';
 
@@ -642,6 +648,7 @@ export default function SessionView() {
                       if (!error) {
                         (qData as any)[KEYS.CHAPTER] = chapterVal;
                         setSavingChapter('saved');
+                        setChapterDraft('');
                         setTimeout(() => setSavingChapter('idle'), 2000);
                       } else {
                         setSavingChapter('idle');
