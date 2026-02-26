@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, LogOut, User, ChevronDown, BookOpen, RefreshCw } from 'lucide-react';
@@ -6,7 +6,7 @@ import type { User as SupaUser } from '@supabase/supabase-js';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/AppContext';
 
-export default function TopNav() {
+const TopNav = forwardRef<HTMLDivElement>(function TopNav(_props, ref) {
   const [user, setUser] = useState<SupaUser | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
@@ -30,7 +30,7 @@ export default function TopNav() {
   const displayName = user?.user_metadata?.full_name || user?.email || '';
 
   return (
-    <div className="fixed top-0 left-0 right-0 h-14 bg-card/60 backdrop-blur-xl border-b border-border z-50 flex items-center justify-between px-4 md:px-8" dir="rtl">
+    <div ref={ref} className="fixed top-0 left-0 right-0 h-14 bg-card/60 backdrop-blur-xl border-b border-border z-50 flex items-center justify-between px-4 md:px-8" dir="rtl">
       {/* Gradient accent line at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-l from-transparent via-primary/30 to-transparent" />
 
@@ -117,5 +117,6 @@ export default function TopNav() {
         }
       </div>
     </div>);
+});
 
-}
+export default TopNav;
