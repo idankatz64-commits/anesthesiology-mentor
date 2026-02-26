@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Download, Upload } from 'lucide-react';
@@ -12,6 +13,7 @@ import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import GaugeDial from '@/components/stats/GaugeDial';
 import { HeatmapGrid, HeatmapLegend } from '@/components/stats/HeatmapGrid';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -33,6 +35,9 @@ export default function StatsView() {
     forgettingRisk, dailyData90,
     trendData14, trendData30,
   } = useStatsData();
+
+  const isAdmin = useIsAdmin();
+  const unclassifiedData = useMemo(() => stats.topicData.find(t => t.topic === 'N/A#' || t.topic === '#N/A' || t.topic.includes('N/A')), [stats.topicData]);
 
   const withExp = data.filter(q => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
@@ -143,7 +148,7 @@ export default function StatsView() {
 
       {/* ROW 4 — Topic Heatmap + Table (full width) */}
       <motion.div variants={itemVariants}>
-        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} />
+        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} unclassifiedData={unclassifiedData} isAdmin={isAdmin} />
       </motion.div>
 
       <motion.div variants={itemVariants}>
