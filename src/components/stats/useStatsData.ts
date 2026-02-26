@@ -49,10 +49,10 @@ export function linearRegression(data: { x: number; y: number }[]) {
 
 export function useStatsData() {
   const { data, progress } = useApp();
-  const [dailyData30, setDailyData30] = useState<DailyData[]>([]);
+  const [dailyData90, setDailyData90] = useState<DailyData[]>([]);
   const [spacedRep, setSpacedRep] = useState<any[]>([]);
 
-  // Fetch 30-day daily data + spaced repetition
+  // Fetch 90-day daily data + spaced repetition
   useEffect(() => {
     const fetch = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -60,7 +60,7 @@ export function useStatsData() {
 
       const endDate = new Date();
       const startDate = new Date();
-      startDate.setDate(endDate.getDate() - 29);
+      startDate.setDate(endDate.getDate() - 89);
       const startStr = startDate.toISOString().split('T')[0];
 
       const [answersRes, srRes] = await Promise.all([
@@ -77,9 +77,9 @@ export function useStatsData() {
 
       // Build 30-day buckets
       const buckets: Record<string, { count: number; correct: number }> = {};
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 90; i++) {
         const d = new Date();
-        d.setDate(d.getDate() - (29 - i));
+        d.setDate(d.getDate() - (89 - i));
         buckets[d.toISOString().split('T')[0]] = { count: 0, correct: 0 };
       }
       (answersRes.data || []).forEach((r: any) => {
@@ -89,7 +89,7 @@ export function useStatsData() {
           if (r.is_correct) buckets[day].correct++;
         }
       });
-      setDailyData30(
+      setDailyData90(
         Object.entries(buckets).map(([date, v]) => ({
           date, count: v.count, correct: v.correct,
           rate: v.count > 0 ? Math.round((v.correct / v.count) * 100) : 0,
@@ -101,7 +101,8 @@ export function useStatsData() {
     fetch();
   }, []);
 
-  const dailyData14 = useMemo(() => dailyData30.slice(-14), [dailyData30]);
+  const dailyData30 = useMemo(() => dailyData90.slice(-30), [dailyData90]);
+  const dailyData14 = useMemo(() => dailyData90.slice(-14), [dailyData90]);
 
   // Core stats
   const stats = useMemo(() => {
@@ -311,6 +312,7 @@ export function useStatsData() {
     chapterCoverage,
     dailyData14,
     dailyData30,
+    dailyData90,
     trendData14,
     trendData30,
   };
