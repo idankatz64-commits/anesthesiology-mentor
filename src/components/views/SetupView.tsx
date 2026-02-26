@@ -195,7 +195,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
 
         <button
           onClick={handleStart}
-          className="w-full bg-gradient-to-r from-primary to-info text-primary-foreground font-semibold text-lg py-5 rounded-2xl shadow-lg transition transform active:scale-[0.99] flex items-center justify-center gap-3"
+          className="w-full bg-gradient-to-r from-[hsl(25,95%,53%)] to-[hsl(30,93%,58%)] text-primary-foreground font-semibold text-lg py-5 rounded-2xl shadow-lg transition transform active:scale-[0.99] flex items-center justify-center gap-3"
         >
           התחל {isPractice ? 'תרגול' : 'בחינה'} ←
         </button>

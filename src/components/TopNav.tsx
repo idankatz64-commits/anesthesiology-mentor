@@ -89,7 +89,7 @@ export default function TopNav() {
             onClick={() => setDropdownOpen(!dropdownOpen)}
             className="flex items-center gap-2 text-sm text-foreground hover:bg-muted px-3 py-1.5 rounded-lg transition">
 
-              <div className="w-7 h-7 rounded-full bg-primary/15 text-primary transition border-destructive border border-double flex items-center justify-center">
+              <div className="w-7 h-7 rounded-full bg-primary/15 text-primary transition border-primary/30 border flex items-center justify-center">
                 <User className="w-4 h-4" />
               </div>
               <span className="max-w-[150px] truncate font-medium text-base">{displayName}</span>

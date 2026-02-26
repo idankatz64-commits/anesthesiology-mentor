@@ -122,9 +122,9 @@ export default function HomeView() {
           onClick={handleSimulation}
           className="liquid-glass p-6 cursor-pointer group"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-feature/8 to-transparent rounded-2xl pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
-            <div className="w-12 h-12 bg-feature/15 text-feature rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-feature)' }}>
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
               <FileCheck className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">מבחן סימולציה</h3>
@@ -137,9 +137,9 @@ export default function HomeView() {
           onClick={handleSpacedRepetition}
           className={`liquid-glass p-6 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-info/8 to-transparent rounded-2xl pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
-            <div className="w-12 h-12 bg-info/15 text-info rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <CalendarClock className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה מרווחת</h3>
@@ -152,9 +152,9 @@ export default function HomeView() {
           onClick={() => navigate('flashcards')}
           className="liquid-glass p-6 cursor-pointer group"
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-matrix/8 to-transparent rounded-2xl pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
-            <div className="w-12 h-12 bg-matrix/15 text-matrix rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-matrix)' }}>
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
               <Layers className="w-6 h-6" />
             </div>
             <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">תרגול כרטיסיות</h3>
@@ -188,9 +188,9 @@ export default function HomeView() {
 
         {/* Favorites */}
         <div onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group">
-          <div className="absolute inset-0 bg-gradient-to-br from-warning/6 to-transparent rounded-2xl pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
-            <div className="w-12 h-12 bg-warning/15 text-warning rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Star className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">מועדפים</h3>
@@ -202,9 +202,9 @@ export default function HomeView() {
 
         {/* Notebook */}
         <div onClick={() => navigate('notebook')} className="liquid-glass p-6 cursor-pointer group">
-          <div className="absolute inset-0 bg-gradient-to-br from-warning/6 to-transparent rounded-2xl pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
-            <div className="w-12 h-12 bg-warning-muted text-warning rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <StickyNote className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">המחברת שלי</h3>
