@@ -18,6 +18,11 @@ function getTreemapColor(score: number) {
   return '#8B0000';
 }
 
+function isUnclassifiedTopic(topic: string) {
+  const normalized = topic.trim().toUpperCase();
+  return normalized === 'N/A#' || normalized === '#N/A';
+}
+
 interface CustomContentProps {
   x?: number;
   y?: number;
@@ -97,7 +102,7 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
   }, [unclassifiedData, isAdmin, navigate]);
   const treemapData = useMemo(() => {
     return topicData
-      .filter(t => t.totalInDb > 0 && t.topic !== 'N/A#')
+      .filter(t => t.totalInDb > 0 && !isUnclassifiedTopic(t.topic))
       .map(t => ({
         name: t.topic,
         size: Math.max(t.totalInDb, 1),
