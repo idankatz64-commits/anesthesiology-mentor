@@ -6,9 +6,11 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { toast } from 'sonner';
-import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X, Download } from 'lucide-react';
+import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X, Download, ChevronDown, Check } from 'lucide-react';
 import Papa from 'papaparse';
+import { getChapterDisplay, resolveChapterName } from '@/data/millerChapters';
 
 interface QuestionRow {
   id: string;
@@ -31,6 +33,147 @@ interface QuestionRow {
 }
 
 const PAGE_SIZE = 25;
+const BATCH_PAGE_SIZE = 50;
+
+function BatchChapterUpdate() {
+  const [open, setOpen] = useState(false);
+  const [rows, setRows] = useState<{ id: string; question: string; chapter: number | null }[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [savingAll, setSavingAll] = useState(false);
+  const [totalMissing, setTotalMissing] = useState(0);
+
+  const fetchMissing = async () => {
+    setLoading(true);
+    const { data, count } = await supabase
+      .from('questions')
+      .select('id, question, chapter', { count: 'exact' })
+      .or('chapter.is.null,chapter.eq.0')
+      .order('id')
+      .limit(BATCH_PAGE_SIZE);
+    setRows((data || []) as any);
+    setTotalMissing(count || 0);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    if (open) fetchMissing();
+  }, [open]);
+
+  const saveOne = async (id: string) => {
+    const draft = drafts[id];
+    if (!draft) return;
+    const { valid } = resolveChapterName(draft);
+    if (!valid) { toast.error('מספר פרק לא תקין'); return; }
+    setSavingId(id);
+    const chapterVal = parseInt(draft, 10);
+    const { error } = await supabase.from('questions').update({ chapter: chapterVal }).eq('id', id);
+    if (error) toast.error('שגיאה: ' + error.message);
+    else {
+      toast.success(`פרק עודכן לשאלה ${id}`);
+      setRows(r => r.filter(row => row.id !== id));
+      setTotalMissing(t => t - 1);
+    }
+    setSavingId(null);
+  };
+
+  const saveAll = async () => {
+    const entries = Object.entries(drafts).filter(([, d]) => d && resolveChapterName(d).valid);
+    if (entries.length === 0) { toast.error('אין שינויים לשמור'); return; }
+    setSavingAll(true);
+    let success = 0;
+    for (const [id, draft] of entries) {
+      const chapterVal = parseInt(draft, 10);
+      const { error } = await supabase.from('questions').update({ chapter: chapterVal }).eq('id', id);
+      if (!error) success++;
+    }
+    toast.success(`${success} שאלות עודכנו בהצלחה`);
+    setSavingAll(false);
+    setDrafts({});
+    fetchMissing();
+  };
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-2 text-sm font-bold text-primary hover:underline w-full">
+        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        עדכון פרקים ({totalMissing > 0 ? totalMissing : '...'} שאלות ללא פרק)
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-4">
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-primary" /></div>
+        ) : rows.length === 0 ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">כל השאלות כבר מעודכנות ✅</p>
+        ) : (
+          <div className="space-y-3">
+            <div className="glass-card rounded-xl overflow-hidden border border-border">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm" dir="rtl">
+                  <thead>
+                    <tr className="border-b border-border bg-muted/50">
+                      <th className="px-3 py-2 text-right font-semibold text-muted-foreground w-20">מזהה</th>
+                      <th className="px-3 py-2 text-right font-semibold text-muted-foreground">שאלה</th>
+                      <th className="px-3 py-2 text-center font-semibold text-muted-foreground w-20">פרק</th>
+                      <th className="px-3 py-2 text-right font-semibold text-muted-foreground">שם הפרק</th>
+                      <th className="px-3 py-2 text-center font-semibold text-muted-foreground w-16">שמור</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rows.map(r => {
+                      const draft = drafts[r.id] || '';
+                      const resolved = draft ? resolveChapterName(draft) : null;
+                      return (
+                        <tr key={r.id} className="border-b border-border/50 hover:bg-muted/30">
+                          <td className="px-3 py-2 font-mono text-xs text-muted-foreground truncate">{r.id}</td>
+                          <td className="px-3 py-2 text-foreground max-w-[250px]"><span className="line-clamp-1">{r.question}</span></td>
+                          <td className="px-3 py-2 text-center">
+                            <input
+                              type="text"
+                              value={draft}
+                              onChange={e => setDrafts(d => ({ ...d, [r.id]: e.target.value }))}
+                              onKeyDown={e => { if (e.key === 'Enter') saveOne(r.id); }}
+                              className="w-16 px-2 py-1 text-xs bg-muted border border-border rounded-lg text-foreground outline-none focus:border-primary text-center"
+                              placeholder="#"
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            {resolved && (
+                              <span className={`text-xs ${resolved.valid ? 'text-muted-foreground' : 'text-destructive'}`}>
+                                {resolved.display}
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-3 py-2 text-center">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              disabled={!draft || !resolved?.valid || savingId === r.id}
+                              onClick={() => saveOne(r.id)}
+                            >
+                              {savingId === r.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                            </Button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={saveAll} disabled={savingAll} size="sm">
+                {savingAll ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Save className="w-4 h-4 ml-1" />}
+                שמור הכל
+              </Button>
+            </div>
+          </div>
+        )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
 
 export default function QuestionEditorTab() {
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
@@ -212,6 +355,9 @@ export default function QuestionEditorTab() {
         <h2 className="text-xl font-bold text-foreground mb-1">Question Editor</h2>
         <p className="text-sm text-muted-foreground">עריכה ומחיקה של שאלות ({totalCount} שאלות סה״כ)</p>
       </div>
+
+      {/* Batch Chapter Update */}
+      <BatchChapterUpdate />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
@@ -410,6 +556,22 @@ export default function QuestionEditorTab() {
                   value={editForm.miller || ''}
                   onChange={(e) => setEditForm(f => ({ ...f, miller: e.target.value }))}
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-sm font-medium text-foreground mb-1 block">פרק (Chapter)</label>
+                <Input
+                  type="number"
+                  value={editForm.chapter ?? ''}
+                  onChange={(e) => setEditForm(f => ({ ...f, chapter: e.target.value ? parseInt(e.target.value, 10) : null }))}
+                />
+              </div>
+              <div className="flex items-end pb-2">
+                <span className={`text-xs ${editForm.chapter && resolveChapterName(String(editForm.chapter)).valid ? 'text-muted-foreground' : editForm.chapter ? 'text-destructive' : 'text-muted-foreground/50'}`}>
+                  {editForm.chapter ? resolveChapterName(String(editForm.chapter)).display : 'הזן מספר פרק'}
+                </span>
               </div>
             </div>
 

@@ -6,13 +6,14 @@ import { KEYS, type ConfidenceLevel } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import {
   X, Flag, Star, ChevronRight, ChevronLeft, SkipForward, BookOpen,
-  StickyNote, Tag, Plus, ExternalLink, Copy, Send, Calculator, Pencil,
+  StickyNote, Tag, Plus, ExternalLink, Copy, Send, Calculator, Pencil, Check,
 } from 'lucide-react';
 import FormulaCalculatorPanel from '@/components/FormulaCalculatorPanel';
 import { useToast } from '@/hooks/use-toast';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { supabase } from '@/integrations/supabase/client';
 import { GlobalQuestionStats, CommunityNotes } from './SessionCommunity';
+import { getChapterDisplay, resolveChapterName } from '@/data/millerChapters';
 
 /** Parse URLs and <a> tags inside explanation text into clickable links */
 function ExplanationRenderer({ text }: { text: string }) {
@@ -66,6 +67,8 @@ export default function SessionView() {
   const [savingCorrectAnswer, setSavingCorrectAnswer] = useState(false);
   const [showConfirmSave, setShowConfirmSave] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const [chapterDraft, setChapterDraft] = useState('');
+  const [savingChapter, setSavingChapter] = useState<'idle' | 'saving' | 'saved'>('idle');
   const mainRef = useRef<HTMLDivElement>(null);
 
   const isSimulation = mode === 'simulation';
@@ -295,6 +298,9 @@ export default function SessionView() {
             </span>
             <span className="flex items-center gap-1.5">📁 <span className="text-foreground">{qData[KEYS.TOPIC]}</span></span>
             <span className="flex items-center gap-1.5">📅 <span className="text-foreground">{qData[KEYS.YEAR]}</span></span>
+            {qData[KEYS.CHAPTER] ? (
+              <span className="flex items-center gap-1.5">📖 <span className="text-foreground">{getChapterDisplay(qData[KEYS.CHAPTER])}</span></span>
+            ) : null}
           </div>
           <div className="flex items-center gap-3">
             <button
@@ -616,6 +622,55 @@ export default function SessionView() {
               >
                 <BookOpen className="w-3 h-3" /> Miller Page: {qData[KEYS.MILLER]}
               </a>
+
+              {/* Admin inline chapter editor */}
+              {isAdmin && (
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground font-medium">פרק:</span>
+                  <input
+                    type="text"
+                    value={chapterDraft || String(qData[KEYS.CHAPTER] || '')}
+                    onChange={e => { setChapterDraft(e.target.value); setSavingChapter('idle'); }}
+                    onFocus={() => { if (!chapterDraft) setChapterDraft(String(qData[KEYS.CHAPTER] || '')); }}
+                    onBlur={async () => {
+                      if (!chapterDraft || chapterDraft === String(qData[KEYS.CHAPTER] || '')) return;
+                      const { valid } = resolveChapterName(chapterDraft);
+                      if (!valid) return;
+                      setSavingChapter('saving');
+                      const chapterVal = chapterDraft.trim().toUpperCase() === 'ACLS' ? 0 : parseInt(chapterDraft, 10);
+                      const { error } = await supabase.from('questions').update({ chapter: chapterVal }).eq('id', serialNumber);
+                      if (!error) {
+                        (qData as any)[KEYS.CHAPTER] = chapterVal;
+                        setSavingChapter('saved');
+                        setTimeout(() => setSavingChapter('idle'), 2000);
+                      } else {
+                        setSavingChapter('idle');
+                        toast({ title: 'שגיאה בשמירת פרק', description: error.message, variant: 'destructive' });
+                      }
+                    }}
+                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    className="w-16 px-2 py-1 text-xs bg-muted border border-border rounded-lg text-foreground outline-none focus:border-primary text-center"
+                    placeholder="#"
+                  />
+                  {chapterDraft && (() => {
+                    const { valid, display } = resolveChapterName(chapterDraft);
+                    return (
+                      <span className={`text-xs ${valid ? 'text-muted-foreground' : 'text-destructive'}`}>
+                        {display}
+                      </span>
+                    );
+                  })()}
+                  {savingChapter === 'saved' && <Check className="w-3.5 h-3.5 text-success" />}
+                </div>
+              )}
+
+              {/* Non-admin chapter display */}
+              {!isAdmin && qData[KEYS.CHAPTER] ? (
+                <span className="text-xs text-muted-foreground bg-muted px-4 py-2 rounded-full font-medium border border-border">
+                  📖 {getChapterDisplay(qData[KEYS.CHAPTER])}
+                </span>
+              ) : null}
+
               {/* Global question success rate */}
               <GlobalQuestionStats questionId={serialNumber} />
             </div>
