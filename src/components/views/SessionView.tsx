@@ -295,7 +295,7 @@ export default function SessionView() {
           )}
 
           {/* Options */}
-          <div className="space-y-4">
+          <div className="space-y-5">
             {(['A', 'B', 'C', 'D'] as const).map(opt => {
               const text = qData[KEYS[opt]];
               if (!text) return null;
@@ -413,36 +413,47 @@ export default function SessionView() {
 
         {/* Feedback - NOT shown in simulation mode */}
         {showFeedback && (
-          <div className="bg-muted/30 border-t border-border p-8 md:p-10">
-            <div className="font-bold text-lg mb-3 flex items-center gap-2">
+          <div className="bg-muted/30 border-t border-border p-8 md:p-10 space-y-6">
+            {/* (1) Correct/Wrong indicator */}
+            <div className="font-bold text-lg flex items-center gap-2">
               {savedAns === correctAns ? (
                 <span className="text-success flex items-center gap-2">✅ יפה מאוד!</span>
               ) : (
                 <span className="text-destructive flex items-center gap-2">❌ התשובה הנכונה היא {correctAns}</span>
               )}
             </div>
-            <div className="bg-card p-6 rounded-2xl border border-border text-foreground text-base leading-relaxed shadow-sm mb-6 font-light">
-              <strong className="block text-foreground mb-2 font-medium flex items-center gap-2">
+
+            <div className="border-t border-border" />
+
+            {/* (2) Explanation text */}
+            <div className="bg-card p-6 rounded-2xl border border-border text-foreground shadow-sm font-light">
+              <strong className="block text-foreground mb-3 font-medium flex items-center gap-2 text-sm">
                 💡 הסבר:
               </strong>
-              <div className="markdown-content bidi-text">
+              <div className="markdown-content bidi-text text-base" style={{ lineHeight: '1.8' }}>
                 <ExplanationRenderer text={qData[KEYS.EXPLANATION] || 'אין הסבר'} />
               </div>
             </div>
 
-            {/* Global question success rate */}
-            <GlobalQuestionStats questionId={serialNumber} />
+            <div className="border-t border-border" />
 
-            <a
-              href={`https://www.google.com/search?q=Miller's+Anesthesia+10th+edition+page+${qData[KEYS.MILLER]}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-primary bg-primary/10 hover:bg-primary/20 px-4 py-2 rounded-full font-medium transition flex items-center gap-2 w-fit mt-4"
-            >
-              <BookOpen className="w-3 h-3" /> Miller Page: {qData[KEYS.MILLER]}
-            </a>
+            {/* (3) Source citations */}
+            <div className="flex flex-wrap items-center gap-3">
+              <a
+                href={`https://www.google.com/search?q=Miller's+Anesthesia+10th+edition+page+${qData[KEYS.MILLER]}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-muted-foreground bg-muted hover:bg-muted/80 px-4 py-2 rounded-full font-medium transition flex items-center gap-2 w-fit border border-border"
+              >
+                <BookOpen className="w-3 h-3" /> Miller Page: {qData[KEYS.MILLER]}
+              </a>
+              {/* Global question success rate */}
+              <GlobalQuestionStats questionId={serialNumber} />
+            </div>
 
-            {/* Community Notes */}
+            <div className="border-t border-border" />
+
+            {/* (4) Community comments */}
             <CommunityNotes questionId={serialNumber} />
           </div>
         )}
