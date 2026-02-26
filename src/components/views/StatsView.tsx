@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Download, Upload } from 'lucide-react';
@@ -12,37 +11,34 @@ import LearningVelocityTile from '@/components/stats/LearningVelocityTile';
 import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import GaugeDial from '@/components/stats/GaugeDial';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { HeatmapGrid, HeatmapLegend } from '@/components/stats/HeatmapGrid';
 
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
-    transition: { staggerChildren: 0.08 },
-  },
+    transition: { staggerChildren: 0.08 }
+  }
 };
 
 const itemVariants = {
   hidden: { opacity: 0, y: 10 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0, 0, 0.2, 1] as const } },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0, 0, 0.2, 1] as const } }
 };
 
 export default function StatsView() {
   const { data, progress, importData, startSession } = useApp();
   const {
     stats, eri, streak, weakZones,
-    forgettingRisk,
-    trendData14, trendData30,
+    forgettingRisk, dailyData90,
+    trendData14, trendData30
   } = useStatsData();
 
-  const isAdmin = useIsAdmin();
-  const unclassifiedData = useMemo(() => stats.topicData.find(t => t.topic === 'N/A#' || t.topic === '#N/A' || t.topic.includes('N/A')), [stats.topicData]);
-
-  const withExp = data.filter(q => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
+  const withExp = data.filter((q) => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
 
   const handleTopicClick = (topic: string) => {
-    const topicQuestions = data.filter(q => q[KEYS.TOPIC] === topic);
+    const topicQuestions = data.filter((q) => q[KEYS.TOPIC] === topic);
     if (topicQuestions.length === 0) return;
     startSession(topicQuestions, Math.min(topicQuestions.length, 15), 'practice');
   };
@@ -68,7 +64,7 @@ export default function StatsView() {
         } else {
           alert('קובץ לא תקין.');
         }
-      } catch { alert('שגיאה בקריאת הקובץ.'); }
+      } catch {alert('שגיאה בקריאת הקובץ.');}
     };
     reader.readAsText(file);
     e.target.value = '';
@@ -80,8 +76,8 @@ export default function StatsView() {
       style={{ minHeight: '100vh' }}
       variants={containerVariants}
       initial="hidden"
-      animate="visible"
-    >
+      animate="visible">
+
       {/* Header */}
       <motion.div variants={itemVariants} className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-foreground">דשבורד ביצועים</h1>
@@ -109,6 +105,11 @@ export default function StatsView() {
         {/* LEFT — Weak Zones + Heatmap */}
         <div className="flex flex-col gap-4">
           <WeakZoneMapTile zones={weakZones} />
+          <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-4">
+            <span className="text-[10px] text-muted-foreground font-medium block mb-2">פעילות 90 יום</span>
+            <HeatmapGrid dailyData={dailyData90} cellSize={10} gap={2} />
+            <HeatmapLegend />
+          </div>
         </div>
 
         {/* CENTER — ERI Hero */}
@@ -118,25 +119,21 @@ export default function StatsView() {
           coverage={eri.coverage}
           criticalAvg={eri.criticalAvg}
           consistency={eri.consistency}
-          streak={streak}
-        />
+          streak={streak} />
 
-        {/* RIGHT — KPI Gauges */}
+
+        {/* RIGHT — KPI Gauges + Forgetting Risk */}
         <div className="flex flex-col gap-4">
-          <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-5">
+          <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-5 text-primary py-0 text-lg px-[15px] font-mono font-bold">
             <span className="text-xs text-muted-foreground font-medium mb-3 block">מדדים עיקריים</span>
             <div className="flex flex-col items-center gap-2">
               <GaugeDial value={eri.accuracy} max={100} color="#60A5FA" label="🔵 דיוק" pct={eri.accuracy} unit="%" />
               <GaugeDial value={eri.coverage} max={100} color="#F97316" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
-              <GaugeDial value={streak} max={30} color="#FB923C" label="🔥 רצף" pct={Math.min(100, Math.round((streak / 30) * 100))} unit=" ימים" />
+              <GaugeDial value={streak} max={30} color="#FB923C" label="🔥 רצף" pct={Math.min(100, Math.round(streak / 30 * 100))} unit=" ימים" />
             </div>
           </div>
+          <ForgettingRiskTile risks={forgettingRisk} />
         </div>
-      </motion.div>
-
-      {/* ROW 2.5 — Forgetting Risk (full width) */}
-      <motion.div variants={itemVariants}>
-        <ForgettingRiskTile risks={forgettingRisk} />
       </motion.div>
 
       {/* ROW 3 — Accuracy Trend Chart (full width) */}
@@ -146,7 +143,7 @@ export default function StatsView() {
 
       {/* ROW 4 — Topic Heatmap + Table (full width) */}
       <motion.div variants={itemVariants}>
-        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} unclassifiedData={unclassifiedData} isAdmin={isAdmin} />
+        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} />
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -154,8 +151,8 @@ export default function StatsView() {
           topicData={stats.topicData}
           onTopicClick={handleTopicClick}
           progress={progress}
-          data={data}
-        />
+          data={data} />
+
       </motion.div>
 
       {/* ROW 5 — Group Position */}
@@ -176,6 +173,6 @@ export default function StatsView() {
           </label>
         </div>
       </motion.div>
-    </motion.div>
-  );
+    </motion.div>);
+
 }
