@@ -1,8 +1,19 @@
 import { supabase } from '@/integrations/supabase/client';
 import { KEYS, type Question } from './types';
 
-/** Fetch all questions from the Supabase questions table with retry */
+const CACHE_KEY = 'questions_cache';
+
+/** Fetch all questions from the Supabase questions table with retry + sessionStorage cache */
 export async function fetchQuestions(retries = 3): Promise<Question[]> {
+  // Check sessionStorage cache first
+  const cached = sessionStorage.getItem(CACHE_KEY);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached) as Question[];
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch { /* ignore bad cache */ }
+  }
+
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
       const allQuestions: Question[] = [];
@@ -42,6 +53,9 @@ export async function fetchQuestions(retries = 3): Promise<Question[]> {
         if (data.length < batchSize) break;
         from += batchSize;
       }
+
+      // Cache in sessionStorage (clears when tab closes)
+      try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(allQuestions)); } catch { /* quota */ }
 
       return allQuestions;
     } catch (err) {
