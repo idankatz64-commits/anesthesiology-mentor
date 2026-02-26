@@ -8,6 +8,19 @@ import {
 } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 
+interface SavedSessionData {
+  questionIds: string[];
+  index: number;
+  mode: SessionState['mode'];
+  answers: (string | null)[];
+  confidence: (ConfidenceLevel | null)[];
+  flagged: number[];
+  skipped: number[];
+  timerSeconds?: number;
+  simTimerSeconds?: number;
+  createdAt: string;
+}
+
 interface AppContextType {
   data: Question[];
   loading: boolean;
@@ -61,6 +74,13 @@ interface AppContextType {
   // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
   getDueQuestions: () => Promise<Question[]>;
+
+  // Session persistence
+  saveSessionToDb: (timerSeconds?: number, simTimerSeconds?: number) => Promise<void>;
+  resumeSessionFromDb: () => Promise<boolean>;
+  clearSavedSession: () => Promise<void>;
+  savedSessionInfo: SavedSessionData | null;
+  loadingSavedSession: boolean;
 }
 
 const defaultProgress: UserProgress = {
@@ -114,6 +134,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'done' | 'error'>('idle');
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  const [savedSessionInfo, setSavedSessionInfo] = useState<SavedSessionData | null>(null);
+  const [loadingSavedSession, setLoadingSavedSession] = useState(true);
 
   const progressRef = useRef(progress);
   progressRef.current = progress;
@@ -139,6 +161,24 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         console.warn('Initial DB fetch failed, will retry after sync:', e);
       }
       if (!cancelled) setLoading(false);
+
+      // Check for saved session
+      try {
+        const { data: { session: authSession } } = await supabase.auth.getSession();
+        if (authSession?.user) {
+          const { data: saved } = await supabase
+            .from('saved_sessions')
+            .select('session_data')
+            .eq('user_id', authSession.user.id)
+            .maybeSingle();
+          if (saved?.session_data && !cancelled) {
+            setSavedSessionInfo(saved.session_data as unknown as SavedSessionData);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to check saved session:', e);
+      }
+      if (!cancelled) setLoadingSavedSession(false);
 
       // Then sync in background (slower)
       if (!cancelled) setSyncStatus('syncing');
@@ -533,6 +573,77 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const saveSessionToDb = useCallback(async (timerSeconds?: number, simTimerSeconds?: number) => {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    if (!authSession?.user) return;
+
+    const currentSession = session;
+    if (!currentSession.quiz.length) return;
+
+    const sessionData: SavedSessionData = {
+      questionIds: currentSession.quiz.map(q => q[KEYS.ID]),
+      index: currentSession.index,
+      mode: currentSession.mode,
+      answers: currentSession.answers,
+      confidence: currentSession.confidence,
+      flagged: Array.from(currentSession.flagged),
+      skipped: Array.from(currentSession.skipped),
+      timerSeconds,
+      simTimerSeconds,
+      createdAt: new Date().toISOString(),
+    };
+
+    await (supabase.from('saved_sessions') as any).upsert({
+      user_id: authSession.user.id,
+      session_data: sessionData,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: 'user_id' });
+
+    setSavedSessionInfo(sessionData);
+  }, [session]);
+
+  const resumeSessionFromDb = useCallback(async (): Promise<boolean> => {
+    if (!savedSessionInfo || !dataRef.current.length) return false;
+
+    const questionMap = new Map(dataRef.current.map(q => [q[KEYS.ID], q]));
+    const quiz = savedSessionInfo.questionIds
+      .map(id => questionMap.get(id))
+      .filter((q): q is Question => !!q);
+
+    if (quiz.length === 0) return false;
+
+    setSession({
+      quiz,
+      index: savedSessionInfo.index,
+      score: 0,
+      mode: savedSessionInfo.mode,
+      answers: savedSessionInfo.answers,
+      confidence: savedSessionInfo.confidence,
+      flagged: new Set(savedSessionInfo.flagged),
+      skipped: new Set(savedSessionInfo.skipped),
+      sourceFilter: 'all',
+      countFilter: quiz.length,
+      unseenOnly: false,
+    });
+    setCurrentView('session');
+
+    // Clear from DB after resuming
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    if (authSession?.user) {
+      await supabase.from('saved_sessions').delete().eq('user_id', authSession.user.id);
+    }
+    setSavedSessionInfo(null);
+    return true;
+  }, [savedSessionInfo]);
+
+  const clearSavedSession = useCallback(async () => {
+    const { data: { session: authSession } } = await supabase.auth.getSession();
+    if (authSession?.user) {
+      await supabase.from('saved_sessions').delete().eq('user_id', authSession.user.id);
+    }
+    setSavedSessionInfo(null);
+  }, []);
+
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
     syncStatus, lastSyncTime, triggerSync,
@@ -542,6 +653,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
     generateWeeklyPlan, getFilteredQuestions, getDueQuestions,
+    saveSessionToDb, resumeSessionFromDb, clearSavedSession, savedSessionInfo, loadingSavedSession,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

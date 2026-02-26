@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers } from 'lucide-react';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X } from 'lucide-react';
 
 export default function HomeView() {
-  const { data, progress, navigate, resetAllData, startSession, getDueQuestions } = useApp();
+  const { data, progress, navigate, resetAllData, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
   const [loadingDue, setLoadingDue] = useState(false);
+  const [resuming, setResuming] = useState(false);
 
   let mistakes = 0;
   Object.values(progress.history).forEach(h => { if (h.lastResult === 'wrong') mistakes++; });
@@ -100,6 +101,48 @@ export default function HomeView() {
           אפס היסטוריה והתחל מחדש
         </button>
       </header>
+
+      {/* Resume saved session banner */}
+      {!loadingSavedSession && savedSessionInfo && (
+        <div className="mb-8 liquid-glass p-5 border-2 border-primary/30 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent rounded-2xl pointer-events-none" />
+          <div className="relative flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0">
+              <h3 className="font-bold text-foreground flex items-center gap-2 text-base">
+                <Play className="w-5 h-5 text-primary" />
+                יש לך סשן שמור!
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                {savedSessionInfo.mode === 'simulation' ? 'סימולציה' :
+                 savedSessionInfo.mode === 'exam' ? 'בחינה' : 'תרגול'}{' '}
+                — שאלה {savedSessionInfo.index + 1} מתוך {savedSessionInfo.questionIds.length}
+                {' · '}נשמר ב-{new Date(savedSessionInfo.createdAt).toLocaleDateString('he-IL')}
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={async () => {
+                  setResuming(true);
+                  await resumeSessionFromDb();
+                  setResuming(false);
+                }}
+                disabled={resuming}
+                className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center gap-2 shadow-lg disabled:opacity-50"
+              >
+                <Play className="w-4 h-4" />
+                {resuming ? 'טוען...' : 'המשך סשן'}
+              </button>
+              <button
+                onClick={() => clearSavedSession()}
+                className="text-muted-foreground hover:text-destructive p-2.5 rounded-xl hover:bg-destructive/10 transition"
+                title="מחק סשן שמור"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         {/* Smart Practice */}
