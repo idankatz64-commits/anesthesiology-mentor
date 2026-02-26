@@ -134,6 +134,15 @@ export default function ForgettingRiskTile({ risks }: Props) {
               ))
             )}
           </div>
+          {treemapData.length > 0 && (
+            <div className="mt-4" style={{ height: 180 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <Treemap data={treemapData} dataKey="size" nameKey="topic" content={<RiskTreemapContent />}>
+                  <Tooltip content={<RiskTooltip />} />
+                </Treemap>
+              </ResponsiveContainer>
+            </div>
+          )}
         </div>
       }
       expanded={
