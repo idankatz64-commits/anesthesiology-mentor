@@ -59,6 +59,10 @@ export default function SessionView() {
   const [editingExplanation, setEditingExplanation] = useState(false);
   const [explanationDraft, setExplanationDraft] = useState('');
   const [savingExplanation, setSavingExplanation] = useState(false);
+  const [editingCorrectAnswer, setEditingCorrectAnswer] = useState(false);
+  const [correctAnswerDraft, setCorrectAnswerDraft] = useState('');
+  const [savingCorrectAnswer, setSavingCorrectAnswer] = useState(false);
+  const [showConfirmSave, setShowConfirmSave] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   const isSimulation = mode === 'simulation';
@@ -420,14 +424,101 @@ export default function SessionView() {
         {/* Feedback - NOT shown in simulation mode */}
         {showFeedback && (
           <div className="bg-muted/30 border-t border-border p-5 md:p-10 space-y-6">
-            {/* (1) Correct/Wrong indicator */}
-            <div className="font-bold text-lg flex items-center gap-2">
+            {/* (1) Correct/Wrong indicator + admin edit correct answer */}
+            <div className="font-bold text-lg flex items-center gap-2 flex-wrap">
               {savedAns === correctAns ? (
                 <span className="text-success flex items-center gap-2">✅ יפה מאוד!</span>
               ) : (
                 <span className="text-destructive flex items-center gap-2">❌ התשובה הנכונה היא {correctAns}</span>
               )}
+              {isAdmin && !editingCorrectAnswer && (
+                <button
+                  onClick={() => { setCorrectAnswerDraft(correctAns); setEditingCorrectAnswer(true); }}
+                  className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
+                  title="ערוך תשובה נכונה"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
+
+            {/* Admin: edit correct answer */}
+            {editingCorrectAnswer && (
+              <div className="p-4 bg-muted/50 rounded-xl border border-border space-y-3">
+                <p className="text-sm font-bold text-foreground">שנה תשובה נכונה:</p>
+                <div className="flex gap-2">
+                  {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => setCorrectAnswerDraft(opt)}
+                      className={`w-10 h-10 rounded-lg font-bold text-sm border transition ${
+                        correctAnswerDraft === opt
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-card text-muted-foreground border-border hover:border-primary/30'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+                {showConfirmSave ? (
+                  <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg space-y-2">
+                    <p className="text-xs font-bold text-destructive">⚠️ שינוי התשובה הנכונה ישפיע על כל המשתמשים. להמשיך?</p>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={() => { setShowConfirmSave(false); setEditingCorrectAnswer(false); }}
+                        className="px-3 py-1.5 text-xs font-bold text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/80 transition"
+                      >
+                        ביטול
+                      </button>
+                      <button
+                        disabled={savingCorrectAnswer}
+                        onClick={async () => {
+                          setSavingCorrectAnswer(true);
+                          const { error } = await supabase
+                            .from('questions')
+                            .update({ correct: correctAnswerDraft })
+                            .eq('id', serialNumber);
+                          setSavingCorrectAnswer(false);
+                          if (error) {
+                            toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
+                          } else {
+                            qData[KEYS.CORRECT] = correctAnswerDraft;
+                            setEditingCorrectAnswer(false);
+                            setShowConfirmSave(false);
+                            toast({ title: 'התשובה הנכונה עודכנה ✅' });
+                          }
+                        }}
+                        className="px-3 py-1.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                      >
+                        {savingCorrectAnswer ? '...' : 'אישור שמירה'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setEditingCorrectAnswer(false)}
+                      className="px-4 py-2 text-xs font-bold text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/80 transition"
+                    >
+                      ביטול
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (correctAnswerDraft !== correctAns) {
+                          setShowConfirmSave(true);
+                        } else {
+                          setEditingCorrectAnswer(false);
+                        }
+                      }}
+                      className="px-4 py-2 text-xs font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition"
+                    >
+                      שמור
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="border-t border-border" />
 
