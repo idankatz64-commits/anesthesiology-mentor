@@ -4,10 +4,12 @@ import { KEYS, type ConfidenceLevel } from '@/lib/types';
 import ReactMarkdown from 'react-markdown';
 import {
   X, Flag, Star, ChevronRight, ChevronLeft, SkipForward, BookOpen,
-  StickyNote, Tag, Plus, ExternalLink, Copy, Send, Calculator,
+  StickyNote, Tag, Plus, ExternalLink, Copy, Send, Calculator, Pencil,
 } from 'lucide-react';
 import FormulaCalculatorPanel from '@/components/FormulaCalculatorPanel';
 import { useToast } from '@/hooks/use-toast';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
+import { supabase } from '@/integrations/supabase/client';
 import { GlobalQuestionStats, CommunityNotes } from './SessionCommunity';
 
 /** Parse URLs and <a> tags inside explanation text into clickable links */
@@ -46,6 +48,7 @@ export default function SessionView() {
     saveNote, setRating, addTag, removeTag,
   } = useApp();
   const { toast } = useToast();
+  const isAdmin = useIsAdmin();
 
   const { quiz, index, mode, answers, confidence, flagged, skipped } = session;
   const [showNote, setShowNote] = useState(false);
@@ -53,6 +56,9 @@ export default function SessionView() {
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [simTimerSeconds, setSimTimerSeconds] = useState(3 * 60 * 60);
   const [calcOpen, setCalcOpen] = useState(false);
+  const [editingExplanation, setEditingExplanation] = useState(false);
+  const [explanationDraft, setExplanationDraft] = useState('');
+  const [savingExplanation, setSavingExplanation] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   const isSimulation = mode === 'simulation';
@@ -429,10 +435,59 @@ export default function SessionView() {
             <div className="bg-card p-6 rounded-2xl border border-border text-foreground shadow-sm font-light">
               <strong className="block text-foreground mb-3 font-medium flex items-center gap-2 text-sm">
                 💡 הסבר:
+                {isAdmin && !editingExplanation && (
+                  <button
+                    onClick={() => { setExplanationDraft(qData[KEYS.EXPLANATION] || ''); setEditingExplanation(true); }}
+                    className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
+                    title="ערוך הסבר"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </strong>
-              <div className="markdown-content bidi-text text-base" style={{ lineHeight: '1.8' }}>
-                <ExplanationRenderer text={qData[KEYS.EXPLANATION] || 'אין הסבר'} />
-              </div>
+              {editingExplanation ? (
+                <div className="space-y-3">
+                  <textarea
+                    value={explanationDraft}
+                    onChange={e => setExplanationDraft(e.target.value)}
+                    className="w-full p-4 bg-muted border border-border rounded-xl text-sm outline-none focus:border-primary resize-y min-h-[120px] text-foreground font-normal"
+                    dir="auto"
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <button
+                      onClick={() => setEditingExplanation(false)}
+                      className="px-4 py-2 text-xs font-bold text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/80 transition"
+                    >
+                      ביטול
+                    </button>
+                    <button
+                      disabled={savingExplanation}
+                      onClick={async () => {
+                        setSavingExplanation(true);
+                        const { error } = await supabase
+                          .from('questions')
+                          .update({ explanation: explanationDraft })
+                          .eq('id', serialNumber);
+                        setSavingExplanation(false);
+                        if (error) {
+                          toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
+                        } else {
+                          qData[KEYS.EXPLANATION] = explanationDraft;
+                          setEditingExplanation(false);
+                          toast({ title: 'ההסבר עודכן ✅' });
+                        }
+                      }}
+                      className="px-4 py-2 text-xs font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                    >
+                      {savingExplanation ? '...' : 'שמור'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="markdown-content bidi-text text-base" style={{ lineHeight: '1.8' }}>
+                  <ExplanationRenderer text={qData[KEYS.EXPLANATION] || 'אין הסבר'} />
+                </div>
+              )}
             </div>
 
             <div className="border-t border-border" />
