@@ -1,4 +1,4 @@
-import StatsTile from './StatsTile';
+import AnimatedStatsTile from './AnimatedStatsTile';
 import type { WeakZone } from './useStatsData';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
@@ -8,7 +8,7 @@ interface Props {
 }
 
 export default function WeakZoneMapTile({ zones }: Props) {
-  const { data, progress, startSession } = useApp();
+  const { data, startSession } = useApp();
 
   const startZoneSession = (ids: string[]) => {
     const questions = data.filter(q => ids.includes(q[KEYS.ID]));
@@ -24,7 +24,7 @@ export default function WeakZoneMapTile({ zones }: Props) {
   ];
 
   return (
-    <StatsTile
+    <AnimatedStatsTile
       collapsed={
         <div className="p-5">
           <span className="text-xs text-muted-foreground font-medium">מפת חולשות</span>
@@ -40,11 +40,11 @@ export default function WeakZoneMapTile({ zones }: Props) {
       }
       expanded={
         <div>
-          <h3 className="text-lg font-bold text-white mb-4">מפת חולשות — פירוט מלא</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">מפת חולשות — פירוט מלא</h3>
           {zoneConfig.map(z => (
             <div key={z.key} className="mb-6">
               <div className="flex items-center justify-between mb-2">
-                <h4 className="font-bold text-sm text-white">{z.emoji} {z.label} ({z.ids.length})</h4>
+                <h4 className="font-bold text-sm text-foreground">{z.emoji} {z.label} ({z.ids.length})</h4>
                 {z.ids.length > 0 && (
                   <button
                     onClick={(e) => { e.stopPropagation(); startZoneSession(z.ids); }}
@@ -61,7 +61,7 @@ export default function WeakZoneMapTile({ zones }: Props) {
                   {z.ids.slice(0, 20).map(id => {
                     const q = data.find(x => x[KEYS.ID] === id);
                     return (
-                      <div key={id} className="text-[11px] text-muted-foreground truncate bg-white/5 px-2 py-1 rounded">
+                      <div key={id} className="text-[11px] text-muted-foreground truncate bg-muted/30 px-2 py-1 rounded">
                         {q ? q[KEYS.QUESTION].slice(0, 80) : id}
                       </div>
                     );

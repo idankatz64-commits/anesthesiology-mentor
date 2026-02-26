@@ -1,10 +1,11 @@
-import StatsTile from './StatsTile';
+import AnimatedStatsTile from './AnimatedStatsTile';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
 
 interface Props {
   data: { date: string; rate: number; count: number; trend?: number }[];
+  fullData?: { date: string; rate: number; count: number; trend?: number }[];
 }
 
 const formatDate = (d: string) => {
@@ -19,7 +20,7 @@ function VelocityChart({ data, height }: { data: Props['data']; height: number }
         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
         <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: '#6B7280', fontSize: 9 }} axisLine={false} tickLine={false} />
         <YAxis domain={[0, 100]} unit="%" tick={{ fill: '#6B7280', fontSize: 9 }} axisLine={false} tickLine={false} />
-        <Tooltip contentStyle={{ background: '#141720', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }} labelFormatter={formatDate} />
+        <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 12, fontSize: 12 }} labelFormatter={formatDate} />
         <Line type="monotone" dataKey="rate" stroke="#F97316" strokeWidth={2} dot={{ r: 2, fill: '#F97316' }} name="הצלחה" />
         <Line type="monotone" dataKey="trend" stroke="#60A5FA" strokeWidth={2} strokeDasharray="6 3" dot={false} name="מגמה" connectNulls />
       </LineChart>
@@ -27,9 +28,9 @@ function VelocityChart({ data, height }: { data: Props['data']; height: number }
   );
 }
 
-export default function LearningVelocityTile({ data }: Props) {
+export default function LearningVelocityTile({ data, fullData }: Props) {
   return (
-    <StatsTile
+    <AnimatedStatsTile
       collapsed={
         <div className="p-5">
           <span className="text-xs text-muted-foreground font-medium">מהירות למידה</span>
@@ -41,9 +42,9 @@ export default function LearningVelocityTile({ data }: Props) {
       }
       expanded={
         <div>
-          <h3 className="text-lg font-bold text-white mb-4">מהירות למידה — 14 ימים</h3>
+          <h3 className="text-lg font-bold text-foreground mb-4">מהירות למידה — {fullData ? '30' : '14'} ימים</h3>
           <div style={{ height: 350 }}>
-            <VelocityChart data={data} height={350} />
+            <VelocityChart data={fullData || data} height={350} />
           </div>
         </div>
       }
