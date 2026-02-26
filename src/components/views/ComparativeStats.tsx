@@ -14,6 +14,7 @@ export default function ComparativeStats() {
   const { data, progress } = useApp();
   const [globalStats, setGlobalStats] = useState<GlobalTopicStat[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     supabase.rpc('get_global_topic_stats').then(({ data: stats }) => {
@@ -44,18 +45,20 @@ export default function ComparativeStats() {
       const mine = topicMap[gs.topic];
       const myAccuracy = mine ? Math.round((mine.correct / mine.answered) * 100) : null;
       const myAnswered = mine?.answered || 0;
+      const diff = myAccuracy !== null ? myAccuracy - gs.avg_accuracy : null;
+      const gapQuestions = diff !== null && diff < 0 ? Math.ceil(Math.abs(diff) / 100 * myAnswered) : 0;
       return {
         topic: gs.topic,
         myAccuracy,
         globalAccuracy: gs.avg_accuracy,
         myAnswered,
         globalUsers: gs.total_users,
-        diff: myAccuracy !== null ? myAccuracy - gs.avg_accuracy : null,
+        diff,
+        gapQuestions,
       };
-    }).sort((a, b) => (a.diff ?? -999) - (b.diff ?? -999));
+    }).sort((a, b) => Math.abs(b.diff ?? 0) - Math.abs(a.diff ?? 0));
   }, [globalStats, progress, data]);
 
-  // Gap metrics
   const gapMetrics = useMemo(() => {
     let totalCorrect = 0, totalAnswered = 0;
     Object.values(progress.history).forEach(h => {
@@ -64,7 +67,6 @@ export default function ComparativeStats() {
     });
     const userAccuracy = totalAnswered > 0 ? (totalCorrect / totalAnswered) * 100 : 0;
 
-    // Weighted group average
     let weightedSum = 0, weightCount = 0;
     globalStats.forEach(gs => {
       weightedSum += gs.avg_accuracy * gs.total_users;
@@ -73,16 +75,16 @@ export default function ComparativeStats() {
     const groupAvg = weightCount > 0 ? weightedSum / weightCount : 0;
 
     const gap = Math.round(userAccuracy - groupAvg);
-    const gapQuestions = gap < 0
-      ? Math.max(0, Math.ceil(Math.abs(gap) / 100 * totalAnswered))
-      : 0;
+    const gapQuestions = gap < 0 ? Math.max(0, Math.ceil(Math.abs(gap) / 100 * totalAnswered)) : 0;
 
     return { userAccuracy: Math.round(userAccuracy), groupAvg: Math.round(groupAvg), gap, gapQuestions };
   }, [progress, globalStats]);
 
+  const displayed = showAll ? comparison : comparison.slice(0, 5);
+
   if (loading) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-8 text-center">
+      <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-8 text-center">
         <p className="text-muted-foreground animate-pulse">טוען נתוני קבוצה...</p>
       </div>
     );
@@ -90,94 +92,83 @@ export default function ComparativeStats() {
 
   if (globalStats.length === 0) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-8 text-center">
+      <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-8 text-center">
         <Users className="w-8 h-8 mx-auto text-muted-foreground mb-3" />
         <p className="text-muted-foreground">אין עדיין מספיק נתונים קבוצתיים.</p>
-        <p className="text-xs text-muted-foreground mt-1">תרגל עוד כדי לראות את מיקומך בקבוצה.</p>
       </div>
     );
   }
 
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden">
-      <div className="p-5 border-b border-border">
+    <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl overflow-hidden">
+      <div className="p-5 border-b border-border dark:border-white/[0.07]">
         <h3 className="font-bold text-foreground flex items-center gap-2 text-sm">
           <Users className="w-5 h-5 text-primary" />
           מיקומך בקבוצה
         </h3>
-        <p className="text-[10px] text-muted-foreground mt-0.5">השוואת הביצועים שלך מול הממוצע הכללי</p>
       </div>
 
-      {/* Gap KPI cards */}
-      <div className="grid grid-cols-2 gap-3 p-5 border-b border-border">
-        <div className={`rounded-xl p-4 text-center border ${gapMetrics.gap >= 0 ? 'bg-green-500/5 border-green-500/20' : 'bg-red-500/5 border-red-500/20'}`}>
-          <div className="text-[10px] text-muted-foreground mb-1">פער מהממוצע</div>
-          <div className={`text-2xl font-black ${gapMetrics.gap >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-            {gapMetrics.gap > 0 ? '+' : ''}{gapMetrics.gap}%
-          </div>
-        </div>
-        <div className="rounded-xl p-4 text-center border border-border bg-muted/20">
-          <div className="text-[10px] text-muted-foreground mb-1">שאלות לסגירת פער</div>
-          {gapMetrics.gapQuestions === 0 ? (
-            <div className="flex items-center justify-center gap-1.5">
-              <CheckCircle className="w-5 h-5 text-green-400" />
-              <span className="text-sm font-bold text-green-400">מעל הממוצע!</span>
-            </div>
-          ) : (
-            <div className="text-2xl font-black text-foreground">~{gapMetrics.gapQuestions}</div>
-          )}
-          {gapMetrics.gapQuestions > 0 && (
-            <p className="text-[9px] text-muted-foreground mt-0.5">תשובות נכונות לממוצע</p>
-          )}
-        </div>
+      {/* Gap KPI badge */}
+      <div className="px-5 py-3 border-b border-border dark:border-white/[0.07] flex flex-wrap items-center gap-3 text-[11px]">
+        <span className={`font-bold ${gapMetrics.gap >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+          פער מהממוצע: {gapMetrics.gap > 0 ? '+' : ''}{gapMetrics.gap}%
+        </span>
+        <span className="text-muted-foreground">|</span>
+        {gapMetrics.gapQuestions === 0 ? (
+          <span className="text-green-400 font-bold flex items-center gap-1"><CheckCircle className="w-3 h-3" /> מעל הממוצע!</span>
+        ) : (
+          <span className="text-muted-foreground">עוד ~{gapMetrics.gapQuestions} תשובות נכונות לממוצע</span>
+        )}
       </div>
 
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-muted/50 border-b border-border text-muted-foreground">
-              <th className="px-4 py-3 text-right text-xs font-bold">נושא</th>
-              <th className="px-4 py-3 text-center text-xs font-bold">הדיוק שלך %</th>
-              <th className="px-4 py-3 text-center text-xs font-bold">ממוצע כללי %</th>
-              <th className="px-4 py-3 text-center text-xs font-bold">מצב</th>
+            <tr className="bg-muted/30 border-b border-border dark:border-white/[0.07] text-muted-foreground">
+              <th className="px-4 py-2.5 text-right text-[10px] font-bold">נושא</th>
+              <th className="px-4 py-2.5 text-center text-[10px] font-bold">הדיוק שלך</th>
+              <th className="px-4 py-2.5 text-center text-[10px] font-bold">ממוצע קבוצה</th>
+              <th className="px-4 py-2.5 text-center text-[10px] font-bold">פער</th>
+              <th className="px-4 py-2.5 text-center text-[10px] font-bold">לסגירה</th>
             </tr>
           </thead>
           <tbody>
-            {comparison.map(row => (
-              <tr key={row.topic} className="border-b border-border hover:bg-muted/30 transition">
-                <td className="px-4 py-3 font-medium text-foreground text-xs">{row.topic}</td>
-                <td className="px-4 py-3 text-center">
+            {displayed.map(row => (
+              <tr key={row.topic} className="border-b border-border/50 dark:border-white/[0.04] hover:bg-muted/20 transition">
+                <td className="px-4 py-2.5 font-medium text-foreground text-xs truncate max-w-[150px]">{row.topic}</td>
+                <td className="px-4 py-2.5 text-center">
                   {row.myAccuracy !== null ? (
-                    <span className={`font-bold text-xs ${row.myAccuracy >= 80 ? 'text-green-400' : row.myAccuracy >= 60 ? 'text-yellow-400' : 'text-red-400'}`}>
-                      {row.myAccuracy}%
-                    </span>
+                    <span className="font-bold text-xs text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{row.myAccuracy}%</span>
                   ) : (
                     <span className="text-muted-foreground text-xs">—</span>
                   )}
                 </td>
-                <td className="px-4 py-3 text-center font-medium text-muted-foreground text-xs">{row.globalAccuracy}%</td>
-                <td className="px-4 py-3 text-center">
+                <td className="px-4 py-2.5 text-center text-muted-foreground text-xs" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{row.globalAccuracy}%</td>
+                <td className="px-4 py-2.5 text-center">
                   {row.diff === null ? (
-                    <span className="text-[10px] text-muted-foreground bg-muted px-2 py-1 rounded-full">לא נענה</span>
-                  ) : row.diff > 5 ? (
-                    <span className="text-[10px] font-bold text-green-400 bg-green-500/10 px-2 py-1 rounded-full inline-flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" /> +{row.diff}%
-                    </span>
-                  ) : row.diff < -5 ? (
-                    <span className="text-[10px] font-bold text-red-400 bg-red-500/10 px-2 py-1 rounded-full inline-flex items-center gap-1">
-                      <TrendingDown className="w-3 h-3" /> {row.diff}%
-                    </span>
+                    <span className="text-[10px] text-muted-foreground">—</span>
                   ) : (
-                    <span className="text-[10px] font-bold text-yellow-400 bg-yellow-500/10 px-2 py-1 rounded-full inline-flex items-center gap-1">
-                      <Minus className="w-3 h-3" /> בממוצע
+                    <span className={`text-[10px] font-bold ${row.diff >= 0 ? 'text-green-400' : 'text-red-400'}`} style={{ fontFamily: "'Share Tech Mono', monospace" }}>
+                      {row.diff > 0 ? '+' : ''}{row.diff}%
                     </span>
                   )}
+                </td>
+                <td className="px-4 py-2.5 text-center text-[10px] text-muted-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>
+                  {row.gapQuestions > 0 ? `~${row.gapQuestions}` : '✓'}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {comparison.length > 5 && (
+        <div className="p-3 text-center border-t border-border dark:border-white/[0.07]">
+          <button onClick={() => setShowAll(!showAll)} className="text-xs text-orange-400 hover:text-orange-300 font-bold transition">
+            {showAll ? 'הצג פחות' : `הרחב לטבלה המלאה (${comparison.length}) ↓`}
+          </button>
+        </div>
+      )}
     </div>
   );
 }

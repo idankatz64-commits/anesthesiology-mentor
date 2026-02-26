@@ -1,4 +1,6 @@
-import AnimatedStatsTile from './AnimatedStatsTile';
+import { useState, useEffect, useId, ReactNode } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { X } from 'lucide-react';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
   ResponsiveContainer,
@@ -10,10 +12,13 @@ interface ERITileProps {
   coverage: number;
   criticalAvg: number;
   consistency: number;
+  streak: number;
 }
 
-function ERIRing({ value, size = 80 }: { value: number; size?: number }) {
-  const strokeWidth = 8;
+const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
+
+function ERIRing({ value, size = 200 }: { value: number; size?: number }) {
+  const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (value / 100) * circumference;
@@ -22,23 +27,43 @@ function ERIRing({ value, size = 80 }: { value: number; size?: number }) {
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
       <svg width={size} height={size} className="-rotate-90">
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="currentColor" className="text-muted/30" strokeWidth={strokeWidth} />
-        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
+        <circle cx={size / 2} cy={size / 2} r={radius} fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={strokeWidth} />
+        <circle
+          cx={size / 2} cy={size / 2} r={radius} fill="none" stroke={color} strokeWidth={strokeWidth}
           strokeDasharray={circumference} strokeDashoffset={offset} strokeLinecap="round"
-          style={{ transition: 'stroke-dashoffset 1s ease-out' }} />
+          style={{ transition: 'stroke-dashoffset 1.2s ease-out', filter: `drop-shadow(0 0 8px ${color}40)` }}
+        />
       </svg>
-      <span className="absolute text-2xl font-black text-foreground">{value}%</span>
+      <div className="absolute flex flex-col items-center">
+        <span className="text-4xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
+        <span className="text-xs text-muted-foreground font-medium mt-1">{getLabel(value)}</span>
+      </div>
     </div>
   );
 }
 
 function getLabel(value: number) {
-  if (value >= 70) return 'מוכן';
+  if (value >= 70) return 'מוכן למבחן';
   if (value >= 50) return 'טוב';
   return 'מוכן חלקית';
 }
 
-export default function ERITile({ value, accuracy, coverage, criticalAvg, consistency }: ERITileProps) {
+export default function ERITile({ value, accuracy, coverage, criticalAvg, consistency, streak }: ERITileProps) {
+  const [open, setOpen] = useState(false);
+  const uniqueId = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [open]);
+
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [open]);
+
   const radarData = [
     { subject: 'דיוק (25%)', val: accuracy, fullMark: 100 },
     { subject: 'כיסוי (25%)', val: coverage, fullMark: 100 },
@@ -46,46 +71,85 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
     { subject: 'עקביות (20%)', val: consistency, fullMark: 100 },
   ];
 
+  const satellites = [
+    { label: 'דיוק', value: `${accuracy}%`, color: accuracy >= 70 ? '#22C55E' : accuracy >= 50 ? '#EAB308' : '#EF4444' },
+    { label: 'כיסוי', value: `${coverage}%`, color: '#F97316' },
+    { label: 'רצף', value: `${streak}`, color: '#FB923C' },
+  ];
+
   return (
-    <AnimatedStatsTile
-      collapsed={
-        <div className="p-5 flex flex-col items-center justify-center gap-2 min-h-[160px]">
-          <ERIRing value={value} />
-          <span className="text-xs text-muted-foreground font-medium">{getLabel(value)}</span>
-          <span className="text-[10px] text-muted-foreground/60">מדד מוכנות למבחן</span>
-        </div>
-      }
-      expanded={
-        <div>
-          <h3 className="text-lg font-bold text-foreground mb-6">מדד מוכנות למבחן (ERI)</h3>
-          <div className="flex flex-col md:flex-row items-center gap-8">
-            <ERIRing value={value} size={140} />
-            <div className="flex-1 w-full" style={{ height: 300 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <RadarChart data={radarData}>
-                  <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
-                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#6B7280', fontSize: 10 }} />
-                  <Radar dataKey="val" stroke="#F97316" fill="#F97316" fillOpacity={0.25} strokeWidth={2} />
-                </RadarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
-            {[
-              { label: 'דיוק', val: accuracy, weight: '25%' },
-              { label: 'כיסוי', val: coverage, weight: '25%' },
-              { label: 'נושאים קריטיים', val: criticalAvg, weight: '30%' },
-              { label: 'עקביות', val: consistency, weight: '20%' },
-            ].map(item => (
-              <div key={item.label} className="bg-muted/30 rounded-lg p-3 text-center">
-                <div className="text-xl font-bold text-foreground">{item.val}%</div>
-                <div className="text-[10px] text-muted-foreground">{item.label} ({item.weight})</div>
+    <>
+      <motion.div
+        layoutId={uniqueId}
+        onClick={() => setOpen(true)}
+        whileHover={{ scale: 1.01 }}
+        transition={spring}
+        className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl cursor-pointer hover:border-orange-500/30 hover:shadow-[0_0_30px_rgba(249,115,22,0.08)] transition-shadow"
+      >
+        <div className="flex flex-col items-center py-8 px-4">
+          <ERIRing value={value} size={200} />
+          <p className="text-[10px] text-muted-foreground/50 mt-2">מדד מוכנות למבחן</p>
+
+          {/* Satellite pills */}
+          <div className="flex items-center gap-4 mt-5">
+            {satellites.map(s => (
+              <div key={s.label} className="flex flex-col items-center bg-muted/20 dark:bg-white/[0.04] rounded-lg px-4 py-2 border border-border dark:border-white/[0.06]">
+                <span className="text-lg font-black" style={{ fontFamily: "'Share Tech Mono', monospace", color: s.color }}>{s.value}</span>
+                <span className="text-[9px] text-muted-foreground">{s.label}</span>
               </div>
             ))}
           </div>
         </div>
-      }
-    />
+      </motion.div>
+
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
+          >
+            <motion.div className="absolute inset-0 bg-black/70 backdrop-blur-md" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} />
+            <motion.div
+              layoutId={uniqueId}
+              transition={spring}
+              className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10"
+            >
+              <button onClick={(e) => { e.stopPropagation(); setOpen(false); }} className="absolute top-4 left-4 w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition z-20">
+                <X className="w-4 h-4" />
+              </button>
+              <h3 className="text-lg font-bold text-foreground mb-6">מדד מוכנות למבחן (ERI)</h3>
+              <div className="flex flex-col md:flex-row items-center gap-8">
+                <ERIRing value={value} size={180} />
+                <div className="flex-1 w-full" style={{ height: 300 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart data={radarData}>
+                      <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                      <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+                      <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#6B7280', fontSize: 10 }} />
+                      <Radar dataKey="val" stroke="#F97316" fill="#F97316" fillOpacity={0.25} strokeWidth={2} />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+                {[
+                  { label: 'דיוק', val: accuracy, weight: '25%' },
+                  { label: 'כיסוי', val: coverage, weight: '25%' },
+                  { label: 'נושאים קריטיים', val: criticalAvg, weight: '30%' },
+                  { label: 'עקביות', val: consistency, weight: '20%' },
+                ].map(item => (
+                  <div key={item.label} className="bg-muted/30 rounded-lg p-3 text-center">
+                    <div className="text-xl font-bold text-foreground">{item.val}%</div>
+                    <div className="text-[10px] text-muted-foreground">{item.label} ({item.weight})</div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
