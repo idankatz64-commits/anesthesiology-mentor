@@ -30,7 +30,7 @@ export default function StatsView() {
   const { data, progress, importData, startSession } = useApp();
   const {
     stats, eri, streak, accuracyTrend, weakZones,
-    forgettingRisk, dailyData14,
+    forgettingRisk, chapterCoverage, dailyData14, dailyData30,
     trendData14, trendData30,
   } = useStatsData();
 
@@ -83,12 +83,13 @@ export default function StatsView() {
 
       {/* Row 1 — 4 Static KPI Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StreakTile streak={streak} />
-        <CoverageTile coverage={stats.coverage} />
+        <StreakTile streak={streak} dailyData={dailyData30} />
+        <CoverageTile coverage={stats.coverage} chapters={chapterCoverage} />
         <AccuracyTile
           accuracy={stats.accuracy}
           trend={accuracyTrend}
           sparkData={dailyData14}
+          fullData={trendData30}
         />
         <ERITile
           value={eri.value}

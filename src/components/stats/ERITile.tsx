@@ -1,3 +1,9 @@
+import AnimatedStatsTile from './AnimatedStatsTile';
+import {
+  RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar,
+  ResponsiveContainer,
+} from 'recharts';
+
 interface ERITileProps {
   value: number;
   accuracy: number;
@@ -32,12 +38,54 @@ function getLabel(value: number) {
   return 'מוכן חלקית';
 }
 
-export default function ERITile({ value }: ERITileProps) {
+export default function ERITile({ value, accuracy, coverage, criticalAvg, consistency }: ERITileProps) {
+  const radarData = [
+    { subject: 'דיוק (25%)', val: accuracy, fullMark: 100 },
+    { subject: 'כיסוי (25%)', val: coverage, fullMark: 100 },
+    { subject: 'נושאים קריטיים (30%)', val: criticalAvg, fullMark: 100 },
+    { subject: 'עקביות (20%)', val: consistency, fullMark: 100 },
+  ];
+
   return (
-    <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl p-5 flex flex-col items-center justify-center gap-2 min-h-[160px]">
-      <ERIRing value={value} />
-      <span className="text-xs text-muted-foreground font-medium">{getLabel(value)}</span>
-      <span className="text-[10px] text-muted-foreground/60">מדד מוכנות למבחן</span>
-    </div>
+    <AnimatedStatsTile
+      collapsed={
+        <div className="p-5 flex flex-col items-center justify-center gap-2 min-h-[160px]">
+          <ERIRing value={value} />
+          <span className="text-xs text-muted-foreground font-medium">{getLabel(value)}</span>
+          <span className="text-[10px] text-muted-foreground/60">מדד מוכנות למבחן</span>
+        </div>
+      }
+      expanded={
+        <div>
+          <h3 className="text-lg font-bold text-foreground mb-6">מדד מוכנות למבחן (ERI)</h3>
+          <div className="flex flex-col md:flex-row items-center gap-8">
+            <ERIRing value={value} size={140} />
+            <div className="flex-1 w-full" style={{ height: 300 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <RadarChart data={radarData}>
+                  <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                  <PolarAngleAxis dataKey="subject" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
+                  <PolarRadiusAxis angle={90} domain={[0, 100]} tick={{ fill: '#6B7280', fontSize: 10 }} />
+                  <Radar dataKey="val" stroke="#F97316" fill="#F97316" fillOpacity={0.25} strokeWidth={2} />
+                </RadarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
+            {[
+              { label: 'דיוק', val: accuracy, weight: '25%' },
+              { label: 'כיסוי', val: coverage, weight: '25%' },
+              { label: 'נושאים קריטיים', val: criticalAvg, weight: '30%' },
+              { label: 'עקביות', val: consistency, weight: '20%' },
+            ].map(item => (
+              <div key={item.label} className="bg-muted/30 rounded-lg p-3 text-center">
+                <div className="text-xl font-bold text-foreground">{item.val}%</div>
+                <div className="text-[10px] text-muted-foreground">{item.label} ({item.weight})</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      }
+    />
   );
 }
