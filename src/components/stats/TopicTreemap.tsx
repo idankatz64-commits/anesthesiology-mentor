@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AnimatedStatsTile from './AnimatedStatsTile';
 import { Treemap, ResponsiveContainer, Tooltip } from 'recharts';
 import type { TopicStat } from './useStatsData';
@@ -6,6 +7,8 @@ import type { TopicStat } from './useStatsData';
 interface Props {
   topicData: TopicStat[];
   onTopicClick: (topic: string) => void;
+  unclassifiedData?: TopicStat;
+  isAdmin?: boolean;
 }
 
 function getTreemapColor(score: number) {
@@ -70,7 +73,28 @@ const CustomTooltip = ({ active, payload }: any) => {
   );
 };
 
-export default function TopicTreemap({ topicData, onTopicClick }: Props) {
+export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData, isAdmin }: Props) {
+  const navigate = useNavigate();
+
+  const unclassifiedBanner = useMemo(() => {
+    if (!unclassifiedData || unclassifiedData.totalInDb === 0) return null;
+    const coverage = unclassifiedData.totalInDb > 0 ? Math.round((unclassifiedData.totalAnswered / unclassifiedData.totalInDb) * 100) : 0;
+    return (
+      <div dir="rtl" className="bg-white/5 border border-dashed border-white/10 rounded-lg px-4 py-2.5 h-12 flex items-center justify-between mt-3">
+        <span className="text-[11px] text-muted-foreground">
+          ⚠️ שאלות ללא סיווג פרק: <span className="font-bold text-foreground">{unclassifiedData.totalInDb}</span> שאלות | כיסוי: <span className="font-bold text-foreground">{coverage}%</span> | דיוק: <span className="font-bold text-foreground">{unclassifiedData.accuracy}%</span>
+        </span>
+        {isAdmin && (
+          <button
+            onClick={() => navigate('/admin')}
+            className="text-[10px] font-bold text-orange-400 border border-orange-500/20 bg-orange-500/10 rounded-md px-2.5 py-1 hover:bg-orange-500/20 transition"
+          >
+            סווג שאלות
+          </button>
+        )}
+      </div>
+    );
+  }, [unclassifiedData, isAdmin, navigate]);
   const treemapData = useMemo(() => {
     return topicData
       .filter(t => t.totalInDb > 0 && t.topic !== 'N/A#')
@@ -127,6 +151,7 @@ export default function TopicTreemap({ topicData, onTopicClick }: Props) {
               </span>
             ))}
           </div>
+          {unclassifiedBanner}
         </div>
       }
       expanded={
@@ -161,6 +186,7 @@ export default function TopicTreemap({ topicData, onTopicClick }: Props) {
               </span>
             ))}
           </div>
+          {unclassifiedBanner}
         </div>
       }
     />
