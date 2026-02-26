@@ -112,8 +112,8 @@ export default function ForgettingRiskTile({ risks }: Props) {
       className={hasHighRisk ? 'animate-pulse-border' : ''}
       collapsed={
         <div className="p-5">
-          <span className="text-xs text-muted-foreground font-medium flex items-center gap-1">
-            <AlertTriangle className="w-3 h-3" /> סיכון שכחה
+          <span className="text-sm text-muted-foreground font-semibold flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4" /> סיכון שכחה
           </span>
           <div className="mt-3 flex flex-wrap gap-2">
             {risks.length === 0 ? (
