@@ -73,7 +73,7 @@ const CustomTooltip = ({ active, payload }: any) => {
 export default function TopicTreemap({ topicData, onTopicClick }: Props) {
   const treemapData = useMemo(() => {
     return topicData
-      .filter(t => t.totalInDb > 0)
+      .filter(t => t.totalInDb > 0 && t.topic !== 'N/A#')
       .map(t => ({
         name: t.topic,
         size: Math.max(t.totalInDb, 1),
