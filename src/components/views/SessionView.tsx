@@ -215,7 +215,6 @@ export default function SessionView() {
       if (userAns) {
         const isCorrect = userAns === q[KEYS.CORRECT];
         updateHistory(q[KEYS.ID], isCorrect);
-        syncAnswerToDb(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
       }
     });
     clearSavedSession();
