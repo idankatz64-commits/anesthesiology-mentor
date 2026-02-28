@@ -1,54 +1,102 @@
 
 
-# בדיקת באגים גלובלית -- שמירה, התקדמות ועריכה
+# Migrate User Progress from localStorage to Supabase
 
-## באגים שנמצאו
+## Problem
+All user progress (history, favorites, notes, ratings, tags, weekly plan) is stored only in localStorage, making it device-specific. Switching devices or clearing browser data loses all progress.
 
-### 1. באג קריטי: עריכות אדמין בתוך סשן לא מסומנות כ-`manually_edited`
-**חומרה: גבוהה**
+## What stays in localStorage
+- Theme preference (dark/light)
+- Welcome modal dismissed flag
 
-כשאדמין עורך הסבר, תשובה נכונה, או פרק מתוך מסך הסשן (`SessionView.tsx`), העדכון לא כולל `manually_edited: true`. המשמעות: הסנכרון הבא מ-Google Sheets ידרוס את השינויים.
+## What moves to Supabase
 
-- שורות 539-542: עדכון תשובה נכונה -- חסר `manually_edited: true`
-- שורות 619-620: עדכון הסבר -- חסר `manually_edited: true`
-- שורות 671-675: עדכון פרק -- חסר `manually_edited: true`
+### New Tables Required
 
-**תיקון:** הוסף `manually_edited: true` לכל שלושת קריאות ה-`update` של שאלות ב-`SessionView.tsx`.
+**1. `user_favorites`**
+- `id` (uuid, PK)
+- `user_id` (uuid, NOT NULL)
+- `question_id` (text, NOT NULL)
+- `created_at` (timestamptz)
+- Unique constraint on (user_id, question_id)
+- RLS: users can only CRUD their own rows
 
----
+**2. `user_notes`**
+- `id` (uuid, PK)
+- `user_id` (uuid, NOT NULL)
+- `question_id` (text, NOT NULL)
+- `note_text` (text, NOT NULL)
+- `updated_at` (timestamptz)
+- Unique constraint on (user_id, question_id)
+- RLS: users can only CRUD their own rows
 
-### 2. באג: עריכות אדמין משנות את האובייקט ישירות (mutation)
-**חומרה: בינונית**
+**3. `user_ratings`**
+- `id` (uuid, PK)
+- `user_id` (uuid, NOT NULL)
+- `question_id` (text, NOT NULL)
+- `rating` (text, NOT NULL) -- 'easy' | 'medium' | 'hard'
+- `updated_at` (timestamptz)
+- Unique constraint on (user_id, question_id)
+- RLS: users can only CRUD their own rows
 
-בשורות 547, 626, 677-679, הקוד משנה ישירות את `qData` (למשל `qData[KEYS.CORRECT] = correctAnswerDraft`). זו מוטציה ישירה של אובייקט בתוך מערך ה-`data` של React, בלי לעבור דרך `setState`. השינוי נראה באופן מקומי, אבל:
-- אם הקומפוננטה עושה re-render ממקור אחר, השינוי עלול להיעלם
-- זה מפר את עקרונות React של immutability
+**4. `user_tags`**
+- `id` (uuid, PK)
+- `user_id` (uuid, NOT NULL)
+- `question_id` (text, NOT NULL)
+- `tag` (text, NOT NULL)
+- `created_at` (timestamptz)
+- Unique constraint on (user_id, question_id, tag)
+- RLS: users can only CRUD their own rows
 
-**תיקון:** לאחר שמירה מוצלחת ל-DB, לעדכן את ה-cache ב-`sessionStorage` ולרענן את ה-`data` state, או לכל הפחות להשאיר את המוטציה הנוכחית (שעובדת בפרקטיקה) אבל גם לנקות את ה-sessionStorage cache כדי שבפעם הבאה הנתונים ייטענו מעודכנים.
+**5. `user_weekly_plans`**
+- `id` (uuid, PK)
+- `user_id` (uuid, NOT NULL, UNIQUE)
+- `plan_data` (jsonb, NOT NULL)
+- `updated_at` (timestamptz)
+- RLS: users can only CRUD their own rows
 
----
+### Modify Existing Table
+**`user_answers`** -- add `ever_wrong` (boolean, default false) column so we can reconstruct the full history object from Supabase.
 
-### 3. באג: `updateHistory` נקרא בתוך `useMemo` ב-ResultsView
-**חומרה: בינונית**
+## Implementation Plan
 
-ב-`ResultsView.tsx` שורות 71-78, `updateHistory` (שהוא side effect שכותב ל-localStorage) נקרא מתוך `useMemo`. זה:
-- מפר את כללי React (side effects אסורים ב-memo)
-- עלול להיקרא מספר פעמים או לא להיקרא כלל בהתאם ל-React strict mode
-- ב-exam mode, ההיסטוריה נשמרת בכל render מחדש
+### Step 1: Create database tables and add column
+Run a single migration creating all 5 new tables with RLS policies, plus adding `ever_wrong` to `user_answers`.
 
-**תיקון:** להעביר את קריאת `updateHistory` ל-`useEffect` עם dependency על `mode` ו-`quiz`.
+### Step 2: Rewrite AppContext.tsx hydration
+- On mount, check for authenticated user
+- If authenticated: fetch all progress data from Supabase (user_answers, user_favorites, user_notes, user_ratings, user_tags, user_weekly_plans) and build the `UserProgress` object from DB data
+- If not authenticated: use empty `defaultProgress` (no localStorage fallback)
+- Listen to `onAuthStateChange` to re-hydrate when user logs in
 
----
+### Step 3: Rewrite each mutation to write to Supabase
+Replace every `localStorage.setItem(LS_KEY, ...)` call with a Supabase upsert/insert/delete:
 
-## שינויים מתוכננים
+- **`updateHistory`**: Already calls `syncAnswerToDb` separately; merge them so `updateHistory` writes directly to `user_answers` (including `ever_wrong`), and also updates local state
+- **`toggleFavorite`**: Insert/delete from `user_favorites`
+- **`saveNote` / `deleteNote`**: Upsert/delete in `user_notes`
+- **`setRating`**: Upsert in `user_ratings`
+- **`addTag` / `removeTag`**: Insert/delete in `user_tags`
+- **`generateWeeklyPlan`**: Upsert in `user_weekly_plans`
+- **`resetAllData`**: Delete all user rows from all tables
+- **`importData`**: Batch upsert into all tables
+- **`saveProgress`**: Remove entirely (no longer needed)
 
-### קובץ 1: `src/components/views/SessionView.tsx`
-- הוסף `manually_edited: true` לשלושת קריאות `supabase.from('questions').update(...)`:
-  - עדכון תשובה נכונה (שורה ~541)
-  - עדכון הסבר (שורה ~620)
-  - עדכון פרק (שורה ~672)
-- נקה את ה-sessionStorage cache לאחר כל עדכון מוצלח (`sessionStorage.removeItem('questions_cache')`)
+### Step 4: Remove localStorage references for progress
+- Remove `LS_KEY` usage for progress (keep for nothing -- it becomes unused)
+- Remove the `saveProgress` callback and its localStorage write
+- Keep theme and welcome_key in localStorage
 
-### קובץ 2: `src/components/views/ResultsView.tsx`
-- העבר את לוגיקת `updateHistory` עבור exam mode מתוך `useMemo` ל-`useEffect` נפרד שרץ פעם אחת בטעינה
+### Step 5: Update dependent components
+- `useStatsData.ts`: Already reads from `progress.history` via context -- no change needed since we hydrate the same shape from Supabase
+- `NotebookView.tsx`: Already reads from `progress.notes` -- works as-is after hydration
+- Any component using `progress.*` continues to work since the data shape is unchanged
+
+## Technical Notes
+
+- All Supabase writes are fire-and-forget with optimistic local state updates (write to state immediately, sync to DB in background)
+- If user is not authenticated, mutations update local state only (in-memory, lost on refresh) -- this preserves the app working for non-logged-in users without persisting
+- The `user_answers` table already has a unique constraint on (user_id, question_id), so upserts work naturally
+- We fetch all user data in parallel on login for fast hydration
+- The `progress` object shape (`UserProgress`) stays the same -- only the storage backend changes
 
