@@ -51,25 +51,47 @@ export default function StatsView() {
     a.click();
   };
 
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const parsed = JSON.parse(ev.target?.result as string);
-        if (parsed && parsed.history) {
-          importData(parsed);
-          alert('הנתונים נטענו בהצלחה!');
-        } else {
-          alert('קובץ לא תקין.');
-        }
-      } catch {alert('שגיאה בקריאת הקובץ.');}
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
+ const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    try {
+      const parsed = JSON.parse(ev.target?.result as string);
 
+      // New format (current app)
+      if (parsed && parsed.history && typeof parsed.history === 'object') {
+        importData(parsed);
+        const count = Object.keys(parsed.history).length;
+        alert(`הנתונים נטענו בהצלחה! ${count} שאלות יובאו.`);
+        return;
+      }
+
+      // Old HTML app format
+      const oldData = parsed?.data || parsed;
+      if (oldData && typeof oldData === 'object') {
+        const normalized: any = {
+          history: oldData.history || {},
+          favorites: Array.isArray(oldData.favorites) ? oldData.favorites : [],
+          notes: oldData.notes || {},
+          ratings: oldData.ratings || {},
+          tags: oldData.tags || {},
+          plan: null,
+        };
+        const count = Object.keys(normalized.history).length;
+        if (count > 0) {
+          importData(normalized);
+          alert(`יובאו בהצלחה ${count} שאלות מהגרסה הישנה!`);
+          return;
+        }
+      }
+
+      alert('קובץ לא תקין — לא זוהה היסטוריית שאלות.');
+    } catch { alert('שגיאה בקריאת הקובץ. ודא שהקובץ הוא JSON תקני.'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+};
   return (
     <motion.div
       className="fade-in max-w-6xl mx-auto space-y-5"
