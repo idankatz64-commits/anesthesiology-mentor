@@ -282,6 +282,7 @@ export type Database = {
         Row: {
           answered_count: number
           correct_count: number
+          ever_wrong: boolean
           id: string
           is_correct: boolean
           question_id: string
@@ -292,6 +293,7 @@ export type Database = {
         Insert: {
           answered_count?: number
           correct_count?: number
+          ever_wrong?: boolean
           id?: string
           is_correct: boolean
           question_id: string
@@ -302,11 +304,33 @@ export type Database = {
         Update: {
           answered_count?: number
           correct_count?: number
+          ever_wrong?: boolean
           id?: string
           is_correct?: boolean
           question_id?: string
           topic?: string | null
           updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_favorites: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
           user_id?: string
         }
         Relationships: []
@@ -334,6 +358,99 @@ export type Database = {
           id?: string
           page_context?: string | null
           question_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_notes: {
+        Row: {
+          id: string
+          note_text: string
+          question_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          note_text: string
+          question_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          note_text?: string
+          question_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_ratings: {
+        Row: {
+          id: string
+          question_id: string
+          rating: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          question_id: string
+          rating: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          question_id?: string
+          rating?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_tags: {
+        Row: {
+          created_at: string
+          id: string
+          question_id: string
+          tag: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          question_id: string
+          tag: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          question_id?: string
+          tag?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_weekly_plans: {
+        Row: {
+          id: string
+          plan_data: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: string
+          plan_data: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: string
+          plan_data?: Json
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

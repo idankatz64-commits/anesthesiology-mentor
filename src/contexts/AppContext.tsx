@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import { fetchQuestions, syncQuestionsFromSheet } from '@/lib/csvService';
 import {
-  KEYS, LS_KEY, WELCOME_KEY,
+  KEYS, WELCOME_KEY,
   type Question, type UserProgress, type SessionState,
   type MultiSelectState, type ViewId, type HistoryEntry, type WeeklyDay,
   type ConfidenceLevel,
@@ -34,7 +34,6 @@ interface AppContextType {
   navigate: (view: ViewId, param?: string | null) => void;
   toggleTheme: () => void;
   closeWelcome: () => void;
-  saveProgress: () => void;
   
   // Session actions
   startSession: (pool: Question[], count: number, mode: SessionState['mode']) => void;
@@ -93,11 +92,6 @@ const defaultSession: SessionState = {
   sourceFilter: 'all', countFilter: 10, unseenOnly: false,
 };
 
-const defaultMultiSelect: MultiSelectState = {
-  topic: new Set(['all']), year: new Set(['all']), kind: new Set(['all']),
-  institution: new Set(['all']), difficulty: new Set(['all']), usertags: new Set(['all']),
-};
-
 // React context for app state
 const AppContext = createContext<AppContextType | null>(null);
 
@@ -107,19 +101,70 @@ export function useApp() {
   return ctx;
 }
 
+// ---- Supabase hydration helpers ----
+
+async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> {
+  const [answersRes, favRes, notesRes, ratingsRes, tagsRes, planRes] = await Promise.all([
+    supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId) as any,
+    supabase.from('user_favorites' as any).select('question_id').eq('user_id', userId),
+    supabase.from('user_notes' as any).select('question_id, note_text').eq('user_id', userId),
+    supabase.from('user_ratings' as any).select('question_id, rating').eq('user_id', userId),
+    supabase.from('user_tags' as any).select('question_id, tag').eq('user_id', userId),
+    supabase.from('user_weekly_plans' as any).select('plan_data').eq('user_id', userId).maybeSingle(),
+  ]);
+
+  // Build history
+  const history: Record<string, HistoryEntry> = {};
+  if (answersRes.data) {
+    for (const row of answersRes.data) {
+      history[row.question_id] = {
+        answered: row.answered_count,
+        correct: row.correct_count,
+        lastResult: row.is_correct ? 'correct' : 'wrong',
+        everWrong: row.ever_wrong ?? false,
+        timestamp: new Date(row.updated_at).getTime(),
+      };
+    }
+  }
+
+  // Build favorites
+  const favorites: string[] = (favRes.data as any[] || []).map((r: any) => r.question_id);
+
+  // Build notes
+  const notes: Record<string, string> = {};
+  for (const r of (notesRes.data as any[] || [])) {
+    notes[r.question_id] = r.note_text;
+  }
+
+  // Build ratings
+  const ratings: Record<string, 'easy' | 'medium' | 'hard'> = {};
+  for (const r of (ratingsRes.data as any[] || [])) {
+    ratings[r.question_id] = r.rating;
+  }
+
+  // Build tags
+  const tags: Record<string, string[]> = {};
+  for (const r of (tagsRes.data as any[] || [])) {
+    if (!tags[r.question_id]) tags[r.question_id] = [];
+    tags[r.question_id].push(r.tag);
+  }
+
+  // Plan
+  const plan: WeeklyDay[] | null = (planRes.data as any)?.plan_data as WeeklyDay[] | null ?? null;
+
+  return { history, favorites, notes, ratings, tags, plan };
+}
+
+// Helper to get current user id (cached in ref below)
+async function getCurrentUserId(): Promise<string | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user?.id ?? null;
+}
+
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
-  const [progress, setProgress] = useState<UserProgress>(() => {
-    try {
-      const s = localStorage.getItem(LS_KEY);
-      if (s) {
-        const p = JSON.parse(s);
-        return { ...defaultProgress, ...p };
-      }
-    } catch {}
-    return { ...defaultProgress };
-  });
+  const [progress, setProgress] = useState<UserProgress>({ ...defaultProgress });
   const [session, setSession] = useState<SessionState>({ ...defaultSession });
   const [multiSelect, setMultiSelect] = useState<MultiSelectState>({
     topic: new Set(['all']), year: new Set(['all']), kind: new Set(['all']),
@@ -129,7 +174,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
     if (saved === 'light') return false;
-    return true; // Default to dark
+    return true;
   });
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'done' | 'error'>('idle');
@@ -141,19 +186,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   progressRef.current = progress;
   const dataRef = useRef(data);
   dataRef.current = data;
+  const userIdRef = useRef<string | null>(null);
 
-  // Apply theme class - dark is default, light is opt-in
+  // Apply theme class
   useEffect(() => {
     document.documentElement.classList.toggle('light', !isDark);
     document.documentElement.classList.toggle('dark', isDark);
     localStorage.setItem('theme', isDark ? 'dark' : 'light');
   }, [isDark]);
 
+  // Hydrate progress from Supabase when auth state changes
+  useEffect(() => {
+    const hydrateUser = async (userId: string | null) => {
+      userIdRef.current = userId;
+      if (userId) {
+        try {
+          const prog = await fetchProgressFromSupabase(userId);
+          setProgress(prog);
+        } catch (e) {
+          console.warn('Failed to hydrate progress from DB:', e);
+          setProgress({ ...defaultProgress });
+        }
+      } else {
+        setProgress({ ...defaultProgress });
+      }
+    };
+
+    // Initial check
+    getCurrentUserId().then(hydrateUser);
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      const uid = session?.user?.id ?? null;
+      await hydrateUser(uid);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
   // Auto-sync from Google Sheets on mount, then fetch from DB
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
-      // First try to load from DB immediately (fast)
       try {
         const questions = await fetchQuestions();
         if (!cancelled) setData(questions);
@@ -180,14 +254,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       if (!cancelled) setLoadingSavedSession(false);
 
-      // Then sync in background (slower)
+      // Then sync in background
       if (!cancelled) setSyncStatus('syncing');
       try {
         const result = await syncQuestionsFromSheet();
         if (!cancelled) {
           setSyncStatus('done');
           setLastSyncTime(result.synced_at);
-          // Refetch after sync to get updated data
           const questions = await fetchQuestions();
           if (!cancelled) setData(questions);
         }
@@ -198,14 +271,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
     init();
     return () => { cancelled = true; };
-  }, []);
-
-  // Realtime subscription REMOVED to eliminate persistent WebSocket connections
-  // and reduce Cloud credit consumption. Questions are fetched once on load.
-  // Admin sync operations will reflect on next page refresh.
-
-  const saveProgressFn = useCallback(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(progressRef.current));
   }, []);
 
   const navigate = useCallback((view: ViewId) => {
@@ -261,6 +326,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  // updateHistory: optimistic local update + fire-and-forget Supabase write
   const updateHistory = useCallback((id: string, isCorrect: boolean) => {
     setProgress(prev => {
       const history = { ...prev.history };
@@ -272,10 +338,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       h.lastResult = isCorrect ? 'correct' : 'wrong';
       h.timestamp = Date.now();
       history[id] = h;
-      const newProgress = { ...prev, history };
-      localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
-      return newProgress;
+      return { ...prev, history };
     });
+
+    // Fire-and-forget DB write
+    const userId = userIdRef.current;
+    if (userId) {
+      (async () => {
+        const { data: existing } = await supabase
+          .from('user_answers')
+          .select('answered_count, correct_count, ever_wrong')
+          .eq('user_id', userId)
+          .eq('question_id', id)
+          .maybeSingle();
+
+        const answeredCount = (existing?.answered_count || 0) + 1;
+        const correctCount = (existing?.correct_count || 0) + (isCorrect ? 1 : 0);
+        const everWrong = (existing?.ever_wrong || false) || !isCorrect;
+
+        await supabase.from('user_answers').upsert({
+          user_id: userId,
+          question_id: id,
+          is_correct: isCorrect,
+          answered_count: answeredCount,
+          correct_count: correctCount,
+          ever_wrong: everWrong,
+          updated_at: new Date().toISOString(),
+        } as any, { onConflict: 'user_id,question_id' });
+      })();
+    }
   }, []);
 
   const setConfidence = useCallback((index: number, level: ConfidenceLevel) => {
@@ -287,20 +378,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const updateSpacedRepetition = useCallback(async (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel) => {
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-    if (!authSession?.user) return;
+    const userId = userIdRef.current;
+    if (!userId) return;
 
     let daysToAdd = 1;
     if (isCorrect && confidence === 'confident') daysToAdd = 7;
     else if (isCorrect && confidence === 'hesitant') daysToAdd = 3;
-    // incorrect or guessed = 1 day
 
     const nextDate = new Date();
     nextDate.setDate(nextDate.getDate() + daysToAdd);
     const nextReviewDate = nextDate.toISOString().split('T')[0];
 
     await supabase.from('spaced_repetition').upsert({
-      user_id: authSession.user.id,
+      user_id: userId,
       question_id: questionId,
       next_review_date: nextReviewDate,
       confidence,
@@ -309,53 +399,70 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, { onConflict: 'user_id,question_id' });
   }, []);
 
-  const incrementScore = useCallback(() => {
-    setSession(prev => ({ ...prev, score: prev.score + 1 }));
-  }, []);
-
+  // syncAnswerToDb is now handled by updateHistory, but kept for backward compat
   const syncAnswerToDb = useCallback(async (questionId: string, isCorrect: boolean, topic: string) => {
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-    if (!authSession?.user) return;
+    const userId = userIdRef.current;
+    if (!userId) return;
 
     const { data: existing } = await supabase
       .from('user_answers')
-      .select('answered_count, correct_count')
-      .eq('user_id', authSession.user.id)
+      .select('answered_count, correct_count, ever_wrong')
+      .eq('user_id', userId)
       .eq('question_id', questionId)
       .maybeSingle();
 
     const answeredCount = (existing?.answered_count || 0) + 1;
     const correctCount = (existing?.correct_count || 0) + (isCorrect ? 1 : 0);
+    const everWrong = (existing?.ever_wrong || false) || !isCorrect;
 
     await supabase.from('user_answers').upsert({
-      user_id: authSession.user.id,
+      user_id: userId,
       question_id: questionId,
       topic: topic || null,
       is_correct: isCorrect,
       answered_count: answeredCount,
       correct_count: correctCount,
+      ever_wrong: everWrong,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,question_id' });
+    } as any, { onConflict: 'user_id,question_id' });
   }, []);
 
   const toggleFavorite = useCallback((id: string) => {
     setProgress(prev => {
       const favorites = [...prev.favorites];
       const idx = favorites.indexOf(id);
-      if (idx > -1) favorites.splice(idx, 1); else favorites.push(id);
-      const newProgress = { ...prev, favorites };
-      localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
-      return newProgress;
+      const removing = idx > -1;
+      if (removing) favorites.splice(idx, 1); else favorites.push(id);
+
+      // Fire-and-forget DB write
+      const userId = userIdRef.current;
+      if (userId) {
+        if (removing) {
+          supabase.from('user_favorites' as any).delete().eq('user_id', userId).eq('question_id', id).then();
+        } else {
+          supabase.from('user_favorites' as any).insert({ user_id: userId, question_id: id } as any).then();
+        }
+      }
+
+      return { ...prev, favorites };
     });
   }, []);
 
   const saveNote = useCallback((id: string, text: string) => {
     setProgress(prev => {
       const notes = { ...prev.notes };
-      if (!text.trim()) delete notes[id]; else notes[id] = text;
-      const newProgress = { ...prev, notes };
-      localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
-      return newProgress;
+      if (!text.trim()) {
+        delete notes[id];
+        // Delete from DB
+        const userId = userIdRef.current;
+        if (userId) supabase.from('user_notes' as any).delete().eq('user_id', userId).eq('question_id', id).then();
+      } else {
+        notes[id] = text;
+        // Upsert to DB
+        const userId = userIdRef.current;
+        if (userId) supabase.from('user_notes' as any).upsert({ user_id: userId, question_id: id, note_text: text, updated_at: new Date().toISOString() } as any, { onConflict: 'user_id,question_id' }).then();
+      }
+      return { ...prev, notes };
     });
   }, []);
 
@@ -363,18 +470,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProgress(prev => {
       const notes = { ...prev.notes };
       delete notes[id];
-      const newProgress = { ...prev, notes };
-      localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
-      return newProgress;
+      const userId = userIdRef.current;
+      if (userId) supabase.from('user_notes' as any).delete().eq('user_id', userId).eq('question_id', id).then();
+      return { ...prev, notes };
     });
   }, []);
 
   const setRating = useCallback((id: string, level: 'easy' | 'medium' | 'hard') => {
     setProgress(prev => {
       const ratings = { ...prev.ratings, [id]: level };
-      const newProgress = { ...prev, ratings };
-      localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
-      return newProgress;
+      const userId = userIdRef.current;
+      if (userId) supabase.from('user_ratings' as any).upsert({ user_id: userId, question_id: id, rating: level, updated_at: new Date().toISOString() } as any, { onConflict: 'user_id,question_id' }).then();
+      return { ...prev, ratings };
     });
   }, []);
 
@@ -383,9 +490,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const tags = { ...prev.tags };
       if (!tags[id]) tags[id] = [];
       if (!tags[id].includes(tag)) tags[id] = [...tags[id], tag];
-      const newProgress = { ...prev, tags };
-      localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
-      return newProgress;
+      const userId = userIdRef.current;
+      if (userId) supabase.from('user_tags' as any).insert({ user_id: userId, question_id: id, tag } as any).then();
+      return { ...prev, tags };
     });
   }, []);
 
@@ -396,20 +503,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         tags[id] = tags[id].filter(t => t !== tag);
         if (tags[id].length === 0) delete tags[id];
       }
-      const newProgress = { ...prev, tags };
-      localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
-      return newProgress;
+      const userId = userIdRef.current;
+      if (userId) supabase.from('user_tags' as any).delete().eq('user_id', userId).eq('question_id', id).eq('tag', tag).then();
+      return { ...prev, tags };
     });
   }, []);
 
-  const resetAllData = useCallback(() => {
+  const resetAllData = useCallback(async () => {
     if (!confirm('האם אתה בטוח? כל ההיסטוריה, ההערות והמועדפים יימחקו.')) return;
-    const newProgress = { ...defaultProgress };
-    setProgress(newProgress);
-    localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
+    setProgress({ ...defaultProgress });
+
+    const userId = userIdRef.current;
+    if (userId) {
+      await Promise.all([
+        supabase.from('user_answers').delete().eq('user_id', userId),
+        supabase.from('user_favorites' as any).delete().eq('user_id', userId),
+        supabase.from('user_notes' as any).delete().eq('user_id', userId),
+        supabase.from('user_ratings' as any).delete().eq('user_id', userId),
+        supabase.from('user_tags' as any).delete().eq('user_id', userId),
+        supabase.from('user_weekly_plans' as any).delete().eq('user_id', userId),
+        supabase.from('spaced_repetition').delete().eq('user_id', userId),
+      ]);
+    }
   }, []);
 
-  const importData = useCallback((imported: UserProgress) => {
+  const importData = useCallback(async (imported: UserProgress) => {
     const newProgress = {
       ...defaultProgress,
       ...imported,
@@ -417,7 +535,61 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tags: imported.tags || {},
     };
     setProgress(newProgress);
-    localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
+
+    const userId = userIdRef.current;
+    if (!userId) return;
+
+    // Batch write to Supabase
+    // History -> user_answers
+    const answerRows = Object.entries(newProgress.history).map(([qid, h]) => ({
+      user_id: userId,
+      question_id: qid,
+      is_correct: h.lastResult === 'correct',
+      answered_count: h.answered,
+      correct_count: h.correct,
+      ever_wrong: h.everWrong,
+      updated_at: new Date(h.timestamp).toISOString(),
+    }));
+    if (answerRows.length) {
+      // Batch in chunks of 500
+      for (let i = 0; i < answerRows.length; i += 500) {
+        await supabase.from('user_answers').upsert(answerRows.slice(i, i + 500) as any, { onConflict: 'user_id,question_id' });
+      }
+    }
+
+    // Favorites
+    if (newProgress.favorites.length) {
+      const favRows = newProgress.favorites.map(qid => ({ user_id: userId, question_id: qid }));
+      await supabase.from('user_favorites' as any).upsert(favRows as any, { onConflict: 'user_id,question_id' });
+    }
+
+    // Notes
+    const noteEntries = Object.entries(newProgress.notes);
+    if (noteEntries.length) {
+      const noteRows = noteEntries.map(([qid, text]) => ({ user_id: userId, question_id: qid, note_text: text, updated_at: new Date().toISOString() }));
+      await supabase.from('user_notes' as any).upsert(noteRows as any, { onConflict: 'user_id,question_id' });
+    }
+
+    // Ratings
+    const ratingEntries = Object.entries(newProgress.ratings);
+    if (ratingEntries.length) {
+      const ratingRows = ratingEntries.map(([qid, rating]) => ({ user_id: userId, question_id: qid, rating, updated_at: new Date().toISOString() }));
+      await supabase.from('user_ratings' as any).upsert(ratingRows as any, { onConflict: 'user_id,question_id' });
+    }
+
+    // Tags
+    const tagRows: any[] = [];
+    Object.entries(newProgress.tags).forEach(([qid, tags]) => {
+      tags.forEach(tag => tagRows.push({ user_id: userId, question_id: qid, tag }));
+    });
+    if (tagRows.length) {
+      await supabase.from('user_tags' as any).upsert(tagRows as any, { onConflict: 'user_id,question_id,tag' });
+    }
+
+    // Plan
+    if (newProgress.plan) {
+      await supabase.from('user_weekly_plans' as any).upsert({ user_id: userId, plan_data: newProgress.plan, updated_at: new Date().toISOString() } as any, { onConflict: 'user_id' });
+    }
   }, []);
 
   const toggleMultiSelect = useCallback((type: keyof MultiSelectState, value: string) => {
@@ -489,14 +661,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [session.sourceFilter, session.unseenOnly, multiSelect, data]);
 
   const getDueQuestions = useCallback(async (): Promise<Question[]> => {
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-    if (!authSession?.user) return [];
+    const userId = userIdRef.current;
+    if (!userId) return [];
 
     const today = new Date().toISOString().split('T')[0];
     const { data: dueRows } = await supabase
       .from('spaced_repetition')
       .select('question_id')
-      .eq('user_id', authSession.user.id)
+      .eq('user_id', userId)
       .lte('next_review_date', today);
 
     if (!dueRows || dueRows.length === 0) return [];
@@ -550,11 +722,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { day, focus: getRand(newTopics.length > 0 ? newTopics : allTopics), type: 'new' as const };
     });
 
-    setProgress(prev => {
-      const newProgress = { ...prev, plan };
-      localStorage.setItem(LS_KEY, JSON.stringify(newProgress));
-      return newProgress;
-    });
+    setProgress(prev => ({ ...prev, plan }));
+
+    // Save to DB
+    const userId = userIdRef.current;
+    if (userId) {
+      supabase.from('user_weekly_plans' as any).upsert({ user_id: userId, plan_data: plan, updated_at: new Date().toISOString() } as any, { onConflict: 'user_id' }).then();
+    }
   }, []);
 
   const triggerSync = useCallback(async () => {
@@ -574,8 +748,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const saveSessionToDb = useCallback(async (timerSeconds?: number, simTimerSeconds?: number) => {
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-    if (!authSession?.user) return;
+    const userId = userIdRef.current;
+    if (!userId) return;
 
     const currentSession = session;
     if (!currentSession.quiz.length) return;
@@ -594,7 +768,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     await (supabase.from('saved_sessions') as any).upsert({
-      user_id: authSession.user.id,
+      user_id: userId,
       session_data: sessionData,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
@@ -627,19 +801,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
     setCurrentView('session');
 
-    // Clear from DB after resuming
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-    if (authSession?.user) {
-      await supabase.from('saved_sessions').delete().eq('user_id', authSession.user.id);
+    const userId = userIdRef.current;
+    if (userId) {
+      await supabase.from('saved_sessions').delete().eq('user_id', userId);
     }
     setSavedSessionInfo(null);
     return true;
   }, [savedSessionInfo]);
 
   const clearSavedSession = useCallback(async () => {
-    const { data: { session: authSession } } = await supabase.auth.getSession();
-    if (authSession?.user) {
-      await supabase.from('saved_sessions').delete().eq('user_id', authSession.user.id);
+    const userId = userIdRef.current;
+    if (userId) {
+      await supabase.from('saved_sessions').delete().eq('user_id', userId);
     }
     setSavedSessionInfo(null);
   }, []);
@@ -647,7 +820,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
     syncStatus, lastSyncTime, triggerSync,
-    navigate, toggleTheme, closeWelcome, saveProgress: saveProgressFn,
+    navigate, toggleTheme, closeWelcome,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
     updateHistory, updateSpacedRepetition, syncAnswerToDb,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
