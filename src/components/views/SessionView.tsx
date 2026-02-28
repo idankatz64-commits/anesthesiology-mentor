@@ -159,7 +159,6 @@ export default function SessionView() {
     const isCorrect = savedAns === correctAns;
     updateHistory(serialNumber, isCorrect);
     updateSpacedRepetition(serialNumber, isCorrect, level);
-    syncAnswerToDb(serialNumber, isCorrect, qData[KEYS.TOPIC]);
   };
 
   const handleNext = () => {
