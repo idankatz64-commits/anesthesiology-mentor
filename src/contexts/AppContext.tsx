@@ -105,12 +105,12 @@ export function useApp() {
 
 async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> {
   const [answersRes, favRes, notesRes, ratingsRes, tagsRes, planRes] = await Promise.all([
-    supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId) as any,
-    supabase.from('user_favorites' as any).select('question_id').eq('user_id', userId),
-    supabase.from('user_notes' as any).select('question_id, note_text').eq('user_id', userId),
-    supabase.from('user_ratings' as any).select('question_id, rating').eq('user_id', userId),
-    supabase.from('user_tags' as any).select('question_id, tag').eq('user_id', userId),
-    supabase.from('user_weekly_plans' as any).select('plan_data').eq('user_id', userId).maybeSingle(),
+    supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId),
+    supabase.from('user_favorites').select('question_id').eq('user_id', userId),
+    supabase.from('user_notes').select('question_id, note_text').eq('user_id', userId),
+    supabase.from('user_ratings').select('question_id, rating').eq('user_id', userId),
+    supabase.from('user_tags').select('question_id, tag').eq('user_id', userId),
+    supabase.from('user_weekly_plans').select('plan_data').eq('user_id', userId).maybeSingle(),
   ]);
 
   // Build history
@@ -128,23 +128,23 @@ async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> 
   }
 
   // Build favorites
-  const favorites: string[] = (favRes.data as any[] || []).map((r: any) => r.question_id);
+  const favorites: string[] = (favRes.data || []).map((r: any) => r.question_id);
 
   // Build notes
   const notes: Record<string, string> = {};
-  for (const r of (notesRes.data as any[] || [])) {
+  for (const r of (notesRes.data || [])) {
     notes[r.question_id] = r.note_text;
   }
 
   // Build ratings
   const ratings: Record<string, 'easy' | 'medium' | 'hard'> = {};
-  for (const r of (ratingsRes.data as any[] || [])) {
-    ratings[r.question_id] = r.rating;
+  for (const r of (ratingsRes.data || [])) {
+    ratings[r.question_id] = r.rating as 'easy' | 'medium' | 'hard';
   }
 
   // Build tags
   const tags: Record<string, string[]> = {};
-  for (const r of (tagsRes.data as any[] || [])) {
+  for (const r of (tagsRes.data || [])) {
     if (!tags[r.question_id]) tags[r.question_id] = [];
     tags[r.question_id].push(r.tag);
   }
@@ -155,11 +155,7 @@ async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> 
   return { history, favorites, notes, ratings, tags, plan };
 }
 
-// Helper to get current user id (cached in ref below)
-async function getCurrentUserId(): Promise<string | null> {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session?.user?.id ?? null;
-}
+
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [data, setData] = useState<Question[]>([]);
@@ -196,29 +192,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, [isDark]);
 
   // Hydrate progress from Supabase when auth state changes
+  const hydrationIdRef = useRef(0);
+
   useEffect(() => {
-    const hydrateUser = async (userId: string | null) => {
+    const hydrateUser = (userId: string | null) => {
       userIdRef.current = userId;
+      const thisHydration = ++hydrationIdRef.current;
       if (userId) {
-        try {
-          const prog = await fetchProgressFromSupabase(userId);
-          setProgress(prog);
-        } catch (e) {
+        fetchProgressFromSupabase(userId).then(prog => {
+          if (hydrationIdRef.current === thisHydration) setProgress(prog);
+        }).catch(e => {
           console.warn('Failed to hydrate progress from DB:', e);
-          setProgress({ ...defaultProgress });
-        }
+          if (hydrationIdRef.current === thisHydration) setProgress({ ...defaultProgress });
+        });
       } else {
         setProgress({ ...defaultProgress });
       }
     };
 
-    // Initial check
-    getCurrentUserId().then(hydrateUser);
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      const uid = session?.user?.id ?? null;
-      await hydrateUser(uid);
+    // Listen for auth changes (fires INITIAL_SESSION immediately)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      hydrateUser(session?.user?.id ?? null);
     });
 
     return () => subscription.unsubscribe();
@@ -438,9 +432,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const userId = userIdRef.current;
       if (userId) {
         if (removing) {
-          supabase.from('user_favorites' as any).delete().eq('user_id', userId).eq('question_id', id).then();
+          supabase.from('user_favorites').delete().eq('user_id', userId).eq('question_id', id).then();
         } else {
-          supabase.from('user_favorites' as any).insert({ user_id: userId, question_id: id } as any).then();
+          supabase.from('user_favorites').insert({ user_id: userId, question_id: id }).then();
         }
       }
 
@@ -455,12 +449,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         delete notes[id];
         // Delete from DB
         const userId = userIdRef.current;
-        if (userId) supabase.from('user_notes' as any).delete().eq('user_id', userId).eq('question_id', id).then();
+        if (userId) supabase.from('user_notes').delete().eq('user_id', userId).eq('question_id', id).then();
       } else {
         notes[id] = text;
         // Upsert to DB
         const userId = userIdRef.current;
-        if (userId) supabase.from('user_notes' as any).upsert({ user_id: userId, question_id: id, note_text: text, updated_at: new Date().toISOString() } as any, { onConflict: 'user_id,question_id' }).then();
+        if (userId) supabase.from('user_notes').upsert({ user_id: userId, question_id: id, note_text: text, updated_at: new Date().toISOString() }, { onConflict: 'user_id,question_id' }).then();
       }
       return { ...prev, notes };
     });
@@ -471,7 +465,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const notes = { ...prev.notes };
       delete notes[id];
       const userId = userIdRef.current;
-      if (userId) supabase.from('user_notes' as any).delete().eq('user_id', userId).eq('question_id', id).then();
+      if (userId) supabase.from('user_notes').delete().eq('user_id', userId).eq('question_id', id).then();
       return { ...prev, notes };
     });
   }, []);
@@ -480,7 +474,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProgress(prev => {
       const ratings = { ...prev.ratings, [id]: level };
       const userId = userIdRef.current;
-      if (userId) supabase.from('user_ratings' as any).upsert({ user_id: userId, question_id: id, rating: level, updated_at: new Date().toISOString() } as any, { onConflict: 'user_id,question_id' }).then();
+      if (userId) supabase.from('user_ratings').upsert({ user_id: userId, question_id: id, rating: level, updated_at: new Date().toISOString() }, { onConflict: 'user_id,question_id' }).then();
       return { ...prev, ratings };
     });
   }, []);
@@ -491,7 +485,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       if (!tags[id]) tags[id] = [];
       if (!tags[id].includes(tag)) tags[id] = [...tags[id], tag];
       const userId = userIdRef.current;
-      if (userId) supabase.from('user_tags' as any).insert({ user_id: userId, question_id: id, tag } as any).then();
+      if (userId) supabase.from('user_tags').insert({ user_id: userId, question_id: id, tag }).then();
       return { ...prev, tags };
     });
   }, []);
@@ -504,7 +498,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (tags[id].length === 0) delete tags[id];
       }
       const userId = userIdRef.current;
-      if (userId) supabase.from('user_tags' as any).delete().eq('user_id', userId).eq('question_id', id).eq('tag', tag).then();
+      if (userId) supabase.from('user_tags').delete().eq('user_id', userId).eq('question_id', id).eq('tag', tag).then();
       return { ...prev, tags };
     });
   }, []);
@@ -517,11 +511,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (userId) {
       await Promise.all([
         supabase.from('user_answers').delete().eq('user_id', userId),
-        supabase.from('user_favorites' as any).delete().eq('user_id', userId),
-        supabase.from('user_notes' as any).delete().eq('user_id', userId),
-        supabase.from('user_ratings' as any).delete().eq('user_id', userId),
-        supabase.from('user_tags' as any).delete().eq('user_id', userId),
-        supabase.from('user_weekly_plans' as any).delete().eq('user_id', userId),
+        supabase.from('user_favorites').delete().eq('user_id', userId),
+        supabase.from('user_notes').delete().eq('user_id', userId),
+        supabase.from('user_ratings').delete().eq('user_id', userId),
+        supabase.from('user_tags').delete().eq('user_id', userId),
+        supabase.from('user_weekly_plans').delete().eq('user_id', userId),
         supabase.from('spaced_repetition').delete().eq('user_id', userId),
       ]);
     }
@@ -560,21 +554,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Favorites
     if (newProgress.favorites.length) {
       const favRows = newProgress.favorites.map(qid => ({ user_id: userId, question_id: qid }));
-      await supabase.from('user_favorites' as any).upsert(favRows as any, { onConflict: 'user_id,question_id' });
+      await supabase.from('user_favorites').upsert(favRows as any, { onConflict: 'user_id,question_id' });
     }
 
     // Notes
     const noteEntries = Object.entries(newProgress.notes);
     if (noteEntries.length) {
       const noteRows = noteEntries.map(([qid, text]) => ({ user_id: userId, question_id: qid, note_text: text, updated_at: new Date().toISOString() }));
-      await supabase.from('user_notes' as any).upsert(noteRows as any, { onConflict: 'user_id,question_id' });
+      await supabase.from('user_notes').upsert(noteRows as any, { onConflict: 'user_id,question_id' });
     }
 
     // Ratings
     const ratingEntries = Object.entries(newProgress.ratings);
     if (ratingEntries.length) {
       const ratingRows = ratingEntries.map(([qid, rating]) => ({ user_id: userId, question_id: qid, rating, updated_at: new Date().toISOString() }));
-      await supabase.from('user_ratings' as any).upsert(ratingRows as any, { onConflict: 'user_id,question_id' });
+      await supabase.from('user_ratings').upsert(ratingRows as any, { onConflict: 'user_id,question_id' });
     }
 
     // Tags
@@ -583,12 +577,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tags.forEach(tag => tagRows.push({ user_id: userId, question_id: qid, tag }));
     });
     if (tagRows.length) {
-      await supabase.from('user_tags' as any).upsert(tagRows as any, { onConflict: 'user_id,question_id,tag' });
+      await supabase.from('user_tags').upsert(tagRows as any, { onConflict: 'user_id,question_id,tag' });
     }
 
     // Plan
     if (newProgress.plan) {
-      await supabase.from('user_weekly_plans' as any).upsert({ user_id: userId, plan_data: newProgress.plan, updated_at: new Date().toISOString() } as any, { onConflict: 'user_id' });
+      await supabase.from('user_weekly_plans').upsert({ user_id: userId, plan_data: newProgress.plan as any, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
     }
   }, []);
 
@@ -727,7 +721,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // Save to DB
     const userId = userIdRef.current;
     if (userId) {
-      supabase.from('user_weekly_plans' as any).upsert({ user_id: userId, plan_data: plan, updated_at: new Date().toISOString() } as any, { onConflict: 'user_id' }).then();
+      supabase.from('user_weekly_plans').upsert({ user_id: userId, plan_data: plan as any, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }).then();
     }
   }, []);
 
