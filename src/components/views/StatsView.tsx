@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Download, Upload, User, AlertTriangle } from 'lucide-react';
@@ -12,6 +13,7 @@ import LearningVelocityTile from '@/components/stats/LearningVelocityTile';
 import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import GaugeDial from '@/components/stats/GaugeDial';
+import PersonalStatsDrilldown, { type DrilldownMetric } from '@/components/stats/PersonalStatsDrilldown';
 
 
 const containerVariants = {
@@ -34,7 +36,10 @@ export default function StatsView() {
     forgettingRisk,
     trendData14, trendData30,
     personalStats,
+    detailedAnswers,
+    repeatedErrorsByTopic,
   } = useStatsData();
+  const [drilldownMetric, setDrilldownMetric] = useState<DrilldownMetric | null>(null);
 
   const withExp = data.filter((q) => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
@@ -43,6 +48,12 @@ export default function StatsView() {
     const topicQuestions = data.filter((q) => q[KEYS.TOPIC] === topic);
     if (topicQuestions.length === 0) return;
     startSession(topicQuestions, Math.min(topicQuestions.length, 15), 'practice');
+  };
+
+  const handleDrilldownPractice = (questionIds: string[]) => {
+    const questions = data.filter(q => questionIds.includes(q[KEYS.ID]));
+    if (questions.length === 0) return;
+    startSession(questions, Math.min(questions.length, 15), 'practice');
   };
 
   const handleExport = () => {
@@ -95,6 +106,7 @@ export default function StatsView() {
   e.target.value = '';
 };
   return (
+    <>
     <motion.div
       className="fade-in max-w-6xl mx-auto space-y-5"
       style={{ minHeight: '100vh' }}
@@ -142,15 +154,15 @@ export default function StatsView() {
           <AnimatedNumber value={personalStats.totalErrors} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
           <div className="text-[10px] text-muted-foreground">טעויות</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
+        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('corrected')}>
           <AnimatedNumber value={personalStats.corrected} className="text-2xl font-black text-green-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
           <div className="text-[10px] text-muted-foreground">שאלות מתוקנות</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
+        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('uncorrected')}>
           <AnimatedNumber value={personalStats.uncorrected} className="text-2xl font-black text-orange-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
           <div className="text-[10px] text-muted-foreground">שאלות שעדיין לא תוקנו</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
+        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('repeatedErrors')}>
           <div className="flex items-center justify-center gap-1">
             <AlertTriangle className="w-4 h-4 text-destructive" />
             <AnimatedNumber value={personalStats.repeatedErrors} className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
@@ -196,7 +208,7 @@ export default function StatsView() {
 
       {/* ROW 4 — Topic Heatmap + Table (full width) */}
       <motion.div variants={itemVariants}>
-        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} />
+        <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} repeatedErrorsByTopic={repeatedErrorsByTopic} />
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -226,6 +238,16 @@ export default function StatsView() {
           </label>
         </div>
       </motion.div>
-    </motion.div>);
+    </motion.div>
 
+    {drilldownMetric && (
+      <PersonalStatsDrilldown
+        open={!!drilldownMetric}
+        onOpenChange={(open) => { if (!open) setDrilldownMetric(null); }}
+        metric={drilldownMetric}
+        detailedAnswers={detailedAnswers}
+        onPractice={handleDrilldownPractice}
+      />
+    )}
+    </>);
 }

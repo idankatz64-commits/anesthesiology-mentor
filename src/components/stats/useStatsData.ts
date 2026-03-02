@@ -57,6 +57,15 @@ export type PersonalStats = {
   repeatedErrors: number;
 };
 
+export type DetailedAnswer = {
+  question_id: string;
+  topic: string | null;
+  answered_count: number;
+  correct_count: number;
+  is_correct: boolean;
+  ever_wrong: boolean;
+};
+
 export function useStatsData() {
   const { data, progress } = useApp();
   const [dailyData90, setDailyData90] = useState<DailyData[]>([]);
@@ -65,6 +74,9 @@ export function useStatsData() {
     totalAttempts: 0, uniqueQuestions: 0, totalErrors: 0,
     corrected: 0, uncorrected: 0, repeatedErrors: 0,
   });
+
+  const [detailedAnswers, setDetailedAnswers] = useState<DetailedAnswer[]>([]);
+  const [repeatedErrorsByTopic, setRepeatedErrorsByTopic] = useState<Record<string, number>>({});
 
   // Fetch 90-day daily data + spaced repetition
   useEffect(() => {
@@ -115,17 +127,22 @@ export function useStatsData() {
       // Personal stats from user_answers
       const { data: allAnswers } = await supabase
         .from('user_answers')
-        .select('answered_count, correct_count, is_correct, ever_wrong')
+        .select('question_id, topic, answered_count, correct_count, is_correct, ever_wrong')
         .eq('user_id', session.user.id);
 
       if (allAnswers) {
         let totalAttempts = 0, totalCorrect = 0, corrected = 0, uncorrected = 0, repeatedErrors = 0;
+        const errByTopic: Record<string, number> = {};
         for (const row of allAnswers) {
           totalAttempts += row.answered_count;
           totalCorrect += row.correct_count;
           if (row.ever_wrong && row.is_correct) corrected++;
           if (row.ever_wrong && !row.is_correct) uncorrected++;
-          if ((row.answered_count - row.correct_count) > 1) repeatedErrors++;
+          if ((row.answered_count - row.correct_count) > 1) {
+            repeatedErrors++;
+            const t = row.topic || 'ללא נושא';
+            errByTopic[t] = (errByTopic[t] || 0) + 1;
+          }
         }
         setPersonalStats({
           totalAttempts,
@@ -133,6 +150,8 @@ export function useStatsData() {
           totalErrors: totalAttempts - totalCorrect,
           corrected, uncorrected, repeatedErrors,
         });
+        setDetailedAnswers(allAnswers as DetailedAnswer[]);
+        setRepeatedErrorsByTopic(errByTopic);
       }
     };
     fetch();
@@ -354,5 +373,7 @@ export function useStatsData() {
     trendData14,
     trendData30,
     personalStats,
+    detailedAnswers,
+    repeatedErrorsByTopic,
   };
 }
