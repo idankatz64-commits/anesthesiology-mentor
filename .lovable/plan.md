@@ -1,65 +1,42 @@
 
 
-# 3 UI Improvements Plan (Updated)
+# Plan: Personal Statistics Cards Section
 
-## Improvement 1: Larger Modals
+## Overview
+Add a new "הסטטיסטיקה שלי" (My Statistics) section below the existing global question bank stats, showing 6 personal metric cards computed from the `user_answers` table.
 
-Update base Dialog, AlertDialog, and Sheet components to use larger default sizes with scrollable content.
+## Data Source
+All metrics come from the `user_answers` table which already has the needed columns:
+- `answered_count` -- total attempts per question
+- `is_correct` -- current correctness state
+- `correct_count` -- how many times answered correctly
+- `ever_wrong` -- whether the question was ever answered wrong
 
-**Files to modify:**
+## Metric Definitions
 
-1. **`src/components/ui/dialog.tsx`** -- Change `DialogContent` default classes:
-   - Replace `max-w-lg` with `max-w-[90vw]`
-   - Add `max-h-[90vh] overflow-y-auto`
+| Card | Computation | Style |
+|------|------------|-------|
+| שאלות שבוצעו | SUM of all `answered_count` | Default |
+| שאלות ייחודיות | COUNT of rows (each row = 1 unique question) | Default |
+| טעויות | SUM(`answered_count`) - SUM(`correct_count`) | Default |
+| שאלות מתוקנות | COUNT WHERE `ever_wrong = true` AND `is_correct = true` | Green text |
+| שאלות שעדיין לא תוקנו | COUNT WHERE `ever_wrong = true` AND `is_correct = false` | Orange text |
+| טעויות חוזרות | COUNT WHERE `(answered_count - correct_count) > 1` | Red, bold, warning icon |
 
-2. **`src/components/ui/alert-dialog.tsx`** -- Change `AlertDialogContent` default classes:
-   - Replace `max-w-lg` with `max-w-[90vw]`
-   - Add `max-h-[90vh] overflow-y-auto`
+## Files to Modify
 
-3. **`src/components/ui/sheet.tsx`** -- Add `max-h-[90vh] overflow-y-auto` to SheetContent; for side sheets add `max-w-[90vw]`
+### 1. `src/components/stats/useStatsData.ts`
+- Add a new `useEffect` (or extend the existing one) to query `user_answers` for the logged-in user
+- Compute and return all 6 metrics as a `personalStats` object
+- No new Supabase tables or migrations needed
 
-4. **`src/components/stats/AnimatedStatsTile.tsx`** -- Replace `max-w-4xl` with `max-w-[90vw]` and `max-h-[85vh]` with `max-h-[90vh]`
+### 2. `src/components/views/StatsView.tsx`
+- Destructure `personalStats` from `useStatsData()`
+- After the existing ROW 1 (global question bank status bar), add:
+  - A section header: "הסטטיסטיקה שלי" with a user icon
+  - A responsive grid of 6 metric cards: `grid-cols-1 sm:grid-cols-2 md:grid-cols-3`
+- Each card uses the same styling as the existing status bar cards (bg-card, border, rounded-xl, Share Tech Mono font)
+- Apply color overrides per spec: green for corrected, orange for uncorrected, red+bold+warning icon for repeated errors
 
----
-
-## Improvement 2: Topic TreeMap Full Screen
-
-Make the TopicTreemap expanded view fill the viewport at 95vw x 95vh.
-
-**Files to modify:**
-
-1. **`src/components/stats/AnimatedStatsTile.tsx`** -- Add optional `expandedClassName` prop that overrides default modal sizing. Default remains `max-w-[90vw] max-h-[90vh]`.
-
-2. **`src/components/stats/TopicTreemap.tsx`** -- Pass `expandedClassName="max-w-[95vw] max-h-[95vh]"` to AnimatedStatsTile. Increase treemap container height to `calc(95vh - 120px)`. Increase font sizes in `CustomTreemapContent`: name font from `Math.min(11, width/8)` to `Math.min(14, width/6)`, score font from `9` to `11`. Relax text truncation threshold from `width/7` to `width/5`. Lower `showText` threshold from `width > 50 && height > 30` to `width > 40 && height > 25`.
-
----
-
-## Improvement 3: Institution Badge on Question Header
-
-No database changes needed -- the existing `source` column stores institution data.
-
-**Files to modify:**
-
-1. **`src/components/views/SessionView.tsx`** -- Add institution badge to the meta bar after the year badge, using the **same CSS classes** as the existing topic and year badges (same background, text color, padding, rounded corners, font size). Content: institution icon + `qData[KEYS.SOURCE]`, shown only when value exists and is not `'N/A'`.
-
-2. **`src/components/views/StudyRoomView.tsx`** -- Add matching institution badge to the study room question meta bar, same style.
-
-3. **`src/components/admin/QuestionEditorTab.tsx`** -- Rename the label on the source input field from "מקור" to "מוסד (Institution)".
-
----
-
-## Summary of All File Changes
-
-| File | Changes |
-|------|---------|
-| `src/components/ui/dialog.tsx` | max-w-[90vw], max-h-[90vh], overflow-y-auto |
-| `src/components/ui/alert-dialog.tsx` | Same as dialog |
-| `src/components/ui/sheet.tsx` | Add overflow and max sizing |
-| `src/components/stats/AnimatedStatsTile.tsx` | Add expandedClassName prop, update defaults to 90vw/90vh |
-| `src/components/stats/TopicTreemap.tsx` | Pass 95vw/95vh, increase fonts and height |
-| `src/components/views/SessionView.tsx` | Add institution badge with matching topic/year badge styling |
-| `src/components/views/StudyRoomView.tsx` | Add institution badge with matching styling |
-| `src/components/admin/QuestionEditorTab.tsx` | Rename label from "מקור" to "מוסד (Institution)" |
-
-No database migrations required.
+## No database changes required.
 
