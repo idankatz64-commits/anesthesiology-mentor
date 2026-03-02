@@ -1,68 +1,62 @@
 
 
-# Plan: Drill-Down Side Panel + TreeMap Toggle
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-## Feature 1: Side Panel Drill-Down for Personal Stats Cards
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-### How it works
-When a user clicks on the "טעויות חוזרות", "שאלות שעדיין לא תוקנו", or "שאלות מתוקנות" cards, a right-side Sheet opens showing a topic breakdown table with a "Practice Now" button per topic.
+## Part A -- Daily Volume Bars
 
-### Data fetching
-- Extend `useStatsData.ts` to fetch detailed per-question data: query `user_answers` with `question_id, topic, answered_count, correct_count, is_correct, ever_wrong` for the current user
-- Store this as a `detailedAnswers` array in state, returned from the hook
-- The drill-down component will group this data by topic and filter based on which card was clicked:
-  - **Corrected**: `ever_wrong = true AND is_correct = true`
-  - **Uncorrected**: `ever_wrong = true AND is_correct = false`
-  - **Repeated errors**: `(answered_count - correct_count) > 1`
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-### New component: `PersonalStatsDrilldown.tsx`
-- Location: `src/components/stats/PersonalStatsDrilldown.tsx`
-- Props: `open`, `onOpenChange`, `metric` (which card), `detailedAnswers` array, `onPractice(topic, questionIds)`
-- Uses the existing `Sheet`, `SheetContent`, `SheetHeader`, `SheetTitle` components
-- Renders a table with columns: Topic, Count, % of topic, Practice button
-- Sorted by count descending
-- Header dynamically shows which metric: "טעויות חוזרות" / "שאלות שעדיין לא תוקנו" / "שאלות מתוקנות"
-- Practice button calls `startSession` with filtered questions for that topic
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-### StatsView.tsx changes
-- Add state: `drilldownMetric` (null | 'corrected' | 'uncorrected' | 'repeatedErrors')
-- Make the 3 relevant cards clickable with `cursor-pointer` and `onClick` to set the metric
-- Render `PersonalStatsDrilldown` sheet at the bottom of the component
-- Pass a handler that calls `startSession` with the filtered question IDs
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
+```
 
-## Feature 2: Toggle on Topic TreeMap
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-### How it works
-A toggle button above the treemap switches between "הצג הכל" (default) and "טעויות חוזרות בלבד". When active, cells with repeated errors get a red pulsing border, the cell text changes to error count, and cells with zero errors are dimmed.
+## Part B -- Daily Performance Report
 
-### Data flow
-- `TopicTreemap` needs a new prop: `repeatedErrorsByTopic` -- a `Record<string, number>` mapping topic name to count of repeated-error questions
-- This data is computed in `useStatsData.ts` from the same `detailedAnswers` array (group by topic, count where `(answered_count - correct_count) > 1`)
-- Passed down from `StatsView` to `TopicTreemap`
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-### TopicTreemap.tsx changes
-- Add local state: `showRepeatedOnly` (boolean, default false)
-- Render a toggle button above the treemap (both collapsed and expanded views)
-- When active: toggle button turns red (`bg-red-500 text-white`)
-- Modify `treemapData` memo to include `repeatedErrors` count per topic from the prop
-- Modify `CustomTreemapContent`:
-  - When `showRepeatedOnly` is true, pass a flag via the data items
-  - Cells with `repeatedErrors > 0`: add red pulsing border (`animate-pulse`, `border-2 border-red-500`), show "X טעויות חוזרות" instead of smartScore %
-  - Cells with `repeatedErrors === 0`: render with `opacity: 0.3`
-- Since `CustomTreemapContent` receives data via Recharts props, add `repeatedErrors` and `showRepeatedOnly` fields to each treemap data item so the content renderer can access them
-
----
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
 
 ## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/stats/useStatsData.ts` | Fetch detailed answers array; compute `repeatedErrorsByTopic` map; return both |
-| `src/components/stats/PersonalStatsDrilldown.tsx` | **New file** -- Sheet with topic breakdown table |
-| `src/components/views/StatsView.tsx` | Add drilldown state, make 3 cards clickable, render sheet, pass `repeatedErrorsByTopic` to TreeMap |
-| `src/components/stats/TopicTreemap.tsx` | Add toggle button, accept `repeatedErrorsByTopic` prop, modify cell rendering for filter mode |
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
 
-## No database changes required
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
 
-All data comes from the existing `user_answers` table which already has `topic`, `answered_count`, `correct_count`, `is_correct`, and `ever_wrong` columns.
+No database changes required.
 
