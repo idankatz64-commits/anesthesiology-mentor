@@ -1,7 +1,8 @@
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Download, Upload } from 'lucide-react';
+import { Download, Upload, User, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
+import AnimatedNumber from '@/components/AnimatedNumber';
 import ComparativeStats from './ComparativeStats';
 import { useStatsData } from '@/components/stats/useStatsData';
 import ERITile from '@/components/stats/ERITile';
@@ -31,7 +32,8 @@ export default function StatsView() {
   const {
     stats, eri, streak, weakZones,
     forgettingRisk,
-    trendData14, trendData30
+    trendData14, trendData30,
+    personalStats,
   } = useStatsData();
 
   const withExp = data.filter((q) => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
@@ -119,6 +121,41 @@ export default function StatsView() {
         <div className="bg-card border border-border rounded-xl p-3 text-center">
           <div className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{data.length}</div>
           <div className="text-[10px] text-muted-foreground">סה״כ שאלות</div>
+        </div>
+      </motion.div>
+
+      {/* ROW 1.5 — Personal Statistics */}
+      <motion.div variants={itemVariants} className="flex items-center gap-2 pt-2" dir="rtl">
+        <User className="w-4 h-4 text-primary" />
+        <h2 className="text-lg font-bold text-foreground">הסטטיסטיקה שלי</h2>
+      </motion.div>
+      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" dir="rtl">
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
+          <AnimatedNumber value={personalStats.totalAttempts} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[10px] text-muted-foreground">שאלות שבוצעו</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
+          <AnimatedNumber value={personalStats.uniqueQuestions} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[10px] text-muted-foreground">שאלות ייחודיות</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
+          <AnimatedNumber value={personalStats.totalErrors} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[10px] text-muted-foreground">טעויות</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
+          <AnimatedNumber value={personalStats.corrected} className="text-2xl font-black text-green-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[10px] text-muted-foreground">שאלות מתוקנות</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
+          <AnimatedNumber value={personalStats.uncorrected} className="text-2xl font-black text-orange-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[10px] text-muted-foreground">שאלות שעדיין לא תוקנו</div>
+        </div>
+        <div className="bg-card border border-border rounded-xl p-3 text-center">
+          <div className="flex items-center justify-center gap-1">
+            <AlertTriangle className="w-4 h-4 text-destructive" />
+            <AnimatedNumber value={personalStats.repeatedErrors} className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          </div>
+          <div className="text-[10px] text-muted-foreground font-bold">טעויות חוזרות</div>
         </div>
       </motion.div>
 
