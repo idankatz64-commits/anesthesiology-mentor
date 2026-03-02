@@ -18,7 +18,6 @@ import FlashcardView from '@/components/views/FlashcardView';
 import AdminView from '@/components/views/AdminView';
 import FormulaSheetView from '@/components/views/FormulaSheetView';
 import StudyRoomView from '@/components/views/StudyRoomView';
-import AnkiView from '@/components/views/AnkiView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { slideFromRight } from '@/lib/animations';
 
@@ -41,7 +40,6 @@ function AppContent() {
       case 'admin': return <AdminView />;
       case 'formula-sheet': return <FormulaSheetView />;
       case 'study-room': return <StudyRoomView />;
-      case 'anki': return <AnkiView />;
       default: return <HomeView />;
     }
   };
