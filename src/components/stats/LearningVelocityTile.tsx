@@ -58,6 +58,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
+const VolumeTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div className="bg-card dark:bg-[#1a1d28] border border-border dark:border-white/[0.1] rounded-lg px-3 py-2 text-xs shadow-xl" dir="rtl">
+      <div className="font-bold text-foreground mb-1">{formatDate(d?.date || label)}</div>
+      <div className="text-muted-foreground">שאלות: <span className="font-bold text-foreground">{d?.count ?? '—'}</span></div>
+      {d?.volumeMA14 != null && <div className="text-muted-foreground">ממוצע 14 יום: <span className="font-bold text-foreground">{d.volumeMA14}</span></div>}
+    </div>
+  );
+};
+
 function computeDailyReport(chartData: ReturnType<typeof computeMovingAverages>) {
   if (!chartData.length) return null;
   const last = chartData[chartData.length - 1];
@@ -154,6 +166,7 @@ function VelocityChart({ data, height }: { data: DayPoint[]; height: number }) {
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
           <XAxis dataKey="date" tickFormatter={formatDate} tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} />
           <YAxis tick={{ fill: '#6B7280', fontSize: 11 }} axisLine={false} tickLine={false} width={35} />
+          <Tooltip content={<VolumeTooltip />} />
           {lastVolumeMA14 != null && (
             <ReferenceLine y={lastVolumeMA14} stroke="#6B7280" strokeDasharray="6 3" strokeWidth={1} />
           )}
