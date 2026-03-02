@@ -224,6 +224,82 @@ export type Database = {
         }
         Relationships: []
       }
+      room_answers: {
+        Row: {
+          answered_at: string
+          id: string
+          is_correct: boolean
+          question_index: number
+          room_id: string
+          selected_answer: string
+          user_id: string
+        }
+        Insert: {
+          answered_at?: string
+          id?: string
+          is_correct: boolean
+          question_index: number
+          room_id: string
+          selected_answer: string
+          user_id: string
+        }
+        Update: {
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          question_index?: number
+          room_id?: string
+          selected_answer?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_answers_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "study_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      room_participants: {
+        Row: {
+          display_name: string
+          id: string
+          is_ready: boolean
+          joined_at: string
+          last_active_at: string
+          room_id: string
+          user_id: string
+        }
+        Insert: {
+          display_name: string
+          id?: string
+          is_ready?: boolean
+          joined_at?: string
+          last_active_at?: string
+          room_id: string
+          user_id: string
+        }
+        Update: {
+          display_name?: string
+          id?: string
+          is_ready?: boolean
+          joined_at?: string
+          last_active_at?: string
+          room_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_participants_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "study_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saved_sessions: {
         Row: {
           created_at: string
@@ -275,6 +351,39 @@ export type Database = {
           question_id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      study_rooms: {
+        Row: {
+          created_at: string
+          created_by: string
+          current_question_index: number
+          expires_at: string
+          id: string
+          question_ids: string[]
+          room_code: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          current_question_index?: number
+          expires_at?: string
+          id?: string
+          question_ids: string[]
+          room_code: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          current_question_index?: number
+          expires_at?: string
+          id?: string
+          question_ids?: string[]
+          room_code?: string
+          status?: string
         }
         Relationships: []
       }
@@ -477,6 +586,10 @@ export type Database = {
         }[]
       }
       is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_room_participant: {
+        Args: { _room_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

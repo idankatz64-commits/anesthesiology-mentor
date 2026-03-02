@@ -17,6 +17,7 @@ import AICoachView from '@/components/views/AICoachView';
 import FlashcardView from '@/components/views/FlashcardView';
 import AdminView from '@/components/views/AdminView';
 import FormulaSheetView from '@/components/views/FormulaSheetView';
+import StudyRoomView from '@/components/views/StudyRoomView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { slideFromRight } from '@/lib/animations';
 
@@ -38,6 +39,7 @@ function AppContent() {
       case 'flashcards': return <FlashcardView />;
       case 'admin': return <AdminView />;
       case 'formula-sheet': return <FormulaSheetView />;
+      case 'study-room': return <StudyRoomView />;
       default: return <HomeView />;
     }
   };

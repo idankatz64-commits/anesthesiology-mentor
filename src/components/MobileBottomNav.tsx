@@ -1,5 +1,5 @@
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, Users } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { motion } from 'framer-motion';
 
@@ -8,7 +8,7 @@ const bottomNav: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'setup-practice', label: 'תרגול', icon: <BookOpen className="w-5 h-5" /> },
   { id: 'setup-exam', label: 'בחינה', icon: <Timer className="w-5 h-5" /> },
   { id: 'stats', label: 'סטטיסטיקה', icon: <BarChart3 className="w-5 h-5" /> },
-  { id: 'notebook', label: 'מחברת', icon: <StickyNote className="w-5 h-5" /> },
+  { id: 'study-room', label: 'משותף', icon: <Users className="w-5 h-5" /> },
 ];
 
 export default function MobileBottomNav() {
