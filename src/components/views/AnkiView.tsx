@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -32,7 +32,7 @@ type AnkiCard = {
   repetitions: number;
 };
 
-export default function AnkiView() {
+const AnkiView = forwardRef<HTMLDivElement>(function AnkiView(_props, _ref) {
   const [phase, setPhase] = useState<'decks' | 'study'>('decks');
   const [decks, setDecks] = useState<Deck[]>([]);
   const [loading, setLoading] = useState(true);
@@ -520,4 +520,6 @@ export default function AnkiView() {
       </Tabs>
     </div>
   );
-}
+});
+
+export default AnkiView;
