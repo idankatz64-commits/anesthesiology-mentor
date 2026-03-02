@@ -7,11 +7,12 @@ interface AnimatedStatsTileProps {
   collapsed: ReactNode;
   expanded: ReactNode;
   className?: string;
+  expandedClassName?: string;
 }
 
 const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
-export default function AnimatedStatsTile({ collapsed, expanded, className = '' }: AnimatedStatsTileProps) {
+export default function AnimatedStatsTile({ collapsed, expanded, className = '', expandedClassName }: AnimatedStatsTileProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '' 
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={spring}
-                className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10"
+                className={`bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl w-full overflow-y-auto p-6 relative z-10 ${expandedClassName || 'max-w-[90vw] max-h-[90vh]'}`}
                 drag="y"
                 dragConstraints={{ top: 0, bottom: 0 }}
                 dragElastic={0.2}

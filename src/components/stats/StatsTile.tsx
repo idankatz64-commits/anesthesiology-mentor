@@ -33,7 +33,7 @@ export default function StatsTile({ collapsed, expanded, className = '' }: Stats
           className="fixed inset-0 z-50 bg-black/70 backdrop-blur-md flex items-center justify-center p-4"
           onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
-          <div className="bg-[#141720] border border-white/[0.07] rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative">
+          <div className="bg-[#141720] border border-white/[0.07] rounded-2xl max-w-[90vw] w-full max-h-[90vh] overflow-y-auto p-6 relative">
             <button
               onClick={(e) => { e.stopPropagation(); setOpen(false); }}
               className="absolute top-4 left-4 w-8 h-8 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-muted-foreground hover:text-foreground transition"

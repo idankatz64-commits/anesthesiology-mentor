@@ -70,8 +70,8 @@ function CustomTreemapContent(props: CustomContentProps) {
   if (depth !== 1) return null;
 
   const color = getTreemapColor(smartScore);
-  const showText = width > 50 && height > 30;
-  const showScore = width > 40 && height > 22;
+  const showText = width > 40 && height > 25;
+  const showScore = width > 35 && height > 20;
 
   return (
     <g>
@@ -82,12 +82,12 @@ function CustomTreemapContent(props: CustomContentProps) {
         style={{ cursor: 'pointer' }}
       />
       {showText && (
-        <text x={x + width / 2} y={y + height / 2 - (showScore ? 6 : 0)} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={Math.min(11, width / 8)} fontWeight="bold">
-          {name && name.length > Math.floor(width / 7) ? name.slice(0, Math.floor(width / 7)) + '…' : name}
+        <text x={x + width / 2} y={y + height / 2 - (showScore ? 6 : 0)} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={Math.min(14, width / 6)} fontWeight="bold">
+          {name && name.length > Math.floor(width / 5) ? name.slice(0, Math.floor(width / 5)) + '…' : name}
         </text>
       )}
       {showScore && (
-        <text x={x + width / 2} y={y + height / 2 + 10} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.7)" fontSize={9} fontFamily="'Share Tech Mono', monospace">
+        <text x={x + width / 2} y={y + height / 2 + 10} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.7)" fontSize={11} fontFamily="'Share Tech Mono', monospace">
           {smartScore}%
         </text>
       )}
@@ -155,6 +155,7 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
 
   return (
     <AnimatedStatsTile
+      expandedClassName="max-w-[95vw] max-h-[95vh]"
       collapsed={
         <div className="p-5">
           <span className="text-xs text-muted-foreground font-medium">מפת ביצועים לפי נושא</span>
@@ -189,7 +190,7 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
         <div>
           <h3 className="text-lg font-bold text-foreground mb-2">מפת ביצועים לפי נושא</h3>
           <p className="text-xs text-muted-foreground mb-4">לחץ על ריבוע כדי להתחיל תרגול בנושא</p>
-          <div style={{ height: 450 }}>
+          <div style={{ height: 'calc(95vh - 120px)' }}>
             <ResponsiveContainer width="100%" height="100%">
               <Treemap
                 data={treemapData}
