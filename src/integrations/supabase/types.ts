@@ -35,6 +35,77 @@ export type Database = {
         }
         Relationships: []
       }
+      anki_cards: {
+        Row: {
+          back: string
+          created_at: string
+          deck_id: string
+          due_date: string
+          ease_factor: number
+          front: string
+          id: string
+          interval_days: number
+          repetitions: number
+          user_id: string
+        }
+        Insert: {
+          back: string
+          created_at?: string
+          deck_id: string
+          due_date?: string
+          ease_factor?: number
+          front: string
+          id?: string
+          interval_days?: number
+          repetitions?: number
+          user_id: string
+        }
+        Update: {
+          back?: string
+          created_at?: string
+          deck_id?: string
+          due_date?: string
+          ease_factor?: number
+          front?: string
+          id?: string
+          interval_days?: number
+          repetitions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "anki_cards_deck_id_fkey"
+            columns: ["deck_id"]
+            isOneToOne: false
+            referencedRelation: "anki_decks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      anki_decks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       calculator_formulas: {
         Row: {
           category_id: string
