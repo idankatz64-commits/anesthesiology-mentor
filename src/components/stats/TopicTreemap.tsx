@@ -70,8 +70,10 @@ function CustomTreemapContent(props: CustomContentProps) {
   if (depth !== 1) return null;
 
   const color = getTreemapColor(smartScore);
-  const showText = width > 40 && height > 25;
-  const showScore = width > 35 && height > 20;
+  const showText = width >= 60 && height >= 35;
+  const showScore = showText && height >= 45;
+  const maxChars = Math.floor(width / 7);
+  const displayName = name && name.length > maxChars ? name.slice(0, maxChars) + '…' : name;
 
   return (
     <g>
@@ -82,14 +84,18 @@ function CustomTreemapContent(props: CustomContentProps) {
         style={{ cursor: 'pointer' }}
       />
       {showText && (
-        <text x={x + width / 2} y={y + height / 2 - (showScore ? 6 : 0)} textAnchor="middle" dominantBaseline="middle" fill="#fff" fontSize={Math.min(14, width / 6)} fontWeight="bold">
-          {name && name.length > Math.floor(width / 5) ? name.slice(0, Math.floor(width / 5)) + '…' : name}
-        </text>
-      )}
-      {showScore && (
-        <text x={x + width / 2} y={y + height / 2 + 10} textAnchor="middle" dominantBaseline="middle" fill="rgba(255,255,255,0.7)" fontSize={11} fontFamily="'Share Tech Mono', monospace">
-          {smartScore}%
-        </text>
+        <foreignObject x={x} y={y} width={width} height={height} style={{ overflow: 'hidden', pointerEvents: 'none' }}>
+          <div style={{ width, height, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '2px 4px', boxSizing: 'border-box' }}>
+            <span style={{ color: '#fff', fontSize: Math.min(14, width / 6), fontWeight: 'bold', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%', textAlign: 'center' }}>
+              {displayName}
+            </span>
+            {showScore && (
+              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: "'Share Tech Mono', monospace", marginTop: 2 }}>
+                {smartScore}%
+              </span>
+            )}
+          </div>
+        </foreignObject>
       )}
     </g>
   );
