@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedStatsTile from './AnimatedStatsTile';
 import { Treemap, ResponsiveContainer, Tooltip } from 'recharts';
@@ -9,6 +9,7 @@ interface Props {
   onTopicClick: (topic: string) => void;
   unclassifiedData?: TopicStat;
   isAdmin?: boolean;
+  repeatedErrorsByTopic?: Record<string, number>;
 }
 
 function lerp(a: number, b: number, t: number) {
@@ -63,12 +64,16 @@ interface CustomContentProps {
   name?: string;
   smartScore?: number;
   depth?: number;
+  repeatedErrors?: number;
+  showRepeatedOnly?: boolean;
 }
 
 function CustomTreemapContent(props: CustomContentProps) {
-  const { x = 0, y = 0, width = 0, height = 0, name, smartScore = 0, depth } = props;
+  const { x = 0, y = 0, width = 0, height = 0, name, smartScore = 0, depth, repeatedErrors = 0, showRepeatedOnly = false } = props;
   if (depth !== 1) return null;
 
+  const isDimmed = showRepeatedOnly && repeatedErrors === 0;
+  const isHighlighted = showRepeatedOnly && repeatedErrors > 0;
   const color = getTreemapColor(smartScore);
   const showText = width >= 60 && height >= 35;
   const showScore = showText && height >= 45;
@@ -76,13 +81,16 @@ function CustomTreemapContent(props: CustomContentProps) {
   const displayName = name && name.length > maxChars ? name.slice(0, maxChars) + '…' : name;
 
   return (
-    <g>
+    <g style={{ opacity: isDimmed ? 0.3 : 1 }}>
       <rect
         x={x} y={y} width={width} height={height}
-        fill={color} stroke="rgba(0,0,0,0.3)" strokeWidth={1}
+        fill={color} stroke={isHighlighted ? 'hsl(0, 84%, 60%)' : 'rgba(0,0,0,0.3)'}
+        strokeWidth={isHighlighted ? 2.5 : 1}
         rx={4} ry={4}
         style={{ cursor: 'pointer' }}
-      />
+      >
+        {isHighlighted && <animate attributeName="stroke-opacity" values="1;0.4;1" dur="2s" repeatCount="indefinite" />}
+      </rect>
       {showText && (
         <foreignObject x={x} y={y} width={width} height={height} style={{ overflow: 'hidden', pointerEvents: 'none' }}>
           <div style={{ width, height, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', padding: '2px 4px', boxSizing: 'border-box' }}>
@@ -90,8 +98,8 @@ function CustomTreemapContent(props: CustomContentProps) {
               {displayName}
             </span>
             {showScore && (
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: "'Share Tech Mono', monospace", marginTop: 2 }}>
-                {smartScore}%
+              <span style={{ color: isHighlighted ? '#fca5a5' : 'rgba(255,255,255,0.7)', fontSize: 11, fontFamily: "'Share Tech Mono', monospace", marginTop: 2, fontWeight: isHighlighted ? 'bold' : 'normal' }}>
+                {showRepeatedOnly ? `${repeatedErrors} טעויות` : `${smartScore}%`}
               </span>
             )}
           </div>
@@ -116,8 +124,9 @@ const CustomTooltip = ({ active, payload }: any) => {
   );
 };
 
-export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData, isAdmin }: Props) {
+export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData, isAdmin, repeatedErrorsByTopic = {} }: Props) {
   const navigate = useNavigate();
+  const [showRepeatedOnly, setShowRepeatedOnly] = useState(false);
 
   const unclassifiedBanner = useMemo(() => {
     if (!unclassifiedData || unclassifiedData.totalInDb === 0) return null;
@@ -148,8 +157,10 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
         accuracy: t.accuracy,
         coverage: t.totalInDb > 0 ? Math.round((t.totalAnswered / t.totalInDb) * 100) : 0,
         totalAnswered: t.totalAnswered,
+        repeatedErrors: repeatedErrorsByTopic[t.topic] || 0,
+        showRepeatedOnly,
       }));
-  }, [topicData]);
+  }, [topicData, repeatedErrorsByTopic, showRepeatedOnly]);
 
   if (treemapData.length === 0) {
     return (
@@ -164,7 +175,15 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
       expandedClassName="max-w-[95vw] max-h-[95vh]"
       collapsed={
         <div className="p-5">
-          <span className="text-xs text-muted-foreground font-medium">מפת ביצועים לפי נושא</span>
+          <div className="flex items-center justify-between mb-1" dir="rtl">
+            <span className="text-xs text-muted-foreground font-medium">מפת ביצועים לפי נושא</span>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowRepeatedOnly(!showRepeatedOnly); }}
+              className={`text-[10px] font-bold px-2.5 py-1 rounded-md border transition ${showRepeatedOnly ? 'bg-destructive text-destructive-foreground border-destructive' : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'}`}
+            >
+              {showRepeatedOnly ? '⚠️ טעויות חוזרות' : 'הצג הכל'}
+            </button>
+          </div>
           <p className="text-[10px] text-muted-foreground/50 mb-3">גודל = כמות שאלות • צבע = Smart Score</p>
           <div style={{ height: 220 }}>
             <ResponsiveContainer width="100%" height="100%">
@@ -194,7 +213,15 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
       }
       expanded={
         <div>
-          <h3 className="text-lg font-bold text-foreground mb-2">מפת ביצועים לפי נושא</h3>
+          <div className="flex items-center justify-between mb-2" dir="rtl">
+            <h3 className="text-lg font-bold text-foreground">מפת ביצועים לפי נושא</h3>
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowRepeatedOnly(!showRepeatedOnly); }}
+              className={`text-xs font-bold px-3 py-1.5 rounded-md border transition ${showRepeatedOnly ? 'bg-destructive text-destructive-foreground border-destructive' : 'bg-muted/30 text-muted-foreground border-border hover:bg-muted/50'}`}
+            >
+              {showRepeatedOnly ? '⚠️ טעויות חוזרות בלבד' : 'הצג הכל'}
+            </button>
+          </div>
           <p className="text-xs text-muted-foreground mb-4">לחץ על ריבוע כדי להתחיל תרגול בנושא</p>
           <div style={{ height: 'calc(95vh - 120px)' }}>
             <ResponsiveContainer width="100%" height="100%">
