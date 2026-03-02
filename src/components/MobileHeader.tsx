@@ -14,6 +14,7 @@ const mobileNav: { id: ViewId; label: string; emoji: string }[] = [
   { id: 'weekly-plan', label: 'תוכנית שבועית', emoji: '📅' },
   { id: 'notebook', label: 'המחברת שלי', emoji: '📝' },
   { id: 'ai-coach', label: 'דו״ח מטות', emoji: '📋' },
+  { id: 'anki', label: 'כרטיסיות Anki', emoji: '🃏' },
 ];
 
 export default function MobileHeader() {
