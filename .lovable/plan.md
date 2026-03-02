@@ -1,102 +1,112 @@
 
 
-# Migrate User Progress from localStorage to Supabase
+# Shared Study Room -- תרגול משותף (Corrected)
 
-## Problem
-All user progress (history, favorites, notes, ratings, tags, weekly plan) is stored only in localStorage, making it device-specific. Switching devices or clearing browser data loses all progress.
+## Correction Applied
+The `questions.id` column is of type **text**. Therefore `study_rooms.question_ids` will be `text[]` (not integer[] or uuid[]).
 
-## What stays in localStorage
-- Theme preference (dark/light)
-- Welcome modal dismissed flag
+## Step 1: Database Migration
 
-## What moves to Supabase
+Create 3 new tables with RLS policies:
 
-### New Tables Required
+**`study_rooms`**
+- `id` uuid PK default gen_random_uuid()
+- `room_code` text UNIQUE NOT NULL (6-char uppercase alphanumeric)
+- `created_by` uuid NOT NULL
+- `status` text NOT NULL DEFAULT 'waiting' (waiting | active | finished)
+- `question_ids` **text[]** NOT NULL (matches questions.id type)
+- `current_question_index` integer NOT NULL DEFAULT 0
+- `created_at` timestamptz DEFAULT now()
+- `expires_at` timestamptz DEFAULT now() + interval '24 hours'
 
-**1. `user_favorites`**
-- `id` (uuid, PK)
-- `user_id` (uuid, NOT NULL)
-- `question_id` (text, NOT NULL)
-- `created_at` (timestamptz)
-- Unique constraint on (user_id, question_id)
-- RLS: users can only CRUD their own rows
+**`room_participants`**
+- `id` uuid PK default gen_random_uuid()
+- `room_id` uuid NOT NULL REFERENCES study_rooms ON DELETE CASCADE
+- `user_id` uuid NOT NULL
+- `display_name` text NOT NULL
+- `joined_at` timestamptz DEFAULT now()
+- `is_ready` boolean DEFAULT false
+- `last_active_at` timestamptz DEFAULT now()
+- UNIQUE (room_id, user_id)
 
-**2. `user_notes`**
-- `id` (uuid, PK)
-- `user_id` (uuid, NOT NULL)
-- `question_id` (text, NOT NULL)
-- `note_text` (text, NOT NULL)
-- `updated_at` (timestamptz)
-- Unique constraint on (user_id, question_id)
-- RLS: users can only CRUD their own rows
+**`room_answers`**
+- `id` uuid PK default gen_random_uuid()
+- `room_id` uuid NOT NULL REFERENCES study_rooms ON DELETE CASCADE
+- `question_index` integer NOT NULL
+- `user_id` uuid NOT NULL
+- `selected_answer` text NOT NULL (A/B/C/D)
+- `is_correct` boolean NOT NULL
+- `answered_at` timestamptz DEFAULT now()
+- UNIQUE (room_id, question_index, user_id)
 
-**3. `user_ratings`**
-- `id` (uuid, PK)
-- `user_id` (uuid, NOT NULL)
-- `question_id` (text, NOT NULL)
-- `rating` (text, NOT NULL) -- 'easy' | 'medium' | 'hard'
-- `updated_at` (timestamptz)
-- Unique constraint on (user_id, question_id)
-- RLS: users can only CRUD their own rows
+**RLS Policies:**
+- `study_rooms`: SELECT for participants (join to room_participants where user_id = auth.uid()), INSERT for authenticated, UPDATE for creator only
+- `room_participants`: SELECT/INSERT/UPDATE/DELETE scoped to rooms user participates in
+- `room_answers`: INSERT own answers, SELECT for rooms user participates in
 
-**4. `user_tags`**
-- `id` (uuid, PK)
-- `user_id` (uuid, NOT NULL)
-- `question_id` (text, NOT NULL)
-- `tag` (text, NOT NULL)
-- `created_at` (timestamptz)
-- Unique constraint on (user_id, question_id, tag)
-- RLS: users can only CRUD their own rows
+Enable realtime on all 3 tables.
 
-**5. `user_weekly_plans`**
-- `id` (uuid, PK)
-- `user_id` (uuid, NOT NULL, UNIQUE)
-- `plan_data` (jsonb, NOT NULL)
-- `updated_at` (timestamptz)
-- RLS: users can only CRUD their own rows
+## Step 2: Types Update
 
-### Modify Existing Table
-**`user_answers`** -- add `ever_wrong` (boolean, default false) column so we can reconstruct the full history object from Supabase.
+In `src/lib/types.ts`:
+- Add `'study-room'` to `ViewId` union
+- Add types: `StudyRoom`, `RoomParticipant`, `RoomAnswer`
 
-## Implementation Plan
+## Step 3: Navigation
 
-### Step 1: Create database tables and add column
-Run a single migration creating all 5 new tables with RLS policies, plus adding `ever_wrong` to `user_answers`.
+- **Sidebar.tsx**: Add nav item with Users icon and label "תרגול משותף"
+- **MobileBottomNav.tsx**: Add entry
+- **Index.tsx**: Add `case 'study-room'` rendering `<StudyRoomView />`
 
-### Step 2: Rewrite AppContext.tsx hydration
-- On mount, check for authenticated user
-- If authenticated: fetch all progress data from Supabase (user_answers, user_favorites, user_notes, user_ratings, user_tags, user_weekly_plans) and build the `UserProgress` object from DB data
-- If not authenticated: use empty `defaultProgress` (no localStorage fallback)
-- Listen to `onAuthStateChange` to re-hydrate when user logs in
+## Step 4: Create StudyRoomView
 
-### Step 3: Rewrite each mutation to write to Supabase
-Replace every `localStorage.setItem(LS_KEY, ...)` call with a Supabase upsert/insert/delete:
+File: `src/components/views/StudyRoomView.tsx`
 
-- **`updateHistory`**: Already calls `syncAnswerToDb` separately; merge them so `updateHistory` writes directly to `user_answers` (including `ever_wrong`), and also updates local state
-- **`toggleFavorite`**: Insert/delete from `user_favorites`
-- **`saveNote` / `deleteNote`**: Upsert/delete in `user_notes`
-- **`setRating`**: Upsert in `user_ratings`
-- **`addTag` / `removeTag`**: Insert/delete in `user_tags`
-- **`generateWeeklyPlan`**: Upsert in `user_weekly_plans`
-- **`resetAllData`**: Delete all user rows from all tables
-- **`importData`**: Batch upsert into all tables
-- **`saveProgress`**: Remove entirely (no longer needed)
+Single component with 4 internal phases managed by local state:
 
-### Step 4: Remove localStorage references for progress
-- Remove `LS_KEY` usage for progress (keep for nothing -- it becomes unused)
-- Remove the `saveProgress` callback and its localStorage write
-- Keep theme and welcome_key in localStorage
+### Phase 1 -- Lobby
+- Section A (Create): Topic multi-select, question count (5/10/15/20), random mix checkbox, "צור חדר" button. On click: generate 6-char code, sample questions from `data`, insert study_rooms + room_participants rows.
+- Section B (Join): Code input + "הצטרף" button. Validates room exists with status='waiting', inserts participant.
 
-### Step 5: Update dependent components
-- `useStatsData.ts`: Already reads from `progress.history` via context -- no change needed since we hydrate the same shape from Supabase
-- `NotebookView.tsx`: Already reads from `progress.notes` -- works as-is after hydration
-- Any component using `progress.*` continues to work since the data shape is unchanged
+### Phase 2 -- Waiting Room
+- Large room code with copy button + WhatsApp share link
+- Participant list with ready indicators
+- "!מוכן" toggle (sets is_ready)
+- Poll every 3s for participant updates
+- Creator sees "התחל מבחן" when all ready (sets status='active')
 
-## Technical Notes
+### Phase 3 -- Question Screen
+- Top bar: counter, room code, participant dots
+- Question + 4 answer buttons (matching existing SessionView style)
+- On answer: lock choice, insert room_answers, also call updateHistory for personal stats
+- Poll every 2s: check all answered current index
+- When all answered: reveal correct/incorrect, show per-participant results, show explanation
+- Creator gets "הבא" button; auto-advance after 10s
+- Disconnect warning after 60s inactivity
 
-- All Supabase writes are fire-and-forget with optimistic local state updates (write to state immediately, sync to DB in background)
-- If user is not authenticated, mutations update local state only (in-memory, lost on refresh) -- this preserves the app working for non-logged-in users without persisting
-- The `user_answers` table already has a unique constraint on (user_id, question_id), so upserts work naturally
-- We fetch all user data in parallel on login for fast hydration
-- The `progress` object shape (`UserProgress`) stays the same -- only the storage backend changes
+### Phase 4 -- Results
+- Side-by-side score comparison
+- Per-question breakdown table
+- "שחק שוב" and "חזור לדף הבית" buttons
+
+## Step 5: Utility Functions
+
+File: `src/lib/studyRoomUtils.ts`
+- `generateRoomCode()`: random 6-char uppercase alphanumeric
+- `pickQuestionsForRoom(data, topics, count, randomMix)`: filter and sample question IDs
+
+## Step 6: Polling and Cleanup
+- All setInterval calls in useEffect with cleanup on unmount
+- Stop polling when room status = 'finished'
+
+## Files to Create
+1. Migration SQL file (3 tables + RLS + realtime)
+2. `src/components/views/StudyRoomView.tsx`
+3. `src/lib/studyRoomUtils.ts`
+
+## Files to Modify
+1. `src/lib/types.ts` -- add 'study-room' to ViewId
+2. `src/components/Sidebar.tsx` -- add nav item
+3. `src/components/MobileBottomNav.tsx` -- add nav item
+4. `src/pages/Index.tsx` -- add case + import
 
