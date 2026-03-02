@@ -568,7 +568,10 @@ export default function StudyRoomView() {
             {currentQuestion[KEYS.CHAPTER] ? (
               <span className="flex items-center gap-1">📖 <span className="text-foreground">{getChapterDisplay(currentQuestion[KEYS.CHAPTER])}</span></span>
             ) : null}
-          </div>
+            {currentQuestion[KEYS.SOURCE] && currentQuestion[KEYS.SOURCE] !== 'N/A' && (
+              <span className="flex items-center gap-1">🏛 <span className="text-foreground">{currentQuestion[KEYS.SOURCE]}</span></span>
+            )}
+           </div>
           <div className="p-6">
             <p className="text-lg font-medium text-foreground leading-relaxed whitespace-pre-wrap bidi-text">
               {currentQuestion[KEYS.QUESTION]}

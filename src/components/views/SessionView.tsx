@@ -326,6 +326,9 @@ export default function SessionView() {
             </span>
             <span className="flex items-center gap-1.5">📁 <span className="text-foreground">{qData[KEYS.TOPIC]}</span></span>
             <span className="flex items-center gap-1.5">📅 <span className="text-foreground">{qData[KEYS.YEAR]}</span></span>
+            {qData[KEYS.SOURCE] && qData[KEYS.SOURCE] !== 'N/A' && (
+              <span className="flex items-center gap-1.5">🏛 <span className="text-foreground">{qData[KEYS.SOURCE]}</span></span>
+            )}
             {qData[KEYS.CHAPTER] ? (
               <span className="flex items-center gap-1.5">📖 <span className="text-foreground">{getChapterDisplay(qData[KEYS.CHAPTER])}</span></span>
             ) : null}

@@ -537,7 +537,7 @@ export default function QuestionEditorTab() {
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-sm font-medium text-foreground mb-1 block">מקור</label>
+                <label className="text-sm font-medium text-foreground mb-1 block">מוסד (Institution)</label>
                 <Input
                   value={editForm.source || ''}
                   onChange={(e) => setEditForm(f => ({ ...f, source: e.target.value }))}
