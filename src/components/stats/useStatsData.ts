@@ -48,10 +48,23 @@ export function linearRegression(data: { x: number; y: number }[]) {
   return { slope, intercept };
 }
 
+export type PersonalStats = {
+  totalAttempts: number;
+  uniqueQuestions: number;
+  totalErrors: number;
+  corrected: number;
+  uncorrected: number;
+  repeatedErrors: number;
+};
+
 export function useStatsData() {
   const { data, progress } = useApp();
   const [dailyData90, setDailyData90] = useState<DailyData[]>([]);
   const [spacedRep, setSpacedRep] = useState<any[]>([]);
+  const [personalStats, setPersonalStats] = useState<PersonalStats>({
+    totalAttempts: 0, uniqueQuestions: 0, totalErrors: 0,
+    corrected: 0, uncorrected: 0, repeatedErrors: 0,
+  });
 
   // Fetch 90-day daily data + spaced repetition
   useEffect(() => {
@@ -98,6 +111,29 @@ export function useStatsData() {
       );
 
       setSpacedRep(srRes.data || []);
+
+      // Personal stats from user_answers
+      const { data: allAnswers } = await supabase
+        .from('user_answers')
+        .select('answered_count, correct_count, is_correct, ever_wrong')
+        .eq('user_id', session.user.id);
+
+      if (allAnswers) {
+        let totalAttempts = 0, totalCorrect = 0, corrected = 0, uncorrected = 0, repeatedErrors = 0;
+        for (const row of allAnswers) {
+          totalAttempts += row.answered_count;
+          totalCorrect += row.correct_count;
+          if (row.ever_wrong && row.is_correct) corrected++;
+          if (row.ever_wrong && !row.is_correct) uncorrected++;
+          if ((row.answered_count - row.correct_count) > 1) repeatedErrors++;
+        }
+        setPersonalStats({
+          totalAttempts,
+          uniqueQuestions: allAnswers.length,
+          totalErrors: totalAttempts - totalCorrect,
+          corrected, uncorrected, repeatedErrors,
+        });
+      }
     };
     fetch();
   }, []);
@@ -317,5 +353,6 @@ export function useStatsData() {
     dailyData90,
     trendData14,
     trendData30,
+    personalStats,
   };
 }
