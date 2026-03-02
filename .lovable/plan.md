@@ -1,53 +1,65 @@
 
 
-# Bug Fix: Study Room Question Screen -- Missing Data
+# 3 UI Improvements Plan (Updated)
 
-## Problem
-The question screen in StudyRoomView shows empty answer options and is missing explanation rendering, topic/chapter metadata, and difficulty rating. The root cause is a timing issue: the study room can enter the question phase before the full `data` array (3000+ questions) has finished loading from the cache/database.
+## Improvement 1: Larger Modals
 
-## Root Cause Analysis
-- `currentQuestion` (line 48) does `data.find(q => q[KEYS.ID] === qId)` -- if `data` is still empty (loading), this returns `null`/`undefined`
-- Even when `data` is loaded, the question screen is missing topic, chapter, Miller, and difficulty metadata that SessionView shows
-- Explanation uses plain `whitespace-pre-wrap` instead of the `SmartContent` renderer that handles HTML and links
+Update base Dialog, AlertDialog, and Sheet components to use larger default sizes with scrollable content.
 
-## Fix Plan
+**Files to modify:**
 
-### 1. Fetch full questions from Supabase when room loads (StudyRoomView.tsx)
+1. **`src/components/ui/dialog.tsx`** -- Change `DialogContent` default classes:
+   - Replace `max-w-lg` with `max-w-[90vw]`
+   - Add `max-h-[90vh] overflow-y-auto`
 
-Add a new state `roomQuestions` (type `Question[]`) that stores the full question objects fetched directly from the database using:
-```
-supabase.from('questions').select('*').in('id', questionIds)
-```
+2. **`src/components/ui/alert-dialog.tsx`** -- Change `AlertDialogContent` default classes:
+   - Replace `max-w-lg` with `max-w-[90vw]`
+   - Add `max-h-[90vh] overflow-y-auto`
 
-After fetching, sort the results to match the original `question_ids` order. Map the raw Supabase rows to the `Question` type using the same KEYS mapping as `csvService.ts`.
+3. **`src/components/ui/sheet.tsx`** -- Add `max-h-[90vh] overflow-y-auto` to SheetContent; for side sheets add `max-w-[90vw]`
 
-Replace the `currentQuestion` memo to use `roomQuestions[currentIndex]` instead of searching through `data`.
+4. **`src/components/stats/AnimatedStatsTile.tsx`** -- Replace `max-w-4xl` with `max-w-[90vw]` and `max-h-[85vh]` with `max-h-[90vh]`
 
-### 2. Add topic/chapter/Miller metadata to question screen
+---
 
-Add a metadata bar above the question text (matching SessionView style):
-- Topic badge with folder icon
-- Year badge
-- Miller chapter display using `getChapterDisplay()`
-- Question ID and serial number header
+## Improvement 2: Topic TreeMap Full Screen
 
-### 3. Improve explanation rendering after reveal
+Make the TopicTreemap expanded view fill the viewport at 95vw x 95vh.
 
-Replace the plain `<p>` explanation with the `SmartContent` component (imported from SessionView) that properly renders HTML content, Markdown links, and external link icons.
+**Files to modify:**
 
-### 4. Add question data to results screen
+1. **`src/components/stats/AnimatedStatsTile.tsx`** -- Add optional `expandedClassName` prop that overrides default modal sizing. Default remains `max-w-[90vw] max-h-[90vh]`.
 
-The results table already uses `data.find()` -- update it to use `roomQuestions` for consistent rendering regardless of whether `data` has loaded.
+2. **`src/components/stats/TopicTreemap.tsx`** -- Pass `expandedClassName="max-w-[95vw] max-h-[95vh]"` to AnimatedStatsTile. Increase treemap container height to `calc(95vh - 120px)`. Increase font sizes in `CustomTreemapContent`: name font from `Math.min(11, width/8)` to `Math.min(14, width/6)`, score font from `9` to `11`. Relax text truncation threshold from `width/7` to `width/5`. Lower `showText` threshold from `width > 50 && height > 30` to `width > 40 && height > 25`.
 
-## Files to Modify
+---
 
-**`src/components/views/StudyRoomView.tsx`**:
-- Add `roomQuestions` state (`Question[]`)
-- Add `useEffect` to fetch questions from Supabase when `questionIds` changes (with KEYS mapping and order preservation)
-- Update `currentQuestion` memo to use `roomQuestions`
-- Import `getChapterDisplay` from millerChapters
-- Import or inline `SmartContent`/`ExplanationRenderer` from SessionView
-- Add metadata bar (topic, year, chapter) to question card
-- Use `SmartContent` for explanation rendering
-- Update results table to use `roomQuestions`
+## Improvement 3: Institution Badge on Question Header
+
+No database changes needed -- the existing `source` column stores institution data.
+
+**Files to modify:**
+
+1. **`src/components/views/SessionView.tsx`** -- Add institution badge to the meta bar after the year badge, using the **same CSS classes** as the existing topic and year badges (same background, text color, padding, rounded corners, font size). Content: institution icon + `qData[KEYS.SOURCE]`, shown only when value exists and is not `'N/A'`.
+
+2. **`src/components/views/StudyRoomView.tsx`** -- Add matching institution badge to the study room question meta bar, same style.
+
+3. **`src/components/admin/QuestionEditorTab.tsx`** -- Rename the label on the source input field from "מקור" to "מוסד (Institution)".
+
+---
+
+## Summary of All File Changes
+
+| File | Changes |
+|------|---------|
+| `src/components/ui/dialog.tsx` | max-w-[90vw], max-h-[90vh], overflow-y-auto |
+| `src/components/ui/alert-dialog.tsx` | Same as dialog |
+| `src/components/ui/sheet.tsx` | Add overflow and max sizing |
+| `src/components/stats/AnimatedStatsTile.tsx` | Add expandedClassName prop, update defaults to 90vw/90vh |
+| `src/components/stats/TopicTreemap.tsx` | Pass 95vw/95vh, increase fonts and height |
+| `src/components/views/SessionView.tsx` | Add institution badge with matching topic/year badge styling |
+| `src/components/views/StudyRoomView.tsx` | Add institution badge with matching styling |
+| `src/components/admin/QuestionEditorTab.tsx` | Rename label from "מקור" to "מוסד (Institution)" |
+
+No database migrations required.
 
