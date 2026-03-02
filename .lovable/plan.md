@@ -1,62 +1,128 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+# Plan: Standalone Anki Flashcard System
 
 ## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+Build a completely separate Anki-style flashcard system with custom user-created decks and cards, independent from the existing MCQ question bank. Includes two new database tables, navigation updates, and a full view with 3 tabs + study mode.
 
-## Part A -- Daily Volume Bars
+**User note applied**: MobileBottomNav will NOT be changed. Anki will be added to the Sidebar (desktop) and MobileHeader hamburger menu (mobile) only.
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+---
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+## 1. Database Migration
 
-### Data shape (extended)
-Each point in `chartData` will gain:
+Create file: `supabase/migrations/20260302_create_anki_tables.sql`
+
+### Table: `anki_decks`
+- `id` uuid PK (default gen_random_uuid)
+- `user_id` uuid NOT NULL
+- `name` text NOT NULL
+- `description` text nullable
+- `created_at` timestamptz default now()
+
+### Table: `anki_cards`
+- `id` uuid PK (default gen_random_uuid)
+- `deck_id` uuid NOT NULL references anki_decks(id) ON DELETE CASCADE
+- `user_id` uuid NOT NULL
+- `front` text NOT NULL
+- `back` text NOT NULL
+- `due_date` timestamptz default now()
+- `interval_days` integer default 1
+- `ease_factor` real default 2.5
+- `repetitions` integer default 0
+- `created_at` timestamptz default now()
+
+### RLS (both tables)
+All four policies (SELECT, INSERT, UPDATE, DELETE) scoped to `auth.uid() = user_id`.
+
+### Indexes
+- `idx_anki_cards_deck` on `deck_id`
+- `idx_anki_cards_user_due` on `(user_id, due_date)`
+- `idx_anki_decks_user` on `user_id`
+
+---
+
+## 2. Navigation Changes
+
+### `src/lib/types.ts`
+Add `'anki'` to the `ViewId` union type.
+
+### `src/components/Sidebar.tsx`
+Add nav item after study-room:
 ```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
+{ id: 'anki', label: 'כרטיסיות Anki 🃏', icon: <Layers className="w-5 h-5" /> }
+```
+Import `Layers` from lucide-react.
+
+### `src/components/MobileHeader.tsx`
+Add to the `mobileNav` array:
+```text
+{ id: 'anki', label: 'כרטיסיות Anki', emoji: '🃏' }
 ```
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+### `src/components/MobileBottomNav.tsx`
+**No changes** -- keep all 5 existing tabs intact.
 
-## Part B -- Daily Performance Report
+### `src/pages/Index.tsx`
+Add case to `renderView`:
+```text
+case 'anki': return <AnkiView />;
+```
+Import `AnkiView` from `@/components/views/AnkiView`.
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+---
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
+## 3. New Component: `src/components/views/AnkiView.tsx`
 
-## Files to Modify
+Single file containing the full Anki experience.
 
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+### Internal state: `phase`
+- `'decks'` -- Tab view (3 tabs)
+- `'study'` -- Study mode for a selected deck
 
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+### Tab 1: "הכרטיסיות שלי"
+- Fetch `anki_decks` for user
+- For each deck, count total cards and cards due today (`due_date <= now()`)
+- Display as a responsive grid of cards showing: name, total count, due count
+- Click deck -> enter study mode
+- Delete deck button with confirmation dialog
 
-No database changes required.
+### Tab 2: "ייבוא"
+- Textarea for pasting Front[TAB]Back lines
+- File upload accepting .txt/.csv, parsed with `papaparse` (already installed)
+- Preview first 5 cards in a mini table
+- Text input for deck name (required)
+- Save button: creates deck row, then batch inserts cards
+
+### Tab 3: "צור כרטיסייה"
+- Form with Front (textarea) and Back (textarea)
+- Select existing deck or text input to create new deck
+- Save button
+
+### Study Mode
+- Query `anki_cards` where `deck_id = selected` and `due_date <= now()`, ordered by `due_date asc`
+- Show front of card with flip animation (similar to existing FlashcardView)
+- "הצג תשובה" button to reveal back
+- Three rating buttons after flip:
+  - "קל" -> `interval_days = Math.ceil(interval_days * ease_factor)`, `ease_factor += 0.1`, `repetitions++`
+  - "בינוני" -> `interval_days = Math.ceil(interval_days * 1.5)`, `repetitions++`
+  - "קשה" -> `interval_days = 1`, `ease_factor = Math.max(1.3, ease_factor - 0.2)`, `repetitions = 0`
+- Update card in DB: `due_date = now() + interval_days days`
+- Progress bar: "X כרטיסיות נותרו להיום"
+- Completion screen when no more due cards
+
+---
+
+## Files Summary
+
+| File | Action |
+|------|--------|
+| `supabase/migrations/20260302_create_anki_tables.sql` | New -- migration SQL |
+| `src/lib/types.ts` | Add `'anki'` to ViewId |
+| `src/components/Sidebar.tsx` | Add Anki nav item |
+| `src/components/MobileHeader.tsx` | Add Anki to hamburger menu |
+| `src/pages/Index.tsx` | Add AnkiView routing |
+| `src/components/views/AnkiView.tsx` | New -- full Anki view |
+
+No changes to MobileBottomNav, FlashcardView, or the MCQ system.
 
