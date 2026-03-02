@@ -1,13 +1,60 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { supabase } from '@/integrations/supabase/client';
-import { KEYS } from '@/lib/types';
+import { KEYS, type Question } from '@/lib/types';
 import { generateRoomCode, pickQuestionsForRoom } from '@/lib/studyRoomUtils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Check, Users, ChevronDown, MessageCircle, Crown, Clock } from 'lucide-react';
+import { Copy, Check, Users, ChevronDown, MessageCircle, Crown, Clock, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { getChapterDisplay } from '@/data/millerChapters';
+import ReactMarkdown from 'react-markdown';
+
+/** Detect if content contains HTML tags */
+function isHtmlContent(text: string): boolean {
+  return /<[a-z][\s\S]*>/i.test(text);
+}
+
+/** Smart renderer for explanations */
+function SmartContent({ text }: { text: string }) {
+  if (isHtmlContent(text)) {
+    return (
+      <div
+        className="markdown-content bidi-text text-base prose prose-sm max-w-none text-foreground"
+        style={{ lineHeight: '1.8' }}
+        dangerouslySetInnerHTML={{ __html: text }}
+      />
+    );
+  }
+  // Parse URLs into clickable links
+  let processed = text.replace(
+    /<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
+    '[$2]($1)'
+  );
+  processed = processed.replace(
+    /(?<!\]\()(?<!\()(https?:\/\/[^\s\)]+)/g,
+    '[$1]($1)'
+  );
+  return (
+    <div className="markdown-content bidi-text text-base" style={{ lineHeight: '1.8' }}>
+      <ReactMarkdown
+        components={{
+          a: ({ href, children }) => (
+            <a href={href} target="_blank" rel="noopener noreferrer"
+              className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1 break-all">
+              {children}
+              <ExternalLink className="w-3 h-3 inline-block flex-shrink-0" />
+            </a>
+          ),
+          p: ({ children }) => <p className="mb-2 leading-relaxed">{children}</p>,
+        }}
+      >
+        {processed}
+      </ReactMarkdown>
+    </div>
+  );
+}
 
 type Phase = 'lobby' | 'waiting' | 'question' | 'results';
 type Participant = { id: string; user_id: string; display_name: string; is_ready: boolean; last_active_at: string };
@@ -29,6 +76,7 @@ export default function StudyRoomView() {
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [autoAdvanceTimer, setAutoAdvanceTimer] = useState<number | null>(null);
+  const [roomQuestions, setRoomQuestions] = useState<Question[]>([]);
 
   // Lobby state
   const [selectedTopics, setSelectedTopics] = useState<Set<string>>(new Set(['all']));
@@ -43,10 +91,47 @@ export default function StudyRoomView() {
   const topics = useMemo(() => [...new Set(data.map(q => q[KEYS.TOPIC]).filter(Boolean))].sort(), [data]);
 
   const currentQuestion = useMemo(() => {
-    if (!questionIds.length) return null;
-    const qId = questionIds[currentIndex];
-    return data.find(q => q[KEYS.ID] === qId) || null;
-  }, [data, questionIds, currentIndex]);
+    if (!roomQuestions.length || currentIndex >= roomQuestions.length) return null;
+    return roomQuestions[currentIndex];
+  }, [roomQuestions, currentIndex]);
+
+  // Fetch full question objects from Supabase when questionIds change
+  useEffect(() => {
+    if (questionIds.length === 0) return;
+    const fetchRoomQuestions = async () => {
+      const { data: rows, error } = await supabase
+        .from('questions')
+        .select('*')
+        .in('id', questionIds);
+      if (error) { console.error('Failed to fetch room questions:', error); return; }
+      if (!rows) return;
+      // Sort to match original question_ids order
+      const orderMap = new Map(questionIds.map((id, idx) => [id, idx]));
+      const sorted = [...rows].sort((a, b) => (orderMap.get(a.id) ?? 0) - (orderMap.get(b.id) ?? 0));
+      // Map to Question type
+      const mapped: Question[] = sorted.map((row: any) => ({
+        [KEYS.ID]: row.id,
+        [KEYS.REF_ID]: row.ref_id || 'N/A',
+        [KEYS.QUESTION]: row.question,
+        [KEYS.A]: row.a || '',
+        [KEYS.B]: row.b || '',
+        [KEYS.C]: row.c || '',
+        [KEYS.D]: row.d || '',
+        [KEYS.CORRECT]: row.correct,
+        [KEYS.EXPLANATION]: row.explanation || '',
+        [KEYS.TOPIC]: row.topic || '',
+        [KEYS.YEAR]: row.year || '',
+        [KEYS.SOURCE]: row.source || 'N/A',
+        [KEYS.MILLER]: row.miller || 'N/A',
+        [KEYS.CHAPTER]: row.chapter || 0,
+        [KEYS.MEDIA_TYPE]: row.media_type || '',
+        [KEYS.MEDIA_LINK]: row.media_link || '',
+        [KEYS.KIND]: row.kind || '',
+      }));
+      setRoomQuestions(mapped);
+    };
+    fetchRoomQuestions();
+  }, [questionIds]);
 
   // Get current user
   useEffect(() => {
@@ -467,11 +552,28 @@ export default function StudyRoomView() {
           </div>
         </div>
 
-        {/* Question */}
-        <div className="bg-card border border-border rounded-2xl p-6">
-          <p className="text-lg font-medium text-foreground leading-relaxed whitespace-pre-wrap">
-            {currentQuestion[KEYS.QUESTION]}
-          </p>
+        {/* Question card with metadata */}
+        <div className="bg-card border border-border rounded-2xl overflow-hidden">
+          {/* Metadata bar */}
+          <div className="bg-muted/50 px-6 py-3 border-b border-border flex flex-wrap gap-3 text-xs text-muted-foreground font-medium items-center">
+            <span className="text-foreground font-bold bidi-text">
+              שאלה {currentQuestion[KEYS.REF_ID]} (#{currentQuestion[KEYS.ID]})
+            </span>
+            {currentQuestion[KEYS.TOPIC] && (
+              <span className="flex items-center gap-1">📁 <span className="text-foreground">{currentQuestion[KEYS.TOPIC]}</span></span>
+            )}
+            {currentQuestion[KEYS.YEAR] && (
+              <span className="flex items-center gap-1">📅 <span className="text-foreground">{currentQuestion[KEYS.YEAR]}</span></span>
+            )}
+            {currentQuestion[KEYS.CHAPTER] ? (
+              <span className="flex items-center gap-1">📖 <span className="text-foreground">{getChapterDisplay(currentQuestion[KEYS.CHAPTER])}</span></span>
+            ) : null}
+          </div>
+          <div className="p-6">
+            <p className="text-lg font-medium text-foreground leading-relaxed whitespace-pre-wrap bidi-text">
+              {currentQuestion[KEYS.QUESTION]}
+            </p>
+          </div>
         </div>
 
         {/* Answer options */}
@@ -533,8 +635,8 @@ export default function StudyRoomView() {
             {/* Explanation */}
             {currentQuestion[KEYS.EXPLANATION] && (
               <div className="bg-muted/50 border border-border rounded-2xl p-4">
-                <p className="text-xs font-bold text-muted-foreground uppercase mb-1">הסבר</p>
-                <p className="text-sm text-foreground whitespace-pre-wrap">{currentQuestion[KEYS.EXPLANATION]}</p>
+                <p className="text-xs font-bold text-muted-foreground uppercase mb-2">הסבר</p>
+                <SmartContent text={currentQuestion[KEYS.EXPLANATION]} />
               </div>
             )}
 
@@ -593,7 +695,7 @@ export default function StudyRoomView() {
             </thead>
             <tbody>
               {questionIds.map((qId, idx) => {
-                const q = data.find(d => d[KEYS.ID] === qId);
+                const q = roomQuestions.find(d => d[KEYS.ID] === qId);
                 const myAns = answers.find(a => a.question_index === idx && a.user_id === userId);
                 return (
                   <tr key={idx} className="border-b border-border last:border-0">
