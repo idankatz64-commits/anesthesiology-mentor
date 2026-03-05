@@ -371,6 +371,7 @@
 .ProseMirror[dir="rtl"] ul,
 .ProseMirror[dir="rtl"] ol { padding-left: 0; padding-right: 1.5rem; }
 .ProseMirror li { display: list-item; }
+.ProseMirror li > p { display: inline; margin: 0; }
 .ProseMirror ul ul { list-style-type: circle; }
 .ProseMirror ul ul ul { list-style-type: square; }
 
