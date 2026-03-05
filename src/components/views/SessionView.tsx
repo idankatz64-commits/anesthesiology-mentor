@@ -359,13 +359,11 @@ export default function SessionView() {
           <div className="flex items-start gap-2 mb-8">
             {editingQuestion ? (
               <div className="w-full space-y-4">
-                <textarea
-                  value={questionDraft}
-                  onChange={e => setQuestionDraft(e.target.value)}
-                  dir="rtl"
-                  rows={4}
-                  className="w-full bg-muted border border-border rounded-xl p-4 text-foreground text-lg leading-relaxed font-medium outline-none focus:border-primary resize-y"
+                <RichTextEditor
+                  content={questionDraft}
+                  onChange={setQuestionDraft}
                   placeholder="טקסט השאלה..."
+                  minHeight="80px"
                 />
                 <div className="space-y-3">
                   {(['A', 'B', 'C', 'D'] as const).map(opt => (
@@ -426,7 +424,9 @@ export default function SessionView() {
               </div>
             ) : (
               <>
-                <p className="text-foreground text-lg leading-relaxed font-medium bidi-text flex-grow">{qData[KEYS.QUESTION]}</p>
+                <div className="text-foreground text-lg leading-relaxed font-medium flex-grow">
+                  <SmartContent text={qData[KEYS.QUESTION]} />
+                </div>
                 {isAdmin && (
                   <button
                     onClick={() => {
