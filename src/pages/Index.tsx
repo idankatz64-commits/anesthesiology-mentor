@@ -77,6 +77,7 @@ function AppContent() {
               animate={slideFromRight.animate}
               exit={slideFromRight.exit}
               transition={slideFromRight.transition}
+              className="max-w-5xl mx-auto"
               style={{ willChange: 'transform', minHeight: '60vh' }}
             >
               {renderView()}
