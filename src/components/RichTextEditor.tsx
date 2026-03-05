@@ -45,6 +45,18 @@ export default function RichTextEditor({
       onChange(editor.getHTML());
     },
     editorProps: {
+      handleKeyDown: (_view, event) => {
+        if (event.key === 'Tab') {
+          if (event.shiftKey) {
+            editor?.chain().focus().liftListItem('listItem').run();
+          } else {
+            editor?.chain().focus().sinkListItem('listItem').run();
+          }
+          event.preventDefault();
+          return true;
+        }
+        return false;
+      },
       attributes: {
         class: `outline-none prose prose-sm max-w-none text-foreground`,
         dir: isRtl ? 'rtl' : 'ltr',
