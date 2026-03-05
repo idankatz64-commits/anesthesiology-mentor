@@ -81,6 +81,17 @@ export default function RichTextEditor({
     setIsRtl(prev => !prev);
   }, []);
 
+  const handleLink = useCallback(() => {
+    if (!editor) return;
+    if (editor.isActive('link')) {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+    const url = window.prompt('הכנס כתובת URL:');
+    if (!url) return;
+    editor.chain().focus().setLink({ href: url }).run();
+  }, [editor]);
+
   if (!editor) return null;
 
   const ToolbarButton = ({
