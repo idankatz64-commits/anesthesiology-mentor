@@ -270,7 +270,7 @@ export default function SessionView() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto pb-24" ref={mainRef} style={{ minHeight: '60vh' }}>
+    <div className="w-full pb-24" ref={mainRef} style={{ minHeight: '60vh' }}>
       {/* Top Bar */}
       <div className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-3">
