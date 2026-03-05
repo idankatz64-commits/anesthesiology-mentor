@@ -1,8 +1,9 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
 import { useEffect, useCallback, useState } from 'react';
-import { Bold, Underline as UnderlineIcon, List, ListOrdered, ArrowLeftRight } from 'lucide-react';
+import { Bold, Underline as UnderlineIcon, List, ListOrdered, ArrowLeftRight, Link2 } from 'lucide-react';
 
 interface RichTextEditorProps {
   content: string;
@@ -28,6 +29,15 @@ export default function RichTextEditor({
         orderedList: { keepMarks: true },
       }),
       Underline,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          class: 'text-primary underline hover:text-primary/80',
+        },
+      }),
     ],
     content,
     editable,
@@ -70,6 +80,17 @@ export default function RichTextEditor({
   const toggleDirection = useCallback(() => {
     setIsRtl(prev => !prev);
   }, []);
+
+  const handleLink = useCallback(() => {
+    if (!editor) return;
+    if (editor.isActive('link')) {
+      editor.chain().focus().unsetLink().run();
+      return;
+    }
+    const url = window.prompt('הכנס כתובת URL:');
+    if (!url) return;
+    editor.chain().focus().setLink({ href: url }).run();
+  }, [editor]);
 
   if (!editor) return null;
 
@@ -130,6 +151,14 @@ export default function RichTextEditor({
             title="Numbered List"
           >
             <ListOrdered className="w-3.5 h-3.5" />
+          </ToolbarButton>
+          <div className="w-px h-4 bg-border mx-1" />
+          <ToolbarButton
+            onClick={handleLink}
+            isActive={editor.isActive('link')}
+            title={editor.isActive('link') ? 'הסר קישור' : 'הוסף קישור'}
+          >
+            <Link2 className="w-3.5 h-3.5" />
           </ToolbarButton>
           <div className="w-px h-4 bg-border mx-1" />
           <ToolbarButton

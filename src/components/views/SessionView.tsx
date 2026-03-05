@@ -93,12 +93,19 @@ export default function SessionView() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [chapterDraft, setChapterDraft] = useState('');
   const [savingChapter, setSavingChapter] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [editingQuestion, setEditingQuestion] = useState(false);
+  const [questionDraft, setQuestionDraft] = useState('');
+  const [answersDraft, setAnswersDraft] = useState({ A: '', B: '', C: '', D: '' });
+  const [savingQuestion, setSavingQuestion] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
-  // Reset chapter draft when question changes
+  // Reset drafts when question changes
   useEffect(() => {
     setChapterDraft('');
     setSavingChapter('idle');
+    setEditingQuestion(false);
+    setQuestionDraft('');
+    setAnswersDraft({ A: '', B: '', C: '', D: '' });
   }, [index]);
 
   const isSimulation = mode === 'simulation';
@@ -349,7 +356,98 @@ export default function SessionView() {
 
         {/* Question Text */}
         <div className="p-8 md:p-10">
-          <p className="text-foreground text-lg leading-relaxed font-medium bidi-text mb-8">{qData[KEYS.QUESTION]}</p>
+          <div className="flex items-start gap-2 mb-8">
+            {editingQuestion ? (
+              <div className="w-full space-y-4">
+                <textarea
+                  value={questionDraft}
+                  onChange={e => setQuestionDraft(e.target.value)}
+                  dir="rtl"
+                  rows={4}
+                  className="w-full bg-muted border border-border rounded-xl p-4 text-foreground text-lg leading-relaxed font-medium outline-none focus:border-primary resize-y"
+                  placeholder="טקסט השאלה..."
+                />
+                <div className="space-y-3">
+                  {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                    <div key={opt} className="flex items-center gap-3">
+                      <span className="w-8 h-8 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center text-sm shrink-0">{opt}</span>
+                      <input
+                        type="text"
+                        value={answersDraft[opt]}
+                        onChange={e => setAnswersDraft(prev => ({ ...prev, [opt]: e.target.value }))}
+                        dir="rtl"
+                        className="flex-grow bg-muted border border-border rounded-xl px-4 py-3 text-foreground text-base outline-none focus:border-primary"
+                        placeholder={`תשובה ${opt}...`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setEditingQuestion(false)}
+                    className="px-4 py-2 text-xs font-bold text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/80 transition"
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    disabled={savingQuestion}
+                    onClick={async () => {
+                      setSavingQuestion(true);
+                      const { error } = await supabase
+                        .from('questions')
+                        .update({
+                          question: questionDraft,
+                          a: answersDraft.A,
+                          b: answersDraft.B,
+                          c: answersDraft.C,
+                          d: answersDraft.D,
+                          manually_edited: true,
+                        })
+                        .eq('id', serialNumber);
+                      setSavingQuestion(false);
+                      if (error) {
+                        toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
+                      } else {
+                        (qData as any)[KEYS.QUESTION] = questionDraft;
+                        (qData as any)[KEYS.A] = answersDraft.A;
+                        (qData as any)[KEYS.B] = answersDraft.B;
+                        (qData as any)[KEYS.C] = answersDraft.C;
+                        (qData as any)[KEYS.D] = answersDraft.D;
+                        sessionStorage.removeItem('questions_cache');
+                        setEditingQuestion(false);
+                        toast({ title: 'השאלה עודכנה ✅' });
+                      }
+                    }}
+                    className="px-4 py-2 text-xs font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                  >
+                    {savingQuestion ? '...' : 'שמור'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p className="text-foreground text-lg leading-relaxed font-medium bidi-text flex-grow">{qData[KEYS.QUESTION]}</p>
+                {isAdmin && (
+                  <button
+                    onClick={() => {
+                      setQuestionDraft(qData[KEYS.QUESTION]);
+                      setAnswersDraft({
+                        A: qData[KEYS.A] || '',
+                        B: qData[KEYS.B] || '',
+                        C: qData[KEYS.C] || '',
+                        D: qData[KEYS.D] || '',
+                      });
+                      setEditingQuestion(true);
+                    }}
+                    className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10 shrink-0 mt-1"
+                    title="ערוך שאלה ותשובות"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
 
           {/* Media */}
           {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== 'nan' && (
@@ -365,6 +463,7 @@ export default function SessionView() {
           )}
 
           {/* Options */}
+          {!editingQuestion && (
           <div className="space-y-5">
             {(['A', 'B', 'C', 'D'] as const).map(opt => {
               const text = qData[KEYS[opt]];
@@ -386,6 +485,7 @@ export default function SessionView() {
               );
             })}
           </div>
+          )}
 
           {/* Confidence Tracker - Practice mode only */}
           {needsConfidence && (

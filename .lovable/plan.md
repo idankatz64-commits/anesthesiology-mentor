@@ -1,52 +1,62 @@
 
 
-# Plan: Full Question Editor + Hyperlink Support
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-## Feature 1: Full Question Editor (Admin Only)
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-### SessionView.tsx changes
+## Part A -- Daily Volume Bars
 
-**New state variables** (reset on `index` change, same pattern as `chapterDraft`):
-- `editingQuestion` (boolean)
-- `questionDraft` (string) — for question text
-- `answersDraft` (`{A: string, B: string, C: string, D: string}`)
-- `savingQuestion` (boolean)
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-**UI**: Add a pencil icon next to the question text at line 352, guarded by `isAdmin && !editingQuestion`. When clicked:
-- Replace `<p>` question text with a `<textarea>` (plain, RTL, dark-themed, ~4 rows)
-- Replace the 4 answer buttons with 4 labeled `<input type="text">` fields (A/B/C/D)
-- Show Cancel + Save buttons
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-**Save handler**: Single `.update()` call:
-```typescript
-supabase.from('questions').update({
-  question: questionDraft,
-  a: answersDraft.A, b: answersDraft.B,
-  c: answersDraft.C, d: answersDraft.D,
-  manually_edited: true
-}).eq('id', serialNumber)
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
 ```
-On success: mutate `qData` in-place, invalidate `questions_cache`, show toast. On error: show error toast.
 
-## Feature 2: Hyperlink Support in RichTextEditor
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-### New dependency
-- `@tiptap/extension-link`
+## Part B -- Daily Performance Report
 
-### RichTextEditor.tsx changes
-- Import `Link` from `@tiptap/extension-link` and `Link2` icon from lucide-react
-- Add `Link.configure({ openOnClick: false, autolink: true, HTMLAttributes: { target: '_blank', rel: 'noopener noreferrer' } })` to extensions
-- Add a Link toolbar button: if text selected, `window.prompt` for URL, then `editor.chain().focus().setLink({ href })`. If already on a link, `unlink()`.
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-### Auto-detection of URLs
-Already handled by `ExplanationRenderer` and `SmartContent` — no changes needed for rendering. The `autolink: true` config handles detection inside the editor.
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
 
-## Files to modify
+## Files to Modify
 
 | File | Changes |
 |------|---------|
-| `src/components/views/SessionView.tsx` | Add question editing state, pencil icon on question text, inline textarea + 4 inputs + save/cancel |
-| `src/components/RichTextEditor.tsx` | Add `@tiptap/extension-link`, link toolbar button |
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
 
 No database changes required.
 
