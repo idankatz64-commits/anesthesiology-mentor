@@ -379,6 +379,7 @@
 .rich-content ul { list-style-type: disc; padding-right: 1.5rem; }
 .rich-content ol { list-style-type: decimal; padding-right: 1.5rem; }
 .rich-content li { display: list-item; }
+.rich-content li > p { display: inline; margin: 0; }
 .rich-content ul ul { list-style-type: circle; }
 .rich-content ul ul ul { list-style-type: square; }
 
