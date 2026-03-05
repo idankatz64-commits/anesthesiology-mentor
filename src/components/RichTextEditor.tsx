@@ -154,6 +154,14 @@ export default function RichTextEditor({
           </ToolbarButton>
           <div className="w-px h-4 bg-border mx-1" />
           <ToolbarButton
+            onClick={handleLink}
+            isActive={editor.isActive('link')}
+            title={editor.isActive('link') ? 'הסר קישור' : 'הוסף קישור'}
+          >
+            <Link2 className="w-3.5 h-3.5" />
+          </ToolbarButton>
+          <div className="w-px h-4 bg-border mx-1" />
+          <ToolbarButton
             onClick={toggleDirection}
             isActive={false}
             title={isRtl ? 'Switch to LTR' : 'Switch to RTL'}
