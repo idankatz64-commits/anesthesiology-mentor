@@ -1,8 +1,9 @@
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
+import Link from '@tiptap/extension-link';
 import { useEffect, useCallback, useState } from 'react';
-import { Bold, Underline as UnderlineIcon, List, ListOrdered, ArrowLeftRight } from 'lucide-react';
+import { Bold, Underline as UnderlineIcon, List, ListOrdered, ArrowLeftRight, Link2 } from 'lucide-react';
 
 interface RichTextEditorProps {
   content: string;
@@ -28,6 +29,15 @@ export default function RichTextEditor({
         orderedList: { keepMarks: true },
       }),
       Underline,
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: {
+          target: '_blank',
+          rel: 'noopener noreferrer',
+          class: 'text-primary underline hover:text-primary/80',
+        },
+      }),
     ],
     content,
     editable,
