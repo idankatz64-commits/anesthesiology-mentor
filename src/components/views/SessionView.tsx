@@ -93,12 +93,19 @@ export default function SessionView() {
   const [showExitDialog, setShowExitDialog] = useState(false);
   const [chapterDraft, setChapterDraft] = useState('');
   const [savingChapter, setSavingChapter] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [editingQuestion, setEditingQuestion] = useState(false);
+  const [questionDraft, setQuestionDraft] = useState('');
+  const [answersDraft, setAnswersDraft] = useState({ A: '', B: '', C: '', D: '' });
+  const [savingQuestion, setSavingQuestion] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
-  // Reset chapter draft when question changes
+  // Reset drafts when question changes
   useEffect(() => {
     setChapterDraft('');
     setSavingChapter('idle');
+    setEditingQuestion(false);
+    setQuestionDraft('');
+    setAnswersDraft({ A: '', B: '', C: '', D: '' });
   }, [index]);
 
   const isSimulation = mode === 'simulation';
