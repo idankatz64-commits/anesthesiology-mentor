@@ -39,7 +39,7 @@ function SmartExplanation({ text }: { text: string }) {
   if (isHtmlContent(text)) {
     return (
       <div
-        className="text-sm text-foreground bidi-text prose prose-sm max-w-none"
+        className="rich-content text-sm text-foreground bidi-text prose prose-sm max-w-none"
         style={{ lineHeight: '1.8' }}
         dangerouslySetInnerHTML={{ __html: text }}
       />

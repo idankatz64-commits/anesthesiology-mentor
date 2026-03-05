@@ -1,32 +1,62 @@
 
 
-# Fix Bullet List Rendering in Display Mode
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-The rendered HTML content uses `markdown-content` class (in SessionView, StudyRoomView) and bare `bidi-text` (in NotebookView, ResultsView). The `.ProseMirror` CSS only applies inside the editor, not these display containers.
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-## Approach
+## Part A -- Daily Volume Bars
 
-Add a shared `.rich-content` class with list styles in `src/index.css`, then apply it to all `dangerouslySetInnerHTML` containers.
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-### 1. `src/index.css` — Add `.rich-content` list styles (after existing `.ProseMirror` rules)
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-```css
-/* Rendered rich-text content (display mode) */
-.rich-content ul { list-style-type: disc; padding-right: 1.5rem; }
-.rich-content ol { list-style-type: decimal; padding-right: 1.5rem; }
-.rich-content li { display: list-item; }
-.rich-content ul ul { list-style-type: circle; }
-.rich-content ul ul ul { list-style-type: square; }
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
 ```
 
-### 2. Add `rich-content` class to all 4 render containers
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-| File | Line | Current class | Add |
-|------|------|--------------|-----|
-| `src/components/views/SessionView.tsx` | ~29 | `markdown-content bidi-text ...` | `rich-content` |
-| `src/components/views/ResultsView.tsx` | ~42 | `text-sm text-foreground bidi-text ...` | `rich-content` |
-| `src/components/views/StudyRoomView.tsx` | ~24 | `markdown-content bidi-text ...` | `rich-content` |
-| `src/components/views/NotebookView.tsx` | ~71 | `bg-muted/50 ... bidi-text` | `rich-content` |
+## Part B -- Daily Performance Report
 
-5 files modified total. No new dependencies. No database changes.
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+
+No database changes required.
 

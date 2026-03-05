@@ -21,7 +21,7 @@ function SmartContent({ text }: { text: string }) {
   if (isHtmlContent(text)) {
     return (
       <div
-        className="markdown-content bidi-text text-base prose prose-sm max-w-none text-foreground"
+        className="rich-content markdown-content bidi-text text-base prose prose-sm max-w-none text-foreground"
         style={{ lineHeight: '1.8' }}
         dangerouslySetInnerHTML={{ __html: text }}
       />
