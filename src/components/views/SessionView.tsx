@@ -424,7 +424,9 @@ export default function SessionView() {
               </div>
             ) : (
               <>
-                <p className="text-foreground text-lg leading-relaxed font-medium bidi-text flex-grow">{qData[KEYS.QUESTION]}</p>
+                <div className="text-foreground text-lg leading-relaxed font-medium flex-grow">
+                  <SmartContent text={qData[KEYS.QUESTION]} />
+                </div>
                 {isAdmin && (
                   <button
                     onClick={() => {
