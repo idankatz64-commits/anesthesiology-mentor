@@ -52,7 +52,7 @@ function MultiSelectDropdown({
                   set.has(val) ? 'bg-primary/10 text-primary font-bold' : 'text-foreground hover:bg-muted'
                 }`}
               >
-                {set.has(val) ? '☑' : '☐'} {val}
+                {set.has(val) ? '☑' : '☐'} {labelMap?.[val] ?? val}
               </div>
             ))}
           </div>
