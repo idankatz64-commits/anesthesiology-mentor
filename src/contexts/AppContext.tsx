@@ -603,7 +603,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const resetFilters = useCallback(() => {
     setMultiSelect({
       topic: new Set(['all']), year: new Set(['all']), kind: new Set(['all']),
-      institution: new Set(['all']), difficulty: new Set(['all']), usertags: new Set(['all']),
+      institution: new Set(['all']), confidence: new Set(['all']), usertags: new Set(['all']),
     });
     setSession(prev => ({ ...prev, sourceFilter: 'all', unseenOnly: false }));
   }, []);
