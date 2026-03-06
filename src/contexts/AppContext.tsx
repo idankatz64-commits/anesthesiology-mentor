@@ -663,7 +663,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     return pool;
-  }, [session.sourceFilter, session.unseenOnly, multiSelect, data]);
+  }, [session.sourceFilter, session.unseenOnly, multiSelect, data, confidenceMap]);
 
   const getDueQuestions = useCallback(async (): Promise<Question[]> => {
     const userId = userIdRef.current;

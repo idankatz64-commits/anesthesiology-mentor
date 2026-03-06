@@ -170,7 +170,15 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
             <MultiSelectDropdown label="מוסד (Institution)" type="institution" values={institutions} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MultiSelectDropdown label="קושי (Difficulty)" type="difficulty" values={['easy', 'medium', 'hard']} />
+            <MultiSelectDropdown label="תיוג (Tags)" type="usertags" values={userTags} />
+            <MultiSelectDropdown 
+              label="ביטחון (Confidence)" 
+              type="confidence" 
+              values={['confident', 'hesitant', 'guessed']} 
+              labelMap={confidenceLabelMap}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-6">
             <div>
               <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">מס' סידורי</label>
               <input
