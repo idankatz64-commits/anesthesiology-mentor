@@ -164,8 +164,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<SessionState>({ ...defaultSession });
   const [multiSelect, setMultiSelect] = useState<MultiSelectState>({
     topic: new Set(['all']), year: new Set(['all']), kind: new Set(['all']),
-    institution: new Set(['all']), difficulty: new Set(['all']), usertags: new Set(['all']),
+    institution: new Set(['all']), confidence: new Set(['all']), usertags: new Set(['all']),
   });
+  const [confidenceMap, setConfidenceMap] = useState<Record<string, string>>({});
   const [currentView, setCurrentView] = useState<ViewId>('home');
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
@@ -205,8 +206,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.warn('Failed to hydrate progress from DB:', e);
           if (hydrationIdRef.current === thisHydration) setProgress({ ...defaultProgress });
         });
+        // Hydrate confidence map from spaced_repetition
+        supabase.from('spaced_repetition').select('question_id, confidence').eq('user_id', userId)
+          .then(({ data: rows }) => {
+            if (hydrationIdRef.current === thisHydration && rows) {
+              const map: Record<string, string> = {};
+              for (const r of rows) { if (r.confidence) map[r.question_id] = r.confidence; }
+              setConfidenceMap(map);
+            }
+          });
       } else {
         setProgress({ ...defaultProgress });
+        setConfidenceMap({});
       }
     };
 
@@ -602,7 +613,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const resetFilters = useCallback(() => {
     setMultiSelect({
       topic: new Set(['all']), year: new Set(['all']), kind: new Set(['all']),
-      institution: new Set(['all']), difficulty: new Set(['all']), usertags: new Set(['all']),
+      institution: new Set(['all']), confidence: new Set(['all']), usertags: new Set(['all']),
     });
     setSession(prev => ({ ...prev, sourceFilter: 'all', unseenOnly: false }));
   }, []);
@@ -633,9 +644,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!ms.year.has('all')) pool = pool.filter(q => ms.year.has(q[KEYS.YEAR]));
     if (!ms.kind.has('all')) pool = pool.filter(q => ms.kind.has(q[KEYS.KIND]));
     if (!ms.institution.has('all')) pool = pool.filter(q => ms.institution.has(q[KEYS.SOURCE]));
-    if (!ms.difficulty.has('all')) pool = pool.filter(q => {
-      const r = p.ratings[q[KEYS.ID]];
-      return r ? ms.difficulty.has(r) : false;
+    if (!ms.confidence.has('all')) pool = pool.filter(q => {
+      const c = confidenceMap[q[KEYS.ID]];
+      return c ? ms.confidence.has(c) : true; // no confidence data = pass through
     });
     if (!ms.usertags.has('all')) pool = pool.filter(q => {
       const t = p.tags[q[KEYS.ID]] || [];
@@ -652,7 +663,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     return pool;
-  }, [session.sourceFilter, session.unseenOnly, multiSelect, data]);
+  }, [session.sourceFilter, session.unseenOnly, multiSelect, data, confidenceMap]);
 
   const getDueQuestions = useCallback(async (): Promise<Question[]> => {
     const userId = userIdRef.current;

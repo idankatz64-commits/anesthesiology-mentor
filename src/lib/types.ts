@@ -89,7 +89,7 @@ export type MultiSelectState = {
   year: Set<string>;
   kind: Set<string>;
   institution: Set<string>;
-  difficulty: Set<string>;
+  confidence: Set<string>;
   usertags: Set<string>;
 };
 

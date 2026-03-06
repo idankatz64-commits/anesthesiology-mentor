@@ -7,10 +7,12 @@ function MultiSelectDropdown({
   label,
   type,
   values,
+  labelMap,
 }: {
   label: string;
   type: string;
   values: string[];
+  labelMap?: Record<string, string>;
 }) {
   const [open, setOpen] = useState(false);
   const { multiSelect, toggleMultiSelect } = useApp();
@@ -50,7 +52,7 @@ function MultiSelectDropdown({
                   set.has(val) ? 'bg-primary/10 text-primary font-bold' : 'text-foreground hover:bg-muted'
                 }`}
               >
-                {set.has(val) ? '☑' : '☐'} {val}
+                {set.has(val) ? '☑' : '☐'} {labelMap?.[val] ?? val}
               </div>
             ))}
           </div>
@@ -75,6 +77,17 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   const years = useMemo(() => [...new Set(data.map(q => q[KEYS.YEAR]).filter(Boolean))].sort(), [data]);
   const kinds = useMemo(() => [...new Set(data.map(q => q[KEYS.KIND]).filter(x => x && x.trim()))].sort(), [data]);
   const institutions = useMemo(() => [...new Set(data.map(q => q[KEYS.SOURCE]).filter(x => x && x !== 'N/A' && x.trim()))].sort(), [data]);
+  const userTags = useMemo(() => {
+    const allTags = new Set<string>();
+    Object.values(progress.tags).forEach(tags => tags.forEach(t => allTags.add(t)));
+    return [...allTags].sort();
+  }, [progress.tags]);
+
+  const confidenceLabelMap: Record<string, string> = {
+    confident: '✅ בטוח',
+    hesitant: '🤔 מתלבט',
+    guessed: '🎲 ניחוש',
+  };
 
   const pool = getFilteredQuestions(serial, textSearch);
 
@@ -159,7 +172,15 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
             <MultiSelectDropdown label="מוסד (Institution)" type="institution" values={institutions} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MultiSelectDropdown label="קושי (Difficulty)" type="difficulty" values={['easy', 'medium', 'hard']} />
+            <MultiSelectDropdown label="תיוג (Tags)" type="usertags" values={userTags} />
+            <MultiSelectDropdown 
+              label="ביטחון (Confidence)" 
+              type="confidence" 
+              values={['confident', 'hesitant', 'guessed']} 
+              labelMap={confidenceLabelMap}
+            />
+          </div>
+          <div className="grid grid-cols-1 gap-6">
             <div>
               <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">מס' סידורי</label>
               <input
