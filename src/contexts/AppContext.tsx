@@ -164,8 +164,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<SessionState>({ ...defaultSession });
   const [multiSelect, setMultiSelect] = useState<MultiSelectState>({
     topic: new Set(['all']), year: new Set(['all']), kind: new Set(['all']),
-    institution: new Set(['all']), difficulty: new Set(['all']), usertags: new Set(['all']),
+    institution: new Set(['all']), confidence: new Set(['all']), usertags: new Set(['all']),
   });
+  const [confidenceMap, setConfidenceMap] = useState<Record<string, string>>({});
   const [currentView, setCurrentView] = useState<ViewId>('home');
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('theme');
