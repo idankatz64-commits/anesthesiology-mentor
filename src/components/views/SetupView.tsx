@@ -7,10 +7,12 @@ function MultiSelectDropdown({
   label,
   type,
   values,
+  labelMap,
 }: {
   label: string;
   type: string;
   values: string[];
+  labelMap?: Record<string, string>;
 }) {
   const [open, setOpen] = useState(false);
   const { multiSelect, toggleMultiSelect } = useApp();
