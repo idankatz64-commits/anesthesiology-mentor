@@ -646,7 +646,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!ms.institution.has('all')) pool = pool.filter(q => ms.institution.has(q[KEYS.SOURCE]));
     if (!ms.confidence.has('all')) pool = pool.filter(q => {
       const c = confidenceMap[q[KEYS.ID]];
-      return c ? ms.confidence.has(c) : true; // no confidence data = pass through
+      return c ? ms.confidence.has(c) : false;
     });
     if (!ms.usertags.has('all')) pool = pool.filter(q => {
       const t = p.tags[q[KEYS.ID]] || [];
