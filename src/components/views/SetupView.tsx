@@ -75,6 +75,17 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   const years = useMemo(() => [...new Set(data.map(q => q[KEYS.YEAR]).filter(Boolean))].sort(), [data]);
   const kinds = useMemo(() => [...new Set(data.map(q => q[KEYS.KIND]).filter(x => x && x.trim()))].sort(), [data]);
   const institutions = useMemo(() => [...new Set(data.map(q => q[KEYS.SOURCE]).filter(x => x && x !== 'N/A' && x.trim()))].sort(), [data]);
+  const userTags = useMemo(() => {
+    const allTags = new Set<string>();
+    Object.values(progress.tags).forEach(tags => tags.forEach(t => allTags.add(t)));
+    return [...allTags].sort();
+  }, [progress.tags]);
+
+  const confidenceLabelMap: Record<string, string> = {
+    confident: '✅ בטוח',
+    hesitant: '🤔 מתלבט',
+    guessed: '🎲 ניחוש',
+  };
 
   const pool = getFilteredQuestions(serial, textSearch);
 
