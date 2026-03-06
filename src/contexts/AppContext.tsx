@@ -206,8 +206,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           console.warn('Failed to hydrate progress from DB:', e);
           if (hydrationIdRef.current === thisHydration) setProgress({ ...defaultProgress });
         });
+        // Hydrate confidence map from spaced_repetition
+        supabase.from('spaced_repetition').select('question_id, confidence').eq('user_id', userId)
+          .then(({ data: rows }) => {
+            if (hydrationIdRef.current === thisHydration && rows) {
+              const map: Record<string, string> = {};
+              for (const r of rows) { if (r.confidence) map[r.question_id] = r.confidence; }
+              setConfidenceMap(map);
+            }
+          });
       } else {
         setProgress({ ...defaultProgress });
+        setConfidenceMap({});
       }
     };
 
