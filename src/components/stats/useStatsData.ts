@@ -159,7 +159,7 @@ export function useStatsData() {
       }
     };
     fetch();
-  }, []);
+  }, [progress]);
 
   const dailyData30 = useMemo(() => dailyData90.slice(-30), [dailyData90]);
   const dailyData14 = useMemo(() => dailyData90.slice(-14), [dailyData90]);
