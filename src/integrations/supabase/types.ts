@@ -229,6 +229,44 @@ export type Database = {
         }
         Relationships: []
       }
+      question_audit_log: {
+        Row: {
+          changed_at: string | null
+          changed_by: string | null
+          field_changed: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          question_id: string | null
+        }
+        Insert: {
+          changed_at?: string | null
+          changed_by?: string | null
+          field_changed?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          question_id?: string | null
+        }
+        Update: {
+          changed_at?: string | null
+          changed_by?: string | null
+          field_changed?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          question_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_audit_log_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       questions: {
         Row: {
           a: string | null
