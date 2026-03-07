@@ -110,7 +110,7 @@ export function useStatsData() {
       for (let i = 0; i < 90; i++) {
         const d = new Date();
         d.setDate(d.getDate() - (89 - i));
-        buckets[d.toISOString().split('T')[0]] = { count: 0, correct: 0 };
+        buckets[toIsraelDateStr(d)] = { count: 0, correct: 0 };
       }
       (answersRes.data || []).forEach((r: any) => {
         const day = new Date(r.updated_at).toISOString().split('T')[0];
