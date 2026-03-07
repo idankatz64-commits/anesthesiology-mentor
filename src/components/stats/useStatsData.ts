@@ -217,7 +217,7 @@ export function useStatsData() {
     for (let i = 0; i < 30; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
+      const key = toIsraelDateStr(d);
       const dayData = dailyData30.find(dd => dd.date === key);
       if (dayData && dayData.count > 0) count++;
       else if (i > 0) break; // Allow today to be empty
