@@ -34,6 +34,10 @@ export function calcSmartScore(answered: number, accuracy: number): number {
   return Math.round(((answered / (answered + 10)) * accuracy) + ((10 / (answered + 10)) * 50));
 }
 
+function toIsraelDateStr(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+}
+
 export function linearRegression(data: { x: number; y: number }[]) {
   const n = data.length;
   if (n < 2) return null;
