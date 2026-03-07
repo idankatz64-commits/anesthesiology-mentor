@@ -73,7 +73,7 @@ const VolumeTooltip = ({ active, payload, label }: any) => {
 function computeDailyReport(chartData: ReturnType<typeof computeMovingAverages>) {
   if (!chartData.length) return null;
   const last = chartData[chartData.length - 1];
-  const today = new Date().toISOString().slice(0, 10);
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
   const isToday = last.date === today;
 
   const todayRate = isToday ? last.rate : null;
