@@ -1,37 +1,62 @@
 
 
-# Fix: Daily Question Count Using Wrong Timezone
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-## Root Cause
-In `useStatsData.ts`, daily buckets are built using UTC dates (`toISOString().split('T')[0]`), but Israel is UTC+2/+3. Answers recorded after 10pm UTC (midnight Israel time) get bucketed into the next UTC day, and answers from 10pm-midnight Israel time get bucketed into the previous day. This causes today's count to be wrong.
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-Two locations need fixing:
+## Part A -- Daily Volume Bars
 
-1. **Lines 106-109** — Bucket key generation uses `new Date().toISOString()` (UTC)
-2. **Line 112** — Answer bucketing uses `new Date(r.updated_at).toISOString()` (UTC)
-3. **Lines 213-216** — Streak calculation also uses UTC dates
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-## Fix
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-Create a helper function to format a date in Israel timezone:
-
-```typescript
-function toIsraelDateStr(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' }); // returns YYYY-MM-DD
-}
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
 ```
 
-Then replace all three locations:
-- **Bucket keys** (line 109): `toIsraelDateStr(d)` instead of `d.toISOString().split('T')[0]`
-- **Answer bucketing** (line 112): `toIsraelDateStr(new Date(r.updated_at))` instead of `new Date(r.updated_at).toISOString().split('T')[0]`
-- **Streak calculation** (line 216): `toIsraelDateStr(d)` instead of `d.toISOString().split('T')[0]`
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-## Refresh After Every Answer
+## Part B -- Daily Performance Report
 
-The `useEffect` on line 82 has an empty dependency array `[]`, meaning it only runs once on mount. We should add `progress` as a dependency so stats refresh whenever the user answers a question.
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-## Files to modify
-| File | Change |
-|------|------|
-| `src/components/stats/useStatsData.ts` | Add `toIsraelDateStr` helper, fix 3 date formatting locations, add `progress` to useEffect deps |
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+
+No database changes required.
 

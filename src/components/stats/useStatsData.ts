@@ -34,6 +34,10 @@ export function calcSmartScore(answered: number, accuracy: number): number {
   return Math.round(((answered / (answered + 10)) * accuracy) + ((10 / (answered + 10)) * 50));
 }
 
+function toIsraelDateStr(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+}
+
 export function linearRegression(data: { x: number; y: number }[]) {
   const n = data.length;
   if (n < 2) return null;
@@ -106,10 +110,10 @@ export function useStatsData() {
       for (let i = 0; i < 90; i++) {
         const d = new Date();
         d.setDate(d.getDate() - (89 - i));
-        buckets[d.toISOString().split('T')[0]] = { count: 0, correct: 0 };
+        buckets[toIsraelDateStr(d)] = { count: 0, correct: 0 };
       }
       (answersRes.data || []).forEach((r: any) => {
-        const day = new Date(r.updated_at).toISOString().split('T')[0];
+        const day = toIsraelDateStr(new Date(r.updated_at));
         if (buckets[day]) {
           buckets[day].count++;
           if (r.is_correct) buckets[day].correct++;
@@ -155,7 +159,7 @@ export function useStatsData() {
       }
     };
     fetch();
-  }, []);
+  }, [progress]);
 
   const dailyData30 = useMemo(() => dailyData90.slice(-30), [dailyData90]);
   const dailyData14 = useMemo(() => dailyData90.slice(-14), [dailyData90]);
@@ -213,7 +217,7 @@ export function useStatsData() {
     for (let i = 0; i < 30; i++) {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
+      const key = toIsraelDateStr(d);
       const dayData = dailyData30.find(dd => dd.date === key);
       if (dayData && dayData.count > 0) count++;
       else if (i > 0) break; // Allow today to be empty
