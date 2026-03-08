@@ -66,9 +66,6 @@ interface AppContextType {
   setSourceFilter: (source: SessionState['sourceFilter']) => void;
   toggleUnseenOnly: () => void;
   
-  // Plan
-  generateWeeklyPlan: (force?: boolean) => void;
-  
   // Sync
   syncStatus: 'idle' | 'syncing' | 'done' | 'error';
   lastSyncTime: string | null;
