@@ -219,9 +219,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               setConfidenceMap(map);
             }
           });
+        // Hydrate admin/editor role
+        supabase.from('admin_users').select('role').eq('id', userId).maybeSingle()
+          .then(({ data: adminEntry }) => {
+            if (hydrationIdRef.current === thisHydration) {
+              setIsAdmin(adminEntry?.role === 'admin');
+              setIsEditor(adminEntry?.role === 'editor' || adminEntry?.role === 'admin');
+            }
+          });
       } else {
         setProgress({ ...defaultProgress });
         setConfidenceMap({});
+        setIsAdmin(false);
+        setIsEditor(false);
       }
     };
 
