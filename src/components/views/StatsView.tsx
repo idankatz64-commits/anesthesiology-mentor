@@ -195,9 +195,9 @@ export default function StatsView() {
         <div className="bg-card border border-border rounded-xl p-5" dir="rtl">
           <span className="text-xs text-muted-foreground font-medium mb-3 block text-right">מדדים עיקריים</span>
           <div className="flex flex-col items-center gap-2">
-            <GaugeDial value={eri.accuracy} max={100} color="#60A5FA" label="🔵 דיוק" pct={eri.accuracy} unit="%" />
-            <GaugeDial value={eri.coverage} max={100} color="#F97316" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
-            <GaugeDial value={streak} max={30} color="#FB923C" label="🔥 רצף" pct={Math.min(100, Math.round(streak / 30 * 100))} unit=" ימים" />
+            <GaugeDial value={eri.accuracy} max={100} color="#22c55e" label="🟢 דיוק" pct={eri.accuracy} unit="%" />
+            <GaugeDial value={eri.coverage} max={100} color="#f59e0b" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
+            <GaugeDial value={streak} max={30} color="#F97316" label="🔥 רצף" pct={Math.min(100, Math.round(streak / 30 * 100))} unit=" ימים" />
           </div>
         </div>
       </motion.div>
