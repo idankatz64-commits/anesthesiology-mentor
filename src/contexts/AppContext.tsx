@@ -104,47 +104,63 @@ export function useApp() {
 
 // ---- Supabase hydration helpers ----
 
+// Paginate past the 1000-row default limit
+async function fetchAllRows<T>(
+  queryBuilder: ReturnType<ReturnType<typeof supabase.from>['select']>
+): Promise<T[]> {
+  const PAGE = 1000;
+  let allData: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await queryBuilder.range(from, from + PAGE - 1);
+    if (error) { console.error('fetchAllRows error', error); break; }
+    if (!data || data.length === 0) break;
+    allData = allData.concat(data as T[]);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return allData;
+}
+
 async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> {
-  const [answersRes, favRes, notesRes, ratingsRes, tagsRes] = await Promise.all([
-    supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId),
-    supabase.from('user_favorites').select('question_id').eq('user_id', userId),
-    supabase.from('user_notes').select('question_id, note_text').eq('user_id', userId),
-    supabase.from('user_ratings').select('question_id, rating').eq('user_id', userId),
-    supabase.from('user_tags').select('question_id, tag').eq('user_id', userId),
+  const [answersData, favData, notesData, ratingsData, tagsData] = await Promise.all([
+    fetchAllRows<any>(supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId)),
+    fetchAllRows<any>(supabase.from('user_favorites').select('question_id').eq('user_id', userId)),
+    fetchAllRows<any>(supabase.from('user_notes').select('question_id, note_text').eq('user_id', userId)),
+    fetchAllRows<any>(supabase.from('user_ratings').select('question_id, rating').eq('user_id', userId)),
+    fetchAllRows<any>(supabase.from('user_tags').select('question_id, tag').eq('user_id', userId)),
   ]);
 
   // Build history
   const history: Record<string, HistoryEntry> = {};
-  if (answersRes.data) {
-    for (const row of answersRes.data) {
-      history[row.question_id] = {
-        answered: row.answered_count,
-        correct: row.correct_count,
-        lastResult: row.is_correct ? 'correct' : 'wrong',
-        everWrong: row.ever_wrong ?? false,
-        timestamp: new Date(row.updated_at).getTime(),
-      };
-    }
+  for (const row of answersData) {
+    history[row.question_id] = {
+      answered: row.answered_count,
+      correct: row.correct_count,
+      lastResult: row.is_correct ? 'correct' : 'wrong',
+      everWrong: row.ever_wrong ?? false,
+      timestamp: new Date(row.updated_at).getTime(),
+    };
   }
 
   // Build favorites
-  const favorites: string[] = (favRes.data || []).map((r: any) => r.question_id);
+  const favorites: string[] = favData.map((r: any) => r.question_id);
 
   // Build notes
   const notes: Record<string, string> = {};
-  for (const r of (notesRes.data || [])) {
+  for (const r of notesData) {
     notes[r.question_id] = r.note_text;
   }
 
   // Build ratings
   const ratings: Record<string, 'easy' | 'medium' | 'hard'> = {};
-  for (const r of (ratingsRes.data || [])) {
+  for (const r of ratingsData) {
     ratings[r.question_id] = r.rating as 'easy' | 'medium' | 'hard';
   }
 
   // Build tags
   const tags: Record<string, string[]> = {};
-  for (const r of (tagsRes.data || [])) {
+  for (const r of tagsData) {
     if (!tags[r.question_id]) tags[r.question_id] = [];
     tags[r.question_id].push(r.tag);
   }
