@@ -164,7 +164,7 @@ export default function SessionView() {
     if (mode !== 'practice' || savedAns === null) return;
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
-    updateHistory(serialNumber, isCorrect);
+    updateHistory(serialNumber, isCorrect, q[KEYS.TOPIC]);
     updateSpacedRepetition(serialNumber, isCorrect, level);
   };
 
