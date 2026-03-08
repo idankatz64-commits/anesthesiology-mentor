@@ -490,28 +490,37 @@ export type Database = {
       spaced_repetition: {
         Row: {
           confidence: string | null
+          ease_factor: number
           id: string
+          interval_days: number
           last_correct: boolean | null
           next_review_date: string
           question_id: string
+          repetitions: number
           updated_at: string
           user_id: string
         }
         Insert: {
           confidence?: string | null
+          ease_factor?: number
           id?: string
+          interval_days?: number
           last_correct?: boolean | null
           next_review_date?: string
           question_id: string
+          repetitions?: number
           updated_at?: string
           user_id: string
         }
         Update: {
           confidence?: string | null
+          ease_factor?: number
           id?: string
+          interval_days?: number
           last_correct?: boolean | null
           next_review_date?: string
           question_id?: string
+          repetitions?: number
           updated_at?: string
           user_id?: string
         }
