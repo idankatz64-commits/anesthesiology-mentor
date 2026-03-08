@@ -2,6 +2,7 @@ import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
+import { getChapterDisplay } from '@/data/millerChapters';
 
 // Paginate past the 1000-row default limit
 async function fetchAllRows<T>(
@@ -20,10 +21,114 @@ async function fetchAllRows<T>(
   }
   return allData;
 }
-import { getChapterDisplay } from '@/data/millerChapters';
 
 export type TopicStat = {
-...
+  topic: string;
+  totalInDb: number;
+  totalAnswered: number;
+  correct: number;
+  wrong: number;
+  accuracy: number;
+  smartScore: number;
+  trend: 'up' | 'down' | 'neutral';
+};
+
+export type DailyData = { date: string; count: number; correct: number; rate: number };
+
+export type WeakZone = {
+  deadZone: string[];      // wrong 3+ times
+  studiedNotLearned: string[]; // <50% accuracy
+  mastered: string[];      // >=50% accuracy
+};
+
+export type ForgettingRisk = {
+  topic: string;
+  risk: number;
+  daysSince: number;
+  accuracy: number;
+};
+
+export function calcSmartScore(answered: number, accuracy: number): number {
+  return Math.round(((answered / (answered + 10)) * accuracy) + ((10 / (answered + 10)) * 50));
+}
+
+function toIsraelDateStr(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+}
+
+export function linearRegression(data: { x: number; y: number }[]) {
+  const n = data.length;
+  if (n < 2) return null;
+  const sumX = data.reduce((s, d) => s + d.x, 0);
+  const sumY = data.reduce((s, d) => s + d.y, 0);
+  const sumXY = data.reduce((s, d) => s + d.x * d.y, 0);
+  const sumX2 = data.reduce((s, d) => s + d.x * d.x, 0);
+  const denom = n * sumX2 - sumX * sumX;
+  if (denom === 0) return null;
+  const slope = (n * sumXY - sumX * sumY) / denom;
+  const intercept = (sumY - slope * sumX) / n;
+  return { slope, intercept };
+}
+
+export type PersonalStats = {
+  totalAttempts: number;
+  uniqueQuestions: number;
+  totalErrors: number;
+  corrected: number;
+  uncorrected: number;
+  repeatedErrors: number;
+};
+
+export type DetailedAnswer = {
+  question_id: string;
+  topic: string | null;
+  answered_count: number;
+  correct_count: number;
+  is_correct: boolean;
+  ever_wrong: boolean;
+};
+
+export function useStatsData() {
+  const { data, progress } = useApp();
+  const [dailyData90, setDailyData90] = useState<DailyData[]>([]);
+  const [spacedRep, setSpacedRep] = useState<any[]>([]);
+  const [detailedAnswers, setDetailedAnswers] = useState<DetailedAnswer[]>([]);
+
+  // Derive personalStats from local progress (instant, no race condition)
+  const personalStats = useMemo<PersonalStats>(() => {
+    const history = Object.values(progress.history || {});
+    return {
+      totalAttempts: history.reduce((sum, h) => sum + (h.answered ?? 0), 0),
+      uniqueQuestions: history.length,
+      totalErrors: history.reduce((sum, h) => sum + ((h.answered ?? 0) - (h.correct ?? 0)), 0),
+      corrected: history.filter(h => h.everWrong && h.lastResult === 'correct').length,
+      uncorrected: history.filter(h => h.everWrong && h.lastResult === 'wrong').length,
+      repeatedErrors: history.filter(h => ((h.answered ?? 0) - (h.correct ?? 0)) > 1).length,
+    };
+  }, [progress.history]);
+
+  // Derive repeatedErrorsByTopic from local progress + question bank
+  const repeatedErrorsByTopic = useMemo<Record<string, number>>(() => {
+    const errByTopic: Record<string, number> = {};
+    Object.entries(progress.history || {}).forEach(([id, h]) => {
+      if ((h.answered - h.correct) > 1) {
+        const q = data.find(x => x[KEYS.ID] === id);
+        const t = q?.[KEYS.TOPIC] || 'ללא נושא';
+        errByTopic[t] = (errByTopic[t] || 0) + 1;
+      }
+    });
+    return errByTopic;
+  }, [progress.history, data]);
+
+  // Fetch 90-day daily data + spaced repetition + detailedAnswers from Supabase
+  useEffect(() => {
+    const fetchData = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const endDate = new Date();
+      const startDate = new Date();
+      startDate.setDate(endDate.getDate() - 89);
       const startStr = startDate.toISOString().split('T')[0];
 
       const [answersData, srData, detailedData] = await Promise.all([
@@ -142,14 +247,12 @@ export type TopicStat = {
   // ERI
   const eri = useMemo(() => {
     const { accuracy, coverage, topicData } = stats;
-    // critical_topic_avg = avg smart score of bottom 10 topics
     const sorted = [...topicData].sort((a, b) => a.smartScore - b.smartScore);
     const bottom10 = sorted.slice(0, Math.min(10, sorted.length));
     const criticalAvg = bottom10.length > 0
       ? Math.round(bottom10.reduce((s, t) => s + t.smartScore, 0) / bottom10.length)
       : 50;
 
-    // consistency = active days in last 14 / 14
     const activeDays14 = dailyData14.filter(d => d.count > 0).length;
     const consistency = Math.round((activeDays14 / 14) * 100);
 
