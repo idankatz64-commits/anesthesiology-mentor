@@ -93,6 +93,7 @@ function AppContent() {
   );
 }
 
+// Main entry point
 export default function Index() {
   return (
     <AppProvider>
