@@ -59,12 +59,6 @@ export type UserProgress = {
   tags: Record<string, string[]>;
 };
 
-export type WeeklyDay = {
-  day: string;
-  focus: string;
-  type: 'weak' | 'new' | 'rest';
-};
-
 export type SessionMode = 'practice' | 'exam' | 'review' | 'simulation';
 
 export type ConfidenceLevel = 'confident' | 'hesitant' | 'guessed';
