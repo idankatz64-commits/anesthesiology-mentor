@@ -469,7 +469,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     nextDate.setDate(nextDate.getDate() + interval);
     const nextReviewDate = nextDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 
-    await supabase.from('spaced_repetition').upsert({
+    const { error } = await supabase.from('spaced_repetition').upsert({
       user_id: userId,
       question_id: questionId,
       next_review_date: nextReviewDate,
@@ -480,6 +480,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ease_factor: ease,
       repetitions: reps,
     } as any, { onConflict: 'user_id,question_id' });
+
+    if (error) {
+      console.error('spaced_repetition upsert error:', error);
+      toast.error('שגיאה בשמירת נתוני חזרה מרווחת');
+    } else {
+      // Keep local confidenceMap in sync
+      setConfidenceMap(prev => ({ ...prev, [questionId]: confidence }));
+    }
   }, []);
 
   // syncAnswerToDb is now handled by updateHistory, but kept for backward compat
