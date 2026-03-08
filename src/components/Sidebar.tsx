@@ -79,7 +79,7 @@ export default function Sidebar() {
               key={item.id}
               onClick={() => navigate(item.id)}
               title={isCollapsed ? item.label : undefined}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3.5'} rounded-xl text-sm transition-all relative
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-4'} rounded-xl text-sm transition-all duration-200 relative
                 ${isActive
                   ? 'text-primary font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
