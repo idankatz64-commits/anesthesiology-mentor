@@ -17,6 +17,7 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'user-management', label: 'User Management', icon: <Users className="w-5 h-5" /> },
   { id: 'import-questions', label: 'Import Questions', icon: <Upload className="w-5 h-5" /> },
   { id: 'formula-management', label: 'Formula Management', icon: <FlaskConical className="w-5 h-5" /> },
+  { id: 'editor-activity', label: 'דוח עורכים', icon: <BarChart3 className="w-5 h-5" /> },
 ];
 
 export default function AdminDashboard() {
