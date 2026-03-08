@@ -439,6 +439,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ever_wrong: everWrong,
       updated_at: new Date().toISOString(),
     } as any, { onConflict: 'user_id,question_id' });
+
+    // Log individual attempt to answer_history
+    supabase.from('answer_history').insert({
+      user_id: userId,
+      question_id: questionId,
+      topic: topic || null,
+      is_correct: isCorrect,
+    } as any).then();
   }, []);
 
   const toggleFavorite = useCallback((id: string) => {
