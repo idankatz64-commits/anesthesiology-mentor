@@ -408,7 +408,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const correctCount = (existing?.correct_count || 0) + (isCorrect ? 1 : 0);
         const everWrong = (existing?.ever_wrong || false) || !isCorrect;
 
-        await supabase.from('user_answers').upsert({
+        const { error } = await supabase.from('user_answers').upsert({
           user_id: userId,
           question_id: id,
           is_correct: isCorrect,
@@ -419,6 +419,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ...(topic ? { topic } : {}),
         } as any, { onConflict: 'user_id,question_id' });
 
+        if (error) {
+          console.error('user_answers upsert error:', error);
+          toast.error('שגיאה בשמירת התקדמות');
+        }
       })();
     }
   }, []);
@@ -469,7 +473,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     nextDate.setDate(nextDate.getDate() + interval);
     const nextReviewDate = nextDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 
-    await supabase.from('spaced_repetition').upsert({
+    const { error } = await supabase.from('spaced_repetition').upsert({
       user_id: userId,
       question_id: questionId,
       next_review_date: nextReviewDate,
@@ -480,6 +484,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ease_factor: ease,
       repetitions: reps,
     } as any, { onConflict: 'user_id,question_id' });
+
+    if (error) {
+      console.error('spaced_repetition upsert error:', error);
+      toast.error('שגיאה בשמירת נתוני חזרה מרווחת');
+    } else {
+      // Keep local confidenceMap in sync
+      setConfidenceMap(prev => ({ ...prev, [questionId]: confidence }));
+    }
   }, []);
 
   // syncAnswerToDb is now handled by updateHistory, but kept for backward compat
