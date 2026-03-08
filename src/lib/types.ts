@@ -55,7 +55,6 @@ export type UserProgress = {
   history: Record<string, HistoryEntry>;
   notes: Record<string, string>;
   favorites: string[];
-  plan: WeeklyDay[] | null;
   ratings: Record<string, 'easy' | 'medium' | 'hard'>;
   tags: Record<string, string[]>;
 };
