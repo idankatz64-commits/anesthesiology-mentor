@@ -164,7 +164,7 @@ export default function SessionView() {
     if (mode !== 'practice' || savedAns === null) return;
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
-    updateHistory(serialNumber, isCorrect);
+    updateHistory(serialNumber, isCorrect, qData[KEYS.TOPIC]);
     updateSpacedRepetition(serialNumber, isCorrect, level);
   };
 
@@ -221,7 +221,7 @@ export default function SessionView() {
       const userAns = answers[i];
       if (userAns) {
         const isCorrect = userAns === q[KEYS.CORRECT];
-        updateHistory(q[KEYS.ID], isCorrect);
+        updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
       }
     });
     clearSavedSession();

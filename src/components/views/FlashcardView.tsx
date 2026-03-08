@@ -100,7 +100,7 @@ export default function FlashcardView() {
   const handleConfidence = async (level: ConfidenceLevel) => {
     if (!current) return;
     const isCorrect = level === 'confident' || level === 'hesitant';
-    updateHistory(current[KEYS.ID], isCorrect);
+    updateHistory(current[KEYS.ID], isCorrect, current[KEYS.TOPIC]);
     await updateSpacedRepetition(current[KEYS.ID], isCorrect, level);
     setStats(prev => ({ ...prev, [level]: prev[level] + 1 }));
 

@@ -46,7 +46,7 @@ interface AppContextType {
   setSessionIndex: (index: number) => void;
   toggleFlag: (index: number) => void;
   skipQuestion: (index: number) => void;
-  updateHistory: (id: string, isCorrect: boolean) => void;
+  updateHistory: (id: string, isCorrect: boolean, topic?: string) => void;
   updateSpacedRepetition: (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel) => void;
   syncAnswerToDb: (questionId: string, isCorrect: boolean, topic: string) => void;
   
@@ -377,7 +377,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // updateHistory: optimistic local update + fire-and-forget Supabase write
-  const updateHistory = useCallback((id: string, isCorrect: boolean) => {
+  const updateHistory = useCallback((id: string, isCorrect: boolean, topic?: string) => {
     setProgress(prev => {
       const history = { ...prev.history };
       if (!history[id]) history[id] = { answered: 0, correct: 0, lastResult: null, everWrong: false, timestamp: 0 };
@@ -414,6 +414,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           correct_count: correctCount,
           ever_wrong: everWrong,
           updated_at: new Date().toISOString(),
+          ...(topic ? { topic } : {}),
         } as any, { onConflict: 'user_id,question_id' });
 
       })();
