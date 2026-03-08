@@ -767,59 +767,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
   }, []);
 
-  const generateWeeklyPlan = useCallback((force = false) => {
-    const d = dataRef.current;
-    const p = progressRef.current;
-    if (!d.length) return;
-    if (p.plan && !force) return;
-
-    const topicStats: Record<string, { correct: number; total: number }> = {};
-    Object.entries(p.history).forEach(([id, h]) => {
-      const q = d.find(x => x[KEYS.ID] === id);
-      if (q && q[KEYS.TOPIC]) {
-        if (!topicStats[q[KEYS.TOPIC]]) topicStats[q[KEYS.TOPIC]] = { correct: 0, total: 0 };
-        topicStats[q[KEYS.TOPIC]].total += h.answered;
-        topicStats[q[KEYS.TOPIC]].correct += h.correct;
-      }
-    });
-
-    const weakTopics = Object.entries(topicStats)
-      .map(([topic, stats]) => ({ topic, acc: stats.correct / stats.total }))
-      .sort((a, b) => a.acc - b.acc)
-      .slice(0, 5)
-      .map(t => t.topic);
-
-    const unseenCounts: Record<string, number> = {};
-    d.forEach(q => {
-      if (!p.history[q[KEYS.ID]]) {
-        if (!unseenCounts[q[KEYS.TOPIC]]) unseenCounts[q[KEYS.TOPIC]] = 0;
-        unseenCounts[q[KEYS.TOPIC]]++;
-      }
-    });
-
-    const newTopics = Object.entries(unseenCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(t => t[0]);
-
-    const allTopics = [...new Set(d.map(q => q[KEYS.TOPIC]))].filter(Boolean);
-    const getRand = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)] || 'General Anesthesia';
-
-    const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-    const plan: WeeklyDay[] = days.map((day, i) => {
-      if (i === 6) return { day, focus: 'חזרה מסכמת ומנוחה', type: 'rest' as const };
-      if (i % 2 === 0) return { day, focus: getRand(weakTopics.length > 0 ? weakTopics : allTopics), type: 'weak' as const };
-      return { day, focus: getRand(newTopics.length > 0 ? newTopics : allTopics), type: 'new' as const };
-    });
-
-    setProgress(prev => ({ ...prev, plan }));
-
-    // Save to DB
-    const userId = userIdRef.current;
-    if (userId) {
-      supabase.from('user_weekly_plans').upsert({ user_id: userId, plan_data: plan as any, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }).then();
-    }
-  }, []);
 
   const triggerSync = useCallback(async () => {
     setSyncStatus('syncing');
