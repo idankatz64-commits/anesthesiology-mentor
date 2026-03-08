@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import FeedbackModal from './FeedbackModal';
