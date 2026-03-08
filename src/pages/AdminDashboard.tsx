@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 import { Link } from 'react-router-dom';
-import { Loader2, FileEdit, Users, Upload, ArrowRight, ShieldAlert, FlaskConical } from 'lucide-react';
+import { Loader2, FileEdit, Users, Upload, ArrowRight, ShieldAlert, FlaskConical, BarChart3 } from 'lucide-react';
 import QuestionEditorTab from '@/components/admin/QuestionEditorTab';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import ImportQuestionsTab from '@/components/admin/ImportQuestionsTab';
 import FormulaManagementTab from '@/components/admin/FormulaManagementTab';
+import EditorActivityTab from '@/components/admin/EditorActivityTab';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animations';
 
