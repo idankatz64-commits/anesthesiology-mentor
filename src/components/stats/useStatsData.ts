@@ -2,16 +2,17 @@ import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
+import { getChapterDisplay } from '@/data/millerChapters';
 
 // Paginate past the 1000-row default limit
 async function fetchAllRows<T>(
-  queryBuilder: ReturnType<ReturnType<typeof supabase.from>['select']>
+  buildQuery: () => any
 ): Promise<T[]> {
   const PAGE = 1000;
   let allData: T[] = [];
   let from = 0;
   while (true) {
-    const { data, error } = await queryBuilder.range(from, from + PAGE - 1);
+    const { data, error } = await buildQuery().range(from, from + PAGE - 1);
     if (error) { console.error('fetchAllRows error', error); break; }
     if (!data || data.length === 0) break;
     allData = allData.concat(data as T[]);
@@ -20,7 +21,6 @@ async function fetchAllRows<T>(
   }
   return allData;
 }
-import { getChapterDisplay } from '@/data/millerChapters';
 
 export type TopicStat = {
   topic: string;
@@ -132,20 +132,20 @@ export function useStatsData() {
       const startStr = startDate.toISOString().split('T')[0];
 
       const [answersData, srData, detailedData] = await Promise.all([
-        fetchAllRows<any>(
+        fetchAllRows<any>(() =>
           supabase
             .from('user_answers')
             .select('updated_at, is_correct, topic')
             .eq('user_id', session.user.id)
             .gte('updated_at', startStr + 'T00:00:00Z')
         ),
-        fetchAllRows<any>(
+        fetchAllRows<any>(() =>
           supabase
             .from('spaced_repetition')
             .select('question_id, next_review_date, last_correct, updated_at, confidence')
             .eq('user_id', session.user.id)
         ),
-        fetchAllRows<any>(
+        fetchAllRows<any>(() =>
           supabase
             .from('user_answers')
             .select('question_id, topic, answered_count, correct_count, is_correct, ever_wrong')
@@ -247,14 +247,12 @@ export function useStatsData() {
   // ERI
   const eri = useMemo(() => {
     const { accuracy, coverage, topicData } = stats;
-    // critical_topic_avg = avg smart score of bottom 10 topics
     const sorted = [...topicData].sort((a, b) => a.smartScore - b.smartScore);
     const bottom10 = sorted.slice(0, Math.min(10, sorted.length));
     const criticalAvg = bottom10.length > 0
       ? Math.round(bottom10.reduce((s, t) => s + t.smartScore, 0) / bottom10.length)
       : 50;
 
-    // consistency = active days in last 14 / 14
     const activeDays14 = dailyData14.filter(d => d.count > 0).length;
     const consistency = Math.round((activeDays14 / 14) * 100);
 
