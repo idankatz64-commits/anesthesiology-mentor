@@ -221,7 +221,7 @@ export default function SessionView() {
       const userAns = answers[i];
       if (userAns) {
         const isCorrect = userAns === q[KEYS.CORRECT];
-        updateHistory(q[KEYS.ID], isCorrect);
+        updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
       }
     });
     clearSavedSession();

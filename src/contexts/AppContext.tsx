@@ -414,6 +414,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           correct_count: correctCount,
           ever_wrong: everWrong,
           updated_at: new Date().toISOString(),
+          ...(topic ? { topic } : {}),
         } as any, { onConflict: 'user_id,question_id' });
 
       })();

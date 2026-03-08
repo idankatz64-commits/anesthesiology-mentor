@@ -338,7 +338,7 @@ export default function StudyRoomView() {
     } as any);
 
     // Save to personal stats
-    updateHistory(currentQuestion[KEYS.ID], isCorrect);
+    updateHistory(currentQuestion[KEYS.ID], isCorrect, currentQuestion[KEYS.TOPIC]);
     syncAnswerToDb(currentQuestion[KEYS.ID], isCorrect, currentQuestion[KEYS.TOPIC]);
 
     // Update last_active_at

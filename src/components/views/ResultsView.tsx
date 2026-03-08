@@ -79,7 +79,7 @@ export default function ResultsView() {
       quiz.forEach((q, i) => {
         const userAns = answers[i];
         if (userAns) {
-          updateHistory(q[KEYS.ID], userAns === q[KEYS.CORRECT]);
+          updateHistory(q[KEYS.ID], userAns === q[KEYS.CORRECT], q[KEYS.TOPIC]);
         }
       });
     }
