@@ -84,7 +84,7 @@ interface AppContextType {
 }
 
 const defaultProgress: UserProgress = {
-  history: {}, notes: {}, favorites: [], plan: null, ratings: {}, tags: {},
+  history: {}, notes: {}, favorites: [], ratings: {}, tags: {},
 };
 
 const defaultSession: SessionState = {
