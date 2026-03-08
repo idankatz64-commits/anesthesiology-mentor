@@ -69,7 +69,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className={`flex-grow ${isCollapsed ? 'p-2' : 'p-4'} space-y-1 overflow-y-auto relative`}>
+      <nav className={`flex-grow ${isCollapsed ? 'p-2' : 'p-4'} space-y-2 overflow-y-auto relative`}>
         {navItems.map(item => {
           const isActive = currentView === item.id ||
             (item.id === 'setup-practice' && currentView === 'setup-practice') ||
