@@ -46,7 +46,7 @@ interface AppContextType {
   setSessionIndex: (index: number) => void;
   toggleFlag: (index: number) => void;
   skipQuestion: (index: number) => void;
-  updateHistory: (id: string, isCorrect: boolean) => void;
+  updateHistory: (id: string, isCorrect: boolean, topic?: string) => void;
   updateSpacedRepetition: (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel) => void;
   syncAnswerToDb: (questionId: string, isCorrect: boolean, topic: string) => void;
   
