@@ -1,5 +1,5 @@
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, Users } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3 } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { motion } from 'framer-motion';
 
