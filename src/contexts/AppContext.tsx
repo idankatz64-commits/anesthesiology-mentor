@@ -105,13 +105,12 @@ export function useApp() {
 // ---- Supabase hydration helpers ----
 
 async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> {
-  const [answersRes, favRes, notesRes, ratingsRes, tagsRes, planRes] = await Promise.all([
+  const [answersRes, favRes, notesRes, ratingsRes, tagsRes] = await Promise.all([
     supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId),
     supabase.from('user_favorites').select('question_id').eq('user_id', userId),
     supabase.from('user_notes').select('question_id, note_text').eq('user_id', userId),
     supabase.from('user_ratings').select('question_id, rating').eq('user_id', userId),
     supabase.from('user_tags').select('question_id, tag').eq('user_id', userId),
-    supabase.from('user_weekly_plans').select('plan_data').eq('user_id', userId).maybeSingle(),
   ]);
 
   // Build history
