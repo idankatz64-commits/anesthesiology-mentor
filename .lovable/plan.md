@@ -1,41 +1,62 @@
 
 
-## Bug + Redesign: Editor Report
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-### Bug: Missing Data
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-**Root cause found.** In `QuestionEditorTab.tsx` line 330, the save handler inserts into `question_audit_log` instead of `question_edit_log`. That's why almost no rows appear in the editor report -- edits go to the wrong table.
+## Part A -- Daily Volume Bars
 
-**Fix:** Change the fire-and-forget insert (lines 326-338) to write to `question_edit_log` with the correct columns: `editor_id`, `question_id`, `fields_changed` (as text array), `action: 'update'`.
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-### Redesign: EditorActivityTab.tsx
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-Replace the current multi-section layout with a simpler, more useful design:
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
+```
 
-**1. Editor Summary Table** (one row per editor):
-| עורך | עריכות היום | סה"כ עריכות | נושאים שנערכו היום |
-|------|------------|------------|-------------------|
-| email | count | all-time count | comma-separated topic list |
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-- Data: `question_edit_log` (all time, no 7-day filter) joined with `admin_users` for email and `questions` for topic.
-- "Today" = `edited_at >= today 00:00 UTC`.
-- Topics today = distinct topics from today's edits.
+## Part B -- Daily Performance Report
 
-**2. 7-Day Bar Chart** (keep existing, enhance tooltip):
-- X: date, Y: total edits.
-- Tooltip: show comma-separated list of topics edited that day.
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-**3. Remove** the topic breakdown table, fields changed bars, and recent edits sections (replaced by the enriched summary table and tooltip).
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
 
-### Notification Improvement (AppContext.tsx)
+## Files to Modify
 
-Update the realtime toast (line 240-243) to also fetch the question's topic and show:
-- שאלה מספר {question_id}
-- נושא: {topic}
-- נערך על ידי: {editor_email}
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
 
-### Files Changed
-1. `src/components/admin/QuestionEditorTab.tsx` -- fix insert target table
-2. `src/components/admin/EditorActivityTab.tsx` -- full redesign
-3. `src/contexts/AppContext.tsx` -- improve notification toast
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+
+No database changes required.
 

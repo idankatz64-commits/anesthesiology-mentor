@@ -327,12 +327,11 @@ export default function QuestionEditorTab() {
         const changedFields = Object.keys(editForm).filter(k => (editForm as any)[k] !== (editQuestion as any)[k]);
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user && changedFields.length > 0) {
-            supabase.from('question_audit_log').insert({
+            supabase.from('question_edit_log').insert({
+              editor_id: session.user.id,
               question_id: editQuestion.id,
-              changed_by: session.user.id,
-              field_changed: changedFields.join(','),
-              old_value: null,
-              new_value: null,
+              fields_changed: changedFields,
+              action: 'update',
             }).then();
           }
         });

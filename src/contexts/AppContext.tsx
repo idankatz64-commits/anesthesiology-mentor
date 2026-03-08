@@ -232,13 +232,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                     schema: 'public',
                     table: 'question_edit_log',
                   }, async (payload) => {
-                    const { data: editorData } = await supabase
-                      .from('admin_users')
-                      .select('email')
-                      .eq('id', (payload.new as any).editor_id)
-                      .maybeSingle();
-                    toast(`✏️ שאלה נערכה על ידי ${editorData?.email ?? 'עורך'}`, {
-                      description: `שדות: ${((payload.new as any).fields_changed as string[])?.join(', ') ?? ''}`,
+                    const newRow = payload.new as any;
+                    const [editorRes, questionRes] = await Promise.all([
+                      supabase.from('admin_users').select('email').eq('id', newRow.editor_id).maybeSingle(),
+                      newRow.question_id
+                        ? supabase.from('questions').select('topic').eq('id', newRow.question_id).maybeSingle()
+                        : Promise.resolve({ data: null }),
+                    ]);
+                    const editorEmail = editorRes.data?.email ?? 'עורך';
+                    const topic = questionRes.data?.topic || 'לא ידוע';
+                    toast(`✏️ שאלה נערכה`, {
+                      description: `שאלה: ${newRow.question_id?.slice(0, 12) ?? '—'}\nנושא: ${topic}\nנערך על ידי: ${editorEmail}`,
                       duration: 6000,
                     });
                   })
