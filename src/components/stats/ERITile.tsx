@@ -72,7 +72,7 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
 
 
   const satellites = [
-  { label: 'דיוק', value: `${accuracy}%`, color: accuracy >= 70 ? '#22C55E' : accuracy >= 50 ? '#EAB308' : '#EF4444' },
+  { label: 'דיוק', value: `${accuracy}%`, color: accuracy >= 70 ? '#22C55E' : accuracy >= 50 ? '#f59e0b' : '#EF4444' },
   { label: 'כיסוי', value: `${coverage}%`, color: '#F97316' },
   { label: 'רצף', value: `${streak}`, color: '#FB923C' }];
 

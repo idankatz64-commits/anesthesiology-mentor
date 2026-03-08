@@ -88,7 +88,7 @@ export default function Sidebar() {
               {isActive && (
                 <motion.div
                   layoutId="sidebar-active"
-                  className={`absolute inset-0 bg-primary/10 ${isCollapsed ? '' : 'border-r-[3px] border-primary'} rounded-xl shadow-[inset_0_0_20px_hsl(25_95%_53%/0.05)]`}
+                  className={`absolute inset-0 bg-primary/10 border-r-[3px] border-primary rounded-xl shadow-[inset_0_0_20px_hsl(25_95%_53%/0.05)]`}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   style={{ willChange: 'transform' }}
                 />

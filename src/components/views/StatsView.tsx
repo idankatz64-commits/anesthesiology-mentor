@@ -232,7 +232,7 @@ export default function StatsView() {
       </motion.div>
 
       {/* ROW 6 — Import/Export */}
-      <motion.div variants={itemVariants} className="bg-card border border-border rounded-xl p-6" dir="rtl">
+      <motion.div variants={itemVariants} className="bg-card border border-border rounded-2xl p-6 transition-all duration-200" dir="rtl">
         <h3 className="font-bold mb-4 text-foreground text-sm flex items-center gap-2">💾 ניהול נתונים וגיבוי</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <button onClick={handleExport} className="bg-primary/10 text-primary border border-primary/20 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2">

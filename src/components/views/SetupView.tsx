@@ -27,7 +27,7 @@ function MultiSelectDropdown({
       <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">{label}</label>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full p-4 bg-card border border-border rounded-2xl text-right text-foreground text-sm font-medium flex justify-between items-center focus:outline-none focus:border-primary transition shadow-sm"
+        className="w-full p-4 bg-card border border-border rounded-2xl text-right text-foreground text-sm font-medium flex justify-between items-center focus:outline-none focus:border-primary transition-all duration-200 shadow-sm"
       >
         <span>{displayLabel}</span>
         <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -38,7 +38,7 @@ function MultiSelectDropdown({
           <div className="absolute z-20 w-full bg-card border border-border shadow-xl rounded-2xl mt-2 max-h-60 overflow-y-auto p-2">
             <div
               onClick={() => { toggleMultiSelect(type as any, 'all'); }}
-              className={`p-3 rounded-lg cursor-pointer flex items-center gap-3 transition ${
+              className={`p-3 rounded-lg cursor-pointer flex items-center gap-3 transition-all duration-200 ${
                 set.has('all') ? 'bg-primary/10 text-primary font-bold' : 'text-foreground hover:bg-muted'
               }`}
             >
@@ -48,7 +48,7 @@ function MultiSelectDropdown({
               <div
                 key={val}
                 onClick={() => toggleMultiSelect(type as any, val)}
-                className={`p-3 rounded-lg cursor-pointer flex items-center gap-3 transition ${
+                className={`p-3 rounded-lg cursor-pointer flex items-center gap-3 transition-all duration-200 ${
                   set.has(val) ? 'bg-primary/10 text-primary font-bold' : 'text-foreground hover:bg-muted'
                 }`}
               >
@@ -102,7 +102,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   return (
     <div className="fade-in max-w-3xl mx-auto">
       <div className="mb-8 flex items-center gap-2 text-sm text-muted-foreground font-medium px-2">
-        <span onClick={() => navigate('home')} className="cursor-pointer hover:text-primary transition">ראשי</span>
+        <span onClick={() => navigate('home')} className="cursor-pointer hover:text-primary transition-all duration-200">ראשי</span>
         <span>/</span>
         <span className="text-foreground">{title}</span>
       </div>
@@ -115,15 +115,15 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
           {title}
         </h2>
 
-        {/* Source Selection */}
-        <div className="mb-10">
-          <label className="block text-sm font-semibold text-foreground mb-3">מקור השאלות</label>
+        {/* Section 1: מקור שאלות */}
+        <div className="bg-muted/30 rounded-2xl p-6 mb-8">
+          <h3 className="text-sm font-bold text-foreground mb-4">מקור שאלות</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
             {(['all', 'mistakes', 'fixed', 'favorites'] as const).map(src => (
               <button
                 key={src}
                 onClick={() => setSourceFilter(src)}
-                className={`p-4 border rounded-2xl text-sm font-medium transition ${
+                className={`p-4 border rounded-2xl text-sm font-medium transition-all duration-200 ${
                   session.sourceFilter === src
                     ? 'bg-primary/10 text-primary border-primary/30'
                     : 'bg-card text-muted-foreground border-border hover:bg-muted'
@@ -136,7 +136,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
 
           <button
             onClick={toggleUnseenOnly}
-            className={`w-full p-4 border rounded-2xl text-sm font-medium transition flex items-center justify-center gap-2 ${
+            className={`w-full p-4 border rounded-2xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
               session.unseenOnly
                 ? 'bg-primary/10 text-primary border-primary/30'
                 : 'bg-card text-muted-foreground border-border hover:bg-muted'
@@ -147,52 +147,59 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
           </button>
         </div>
 
-        {/* Filters */}
-        <div className="space-y-6 mb-12">
-          <div>
-            <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">חיפוש חופשי</label>
-            <div className="relative">
-              <input
-                type="text"
-                value={textSearch}
-                onChange={e => setTextSearch(e.target.value)}
-                placeholder="חפש תרופה, מחלה או מושג..."
-                className="w-full p-4 pl-12 bg-muted border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition text-foreground placeholder-muted-foreground"
-              />
-              <Search className="absolute left-5 top-5 w-4 h-4 text-muted-foreground" />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MultiSelectDropdown label="נושא (Topic)" type="topic" values={topics} />
-            <MultiSelectDropdown label="סוג (Kind)" type="kind" values={kinds} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MultiSelectDropdown label="שנה (Year)" type="year" values={years} />
-            <MultiSelectDropdown label="מוסד (Institution)" type="institution" values={institutions} />
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <MultiSelectDropdown label="תיוג (Tags)" type="usertags" values={userTags} />
-            <MultiSelectDropdown 
-              label="ביטחון (Confidence)" 
-              type="confidence" 
-              values={['confident', 'hesitant', 'guessed']} 
-              labelMap={confidenceLabelMap}
-            />
-          </div>
-          <div className="grid grid-cols-1 gap-6">
+        {/* Section 2: סינון מתקדם */}
+        <div className="bg-muted/30 rounded-2xl p-6 mb-8">
+          <h3 className="text-sm font-bold text-foreground mb-4">סינון מתקדם</h3>
+          <div className="space-y-8">
             <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">מס' סידורי</label>
-              <input
-                type="text"
-                value={serial}
-                onChange={e => setSerial(e.target.value)}
-                placeholder="למשל: 120"
-                className="w-full p-4 bg-muted border border-border rounded-2xl outline-none focus:border-primary transition text-foreground placeholder-muted-foreground"
+              <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">חיפוש חופשי</label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={textSearch}
+                  onChange={e => setTextSearch(e.target.value)}
+                  placeholder="חפש תרופה, מחלה או מושג..."
+                  className="w-full p-4 pl-12 bg-muted border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-foreground placeholder-muted-foreground"
+                />
+                <Search className="absolute left-5 top-5 w-4 h-4 text-muted-foreground" />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <MultiSelectDropdown label="נושא (Topic)" type="topic" values={topics} />
+              <MultiSelectDropdown label="סוג (Kind)" type="kind" values={kinds} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <MultiSelectDropdown label="שנה (Year)" type="year" values={years} />
+              <MultiSelectDropdown label="מוסד (Institution)" type="institution" values={institutions} />
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <MultiSelectDropdown label="תיוג (Tags)" type="usertags" values={userTags} />
+              <MultiSelectDropdown 
+                label="ביטחון (Confidence)" 
+                type="confidence" 
+                values={['confident', 'hesitant', 'guessed']} 
+                labelMap={confidenceLabelMap}
               />
             </div>
+            <div className="grid grid-cols-1 gap-6">
+              <div>
+                <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">מס' סידורי</label>
+                <input
+                  type="text"
+                  value={serial}
+                  onChange={e => setSerial(e.target.value)}
+                  placeholder="למשל: 120"
+                  className="w-full p-4 bg-muted border border-border rounded-2xl outline-none focus:border-primary transition-all duration-200 text-foreground placeholder-muted-foreground"
+                />
+              </div>
+            </div>
           </div>
+        </div>
 
+        {/* Section 3: הגדרות */}
+        <div className="bg-muted/30 rounded-2xl p-6 mb-8">
+          <h3 className="text-sm font-bold text-foreground mb-4">הגדרות</h3>
           <div>
             <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">כמות שאלות</label>
             <input
@@ -201,11 +208,11 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
               max={150}
               value={count}
               onChange={e => setCount(parseInt(e.target.value) || 10)}
-              className="w-full p-4 bg-muted border border-border rounded-2xl outline-none focus:border-primary transition font-bold text-foreground text-lg"
+              className="w-full p-4 bg-muted border border-border rounded-2xl outline-none focus:border-primary transition-all duration-200 font-bold text-foreground text-lg"
             />
           </div>
 
-          <div className={`text-center text-sm font-bold p-3 rounded-xl border ${
+          <div className={`text-center text-sm font-bold p-3 rounded-xl border mt-6 ${
             pool.length > 0
               ? 'text-primary bg-primary/10 border-primary/20'
               : 'text-destructive bg-destructive/10 border-destructive/20'
@@ -216,7 +223,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
 
         <button
           onClick={handleStart}
-          className="w-full bg-gradient-to-r from-[hsl(25,95%,53%)] to-[hsl(30,93%,58%)] text-primary-foreground font-semibold text-lg py-5 rounded-2xl shadow-lg transition transform active:scale-[0.99] flex items-center justify-center gap-3"
+          className="w-full bg-gradient-to-r from-[hsl(25,95%,53%)] to-[hsl(30,93%,58%)] text-primary-foreground font-semibold text-lg py-5 rounded-2xl shadow-lg transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-3"
         >
           התחל {isPractice ? 'תרגול' : 'בחינה'} ←
         </button>
