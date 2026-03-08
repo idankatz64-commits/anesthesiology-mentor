@@ -184,6 +184,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [loadingSavedSession, setLoadingSavedSession] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditor, setIsEditor] = useState(false);
+  const editChannelRef = useRef<RealtimeChannel | null>(null);
 
   const progressRef = useRef(progress);
   progressRef.current = progress;
