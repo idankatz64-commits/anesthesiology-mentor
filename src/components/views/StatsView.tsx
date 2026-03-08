@@ -148,32 +148,32 @@ export default function StatsView() {
         <h2 className="text-lg font-bold text-foreground">הסטטיסטיקה שלי</h2>
       </motion.div>
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" dir="rtl">
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <AnimatedNumber value={personalStats.totalAttempts} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">שאלות שבוצעו</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <AnimatedNumber value={personalStats.totalAttempts} className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">שאלות שבוצעו</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <AnimatedNumber value={personalStats.uniqueQuestions} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">שאלות ייחודיות</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <AnimatedNumber value={personalStats.uniqueQuestions} className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">שאלות ייחודיות</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <AnimatedNumber value={personalStats.totalErrors} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">טעויות</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <AnimatedNumber value={personalStats.totalErrors} className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">טעויות</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('corrected')}>
-          <AnimatedNumber value={personalStats.corrected} className="text-2xl font-black text-green-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">שאלות מתוקנות</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center cursor-pointer hover:bg-accent/10 transition-all duration-200" onClick={() => setDrilldownMetric('corrected')}>
+          <AnimatedNumber value={personalStats.corrected} className="text-3xl font-black text-success" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">שאלות מתוקנות</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('uncorrected')}>
-          <AnimatedNumber value={personalStats.uncorrected} className="text-2xl font-black text-orange-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">שאלות שעדיין לא תוקנו</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center cursor-pointer hover:bg-accent/10 transition-all duration-200" onClick={() => setDrilldownMetric('uncorrected')}>
+          <AnimatedNumber value={personalStats.uncorrected} className="text-3xl font-black text-primary" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">שאלות שעדיין לא תוקנו</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('repeatedErrors')}>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center cursor-pointer hover:bg-accent/10 transition-all duration-200" onClick={() => setDrilldownMetric('repeatedErrors')}>
           <div className="flex items-center justify-center gap-1">
             <AlertTriangle className="w-4 h-4 text-destructive" />
-            <AnimatedNumber value={personalStats.repeatedErrors} className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+            <AnimatedNumber value={personalStats.repeatedErrors} className="text-3xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
           </div>
-          <div className="text-[10px] text-muted-foreground font-bold">טעויות חוזרות</div>
+          <div className="text-[11px] text-muted-foreground font-bold">טעויות חוזרות</div>
         </div>
       </motion.div>
 
