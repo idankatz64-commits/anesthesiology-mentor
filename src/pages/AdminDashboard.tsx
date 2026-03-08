@@ -10,7 +10,7 @@ import EditorActivityTab from '@/components/admin/EditorActivityTab';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animations';
 
-type AdminTab = 'question-editor' | 'user-management' | 'import-questions' | 'formula-management';
+type AdminTab = 'question-editor' | 'user-management' | 'import-questions' | 'formula-management' | 'editor-activity';
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'question-editor', label: 'Question Editor', icon: <FileEdit className="w-5 h-5" /> },
