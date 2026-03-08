@@ -370,6 +370,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ever_wrong: everWrong,
           updated_at: new Date().toISOString(),
         } as any, { onConflict: 'user_id,question_id' });
+
+        // Log individual attempt to answer_history
+        const q = dataRef.current?.find((x: any) => x.id === id);
+        supabase.from('answer_history').insert({
+          user_id: userId,
+          question_id: id,
+          topic: q?.topic || null,
+          is_correct: isCorrect,
+        } as any).then();
       })();
     }
   }, []);
