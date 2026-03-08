@@ -121,6 +121,11 @@ export default function StatsView() {
         <p className="text-xs text-muted-foreground hidden md:block">לחץ על כרטיס לפירוט מלא</p>
       </motion.div>
 
+      {/* Daily Report */}
+      <motion.div variants={itemVariants}>
+        <DailyReportTile />
+      </motion.div>
+
       {/* ROW 1 — Question Bank Status Bar */}
       <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3" dir="rtl">
         <div className="bg-card border border-border rounded-xl p-3 text-center">
