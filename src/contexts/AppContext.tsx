@@ -30,6 +30,8 @@ interface AppContextType {
   currentView: ViewId;
   isDark: boolean;
   showWelcome: boolean;
+  isAdmin: boolean;
+  isEditor: boolean;
   
   navigate: (view: ViewId, param?: string | null) => void;
   toggleTheme: () => void;
