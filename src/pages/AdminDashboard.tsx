@@ -88,6 +88,7 @@ export default function AdminDashboard() {
           {activeTab === 'user-management' && <UserManagementTab />}
           {activeTab === 'import-questions' && <ImportQuestionsTab />}
           {activeTab === 'formula-management' && <FormulaManagementTab />}
+          {activeTab === 'editor-activity' && <EditorActivityTab />}
         </div>
       </main>
     </motion.div>
