@@ -74,17 +74,37 @@ export function useStatsData() {
   const { data, progress } = useApp();
   const [dailyData90, setDailyData90] = useState<DailyData[]>([]);
   const [spacedRep, setSpacedRep] = useState<any[]>([]);
-  const [personalStats, setPersonalStats] = useState<PersonalStats>({
-    totalAttempts: 0, uniqueQuestions: 0, totalErrors: 0,
-    corrected: 0, uncorrected: 0, repeatedErrors: 0,
-  });
-
   const [detailedAnswers, setDetailedAnswers] = useState<DetailedAnswer[]>([]);
-  const [repeatedErrorsByTopic, setRepeatedErrorsByTopic] = useState<Record<string, number>>({});
 
-  // Fetch 90-day daily data + spaced repetition
+  // Derive personalStats from local progress (instant, no race condition)
+  const personalStats = useMemo<PersonalStats>(() => {
+    const history = Object.values(progress.history || {});
+    return {
+      totalAttempts: history.reduce((sum, h) => sum + (h.answered ?? 0), 0),
+      uniqueQuestions: history.length,
+      totalErrors: history.reduce((sum, h) => sum + ((h.answered ?? 0) - (h.correct ?? 0)), 0),
+      corrected: history.filter(h => h.everWrong && h.lastResult === 'correct').length,
+      uncorrected: history.filter(h => h.everWrong && h.lastResult === 'wrong').length,
+      repeatedErrors: history.filter(h => ((h.answered ?? 0) - (h.correct ?? 0)) > 1).length,
+    };
+  }, [progress.history]);
+
+  // Derive repeatedErrorsByTopic from local progress + question bank
+  const repeatedErrorsByTopic = useMemo<Record<string, number>>(() => {
+    const errByTopic: Record<string, number> = {};
+    Object.entries(progress.history || {}).forEach(([id, h]) => {
+      if ((h.answered - h.correct) > 1) {
+        const q = data.find(x => x[KEYS.ID] === id);
+        const t = q?.[KEYS.TOPIC] || 'ללא נושא';
+        errByTopic[t] = (errByTopic[t] || 0) + 1;
+      }
+    });
+    return errByTopic;
+  }, [progress.history, data]);
+
+  // Fetch 90-day daily data + spaced repetition + detailedAnswers from Supabase
   useEffect(() => {
-    const fetch = async () => {
+    const fetchData = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) return;
 
@@ -93,7 +113,7 @@ export function useStatsData() {
       startDate.setDate(endDate.getDate() - 89);
       const startStr = startDate.toISOString().split('T')[0];
 
-      const [answersRes, srRes] = await Promise.all([
+      const [answersRes, srRes, detailedRes] = await Promise.all([
         supabase
           .from('user_answers')
           .select('updated_at, is_correct, topic')
@@ -103,9 +123,13 @@ export function useStatsData() {
           .from('spaced_repetition')
           .select('question_id, next_review_date, last_correct, updated_at, confidence')
           .eq('user_id', session.user.id),
+        supabase
+          .from('user_answers')
+          .select('question_id, topic, answered_count, correct_count, is_correct, ever_wrong')
+          .eq('user_id', session.user.id),
       ]);
 
-      // Build 90-day buckets (unique questions per day)
+      // Build 90-day buckets
       const buckets: Record<string, { count: number; correct: number }> = {};
       for (let i = 0; i < 90; i++) {
         const d = new Date();
@@ -127,38 +151,9 @@ export function useStatsData() {
       );
 
       setSpacedRep(srRes.data || []);
-
-      // Personal stats from user_answers
-      const { data: allAnswers } = await supabase
-        .from('user_answers')
-        .select('question_id, topic, answered_count, correct_count, is_correct, ever_wrong')
-        .eq('user_id', session.user.id);
-
-      if (allAnswers) {
-        let totalAttempts = 0, totalCorrect = 0, corrected = 0, uncorrected = 0, repeatedErrors = 0;
-        const errByTopic: Record<string, number> = {};
-        for (const row of allAnswers) {
-          totalAttempts += row.answered_count;
-          totalCorrect += row.correct_count;
-          if (row.ever_wrong && row.is_correct) corrected++;
-          if (row.ever_wrong && !row.is_correct) uncorrected++;
-          if ((row.answered_count - row.correct_count) > 1) {
-            repeatedErrors++;
-            const t = row.topic || 'ללא נושא';
-            errByTopic[t] = (errByTopic[t] || 0) + 1;
-          }
-        }
-        setPersonalStats({
-          totalAttempts,
-          uniqueQuestions: allAnswers.length,
-          totalErrors: totalAttempts - totalCorrect,
-          corrected, uncorrected, repeatedErrors,
-        });
-        setDetailedAnswers(allAnswers as DetailedAnswer[]);
-        setRepeatedErrorsByTopic(errByTopic);
-      }
+      setDetailedAnswers((detailedRes.data || []) as DetailedAnswer[]);
     };
-    fetch();
+    fetchData();
   }, [progress]);
 
   const dailyData30 = useMemo(() => dailyData90.slice(-30), [dailyData90]);
