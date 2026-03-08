@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, CalendarDays, ClipboardCheck, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, ChevronLeft, ChevronRight } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import FeedbackModal from './FeedbackModal';
@@ -14,10 +14,7 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'setup-exam', label: 'בחינה (Exam)', icon: <Timer className="w-5 h-5" /> },
   { id: 'stats', label: 'סטטיסטיקה', icon: <BarChart3 className="w-5 h-5" /> },
   { id: 'notebook', label: 'המחברת שלי', icon: <StickyNote className="w-5 h-5" /> },
-  { id: 'weekly-plan', label: 'תוכנית שבועית', icon: <CalendarDays className="w-5 h-5" /> },
-  { id: 'ai-coach', label: 'דו״ח מטות', icon: <ClipboardCheck className="w-5 h-5" /> },
   { id: 'formula-sheet', label: 'Formula Sheet', icon: <FlaskConical className="w-5 h-5" /> },
-  { id: 'study-room', label: 'תרגול משותף 👥', icon: <Users className="w-5 h-5" /> },
 ];
 
 export default function Sidebar() {

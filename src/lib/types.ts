@@ -55,15 +55,8 @@ export type UserProgress = {
   history: Record<string, HistoryEntry>;
   notes: Record<string, string>;
   favorites: string[];
-  plan: WeeklyDay[] | null;
   ratings: Record<string, 'easy' | 'medium' | 'hard'>;
   tags: Record<string, string[]>;
-};
-
-export type WeeklyDay = {
-  day: string;
-  focus: string;
-  type: 'weak' | 'new' | 'rest';
 };
 
 export type SessionMode = 'practice' | 'exam' | 'review' | 'simulation';
@@ -93,4 +86,4 @@ export type MultiSelectState = {
   usertags: Set<string>;
 };
 
-export type ViewId = 'home' | 'setup-practice' | 'setup-exam' | 'session' | 'review' | 'results' | 'stats' | 'notebook' | 'weekly-plan' | 'ai-coach' | 'simulation-results' | 'flashcards' | 'admin' | 'formula-sheet' | 'study-room';
+export type ViewId = 'home' | 'setup-practice' | 'setup-exam' | 'session' | 'review' | 'results' | 'stats' | 'notebook' | 'simulation-results' | 'flashcards' | 'admin' | 'formula-sheet';

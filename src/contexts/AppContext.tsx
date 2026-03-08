@@ -3,7 +3,7 @@ import { fetchQuestions, syncQuestionsFromSheet } from '@/lib/csvService';
 import {
   KEYS, WELCOME_KEY,
   type Question, type UserProgress, type SessionState,
-  type MultiSelectState, type ViewId, type HistoryEntry, type WeeklyDay,
+  type MultiSelectState, type ViewId, type HistoryEntry,
   type ConfidenceLevel,
 } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
@@ -66,9 +66,6 @@ interface AppContextType {
   setSourceFilter: (source: SessionState['sourceFilter']) => void;
   toggleUnseenOnly: () => void;
   
-  // Plan
-  generateWeeklyPlan: (force?: boolean) => void;
-  
   // Sync
   syncStatus: 'idle' | 'syncing' | 'done' | 'error';
   lastSyncTime: string | null;
@@ -87,7 +84,7 @@ interface AppContextType {
 }
 
 const defaultProgress: UserProgress = {
-  history: {}, notes: {}, favorites: [], plan: null, ratings: {}, tags: {},
+  history: {}, notes: {}, favorites: [], ratings: {}, tags: {},
 };
 
 const defaultSession: SessionState = {
@@ -108,13 +105,12 @@ export function useApp() {
 // ---- Supabase hydration helpers ----
 
 async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> {
-  const [answersRes, favRes, notesRes, ratingsRes, tagsRes, planRes] = await Promise.all([
+  const [answersRes, favRes, notesRes, ratingsRes, tagsRes] = await Promise.all([
     supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId),
     supabase.from('user_favorites').select('question_id').eq('user_id', userId),
     supabase.from('user_notes').select('question_id, note_text').eq('user_id', userId),
     supabase.from('user_ratings').select('question_id, rating').eq('user_id', userId),
     supabase.from('user_tags').select('question_id, tag').eq('user_id', userId),
-    supabase.from('user_weekly_plans').select('plan_data').eq('user_id', userId).maybeSingle(),
   ]);
 
   // Build history
@@ -153,10 +149,7 @@ async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> 
     tags[r.question_id].push(r.tag);
   }
 
-  // Plan
-  const plan: WeeklyDay[] | null = (planRes.data as any)?.plan_data as WeeklyDay[] | null ?? null;
-
-  return { history, favorites, notes, ratings, tags, plan };
+  return { history, favorites, notes, ratings, tags };
 }
 
 
@@ -683,10 +676,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await supabase.from('user_tags').upsert(tagRows as any, { onConflict: 'user_id,question_id,tag' });
     }
 
-    // Plan
-    if (newProgress.plan) {
-      await supabase.from('user_weekly_plans').upsert({ user_id: userId, plan_data: newProgress.plan as any, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-    }
   }, []);
 
   const toggleMultiSelect = useCallback((type: keyof MultiSelectState, value: string) => {
@@ -774,59 +763,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
   }, []);
 
-  const generateWeeklyPlan = useCallback((force = false) => {
-    const d = dataRef.current;
-    const p = progressRef.current;
-    if (!d.length) return;
-    if (p.plan && !force) return;
-
-    const topicStats: Record<string, { correct: number; total: number }> = {};
-    Object.entries(p.history).forEach(([id, h]) => {
-      const q = d.find(x => x[KEYS.ID] === id);
-      if (q && q[KEYS.TOPIC]) {
-        if (!topicStats[q[KEYS.TOPIC]]) topicStats[q[KEYS.TOPIC]] = { correct: 0, total: 0 };
-        topicStats[q[KEYS.TOPIC]].total += h.answered;
-        topicStats[q[KEYS.TOPIC]].correct += h.correct;
-      }
-    });
-
-    const weakTopics = Object.entries(topicStats)
-      .map(([topic, stats]) => ({ topic, acc: stats.correct / stats.total }))
-      .sort((a, b) => a.acc - b.acc)
-      .slice(0, 5)
-      .map(t => t.topic);
-
-    const unseenCounts: Record<string, number> = {};
-    d.forEach(q => {
-      if (!p.history[q[KEYS.ID]]) {
-        if (!unseenCounts[q[KEYS.TOPIC]]) unseenCounts[q[KEYS.TOPIC]] = 0;
-        unseenCounts[q[KEYS.TOPIC]]++;
-      }
-    });
-
-    const newTopics = Object.entries(unseenCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(t => t[0]);
-
-    const allTopics = [...new Set(d.map(q => q[KEYS.TOPIC]))].filter(Boolean);
-    const getRand = (arr: string[]) => arr[Math.floor(Math.random() * arr.length)] || 'General Anesthesia';
-
-    const days = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
-    const plan: WeeklyDay[] = days.map((day, i) => {
-      if (i === 6) return { day, focus: 'חזרה מסכמת ומנוחה', type: 'rest' as const };
-      if (i % 2 === 0) return { day, focus: getRand(weakTopics.length > 0 ? weakTopics : allTopics), type: 'weak' as const };
-      return { day, focus: getRand(newTopics.length > 0 ? newTopics : allTopics), type: 'new' as const };
-    });
-
-    setProgress(prev => ({ ...prev, plan }));
-
-    // Save to DB
-    const userId = userIdRef.current;
-    if (userId) {
-      supabase.from('user_weekly_plans').upsert({ user_id: userId, plan_data: plan as any, updated_at: new Date().toISOString() }, { onConflict: 'user_id' }).then();
-    }
-  }, []);
 
   const triggerSync = useCallback(async () => {
     setSyncStatus('syncing');
@@ -923,7 +859,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateHistory, updateSpacedRepetition, syncAnswerToDb,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
-    generateWeeklyPlan, getFilteredQuestions, getDueQuestions,
+    getFilteredQuestions, getDueQuestions,
     saveSessionToDb, resumeSessionFromDb, clearSavedSession, savedSessionInfo, loadingSavedSession,
   };
 
