@@ -128,17 +128,17 @@ export default function StatsView() {
 
       {/* ROW 1 — Question Bank Status Bar */}
       <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3" dir="rtl">
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withoutExp}</div>
-          <div className="text-[10px] text-muted-foreground">ללא הסבר</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <div className="text-3xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withoutExp}</div>
+          <div className="text-[11px] text-muted-foreground">ללא הסבר</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-2xl font-black text-primary" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withExp}</div>
-          <div className="text-[10px] text-muted-foreground">כוללות הסבר</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <div className="text-3xl font-black text-primary" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withExp}</div>
+          <div className="text-[11px] text-muted-foreground">כוללות הסבר</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{data.length}</div>
-          <div className="text-[10px] text-muted-foreground">סה״כ שאלות</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <div className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{data.length}</div>
+          <div className="text-[11px] text-muted-foreground">סה״כ שאלות</div>
         </div>
       </motion.div>
 
