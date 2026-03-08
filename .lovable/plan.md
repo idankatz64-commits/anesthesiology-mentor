@@ -1,62 +1,32 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## Investigation Results
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+**The `user_answers` table is NOT empty** — it has 1,612 rows with recent writes from today. The app IS writing correctly.
 
-## Part A -- Daily Volume Bars
+**Why you see 0 rows in the Cloud SQL editor**: The SQL editor runs without an authenticated user session, so the RLS policy `auth.uid() = user_id` blocks all rows. This is expected and correct security behavior.
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+**However, there is a real bug**: 1,484 of 1,612 rows have `topic = NULL` because `updateHistory()` (the main write path from SessionView, ResultsView, FlashcardView) does not include the `topic` field. Only `syncAnswerToDb()` (called only from StudyRoomView) writes the topic. This means:
+- DailyReportTile's "distinct topics" counter always shows 0
+- Any topic-based stats from `user_answers` are broken
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+## Plan
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
+### 1. Fix `updateHistory` in AppContext.tsx to include `topic`
+- Add an optional `topic` parameter to `updateHistory(id, isCorrect, topic?)`
+- Pass it into the `user_answers` upsert (line 409-417)
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+### 2. Update all callers to pass topic
+- **SessionView.tsx** (line 167, 224): pass `q[KEYS.TOPIC]`
+- **ResultsView.tsx** (line 82): pass `q[KEYS.TOPIC]`
+- **FlashcardView.tsx** (line 103): pass `current[KEYS.TOPIC]`
+- **StudyRoomView.tsx** (line 341): pass `currentQuestion[KEYS.TOPIC]` (already calls `syncAnswerToDb` with topic separately, but should also pass to `updateHistory`)
 
-## Part B -- Daily Performance Report
+### 3. Backfill existing null topics
+- Run a SQL migration that updates `user_answers` rows where `topic IS NULL` by joining on the `questions` table to fill in the correct topic
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+### 4. Update the `updateHistory` type in AppContext interface
+- Change signature from `(id: string, isCorrect: boolean) => void` to `(id: string, isCorrect: boolean, topic?: string) => void`
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
+No schema changes needed. No new dependencies.
 
