@@ -192,8 +192,8 @@ export default function StatsView() {
           streak={streak} />
 
         {/* RIGHT — KPI Gauges */}
-        <div className="bg-card border border-border rounded-xl p-5" dir="rtl">
-          <span className="text-xs text-muted-foreground font-medium mb-3 block text-right">מדדים עיקריים</span>
+        <div className="bg-card border border-border rounded-2xl p-5 transition-all duration-200" dir="rtl">
+          <span className="text-sm font-bold text-foreground mb-4 block text-right">מדדים עיקריים</span>
           <div className="flex flex-col items-center gap-2">
             <GaugeDial value={eri.accuracy} max={100} color="#22c55e" label="🟢 דיוק" pct={eri.accuracy} unit="%" />
             <GaugeDial value={eri.coverage} max={100} color="#f59e0b" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
