@@ -3,7 +3,7 @@ import { fetchQuestions, syncQuestionsFromSheet } from '@/lib/csvService';
 import {
   KEYS, WELCOME_KEY,
   type Question, type UserProgress, type SessionState,
-  type MultiSelectState, type ViewId, type HistoryEntry, type WeeklyDay,
+  type MultiSelectState, type ViewId, type HistoryEntry,
   type ConfidenceLevel,
 } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
