@@ -676,10 +676,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       await supabase.from('user_tags').upsert(tagRows as any, { onConflict: 'user_id,question_id,tag' });
     }
 
-    // Plan
-    if (newProgress.plan) {
-      await supabase.from('user_weekly_plans').upsert({ user_id: userId, plan_data: newProgress.plan as any, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
-    }
   }, []);
 
   const toggleMultiSelect = useCallback((type: keyof MultiSelectState, value: string) => {
