@@ -294,6 +294,33 @@ export type Database = {
           },
         ]
       }
+      question_edit_log: {
+        Row: {
+          action: string
+          edited_at: string
+          editor_id: string
+          fields_changed: string[]
+          id: string
+          question_id: string | null
+        }
+        Insert: {
+          action?: string
+          edited_at?: string
+          editor_id: string
+          fields_changed?: string[]
+          id?: string
+          question_id?: string | null
+        }
+        Update: {
+          action?: string
+          edited_at?: string
+          editor_id?: string
+          fields_changed?: string[]
+          id?: string
+          question_id?: string | null
+        }
+        Relationships: []
+      }
       questions: {
         Row: {
           a: string | null
