@@ -106,13 +106,13 @@ export function useApp() {
 
 // Paginate past the 1000-row default limit
 async function fetchAllRows<T>(
-  queryBuilder: ReturnType<ReturnType<typeof supabase.from>['select']>
+  buildQuery: () => any
 ): Promise<T[]> {
   const PAGE = 1000;
   let allData: T[] = [];
   let from = 0;
   while (true) {
-    const { data, error } = await queryBuilder.range(from, from + PAGE - 1);
+    const { data, error } = await buildQuery().range(from, from + PAGE - 1);
     if (error) { console.error('fetchAllRows error', error); break; }
     if (!data || data.length === 0) break;
     allData = allData.concat(data as T[]);
@@ -124,11 +124,11 @@ async function fetchAllRows<T>(
 
 async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> {
   const [answersData, favData, notesData, ratingsData, tagsData] = await Promise.all([
-    fetchAllRows<any>(supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId)),
-    fetchAllRows<any>(supabase.from('user_favorites').select('question_id').eq('user_id', userId)),
-    fetchAllRows<any>(supabase.from('user_notes').select('question_id, note_text').eq('user_id', userId)),
-    fetchAllRows<any>(supabase.from('user_ratings').select('question_id, rating').eq('user_id', userId)),
-    fetchAllRows<any>(supabase.from('user_tags').select('question_id, tag').eq('user_id', userId)),
+    fetchAllRows<any>(() => supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId)),
+    fetchAllRows<any>(() => supabase.from('user_favorites').select('question_id').eq('user_id', userId)),
+    fetchAllRows<any>(() => supabase.from('user_notes').select('question_id, note_text').eq('user_id', userId)),
+    fetchAllRows<any>(() => supabase.from('user_ratings').select('question_id, rating').eq('user_id', userId)),
+    fetchAllRows<any>(() => supabase.from('user_tags').select('question_id, tag').eq('user_id', userId)),
   ]);
 
   // Build history
