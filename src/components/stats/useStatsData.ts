@@ -95,17 +95,17 @@ export function useStatsData() {
 
       const [answersRes, srRes] = await Promise.all([
         supabase
-          .from('answer_history')
-          .select('answered_at, is_correct, topic')
+          .from('user_answers')
+          .select('updated_at, is_correct, topic')
           .eq('user_id', session.user.id)
-          .gte('answered_at', startStr + 'T00:00:00Z'),
+          .gte('updated_at', startStr + 'T00:00:00Z'),
         supabase
           .from('spaced_repetition')
           .select('question_id, next_review_date, last_correct, updated_at, confidence')
           .eq('user_id', session.user.id),
       ]);
 
-      // Build 30-day buckets
+      // Build 90-day buckets (unique questions per day)
       const buckets: Record<string, { count: number; correct: number }> = {};
       for (let i = 0; i < 90; i++) {
         const d = new Date();
@@ -113,7 +113,7 @@ export function useStatsData() {
         buckets[toIsraelDateStr(d)] = { count: 0, correct: 0 };
       }
       (answersRes.data || []).forEach((r: any) => {
-        const day = toIsraelDateStr(new Date(r.answered_at));
+        const day = toIsraelDateStr(new Date(r.updated_at));
         if (buckets[day]) {
           buckets[day].count++;
           if (r.is_correct) buckets[day].correct++;

@@ -870,6 +870,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
+    isAdmin, isEditor,
     syncStatus, lastSyncTime, triggerSync,
     navigate, toggleTheme, closeWelcome,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
