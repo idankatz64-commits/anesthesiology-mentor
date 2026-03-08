@@ -1,54 +1,62 @@
 
 
-## UI/UX Improvement Plan — 8 Items
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-### 1. Contrast & Readability (`src/index.css`)
-- Dark mode: `--card` from `260 25% 8%` → `260 25% 11%`, `--muted-foreground` from `220 15% 50%` → `220 15% 65%`, `--border` from `260 20% 14%` → `260 20% 18%`
-- Light mode: `--muted-foreground` from `250 12% 45%` → `250 12% 38%`
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-### 2. Dashboard Visual Hierarchy (`src/components/views/StatsView.tsx`)
-- All stat cards get `rounded-2xl` (already on some, standardize)
-- ERI tile moves to full-width top position (out of the 3-col grid), larger ring
-- Stat number fonts bumped to `text-3xl font-black`, subtitles to `text-[11px]`
-- Add skeleton loading state while `useStatsData` loads
+## Part A -- Daily Volume Bars
 
-### 3. Consistent Status Colors
-- Replace `#EAB308` with `#f59e0b` (amber) in `ERITile.tsx`, `WeakZoneMapTile.tsx`
-- Replace `#60A5FA` accuracy gauge color with `#22c55e` (green) in `StatsView.tsx`
-- Standardize: green `#22c55e`, amber `#f59e0b`, red `#ef4444`
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-### 4. Gauge → Circular Progress Rings (`src/components/stats/GaugeDial.tsx`)
-- Replace half-circle speedometer with full-circle SVG ring (stroke-dasharray pattern from ERIRing)
-- Center text: `text-2xl font-black` with value
-- Title label above, subtitle below
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-### 5. Sidebar Navigation (`src/components/Sidebar.tsx`)
-- Nav items: `space-y-1` → `space-y-2`, padding `py-3.5` → `py-4`
-- Active state already has `border-r-[3px]` — ensure it's always visible (currently conditional on `isCollapsed`)
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
+```
 
-### 6. Practice Settings Form (`src/components/views/SetupView.tsx`)
-- Wrap filter groups in labeled sections with `bg-muted/30 rounded-2xl p-6` containers
-- Section headers: "מקור שאלות", "סינון מתקדם", "הגדרות"
-- CTA button: add `hover:scale-[1.01] transition-transform duration-200`
-- Spacing between sections: `space-y-8`
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-### 7. Treemap (`src/components/stats/TopicTreemap.tsx`)
-- Already has tooltips, ellipsis, click-to-practice — no changes needed (verified)
+## Part B -- Daily Performance Report
 
-### 8. Micro-interactions
-- `AnimatedStatsTile.tsx`: `rounded-xl` → `rounded-2xl`, add `transition-all duration-200`
-- Add `StatsSkeleton` component inline in `StatsView.tsx` for loading state
-- Ensure all interactive cards/buttons have `transition-all duration-200`
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-### Files Changed
-| File | Summary |
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
+
+## Files to Modify
+
+| File | Changes |
 |------|---------|
-| `src/index.css` | CSS variable contrast improvements |
-| `src/components/stats/GaugeDial.tsx` | Full rewrite → circular progress ring |
-| `src/components/stats/AnimatedStatsTile.tsx` | rounded-2xl, transition-all |
-| `src/components/views/StatsView.tsx` | ERI full-width, font sizes, skeleton, rounded-2xl |
-| `src/components/stats/ERITile.tsx` | Color fix: `#EAB308` → `#f59e0b` |
-| `src/components/stats/WeakZoneMapTile.tsx` | Color fix: `#EAB308` → `#f59e0b` |
-| `src/components/views/SetupView.tsx` | Section groupings, spacing, CTA hover |
-| `src/components/Sidebar.tsx` | Nav padding, spacing |
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+
+No database changes required.
 

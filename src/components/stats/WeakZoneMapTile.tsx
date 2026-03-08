@@ -44,7 +44,7 @@ export default function WeakZoneMapTile({ zones }: Props) {
           <span className="mb-4 block font-mono font-bold text-lg text-primary">מפת חולשות</span>
           <div className="flex flex-col items-center gap-2">
             <GaugeDial value={zones.mastered.length} max={maxGauge} color="#22C55E" label="🟢 נרכש" pct={masteredPct} />
-            <GaugeDial value={zones.studiedNotLearned.length} max={maxGauge} color="#EAB308" label="🟡 לא נרכש" pct={studiedPct} />
+            <GaugeDial value={zones.studiedNotLearned.length} max={maxGauge} color="#f59e0b" label="🟡 לא נרכש" pct={studiedPct} />
             <GaugeDial value={zones.deadZone.length} max={maxGauge} color="#EF4444" label="🔴 אזור מת" pct={deadPct} />
           </div>
         </div>

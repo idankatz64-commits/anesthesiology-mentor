@@ -69,7 +69,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className={`flex-grow ${isCollapsed ? 'p-2' : 'p-4'} space-y-1 overflow-y-auto relative`}>
+      <nav className={`flex-grow ${isCollapsed ? 'p-2' : 'p-4'} space-y-2 overflow-y-auto relative`}>
         {navItems.map(item => {
           const isActive = currentView === item.id ||
             (item.id === 'setup-practice' && currentView === 'setup-practice') ||
@@ -79,7 +79,7 @@ export default function Sidebar() {
               key={item.id}
               onClick={() => navigate(item.id)}
               title={isCollapsed ? item.label : undefined}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-3.5'} rounded-xl text-sm transition-all relative
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-4'} rounded-xl text-sm transition-all duration-200 relative
                 ${isActive
                   ? 'text-primary font-semibold'
                   : 'text-muted-foreground hover:text-foreground'
@@ -88,7 +88,7 @@ export default function Sidebar() {
               {isActive && (
                 <motion.div
                   layoutId="sidebar-active"
-                  className={`absolute inset-0 bg-primary/10 ${isCollapsed ? '' : 'border-r-[3px] border-primary'} rounded-xl shadow-[inset_0_0_20px_hsl(25_95%_53%/0.05)]`}
+                  className={`absolute inset-0 bg-primary/10 border-r-[3px] border-primary rounded-xl shadow-[inset_0_0_20px_hsl(25_95%_53%/0.05)]`}
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   style={{ willChange: 'transform' }}
                 />

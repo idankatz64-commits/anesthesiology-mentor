@@ -40,7 +40,7 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '',
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className={`bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl cursor-pointer transition-shadow duration-200 hover:border-orange-500/30 hover:shadow-[0_0_20px_rgba(249,115,22,0.1)] ${className}`}
+        className={`bg-card border border-border rounded-2xl cursor-pointer transition-all duration-200 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)] ${className}`}
       >
         {collapsed}
       </motion.div>
@@ -67,7 +67,7 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '',
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={spring}
-                className={`bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-2xl w-full overflow-y-auto p-6 relative z-10 ${expandedClassName || 'max-w-[90vw] max-h-[90vh]'}`}
+                className={`bg-card border border-border rounded-2xl w-full overflow-y-auto p-6 relative z-10 ${expandedClassName || 'max-w-[90vw] max-h-[90vh]'}`}
                 drag="y"
                 dragConstraints={{ top: 0, bottom: 0 }}
                 dragElastic={0.2}

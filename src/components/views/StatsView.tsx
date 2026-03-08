@@ -128,17 +128,17 @@ export default function StatsView() {
 
       {/* ROW 1 — Question Bank Status Bar */}
       <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3" dir="rtl">
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withoutExp}</div>
-          <div className="text-[10px] text-muted-foreground">ללא הסבר</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <div className="text-3xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withoutExp}</div>
+          <div className="text-[11px] text-muted-foreground">ללא הסבר</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-2xl font-black text-primary" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withExp}</div>
-          <div className="text-[10px] text-muted-foreground">כוללות הסבר</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <div className="text-3xl font-black text-primary" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{withExp}</div>
+          <div className="text-[11px] text-muted-foreground">כוללות הסבר</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <div className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{data.length}</div>
-          <div className="text-[10px] text-muted-foreground">סה״כ שאלות</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <div className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{data.length}</div>
+          <div className="text-[11px] text-muted-foreground">סה״כ שאלות</div>
         </div>
       </motion.div>
 
@@ -148,32 +148,32 @@ export default function StatsView() {
         <h2 className="text-lg font-bold text-foreground">הסטטיסטיקה שלי</h2>
       </motion.div>
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3" dir="rtl">
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <AnimatedNumber value={personalStats.totalAttempts} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">שאלות שבוצעו</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <AnimatedNumber value={personalStats.totalAttempts} className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">שאלות שבוצעו</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <AnimatedNumber value={personalStats.uniqueQuestions} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">שאלות ייחודיות</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <AnimatedNumber value={personalStats.uniqueQuestions} className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">שאלות ייחודיות</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center">
-          <AnimatedNumber value={personalStats.totalErrors} className="text-2xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">טעויות</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center transition-all duration-200">
+          <AnimatedNumber value={personalStats.totalErrors} className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">טעויות</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('corrected')}>
-          <AnimatedNumber value={personalStats.corrected} className="text-2xl font-black text-green-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">שאלות מתוקנות</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center cursor-pointer hover:bg-accent/10 transition-all duration-200" onClick={() => setDrilldownMetric('corrected')}>
+          <AnimatedNumber value={personalStats.corrected} className="text-3xl font-black text-success" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">שאלות מתוקנות</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('uncorrected')}>
-          <AnimatedNumber value={personalStats.uncorrected} className="text-2xl font-black text-orange-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          <div className="text-[10px] text-muted-foreground">שאלות שעדיין לא תוקנו</div>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center cursor-pointer hover:bg-accent/10 transition-all duration-200" onClick={() => setDrilldownMetric('uncorrected')}>
+          <AnimatedNumber value={personalStats.uncorrected} className="text-3xl font-black text-primary" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <div className="text-[11px] text-muted-foreground">שאלות שעדיין לא תוקנו</div>
         </div>
-        <div className="bg-card border border-border rounded-xl p-3 text-center cursor-pointer hover:bg-accent/50 transition" onClick={() => setDrilldownMetric('repeatedErrors')}>
+        <div className="bg-card border border-border rounded-2xl p-4 text-center cursor-pointer hover:bg-accent/10 transition-all duration-200" onClick={() => setDrilldownMetric('repeatedErrors')}>
           <div className="flex items-center justify-center gap-1">
             <AlertTriangle className="w-4 h-4 text-destructive" />
-            <AnimatedNumber value={personalStats.repeatedErrors} className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+            <AnimatedNumber value={personalStats.repeatedErrors} className="text-3xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
           </div>
-          <div className="text-[10px] text-muted-foreground font-bold">טעויות חוזרות</div>
+          <div className="text-[11px] text-muted-foreground font-bold">טעויות חוזרות</div>
         </div>
       </motion.div>
 
@@ -192,12 +192,12 @@ export default function StatsView() {
           streak={streak} />
 
         {/* RIGHT — KPI Gauges */}
-        <div className="bg-card border border-border rounded-xl p-5" dir="rtl">
-          <span className="text-xs text-muted-foreground font-medium mb-3 block text-right">מדדים עיקריים</span>
+        <div className="bg-card border border-border rounded-2xl p-5 transition-all duration-200" dir="rtl">
+          <span className="text-sm font-bold text-foreground mb-4 block text-right">מדדים עיקריים</span>
           <div className="flex flex-col items-center gap-2">
-            <GaugeDial value={eri.accuracy} max={100} color="#60A5FA" label="🔵 דיוק" pct={eri.accuracy} unit="%" />
-            <GaugeDial value={eri.coverage} max={100} color="#F97316" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
-            <GaugeDial value={streak} max={30} color="#FB923C" label="🔥 רצף" pct={Math.min(100, Math.round(streak / 30 * 100))} unit=" ימים" />
+            <GaugeDial value={eri.accuracy} max={100} color="#22c55e" label="🟢 דיוק" pct={eri.accuracy} unit="%" />
+            <GaugeDial value={eri.coverage} max={100} color="#f59e0b" label="🟠 כיסוי" pct={eri.coverage} unit="%" />
+            <GaugeDial value={streak} max={30} color="#F97316" label="🔥 רצף" pct={Math.min(100, Math.round(streak / 30 * 100))} unit=" ימים" />
           </div>
         </div>
       </motion.div>
@@ -232,7 +232,7 @@ export default function StatsView() {
       </motion.div>
 
       {/* ROW 6 — Import/Export */}
-      <motion.div variants={itemVariants} className="bg-card border border-border rounded-xl p-6" dir="rtl">
+      <motion.div variants={itemVariants} className="bg-card border border-border rounded-2xl p-6 transition-all duration-200" dir="rtl">
         <h3 className="font-bold mb-4 text-foreground text-sm flex items-center gap-2">💾 ניהול נתונים וגיבוי</h3>
         <div className="flex flex-col sm:flex-row gap-3">
           <button onClick={handleExport} className="bg-primary/10 text-primary border border-primary/20 px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary/20 transition flex items-center justify-center gap-2">
