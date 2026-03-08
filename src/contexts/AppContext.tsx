@@ -7,6 +7,8 @@ import {
   type ConfidenceLevel,
 } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface SavedSessionData {
   questionIds: string[];
@@ -182,6 +184,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [loadingSavedSession, setLoadingSavedSession] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditor, setIsEditor] = useState(false);
+  const editChannelRef = useRef<RealtimeChannel | null>(null);
 
   const progressRef = useRef(progress);
   progressRef.current = progress;
@@ -223,8 +226,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         supabase.from('admin_users').select('role').eq('id', userId).maybeSingle()
           .then(({ data: adminEntry }) => {
             if (hydrationIdRef.current === thisHydration) {
-              setIsAdmin(adminEntry?.role === 'admin');
-              setIsEditor(adminEntry?.role === 'editor' || adminEntry?.role === 'admin');
+              const userIsAdmin = adminEntry?.role === 'admin';
+              setIsAdmin(userIsAdmin);
+              setIsEditor(adminEntry?.role === 'editor' || userIsAdmin);
+
+              // Subscribe to edit notifications for admins only
+              if (userIsAdmin && !editChannelRef.current) {
+                editChannelRef.current = supabase
+                  .channel('admin-edit-alerts')
+                  .on('postgres_changes', {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'question_edit_log',
+                  }, async (payload) => {
+                    const { data: editorData } = await supabase
+                      .from('admin_users')
+                      .select('email')
+                      .eq('id', (payload.new as any).editor_id)
+                      .maybeSingle();
+                    toast(`✏️ שאלה נערכה על ידי ${editorData?.email ?? 'עורך'}`, {
+                      description: `שדות: ${((payload.new as any).fields_changed as string[])?.join(', ') ?? ''}`,
+                      duration: 6000,
+                    });
+                  })
+                  .subscribe();
+              }
             }
           });
       } else {
@@ -232,6 +258,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setConfidenceMap({});
         setIsAdmin(false);
         setIsEditor(false);
+        // Unsubscribe from edit notifications
+        if (editChannelRef.current) {
+          supabase.removeChannel(editChannelRef.current);
+          editChannelRef.current = null;
+        }
       }
     };
 
