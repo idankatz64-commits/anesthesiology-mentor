@@ -31,12 +31,9 @@ function AppContent() {
       case 'results': return <ResultsView />;
       case 'stats': return <StatsView />;
       case 'notebook': return <NotebookView />;
-      case 'weekly-plan': return <WeeklyPlanView />;
-      case 'ai-coach': return <AICoachView />;
       case 'flashcards': return <FlashcardView />;
       case 'admin': return <AdminView />;
       case 'formula-sheet': return <FormulaSheetView />;
-      case 'study-room': return <StudyRoomView />;
       default: return <HomeView />;
     }
   };

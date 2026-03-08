@@ -14,10 +14,7 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'setup-exam', label: 'בחינה (Exam)', icon: <Timer className="w-5 h-5" /> },
   { id: 'stats', label: 'סטטיסטיקה', icon: <BarChart3 className="w-5 h-5" /> },
   { id: 'notebook', label: 'המחברת שלי', icon: <StickyNote className="w-5 h-5" /> },
-  { id: 'weekly-plan', label: 'תוכנית שבועית', icon: <CalendarDays className="w-5 h-5" /> },
-  { id: 'ai-coach', label: 'דו״ח מטות', icon: <ClipboardCheck className="w-5 h-5" /> },
   { id: 'formula-sheet', label: 'Formula Sheet', icon: <FlaskConical className="w-5 h-5" /> },
-  { id: 'study-room', label: 'תרגול משותף 👥', icon: <Users className="w-5 h-5" /> },
 ];
 
 export default function Sidebar() {
