@@ -149,10 +149,7 @@ async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> 
     tags[r.question_id].push(r.tag);
   }
 
-  // Plan
-  const plan: WeeklyDay[] | null = (planRes.data as any)?.plan_data as WeeklyDay[] | null ?? null;
-
-  return { history, favorites, notes, ratings, tags, plan };
+  return { history, favorites, notes, ratings, tags };
 }
 
 
