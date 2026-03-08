@@ -14,6 +14,7 @@ import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import GaugeDial from '@/components/stats/GaugeDial';
 import PersonalStatsDrilldown, { type DrilldownMetric } from '@/components/stats/PersonalStatsDrilldown';
+import DailyReportTile from '@/components/stats/DailyReportTile';
 
 
 const containerVariants = {
