@@ -377,7 +377,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // updateHistory: optimistic local update + fire-and-forget Supabase write
-  const updateHistory = useCallback((id: string, isCorrect: boolean) => {
+  const updateHistory = useCallback((id: string, isCorrect: boolean, topic?: string) => {
     setProgress(prev => {
       const history = { ...prev.history };
       if (!history[id]) history[id] = { answered: 0, correct: 0, lastResult: null, everWrong: false, timestamp: 0 };
