@@ -133,36 +133,34 @@ async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> 
 
   // Build history
   const history: Record<string, HistoryEntry> = {};
-  if (answersRes.data) {
-    for (const row of answersRes.data) {
-      history[row.question_id] = {
-        answered: row.answered_count,
-        correct: row.correct_count,
-        lastResult: row.is_correct ? 'correct' : 'wrong',
-        everWrong: row.ever_wrong ?? false,
-        timestamp: new Date(row.updated_at).getTime(),
-      };
-    }
+  for (const row of answersData) {
+    history[row.question_id] = {
+      answered: row.answered_count,
+      correct: row.correct_count,
+      lastResult: row.is_correct ? 'correct' : 'wrong',
+      everWrong: row.ever_wrong ?? false,
+      timestamp: new Date(row.updated_at).getTime(),
+    };
   }
 
   // Build favorites
-  const favorites: string[] = (favRes.data || []).map((r: any) => r.question_id);
+  const favorites: string[] = favData.map((r: any) => r.question_id);
 
   // Build notes
   const notes: Record<string, string> = {};
-  for (const r of (notesRes.data || [])) {
+  for (const r of notesData) {
     notes[r.question_id] = r.note_text;
   }
 
   // Build ratings
   const ratings: Record<string, 'easy' | 'medium' | 'hard'> = {};
-  for (const r of (ratingsRes.data || [])) {
+  for (const r of ratingsData) {
     ratings[r.question_id] = r.rating as 'easy' | 'medium' | 'hard';
   }
 
   // Build tags
   const tags: Record<string, string[]> = {};
-  for (const r of (tagsRes.data || [])) {
+  for (const r of tagsData) {
     if (!tags[r.question_id]) tags[r.question_id] = [];
     tags[r.question_id].push(r.tag);
   }

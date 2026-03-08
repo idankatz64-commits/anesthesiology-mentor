@@ -131,20 +131,26 @@ export function useStatsData() {
       startDate.setDate(endDate.getDate() - 89);
       const startStr = startDate.toISOString().split('T')[0];
 
-      const [answersRes, srRes, detailedRes] = await Promise.all([
-        supabase
-          .from('user_answers')
-          .select('updated_at, is_correct, topic')
-          .eq('user_id', session.user.id)
-          .gte('updated_at', startStr + 'T00:00:00Z'),
-        supabase
-          .from('spaced_repetition')
-          .select('question_id, next_review_date, last_correct, updated_at, confidence')
-          .eq('user_id', session.user.id),
-        supabase
-          .from('user_answers')
-          .select('question_id, topic, answered_count, correct_count, is_correct, ever_wrong')
-          .eq('user_id', session.user.id),
+      const [answersData, srData, detailedData] = await Promise.all([
+        fetchAllRows<any>(
+          supabase
+            .from('user_answers')
+            .select('updated_at, is_correct, topic')
+            .eq('user_id', session.user.id)
+            .gte('updated_at', startStr + 'T00:00:00Z')
+        ),
+        fetchAllRows<any>(
+          supabase
+            .from('spaced_repetition')
+            .select('question_id, next_review_date, last_correct, updated_at, confidence')
+            .eq('user_id', session.user.id)
+        ),
+        fetchAllRows<any>(
+          supabase
+            .from('user_answers')
+            .select('question_id, topic, answered_count, correct_count, is_correct, ever_wrong')
+            .eq('user_id', session.user.id)
+        ),
       ]);
 
       // Build 90-day buckets
@@ -154,7 +160,7 @@ export function useStatsData() {
         d.setDate(d.getDate() - (89 - i));
         buckets[toIsraelDateStr(d)] = { count: 0, correct: 0 };
       }
-      (answersRes.data || []).forEach((r: any) => {
+      answersData.forEach((r: any) => {
         const day = toIsraelDateStr(new Date(r.updated_at));
         if (buckets[day]) {
           buckets[day].count++;
@@ -168,8 +174,8 @@ export function useStatsData() {
         }))
       );
 
-      setSpacedRep(srRes.data || []);
-      setDetailedAnswers((detailedRes.data || []) as DetailedAnswer[]);
+      setSpacedRep(srData);
+      setDetailedAnswers(detailedData as DetailedAnswer[]);
     };
     fetchData();
   }, [progress]);
