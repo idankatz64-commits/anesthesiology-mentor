@@ -23,7 +23,7 @@ function ERIRing({ value, size = 240 }: {value: number;size?: number;}) {
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - value / 100 * circumference;
-  const color = value >= 70 ? '#22C55E' : value >= 50 ? '#EAB308' : '#EF4444';
+  const color = value >= 70 ? '#22C55E' : value >= 50 ? '#f59e0b' : '#EF4444';
 
   return (
     <div className="relative inline-flex items-center justify-center" style={{ width: size, height: size }}>
