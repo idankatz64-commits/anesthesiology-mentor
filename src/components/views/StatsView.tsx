@@ -14,6 +14,7 @@ import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import GaugeDial from '@/components/stats/GaugeDial';
 import PersonalStatsDrilldown, { type DrilldownMetric } from '@/components/stats/PersonalStatsDrilldown';
+import DailyReportTile from '@/components/stats/DailyReportTile';
 
 
 const containerVariants = {
@@ -118,6 +119,11 @@ export default function StatsView() {
       <motion.div variants={itemVariants} className="flex items-center justify-between" dir="rtl">
         <h1 className="text-2xl font-bold text-foreground">דשבורד ביצועים</h1>
         <p className="text-xs text-muted-foreground hidden md:block">לחץ על כרטיס לפירוט מלא</p>
+      </motion.div>
+
+      {/* Daily Report */}
+      <motion.div variants={itemVariants}>
+        <DailyReportTile />
       </motion.div>
 
       {/* ROW 1 — Question Bank Status Bar */}
