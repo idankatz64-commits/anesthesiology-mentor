@@ -408,7 +408,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const correctCount = (existing?.correct_count || 0) + (isCorrect ? 1 : 0);
         const everWrong = (existing?.ever_wrong || false) || !isCorrect;
 
-        await supabase.from('user_answers').upsert({
+        const { error } = await supabase.from('user_answers').upsert({
           user_id: userId,
           question_id: id,
           is_correct: isCorrect,
@@ -419,6 +419,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           ...(topic ? { topic } : {}),
         } as any, { onConflict: 'user_id,question_id' });
 
+        if (error) {
+          console.error('user_answers upsert error:', error);
+          toast.error('שגיאה בשמירת התקדמות');
+        }
       })();
     }
   }, []);
