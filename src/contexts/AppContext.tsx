@@ -267,8 +267,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     };
 
     // Listen for auth changes (fires INITIAL_SESSION immediately)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      hydrateUser(session?.user?.id ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        hydrateUser(session?.user?.id ?? null);
+      }
     });
 
     return () => subscription.unsubscribe();
