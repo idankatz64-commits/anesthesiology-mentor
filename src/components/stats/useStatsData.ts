@@ -2,6 +2,24 @@ import { useMemo, useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
+
+// Paginate past the 1000-row default limit
+async function fetchAllRows<T>(
+  queryBuilder: ReturnType<ReturnType<typeof supabase.from>['select']>
+): Promise<T[]> {
+  const PAGE = 1000;
+  let allData: T[] = [];
+  let from = 0;
+  while (true) {
+    const { data, error } = await queryBuilder.range(from, from + PAGE - 1);
+    if (error) { console.error('fetchAllRows error', error); break; }
+    if (!data || data.length === 0) break;
+    allData = allData.concat(data as T[]);
+    if (data.length < PAGE) break;
+    from += PAGE;
+  }
+  return allData;
+}
 import { getChapterDisplay } from '@/data/millerChapters';
 
 export type TopicStat = {
