@@ -180,6 +180,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [savedSessionInfo, setSavedSessionInfo] = useState<SavedSessionData | null>(null);
   const [loadingSavedSession, setLoadingSavedSession] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isEditor, setIsEditor] = useState(false);
 
   const progressRef = useRef(progress);
   progressRef.current = progress;
