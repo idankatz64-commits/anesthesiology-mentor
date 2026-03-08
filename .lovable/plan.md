@@ -1,56 +1,62 @@
 
 
-# Fix: Daily Question Count — Track Individual Answer Attempts
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-## Problem
-`user_answers` has one row per question (upserted). The daily count query counts rows by `updated_at`, so re-answering the same question doesn't create a new row — it just updates the existing one. A day with 60 answers but only 7 new questions shows "7".
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-## Solution
+## Part A -- Daily Volume Bars
 
-### 1. Create `answer_history` table (migration)
-```sql
-CREATE TABLE public.answer_history (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  question_id text NOT NULL,
-  topic text,
-  is_correct boolean NOT NULL,
-  answered_at timestamptz NOT NULL DEFAULT now()
-);
-ALTER TABLE public.answer_history ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Users can insert own answer_history" ON public.answer_history FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
-CREATE POLICY "Users can read own answer_history" ON public.answer_history FOR SELECT TO authenticated USING (auth.uid() = user_id);
-CREATE INDEX idx_answer_history_user_date ON public.answer_history (user_id, answered_at);
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
+
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
 ```
 
-### 2. Insert into `answer_history` on every answer (`src/contexts/AppContext.tsx`)
-In both `updateHistory` (line ~364) and `syncAnswerToDb` (line ~423), add a fire-and-forget insert after the existing upsert:
-```typescript
-supabase.from('answer_history').insert({
-  user_id: userId,
-  question_id: id,
-  topic: topic || null,
-  is_correct: isCorrect,
-});
-```
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-For `updateHistory`, the topic isn't available directly — we'll need to look it up from the current question data or pass it through.
+## Part B -- Daily Performance Report
 
-### 3. Update `useStatsData.ts` daily data query (line ~96-106)
-Change the 90-day query from `user_answers` to `answer_history`:
-```typescript
-supabase
-  .from('answer_history')
-  .select('answered_at, is_correct, topic')
-  .eq('user_id', session.user.id)
-  .gte('answered_at', startStr + 'T00:00:00Z'),
-```
-And update the bucketing to use `answered_at` instead of `updated_at`.
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-### Files to modify
-| File | Change |
-|------|--------|
-| New migration | Create `answer_history` table with RLS |
-| `src/contexts/AppContext.tsx` | Insert into `answer_history` alongside existing upserts (2 locations) |
-| `src/components/stats/useStatsData.ts` | Query `answer_history` instead of `user_answers` for daily buckets |
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+
+No database changes required.
 

@@ -106,6 +106,33 @@ export type Database = {
         }
         Relationships: []
       }
+      answer_history: {
+        Row: {
+          answered_at: string
+          id: string
+          is_correct: boolean
+          question_id: string
+          topic: string | null
+          user_id: string
+        }
+        Insert: {
+          answered_at?: string
+          id?: string
+          is_correct: boolean
+          question_id: string
+          topic?: string | null
+          user_id: string
+        }
+        Update: {
+          answered_at?: string
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          topic?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       calculator_formulas: {
         Row: {
           category_id: string
