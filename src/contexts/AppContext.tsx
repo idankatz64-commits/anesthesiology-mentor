@@ -30,6 +30,8 @@ interface AppContextType {
   currentView: ViewId;
   isDark: boolean;
   showWelcome: boolean;
+  isAdmin: boolean;
+  isEditor: boolean;
   
   navigate: (view: ViewId, param?: string | null) => void;
   toggleTheme: () => void;
@@ -178,6 +180,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [savedSessionInfo, setSavedSessionInfo] = useState<SavedSessionData | null>(null);
   const [loadingSavedSession, setLoadingSavedSession] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isEditor, setIsEditor] = useState(false);
 
   const progressRef = useRef(progress);
   progressRef.current = progress;
@@ -215,9 +219,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               setConfidenceMap(map);
             }
           });
+        // Hydrate admin/editor role
+        supabase.from('admin_users').select('role').eq('id', userId).maybeSingle()
+          .then(({ data: adminEntry }) => {
+            if (hydrationIdRef.current === thisHydration) {
+              setIsAdmin(adminEntry?.role === 'admin');
+              setIsEditor(adminEntry?.role === 'editor' || adminEntry?.role === 'admin');
+            }
+          });
       } else {
         setProgress({ ...defaultProgress });
         setConfidenceMap({});
+        setIsAdmin(false);
+        setIsEditor(false);
       }
     };
 
@@ -371,14 +385,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           updated_at: new Date().toISOString(),
         } as any, { onConflict: 'user_id,question_id' });
 
-        // Log individual attempt to answer_history
-        const q = dataRef.current?.find((x: any) => x.id === id);
-        supabase.from('answer_history').insert({
-          user_id: userId,
-          question_id: id,
-          topic: q?.topic || null,
-          is_correct: isCorrect,
-        } as any).then();
       })();
     }
   }, []);
@@ -395,13 +401,39 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const userId = userIdRef.current;
     if (!userId) return;
 
-    let daysToAdd = 1;
-    if (isCorrect && confidence === 'confident') daysToAdd = 7;
-    else if (isCorrect && confidence === 'hesitant') daysToAdd = 3;
+    // Fetch existing SM-2 state
+    const { data: existing } = await supabase
+      .from('spaced_repetition')
+      .select('interval_days, ease_factor, repetitions')
+      .eq('user_id', userId)
+      .eq('question_id', questionId)
+      .maybeSingle();
 
-    const nextDate = new Date();
-    nextDate.setDate(nextDate.getDate() + daysToAdd);
-    const nextReviewDate = nextDate.toISOString().split('T')[0];
+    let interval = (existing as any)?.interval_days ?? 1;
+    let ease = (existing as any)?.ease_factor ?? 2.5;
+    let reps = (existing as any)?.repetitions ?? 0;
+
+    if (!isCorrect) {
+      // Wrong: reset interval, decrease ease, reset reps
+      interval = 1;
+      ease = Math.max(1.3, ease - 0.2);
+      reps = 0;
+    } else if (confidence === 'hesitant' || confidence === 'guessed') {
+      // Correct but hesitant/guessed: modest interval growth
+      interval = Math.max(1, Math.round(interval * 1.2));
+      reps++;
+    } else {
+      // Correct + confident: full SM-2 growth
+      interval = Math.max(1, Math.round(interval * ease));
+      ease += 0.1;
+      reps++;
+    }
+
+    // Compute next review date in Israel TZ
+    const now = new Date();
+    const nextDate = new Date(now.getTime());
+    nextDate.setDate(nextDate.getDate() + interval);
+    const nextReviewDate = nextDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 
     await supabase.from('spaced_repetition').upsert({
       user_id: userId,
@@ -410,7 +442,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       confidence,
       last_correct: isCorrect,
       updated_at: new Date().toISOString(),
-    }, { onConflict: 'user_id,question_id' });
+      interval_days: interval,
+      ease_factor: ease,
+      repetitions: reps,
+    } as any, { onConflict: 'user_id,question_id' });
   }, []);
 
   // syncAnswerToDb is now handled by updateHistory, but kept for backward compat
@@ -440,13 +475,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updated_at: new Date().toISOString(),
     } as any, { onConflict: 'user_id,question_id' });
 
-    // Log individual attempt to answer_history
-    supabase.from('answer_history').insert({
-      user_id: userId,
-      question_id: questionId,
-      topic: topic || null,
-      is_correct: isCorrect,
-    } as any).then();
+    // answer_history insert removed — user_answers upsert above is sufficient
   }, []);
 
   const toggleFavorite = useCallback((id: string) => {
@@ -841,6 +870,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
+    isAdmin, isEditor,
     syncStatus, lastSyncTime, triggerSync,
     navigate, toggleTheme, closeWelcome,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,

@@ -321,6 +321,23 @@ export default function QuestionEditorTab() {
 
       if (error) throw error;
       toast.success('השאלה עודכנה בהצלחה');
+
+      // Fire-and-forget edit log
+      if (editForm && editQuestion) {
+        const changedFields = Object.keys(editForm).filter(k => (editForm as any)[k] !== (editQuestion as any)[k]);
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session?.user && changedFields.length > 0) {
+            supabase.from('question_audit_log').insert({
+              question_id: editQuestion.id,
+              changed_by: session.user.id,
+              field_changed: changedFields.join(','),
+              old_value: null,
+              new_value: null,
+            }).then();
+          }
+        });
+      }
+
       setEditQuestion(null);
       fetchQuestions();
     } catch (err: any) {
