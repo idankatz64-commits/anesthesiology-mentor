@@ -1,62 +1,39 @@
+Smart Practice Upgrade: Session Size Selector + Hybrid Scoring
+
+### Current State
+
+1. **Question selection logic** — `src/contexts/AppContext.tsx`, line 351: `startSession` just shuffles randomly and slices to `count`. No scoring.
+2. **Setup screen** — `src/components/views/SetupView.tsx`: renders filters + a numeric "כמות שאלות" input + a start button.
+3. **Available data at selection time** — `progress.history` (per-question answer counts, accuracy, `everWrong`, timestamps), `getDueQuestions()` (SRS due dates from `spaced_repetition` table), `confidenceMap`, all question metadata including `topic`.
+
+### Plan (3 files)
+
+#### File 1: `src/lib/smartSelection.ts` (NEW)
+
+Pure logic module containing:
+
+- **YIELD_TIER_MAP** constant mapping topic strings → tier scores (1.0 / 0.6 / 0.2 / 0)
+- **WEIGHT_PROFILES** constant: `{ quick: [...], regular: [...], long: [...] }`
+- `**computeSmartScore(question, params)**` — calculates the 6-parameter score per the spec (srsUrgency, topicWeakness, recencyGap, streakPenalty, examProximity, yieldBoost)
+- `**selectSmartQuestions(pool, count, sessionSize, srsData, history, topicStats)**` — scores all candidates, sorts descending, returns top `count`. For `simulation` mode: distributes questions proportionally by topic using an `avg_q` mapping (hardcoded exam proportions)
+- Exam date hardcoded as `2026-06-16`
+
+#### File 2: `src/components/views/SetupView.tsx` (MODIFY)
+
+- Replace the numeric "כמות שאלות" input with 4 selectable cards: Quick (15), Regular (40), Long (100), Simulation (120)
+- Each card shows name, count, and description text
+- Store selection as `sessionSize: 'quick' | 'regular' | 'long' | 'simulation'` in component state (default: `regular`)
+- The count state derives from the selected card
+- On "Start", call the new smart selection logic instead of passing the raw pool directly: fetch SRS data via `getDueQuestions`, compute topic stats from `progress.history`, call `selectSmartQuestions`, then pass the result to `startSession`
+
+#### **File 3:** `src/contexts/AppContext.tsx` **(MINOR MODIFY)**
+
+- No major changes needed. `startSession` already accepts a pre-built `pool` and `count`. The smart selection will happen in SetupView before calling `startSession`, so the context stays clean.
+- Only change: add a new helper `fetchSrsData()` that returns `Record<questionId, { next_review_date: string }>` by reading from **existing in-memory context state only** — no new Supabase network call. The SRS data is already loaded in context; this helper simply reshapes it into a lookup map for the scoring function.Summary of Changes
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
-
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
-
-## Part A -- Daily Volume Bars
-
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
-
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
-
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
-
-`volumeMA14` = average of `count` over the previous 14 active days.
-
-## Part B -- Daily Performance Report
-
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
-
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
-
+| File                                 | Action | What                                                                |
+| ------------------------------------ | ------ | ------------------------------------------------------------------- |
+| `src/lib/smartSelection.ts`          | Create | Scoring algorithm + selection logic                                 |
+| `src/components/views/SetupView.tsx` | Modify | Replace count input with 4 session-size cards, wire smart selection |
+| `src/contexts/AppContext.tsx`        | Modify | Add `fetchSrsData()` helper to expose raw SRS dates                 |
