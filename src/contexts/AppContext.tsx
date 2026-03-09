@@ -880,7 +880,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateHistory, updateSpacedRepetition, syncAnswerToDb,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
-    getFilteredQuestions, getDueQuestions,
+    getFilteredQuestions, getDueQuestions, fetchSrsData,
     saveSessionToDb, resumeSessionFromDb, clearSavedSession, savedSessionInfo, loadingSavedSession,
   };
 
