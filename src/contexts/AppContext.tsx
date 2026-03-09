@@ -784,6 +784,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
   }, []);
 
+  const fetchSrsData = useCallback(async (): Promise<Record<string, { next_review_date: string }>> => {
+    const userId = userIdRef.current;
+    if (!userId) return {};
+
+    const rows = await fetchAllRows<any>(() =>
+      supabase.from('spaced_repetition').select('question_id, next_review_date').eq('user_id', userId)
+    );
+
+    const map: Record<string, { next_review_date: string }> = {};
+    for (const r of rows) {
+      map[r.question_id] = { next_review_date: r.next_review_date };
+    }
+    return map;
+  }, []);
+
 
   const triggerSync = useCallback(async () => {
     setSyncStatus('syncing');
