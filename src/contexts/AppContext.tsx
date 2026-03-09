@@ -71,9 +71,10 @@ interface AppContextType {
   lastSyncTime: string | null;
   triggerSync: () => Promise<{ count: number } | null>;
   
-  // Computed
+   // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
   getDueQuestions: () => Promise<Question[]>;
+  fetchSrsData: () => Promise<Record<string, { next_review_date: string }>>;
 
   // Session persistence
   saveSessionToDb: (timerSeconds?: number, simTimerSeconds?: number) => Promise<void>;
