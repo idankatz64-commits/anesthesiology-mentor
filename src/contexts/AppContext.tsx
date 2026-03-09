@@ -71,9 +71,10 @@ interface AppContextType {
   lastSyncTime: string | null;
   triggerSync: () => Promise<{ count: number } | null>;
   
-  // Computed
+   // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
   getDueQuestions: () => Promise<Question[]>;
+  fetchSrsData: () => Promise<Record<string, { next_review_date: string }>>;
 
   // Session persistence
   saveSessionToDb: (timerSeconds?: number, simTimerSeconds?: number) => Promise<void>;
@@ -783,6 +784,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
   }, []);
 
+  const fetchSrsData = useCallback(async (): Promise<Record<string, { next_review_date: string }>> => {
+    const userId = userIdRef.current;
+    if (!userId) return {};
+
+    const rows = await fetchAllRows<any>(() =>
+      supabase.from('spaced_repetition').select('question_id, next_review_date').eq('user_id', userId)
+    );
+
+    const map: Record<string, { next_review_date: string }> = {};
+    for (const r of rows) {
+      map[r.question_id] = { next_review_date: r.next_review_date };
+    }
+    return map;
+  }, []);
+
 
   const triggerSync = useCallback(async () => {
     setSyncStatus('syncing');
@@ -879,7 +895,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateHistory, updateSpacedRepetition, syncAnswerToDb,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
-    getFilteredQuestions, getDueQuestions,
+    getFilteredQuestions, getDueQuestions, fetchSrsData,
     saveSessionToDb, resumeSessionFromDb, clearSavedSession, savedSessionInfo, loadingSavedSession,
   };
 

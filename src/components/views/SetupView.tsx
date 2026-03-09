@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS, type SessionMode } from '@/lib/types';
 import { ChevronDown, Search, EyeOff } from 'lucide-react';
+import { selectSmartQuestions, SESSION_SIZE_CONFIG, type SessionSize } from '@/lib/smartSelection';
 
 function MultiSelectDropdown({
   label,
@@ -62,16 +63,20 @@ function MultiSelectDropdown({
   );
 }
 
+const SESSION_SIZES: SessionSize[] = ['quick', 'regular', 'long', 'simulation'];
+
 export default function SetupView({ mode }: { mode: SessionMode }) {
   const {
     data, progress, session, multiSelect,
     setSourceFilter, toggleUnseenOnly, getFilteredQuestions, startSession, navigate,
-    toggleMultiSelect,
+    toggleMultiSelect, fetchSrsData,
   } = useApp();
 
-  const [count, setCount] = useState(10);
+  const [sessionSize, setSessionSize] = useState<SessionSize>('regular');
+  const count = SESSION_SIZE_CONFIG[sessionSize].count;
   const [serial, setSerial] = useState('');
   const [textSearch, setTextSearch] = useState('');
+  const [starting, setStarting] = useState(false);
 
   const topics = useMemo(() => [...new Set(data.map(q => q[KEYS.TOPIC]).filter(Boolean))].sort(), [data]);
   const years = useMemo(() => [...new Set(data.map(q => q[KEYS.YEAR]).filter(Boolean))].sort(), [data]);
@@ -91,9 +96,19 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
 
   const pool = getFilteredQuestions(serial, textSearch);
 
-  const handleStart = () => {
+  const handleStart = async () => {
     if (pool.length === 0) { alert('לא נמצאו שאלות תואמות לסינון.'); return; }
-    startSession(pool, count, mode);
+    setStarting(true);
+    try {
+      const srsData = await fetchSrsData();
+      const smartPool = selectSmartQuestions(pool, count, sessionSize, srsData, progress.history, data);
+      startSession(smartPool, smartPool.length, mode);
+    } catch (e) {
+      console.error('Smart selection failed, falling back to random:', e);
+      startSession(pool, count, mode);
+    } finally {
+      setStarting(false);
+    }
   };
 
   const isPractice = mode === 'practice';
@@ -197,19 +212,30 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
           </div>
         </div>
 
-        {/* Section 3: הגדרות */}
+        {/* Section 3: גודל מפגש */}
         <div className="bg-muted/30 rounded-2xl p-6 mb-8">
-          <h3 className="text-sm font-bold text-foreground mb-4">הגדרות</h3>
-          <div>
-            <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">כמות שאלות</label>
-            <input
-              type="number"
-              min={1}
-              max={150}
-              value={count}
-              onChange={e => setCount(parseInt(e.target.value) || 10)}
-              className="w-full p-4 bg-muted border border-border rounded-2xl outline-none focus:border-primary transition-all duration-200 font-bold text-foreground text-lg"
-            />
+          <h3 className="text-sm font-bold text-foreground mb-4">כמה שאלות?</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {SESSION_SIZES.map(size => {
+              const cfg = SESSION_SIZE_CONFIG[size];
+              const isSelected = sessionSize === size;
+              return (
+                <button
+                  key={size}
+                  onClick={() => setSessionSize(size)}
+                  className={`p-4 border rounded-2xl text-center transition-all duration-200 ${
+                    isSelected
+                      ? 'bg-primary/10 text-primary border-primary/30 ring-2 ring-primary/20'
+                      : 'bg-card text-muted-foreground border-border hover:bg-muted'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">{cfg.emoji}</div>
+                  <div className="font-bold text-sm">{cfg.label}</div>
+                  <div className="text-xs font-semibold mt-1">{cfg.count} שאלות</div>
+                  <div className="text-[10px] mt-2 leading-tight opacity-70">{cfg.desc}</div>
+                </button>
+              );
+            })}
           </div>
 
           <div className={`text-center text-sm font-bold p-3 rounded-xl border mt-6 ${
@@ -223,9 +249,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
 
         <button
           onClick={handleStart}
-          className="w-full bg-gradient-to-r from-[hsl(25,95%,53%)] to-[hsl(30,93%,58%)] text-primary-foreground font-semibold text-lg py-5 rounded-2xl shadow-lg transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-3"
+          disabled={starting}
+          className="w-full bg-gradient-to-r from-[hsl(25,95%,53%)] to-[hsl(30,93%,58%)] text-primary-foreground font-semibold text-lg py-5 rounded-2xl shadow-lg transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-3 disabled:opacity-60"
         >
-          התחל {isPractice ? 'תרגול' : 'בחינה'} ←
+          {starting ? 'מכין שאלות...' : `התחל ${isPractice ? 'תרגול' : 'בחינה'} ←`}
         </button>
       </div>
     </div>
