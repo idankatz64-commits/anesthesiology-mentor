@@ -262,15 +262,15 @@ export default function FlashcardView() {
         <h2 className="text-2xl font-bold text-foreground mb-2">סיימת! 🎉</h2>
         <p className="text-muted-foreground mb-8">עברת על {total} כרטיסיות</p>
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="deep-tile rounded-xl p-4">
             <div className="text-2xl font-bold text-success">{stats.confident}</div>
             <div className="text-xs text-muted-foreground mt-1">בטוח</div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="deep-tile rounded-xl p-4">
             <div className="text-2xl font-bold text-warning">{stats.hesitant}</div>
             <div className="text-xs text-muted-foreground mt-1">מתלבט</div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="deep-tile rounded-xl p-4">
             <div className="text-2xl font-bold text-destructive">{stats.guessed}</div>
             <div className="text-xs text-muted-foreground mt-1">ניחוש</div>
           </div>
