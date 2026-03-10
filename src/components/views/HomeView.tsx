@@ -312,6 +312,12 @@ export default function HomeView() {
         </motion.div>
       </motion.div>
 
+      {/* Personal Stats Summary */}
+      <div className="mb-12">
+        <h3 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-widest px-1 matrix-title">סיכום אישי</h3>
+        <HomeStatsSummary />
+      </div>
+
       {/* DB Status */}
       <div className="mb-12">
         <h3 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-widest px-1 matrix-title">סטטוס מאגר שאלות</h3>
