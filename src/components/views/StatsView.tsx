@@ -9,7 +9,7 @@ import { useStatsData } from '@/components/stats/useStatsData';
 import ERITile from '@/components/stats/ERITile';
 import WeakZoneMapTile from '@/components/stats/WeakZoneMapTile';
 import ForgettingRiskTile from '@/components/stats/ForgettingRiskTile';
-import LearningVelocityTile from '@/components/stats/LearningVelocityTile';
+import AccuracyCanvasChart from '@/components/stats/AccuracyCanvasChart';
 import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import GaugeDial from '@/components/stats/GaugeDial';
@@ -209,7 +209,7 @@ export default function StatsView() {
 
       {/* ROW 3 — Accuracy Trend Chart (full width) */}
       <motion.div variants={itemVariants}>
-        <LearningVelocityTile data={trendData14} fullData={trendData30} />
+        <AccuracyCanvasChart />
       </motion.div>
 
       {/* ROW 4 — Topic Heatmap + Table (full width) */}
