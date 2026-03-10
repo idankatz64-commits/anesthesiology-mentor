@@ -47,7 +47,7 @@ interface AppContextType {
   toggleFlag: (index: number) => void;
   skipQuestion: (index: number) => void;
   updateHistory: (id: string, isCorrect: boolean, topic?: string) => void;
-  updateSpacedRepetition: (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel) => void;
+  updateSpacedRepetition: (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel, topic?: string) => void;
   syncAnswerToDb: (questionId: string, isCorrect: boolean, topic: string) => void;
   
   // Progress actions
@@ -449,7 +449,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  const updateSpacedRepetition = useCallback(async (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel) => {
+  const updateSpacedRepetition = useCallback(async (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel, topic?: string) => {
     const userId = userIdRef.current;
     if (!userId) return;
 
@@ -506,6 +506,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Keep local confidenceMap in sync
       setConfidenceMap(prev => ({ ...prev, [questionId]: confidence }));
     }
+
+    // Fire-and-forget: log to answer_history for trend analytics
+    supabase.from('answer_history').insert({
+      user_id: userId,
+      question_id: questionId,
+      topic: topic || null,
+      is_correct: isCorrect,
+      answered_at: new Date().toISOString(),
+    }).then(({ error: ahErr }) => {
+      if (ahErr) console.error('answer_history insert error:', ahErr);
+    });
   }, []);
 
   // syncAnswerToDb is now handled by updateHistory, but kept for backward compat

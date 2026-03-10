@@ -165,7 +165,7 @@ export default function SessionView() {
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
     updateHistory(serialNumber, isCorrect, qData[KEYS.TOPIC]);
-    updateSpacedRepetition(serialNumber, isCorrect, level);
+    updateSpacedRepetition(serialNumber, isCorrect, level, qData[KEYS.TOPIC]);
   };
 
   const handleNext = () => {
