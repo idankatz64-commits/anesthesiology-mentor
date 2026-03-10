@@ -214,7 +214,7 @@ export default function StatsView() {
       </motion.div>
 
       {/* ROW 4 — Topic Heatmap + Table (full width) */}
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} className="min-h-[400px]">
         <TopicTreemap topicData={stats.topicData} onTopicClick={handleTopicClick} repeatedErrorsByTopic={repeatedErrorsByTopic} />
       </motion.div>
 

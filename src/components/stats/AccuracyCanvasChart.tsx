@@ -247,7 +247,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
     const plotW = w - MARGIN.left - MARGIN.right;
     const plotH = PANEL2_H - 5 - 15;
-    const barW = Math.max(2, (plotW / data.length) - 1);
+    const barW = Math.max(2, (plotW / data.length) * 0.5);
 
     ctx.fillStyle = theme.text;
     ctx.font = '9px sans-serif';
