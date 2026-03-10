@@ -344,6 +344,7 @@ export default function FlashcardView() {
             className="w-full rounded-2xl deep-tile p-8 md:p-12 shadow-lg absolute top-0 left-0"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
+            <div className="text-xs text-muted-foreground mb-4 font-medium">תשובה</div>
             <div className="bg-success/10 border border-success/20 rounded-xl p-4 mb-6">
               <div className="text-sm font-bold text-success mb-1">תשובה נכונה: {correctAnswer}</div>
               <p className="text-foreground font-medium">{correctText}</p>
