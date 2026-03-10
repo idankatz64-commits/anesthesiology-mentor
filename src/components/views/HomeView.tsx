@@ -314,6 +314,18 @@ export default function HomeView() {
         </motion.div>
       </motion.div>
 
+      {/* Daily Report Button */}
+      <div className="mb-8 flex justify-center">
+        <button
+          onClick={() => setReportOpen(true)}
+          className="liquid-glass px-6 py-3 flex items-center gap-2 text-sm font-semibold text-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          <ClipboardList className="w-5 h-5" />
+          דו״ח יומי
+        </button>
+      </div>
+      <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
+
       {/* Personal Stats Summary */}
       <div className="mb-12">
         <h3 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-widest px-1 matrix-title">סיכום אישי</h3>
