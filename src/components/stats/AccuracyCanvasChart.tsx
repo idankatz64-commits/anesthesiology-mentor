@@ -169,7 +169,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
     const plotW = w - MARGIN.left - MARGIN.right;
     const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
-    const barW = Math.max(2, (plotW / data.length) - 1);
+    const barW = Math.max(2, (plotW / data.length) * 0.5);
 
     ctx.strokeStyle = theme.gridLine;
     ctx.lineWidth = 1;
