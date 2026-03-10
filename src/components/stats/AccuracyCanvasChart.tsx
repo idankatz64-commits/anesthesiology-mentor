@@ -91,8 +91,8 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const [showGlobalAvg, setShowGlobalAvg] = useState(true);
   const [logScale, setLogScale] = useState(false);
 
-  const PANEL1_H = expanded ? 400 : 260;
-  const PANEL2_H = expanded ? 100 : 70;
+  const PANEL1_H = expanded ? 450 : 340;
+  const PANEL2_H = expanded ? 110 : 90;
   const MARGIN = { top: 10, right: 10, bottom: 20, left: 40 };
 
   useEffect(() => {
