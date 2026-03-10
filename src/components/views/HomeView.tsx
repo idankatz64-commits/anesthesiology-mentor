@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle } from 'lucide-react';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle, ClipboardList } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cardHoverTap } from '@/lib/animations';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
 import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
+import DailyReportModal from '@/components/DailyReportModal';
 
 const containerVariant = {
   hidden: {},
