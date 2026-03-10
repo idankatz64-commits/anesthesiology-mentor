@@ -1,54 +1,62 @@
 
 
-## Plan: Rebuild TopicPerformanceTable with Full Spec
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-### Overview
-Completely rewrite `TopicPerformanceTable.tsx` to match the detailed spec: new columns (נענו, נכון, שגוי), column toggle bar, new expanded row with 3 panels (session bars, donut chart, group position gradient), and TradingView dark styling.
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-### Data Sources (no DB changes needed)
-- `topicData` prop already has: `topic`, `totalInDb`, `totalAnswered`, `correct`, `wrong`, `accuracy`, `smartScore`
-- Group averages: existing `get_global_topic_stats` RPC (already fetched)
-- Session history: `answer_history` table query per topic on expand (already done)
-- No new tables or migrations required
+## Part A -- Daily Volume Bars
 
-### Changes to `TopicPerformanceTable.tsx` (full rewrite)
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-**Column Toggle Bar**
-- Row of small toggle buttons above table for: במאגר, נענו, נכון, שגוי, דיוק, Smart Score, ממוצע קבוצה, מיקום
-- נושא always visible. State: `visibleCols` set, default all on
-- Styled as small pills: active = filled `#7b92ff`, inactive = outlined `#1a1a1a`
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-**Table Columns** (9 total)
-1. נושא — topic_main name (always visible)
-2. במאגר — `totalInDb`
-3. נענו — `totalAnswered`
-4. נכון — `correct` (green `#00e676`)
-5. שגוי — `wrong` (red `#ff1744`)
-6. דיוק — 5px colored bar + percentage, color by threshold
-7. Smart Score — colored badge (מצוין/בינוני/לשפר)
-8. ממוצע קבוצה — group avg %
-9. מיקום — rank label: "Top 10%" / "מעל ממוצע" / "בממוצע" / "מתחת לממוצע"
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
+```
 
-Position logic: if user in top 10% of all users for that topic → "Top 10%", else compare to group avg with ±5% threshold.
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-**Expandable Row** — 3 side-by-side panels on click:
+## Part B -- Daily Performance Report
 
-Panel A: "דיוק ב-5 סשנים אחרונים" — keep existing session bar chart (recharts), colored bars by accuracy.
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-Panel B: "התפלגות תשובות" — Canvas or SVG donut chart: correct (#00e676), wrong (#ff1744), unanswered (#555). Center text = accuracy %. Legend below.
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
 
-Panel C: "מיקום בקבוצה" — Gradient bar (red→orange→green), white circle marker at user accuracy, orange vertical line at group avg. Stats row below: דיוק שלי / ממוצע קבוצה / פער / נשאר לסגירה / Smart Score.
+## Files to Modify
 
-**Styling**
-- Background `#0a0a0a`, card `#0f0f0f`, borders `#1a1a1a`
-- Expanded row: left border 2px solid `#7b92ff`, bg `#0a0a10`
-- Row hover: `#111`
-- RTL, Hebrew labels
-- Search bar retained
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
 
-### StatsView.tsx
-- No changes needed — already imports and uses `TopicPerformanceTable` with correct props
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
 
-### Files Changed
-- `src/components/stats/TopicPerformanceTable.tsx` — full rewrite
+No database changes required.
 
