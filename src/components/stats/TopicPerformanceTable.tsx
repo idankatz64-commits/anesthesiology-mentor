@@ -1,12 +1,13 @@
-import { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ArrowUpDown, X, Play } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
+import { Search, ArrowUpDown, Play, ChevronDown, ChevronUp, X } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import type { TopicStat } from './useStatsData';
 import type { UserProgress, Question } from '@/lib/types';
 import { KEYS } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
 
-type SortKey = 'topic' | 'totalInDb' | 'totalAnswered' | 'correct' | 'wrong' | 'accuracy' | 'smartScore';
+type SortKey = 'rank' | 'topic' | 'totalInDb' | 'coverage' | 'accuracy' | 'smartScore';
 
 interface Props {
   topicData: TopicStat[];
@@ -17,89 +18,81 @@ interface Props {
 
 const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
+function getAccuracyColor(acc: number) {
+  if (acc >= 70) return '#22c55e';
+  if (acc >= 50) return '#f59e0b';
+  return '#ef4444';
+}
+
+function getScoreBadge(score: number) {
+  if (score >= 70) return { label: 'מצוין', bg: 'bg-green-500/15 text-green-400 border-green-500/20' };
+  if (score >= 50) return { label: 'בינוני', bg: 'bg-yellow-500/15 text-yellow-400 border-yellow-500/20' };
+  return { label: 'לשפר', bg: 'bg-red-500/15 text-red-400 border-red-500/20' };
+}
+
+function getPositionBadge(myAcc: number, groupAvg: number | null) {
+  if (groupAvg === null) return null;
+  const diff = myAcc - groupAvg;
+  if (diff > 5) return { label: 'מעל ממוצע', bg: 'bg-green-500/10 text-green-400' };
+  if (diff >= -5) return { label: 'בממוצע', bg: 'bg-muted/40 text-muted-foreground' };
+  return { label: 'מתחת לממוצע', bg: 'bg-red-500/10 text-red-400' };
+}
+
 export default function TopicPerformanceTable({ topicData, onTopicClick, progress, data }: Props) {
   const [searchTerm, setSearchTerm] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('smartScore');
-  const [sortAsc, setSortAsc] = useState(true);
+  const [sortAsc, setSortAsc] = useState(false);
   const [showAll, setShowAll] = useState(false);
   const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
+  const [groupStats, setGroupStats] = useState<Record<string, number>>({});
+
+  // Fetch group averages
+  useEffect(() => {
+    supabase.rpc('get_global_topic_stats').then(({ data: rows }) => {
+      if (!rows) return;
+      const map: Record<string, number> = {};
+      rows.forEach((r: any) => { if (r.topic) map[r.topic] = Math.round(r.avg_accuracy); });
+      setGroupStats(map);
+    });
+  }, []);
+
+  // Enrich topic data with coverage
+  const enriched = useMemo(() => {
+    return topicData.map((t, _i) => ({
+      ...t,
+      coverage: t.totalInDb > 0 ? Math.round((t.totalAnswered / t.totalInDb) * 100) : 0,
+      groupAvg: groupStats[t.topic] ?? null,
+    }));
+  }, [topicData, groupStats]);
 
   const filtered = useMemo(() => {
-    let list = topicData.filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()));
+    let list = enriched.filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()));
     list.sort((a, b) => {
       let cmp = 0;
       if (sortKey === 'topic') cmp = a.topic.localeCompare(b.topic);
+      else if (sortKey === 'coverage') cmp = a.coverage - b.coverage;
+      else if (sortKey === 'rank') cmp = a.smartScore - b.smartScore; // rank by smartScore
       else cmp = (a[sortKey] as number) - (b[sortKey] as number);
       return sortAsc ? cmp : -cmp;
     });
-    return list;
-  }, [topicData, searchTerm, sortKey, sortAsc]);
+    // Assign rank after sorting by smartScore descending
+    return list.map((item, idx) => ({ ...item, rank: idx + 1 }));
+  }, [enriched, searchTerm, sortKey, sortAsc]);
 
-  const displayed = showAll ? filtered : filtered.slice(0, 5);
+  const displayed = showAll ? filtered : filtered.slice(0, 10);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
-    else { setSortKey(key); setSortAsc(true); }
-  };
-
-  const getRowBg = (score: number) => {
-    if (score > 70) return 'bg-green-500/5';
-    if (score >= 50) return 'bg-yellow-500/5';
-    return 'bg-red-500/5';
-  };
-
-  const getScoreBg = (score: number) => {
-    if (score > 70) return 'bg-green-500/15 text-green-400';
-    if (score >= 50) return 'bg-yellow-500/15 text-yellow-400';
-    return 'bg-red-500/15 text-red-400';
-  };
-
-  // Compute per-topic detail data
-  const getTopicDetail = (topic: string) => {
-    const topicQuestions = data.filter(q => q[KEYS.TOPIC] === topic);
-    const totalInDb = topicQuestions.length;
-    let correct = 0, wrong = 0, skipped = 0;
-
-    topicQuestions.forEach(q => {
-      const h = progress.history[q[KEYS.ID]];
-      if (!h) { skipped++; return; }
-      if (h.lastResult === 'correct') correct++;
-      else wrong++;
-    });
-    skipped = totalInDb - correct - wrong;
-
-    const donutData = [
-      { name: 'נכון', value: correct, color: '#22C55E' },
-      { name: 'שגוי', value: wrong, color: '#EF4444' },
-      { name: 'לא נענה', value: skipped, color: '#6B7280' },
-    ].filter(d => d.value > 0);
-
-    // Last 5 sessions: simulate from history timestamps
-    const sessions: { label: string; acc: number }[] = [];
-    const answered = topicQuestions
-      .filter(q => progress.history[q[KEYS.ID]])
-      .sort((a, b) => (progress.history[b[KEYS.ID]]?.timestamp || 0) - (progress.history[a[KEYS.ID]]?.timestamp || 0));
-
-    // Group by chunks of 5 to simulate "sessions"
-    for (let i = 0; i < Math.min(answered.length, 25); i += 5) {
-      const chunk = answered.slice(i, i + 5);
-      const chunkCorrect = chunk.filter(q => progress.history[q[KEYS.ID]]?.lastResult === 'correct').length;
-      sessions.push({ label: `${sessions.length + 1}`, acc: Math.round((chunkCorrect / chunk.length) * 100) });
-    }
-    sessions.reverse();
-
-    const stat = topicData.find(t => t.topic === topic);
-    const coverage = totalInDb > 0 ? Math.round(((correct + wrong) / totalInDb) * 100) : 0;
-
-    return { donutData, sessions: sessions.slice(-5), stat, coverage, correct, wrong, totalInDb };
+    else { setSortKey(key); setSortAsc(key === 'topic'); }
   };
 
   return (
     <div className="bg-card dark:bg-[#141720] border border-border dark:border-white/[0.07] rounded-xl overflow-hidden">
-      <div className="p-5 border-b border-border dark:border-white/[0.07] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Header */}
+      <div className="p-5 border-b border-border dark:border-white/[0.07] flex flex-col sm:flex-row sm:items-center justify-between gap-3" dir="rtl">
         <div>
           <h3 className="font-bold text-foreground text-sm">ביצועים לפי נושא</h3>
-          <p className="text-[10px] text-muted-foreground mt-0.5">לחץ על שורה לפירוט</p>
+          <p className="text-[10px] text-muted-foreground mt-0.5">לחץ על שורה לפירוט • מיון לפי Smart Score</p>
         </div>
         <div className="relative w-full sm:w-56">
           <input
@@ -107,7 +100,7 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             placeholder="חפש נושא..."
-            className="w-full py-2 px-3 pl-9 border border-border dark:border-white/[0.07] rounded-lg bg-muted/30 text-foreground text-sm outline-none focus:border-orange-500/50 transition"
+            className="w-full py-2 px-3 pl-9 border border-border dark:border-white/[0.07] rounded-lg bg-muted/30 text-foreground text-sm outline-none focus:border-primary/50 transition"
           />
           <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
         </div>
@@ -115,26 +108,28 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
 
       {filtered.length > 0 ? (
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm" dir="rtl">
             <thead>
               <tr className="bg-muted/30 border-b border-border dark:border-white/[0.07] text-muted-foreground">
-                {[
-                  { label: 'נושא', key: 'topic' as SortKey },
-                  { label: 'במאגר', key: 'totalInDb' as SortKey },
-                  { label: 'נענו', key: 'totalAnswered' as SortKey },
-                  { label: '✓', key: 'correct' as SortKey },
-                  { label: '✗', key: 'wrong' as SortKey },
-                  { label: 'דיוק', key: 'accuracy' as SortKey },
-                  { label: 'Smart Score', key: 'smartScore' as SortKey },
-                ].map(col => (
+                {([
+                  { label: '#', key: 'rank' as SortKey, w: 'w-10' },
+                  { label: 'נושא', key: 'topic' as SortKey, w: '' },
+                  { label: 'במאגר', key: 'totalInDb' as SortKey, w: 'w-16' },
+                  { label: 'כיסוי', key: 'coverage' as SortKey, w: 'w-16' },
+                  { label: 'דיוק שלי', key: 'accuracy' as SortKey, w: 'w-20' },
+                  { label: 'ממוצע קבוצה', key: 'accuracy' as SortKey, w: 'w-24' },
+                  { label: 'Smart Score', key: 'smartScore' as SortKey, w: 'w-28' },
+                ] as { label: string; key: SortKey; w: string }[]).map((col, i) => (
                   <th
-                    key={col.key}
-                    className="px-4 py-3 text-[11px] font-bold cursor-pointer hover:text-foreground transition select-none whitespace-nowrap"
-                    onClick={() => handleSort(col.key)}
+                    key={col.label + i}
+                    className={`px-3 py-3 text-[11px] font-bold cursor-pointer hover:text-foreground transition select-none whitespace-nowrap text-right ${col.w}`}
+                    onClick={() => col.key !== 'accuracy' || col.label === 'דיוק שלי' ? handleSort(col.key) : undefined}
                   >
                     <span className="flex items-center gap-1">
                       {col.label}
-                      <ArrowUpDown className={`w-3 h-3 ${sortKey === col.key ? 'text-orange-500' : 'text-muted-foreground/40'}`} />
+                      {col.label !== 'ממוצע קבוצה' && (
+                        <ArrowUpDown className={`w-3 h-3 ${sortKey === col.key ? 'text-primary' : 'text-muted-foreground/30'}`} />
+                      )}
                     </span>
                   </th>
                 ))}
@@ -143,33 +138,67 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
             <tbody>
               {displayed.map(t => {
                 const isExpanded = expandedTopic === t.topic;
+                const badge = getScoreBadge(t.smartScore);
+                const posBadge = getPositionBadge(t.accuracy, t.groupAvg);
+                const borderColor = getAccuracyColor(t.accuracy);
+
                 return (
                   <React.Fragment key={t.topic}>
                     <tr
                       onClick={() => setExpandedTopic(isExpanded ? null : t.topic)}
-                      className={`border-b border-border/50 dark:border-white/[0.05] hover:bg-orange-500/5 transition-colors cursor-pointer ${getRowBg(t.smartScore)}`}
+                      className="border-b border-border/50 dark:border-white/[0.05] hover:bg-accent/5 transition-colors cursor-pointer group"
+                      style={{ borderTop: `2px solid ${borderColor}` }}
                     >
-                      <td className="px-4 py-3.5 font-medium text-foreground">{t.topic}</td>
-                      <td className="px-4 py-3.5 text-center text-muted-foreground text-xs">{t.totalInDb}</td>
-                      <td className="px-4 py-3.5 text-center text-muted-foreground text-xs">{t.totalAnswered}</td>
-                      <td className="px-4 py-3.5 text-center text-green-400 text-xs">{t.correct}</td>
-                      <td className="px-4 py-3.5 text-center text-red-400 text-xs">{t.wrong}</td>
-                      <td className="px-4 py-3.5 text-center text-xs font-bold text-foreground">{t.accuracy}%</td>
-                      <td className="px-4 py-3.5 text-center">
-                        <span className={`inline-flex items-center justify-center min-w-[48px] px-2.5 py-1 rounded-full text-xs font-black ${getScoreBg(t.smartScore)}`}>
-                          {t.smartScore}%
+                      {/* Rank */}
+                      <td className="px-3 py-3 text-center text-muted-foreground text-xs font-mono">{t.rank}</td>
+                      {/* Topic */}
+                      <td className="px-3 py-3 font-medium text-foreground">
+                        <div className="flex items-center gap-2">
+                          <span>{t.topic}</span>
+                          {posBadge && (
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${posBadge.bg}`}>
+                              {posBadge.label}
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      {/* NT (bank) */}
+                      <td className="px-3 py-3 text-center text-muted-foreground text-xs">{t.totalInDb}</td>
+                      {/* Coverage */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-xs text-amber-400 font-bold">{t.coverage}%</span>
+                      </td>
+                      {/* My accuracy */}
+                      <td className="px-3 py-3 text-center">
+                        <span className="text-xs font-bold" style={{ color: getAccuracyColor(t.accuracy) }}>{t.accuracy}%</span>
+                      </td>
+                      {/* Group avg */}
+                      <td className="px-3 py-3 text-center">
+                        {t.groupAvg !== null ? (
+                          <span className="text-xs text-muted-foreground">{t.groupAvg}%</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground/30">—</span>
+                        )}
+                      </td>
+                      {/* Smart Score badge */}
+                      <td className="px-3 py-3 text-center">
+                        <span className={`inline-flex items-center justify-center min-w-[56px] px-2.5 py-1 rounded-full text-[11px] font-black border ${badge.bg}`}>
+                          {t.smartScore}% {badge.label}
                         </span>
                       </td>
                     </tr>
 
-                    {/* Inline expansion */}
+                    {/* Expansion */}
                     <AnimatePresence>
                       {isExpanded && (
                         <tr>
                           <td colSpan={7} className="p-0">
                             <TopicDetailPanel
                               topic={t.topic}
-                              detail={getTopicDetail(t.topic)}
+                              topicStat={t}
+                              progress={progress}
+                              data={data}
+                              groupAvg={t.groupAvg}
                               onStartPractice={() => onTopicClick(t.topic)}
                               onClose={() => setExpandedTopic(null)}
                             />
@@ -189,14 +218,13 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
         </div>
       )}
 
-      {/* Show All / Collapse toggle */}
-      {filtered.length > 5 && (
+      {filtered.length > 10 && (
         <div className="p-3 text-center border-t border-border dark:border-white/[0.07]">
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-xs text-orange-400 hover:text-orange-300 font-bold transition"
+            className="text-xs text-primary hover:text-primary/80 font-bold transition flex items-center gap-1 mx-auto"
           >
-            {showAll ? 'הצג פחות' : `הצג הכל (${filtered.length})`}
+            {showAll ? <><ChevronUp className="w-3 h-3" /> הצג פחות</> : <><ChevronDown className="w-3 h-3" /> הצג הכל ({filtered.length})</>}
           </button>
         </div>
       )}
@@ -204,26 +232,57 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
   );
 }
 
-// Need to import React for Fragment
-import React from 'react';
+/* ─── Expanded Detail Panel ──────────────────────────── */
 
-interface TopicDetailPanelProps {
+interface DetailPanelProps {
   topic: string;
-  detail: {
-    donutData: { name: string; value: number; color: string }[];
-    sessions: { label: string; acc: number }[];
-    stat: TopicStat | undefined;
-    coverage: number;
-    correct: number;
-    wrong: number;
-    totalInDb: number;
-  };
+  topicStat: TopicStat & { coverage: number; groupAvg: number | null };
+  progress: UserProgress;
+  data: Question[];
+  groupAvg: number | null;
   onStartPractice: () => void;
   onClose: () => void;
 }
 
-function TopicDetailPanel({ topic, detail, onStartPractice, onClose }: TopicDetailPanelProps) {
-  const { donutData, sessions, stat, coverage } = detail;
+function TopicDetailPanel({ topic, topicStat, progress, data, groupAvg, onStartPractice, onClose }: DetailPanelProps) {
+  const [sessionData, setSessionData] = useState<{ label: string; acc: number }[]>([]);
+
+  // Fetch last 5 sessions from answer_history for this topic
+  useEffect(() => {
+    const fetchSessions = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data: rows } = await supabase
+        .from('answer_history')
+        .select('is_correct, answered_at')
+        .eq('user_id', session.user.id)
+        .eq('topic', topic)
+        .order('answered_at', { ascending: true });
+
+      if (!rows || rows.length === 0) return;
+
+      // Group into sessions by date
+      const byDate: Record<string, { correct: number; total: number }> = {};
+      rows.forEach((r: any) => {
+        const day = new Date(r.answered_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+        if (!byDate[day]) byDate[day] = { correct: 0, total: 0 };
+        byDate[day].total++;
+        if (r.is_correct) byDate[day].correct++;
+      });
+
+      const sessions = Object.entries(byDate)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .slice(-5)
+        .map(([date, v], i) => ({
+          label: new Date(date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric' }),
+          acc: v.total > 0 ? Math.round((v.correct / v.total) * 100) : 0,
+        }));
+
+      setSessionData(sessions);
+    };
+    fetchSessions();
+  }, [topic]);
 
   return (
     <motion.div
@@ -233,7 +292,7 @@ function TopicDetailPanel({ topic, detail, onStartPractice, onClose }: TopicDeta
       transition={spring}
       className="overflow-hidden"
     >
-      <div className="bg-muted/20 dark:bg-white/[0.03] border-t border-border dark:border-white/[0.07] p-5">
+      <div className="bg-muted/20 dark:bg-white/[0.03] border-t border-border dark:border-white/[0.07] p-5" dir="rtl">
         <div className="flex items-start justify-between mb-4">
           <h4 className="text-sm font-bold text-foreground">{topic}</h4>
           <button onClick={(e) => { e.stopPropagation(); onClose(); }} className="text-muted-foreground hover:text-foreground transition">
@@ -241,69 +300,63 @@ function TopicDetailPanel({ topic, detail, onStartPractice, onClose }: TopicDeta
           </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Donut chart */}
-          <div className="flex flex-col items-center">
-            <p className="text-[10px] text-muted-foreground mb-2">התפלגות תשובות</p>
-            <div style={{ width: 120, height: 120 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie data={donutData} cx="50%" cy="50%" innerRadius={30} outerRadius={50} dataKey="value" stroke="none">
-                    {donutData.map((entry, i) => (
-                      <Cell key={i} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-            <div className="flex gap-3 mt-1">
-              {donutData.map(d => (
-                <span key={d.name} className="text-[9px] text-muted-foreground flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full inline-block" style={{ backgroundColor: d.color }} />
-                  {d.name}
-                </span>
-              ))}
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Stats pills */}
+          <div className="grid grid-cols-2 gap-2">
+            {[
+              { label: 'Smart Score', value: `${topicStat.smartScore}%`, color: getAccuracyColor(topicStat.smartScore) },
+              { label: 'דיוק שלי', value: `${topicStat.accuracy}%`, color: getAccuracyColor(topicStat.accuracy) },
+              { label: 'כיסוי', value: `${topicStat.coverage}%`, color: '#f59e0b' },
+              { label: 'ממוצע קבוצה', value: groupAvg !== null ? `${groupAvg}%` : '—', color: '#6b7280' },
+              { label: 'ניסיונות', value: `${topicStat.totalAnswered}`, color: 'hsl(var(--foreground))' },
+              { label: 'במאגר', value: `${topicStat.totalInDb}`, color: 'hsl(var(--muted-foreground))' },
+            ].map(p => (
+              <div key={p.label} className="bg-muted/30 rounded-lg px-3 py-2 text-center">
+                <div className="text-xs font-black" style={{ color: p.color }}>{p.value}</div>
+                <div className="text-[9px] text-muted-foreground">{p.label}</div>
+              </div>
+            ))}
           </div>
 
-          {/* Bar chart — last 5 sessions */}
+          {/* Session accuracy bars */}
           <div className="flex flex-col items-center">
             <p className="text-[10px] text-muted-foreground mb-2">דיוק ב-5 סשנים אחרונים</p>
-            {sessions.length > 0 ? (
-              <div style={{ width: '100%', height: 120 }}>
+            {sessionData.length > 0 ? (
+              <div style={{ width: '100%', height: 130 }}>
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={sessions} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                  <BarChart data={sessionData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
                     <XAxis dataKey="label" tick={{ fill: '#6B7280', fontSize: 9 }} axisLine={false} tickLine={false} />
                     <YAxis domain={[0, 100]} tick={{ fill: '#6B7280', fontSize: 9 }} axisLine={false} tickLine={false} />
-                    <Tooltip contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }} />
-                    <Bar dataKey="acc" fill="#F97316" radius={[4, 4, 0, 0]} name="דיוק %" />
+                    <Tooltip
+                      contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11 }}
+                      formatter={(v: number) => [`${v}%`, 'דיוק']}
+                    />
+                    <Bar dataKey="acc" radius={[4, 4, 0, 0]} name="דיוק %">
+                      {sessionData.map((entry, i) => (
+                        <Cell key={i} fill={getAccuracyColor(entry.acc)} />
+                      ))}
+                    </Bar>
                   </BarChart>
                 </ResponsiveContainer>
               </div>
             ) : (
-              <p className="text-[10px] text-muted-foreground/50 mt-8">אין סשנים עדיין</p>
+              <p className="text-[10px] text-muted-foreground/50 mt-8">אין היסטוריית סשנים עדיין</p>
             )}
           </div>
 
-          {/* Stat pills + action */}
-          <div className="flex flex-col items-center gap-3">
-            <div className="grid grid-cols-2 gap-2 w-full">
-              {[
-                { label: 'Smart Score', value: `${stat?.smartScore || 0}%`, bg: stat ? getScorePillBg(stat.smartScore) : 'bg-muted/30 text-muted-foreground' },
-                { label: 'דיוק', value: `${stat?.accuracy || 0}%`, bg: 'bg-blue-500/15 text-blue-400' },
-                { label: 'כיסוי', value: `${coverage}%`, bg: 'bg-orange-500/15 text-orange-400' },
-                { label: 'ניסיונות', value: `${stat?.totalAnswered || 0}`, bg: 'bg-muted/30 text-foreground' },
-              ].map(p => (
-                <div key={p.label} className={`rounded-lg px-3 py-2 text-center ${p.bg}`}>
-                  <div className="text-xs font-black">{p.value}</div>
-                  <div className="text-[9px] opacity-70">{p.label}</div>
+          {/* Action */}
+          <div className="flex flex-col items-center justify-center gap-3">
+            {groupAvg !== null && (
+              <div className="text-center">
+                <div className="text-[10px] text-muted-foreground mb-1">פער מממוצע קבוצה</div>
+                <div className="text-2xl font-black" style={{ fontFamily: "'Share Tech Mono', monospace", color: getAccuracyColor(topicStat.accuracy) }}>
+                  {topicStat.accuracy - groupAvg > 0 ? '+' : ''}{topicStat.accuracy - groupAvg}%
                 </div>
-              ))}
-            </div>
+              </div>
+            )}
             <button
               onClick={(e) => { e.stopPropagation(); onStartPractice(); }}
-              className="w-full flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold transition"
+              className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-4 py-2.5 rounded-xl text-sm font-bold transition"
             >
               <Play className="w-4 h-4" /> התחל תרגול בנושא זה
             </button>
@@ -312,10 +365,4 @@ function TopicDetailPanel({ topic, detail, onStartPractice, onClose }: TopicDeta
       </div>
     </motion.div>
   );
-}
-
-function getScorePillBg(score: number) {
-  if (score > 70) return 'bg-green-500/15 text-green-400';
-  if (score >= 50) return 'bg-yellow-500/15 text-yellow-400';
-  return 'bg-red-500/15 text-red-400';
 }
