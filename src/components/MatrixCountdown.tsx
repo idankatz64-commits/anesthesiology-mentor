@@ -258,7 +258,7 @@ export default function MatrixCountdown() {
         </div>
 
         {/* Digits */}
-        <div className="flex items-center gap-2 flex-wrap justify-center" dir="ltr">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center" dir="ltr">
           {units.map((u, i) => (
             <div key={u.label} className="flex items-center">
               <div className="flex flex-col items-center gap-1">
