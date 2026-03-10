@@ -506,6 +506,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Keep local confidenceMap in sync
       setConfidenceMap(prev => ({ ...prev, [questionId]: confidence }));
     }
+
+    // Fire-and-forget: log to answer_history for trend analytics
+    supabase.from('answer_history').insert({
+      user_id: userId,
+      question_id: questionId,
+      topic: confidence ? undefined : null, // topic will be passed by caller via updateHistory
+      is_correct: isCorrect,
+      answered_at: new Date().toISOString(),
+    }).then(({ error: ahErr }) => {
+      if (ahErr) console.error('answer_history insert error:', ahErr);
+    });
   }, []);
 
   // syncAnswerToDb is now handled by updateHistory, but kept for backward compat
