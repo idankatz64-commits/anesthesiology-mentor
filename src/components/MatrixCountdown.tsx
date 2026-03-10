@@ -271,7 +271,7 @@ export default function MatrixCountdown() {
         </div>
 
         {/* Subtitle */}
-        <p className="text-muted-foreground/60 text-xs font-light tracking-wide">
+        <p className="text-muted-foreground/60 text-[10px] sm:text-xs font-light tracking-wide text-center">
           Simulator for Stage 1 Anesthesia, Intensive Care and Pain Medicine
         </p>
       </div>
