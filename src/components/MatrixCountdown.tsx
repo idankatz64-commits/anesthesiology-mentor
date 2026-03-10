@@ -108,7 +108,7 @@ function Digit({ value }: { value: number }) {
   return (
     <div className="relative flex gap-[2px]">
       {str.split('').map((ch, i) => (
-        <div key={i} className="relative w-[2.4em] h-[3.2em] overflow-hidden">
+        <div key={i} className="relative w-[1.6em] h-[2.2em] sm:w-[2.4em] sm:h-[3.2em] overflow-hidden">
           <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,65,0.03)_2px,rgba(0,255,65,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
           <div className="absolute inset-0 bg-background/70 border border-[#00ff41]/20 rounded-sm" />
           <AnimatePresence mode="popLayout">
@@ -118,7 +118,7 @@ function Digit({ value }: { value: number }) {
               animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
               exit={{ y: 10, opacity: 0, filter: 'blur(3px)' }}
               transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.6 }}
-              className="absolute inset-0 flex items-center justify-center font-mono text-2xl font-bold"
+              className="absolute inset-0 flex items-center justify-center font-mono text-base sm:text-2xl font-bold"
               style={{
                 color: '#00ff41',
                 textShadow: '0 0 10px rgba(0,255,65,0.6), 0 0 25px rgba(0,255,65,0.15)',
@@ -137,7 +137,7 @@ function Digit({ value }: { value: number }) {
 function ColonSeparator() {
   return (
     <motion.span
-      className="font-mono text-2xl font-bold mx-1 self-center"
+      className="font-mono text-base sm:text-2xl font-bold mx-0.5 sm:mx-1 self-center"
       style={{ color: 'rgba(0,255,65,0.4)' }}
       animate={{ opacity: [0.3, 1, 0.3] }}
       transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
@@ -194,7 +194,7 @@ export default function MatrixCountdown() {
   return (
     <motion.div
       ref={containerRef}
-      className="liquid-glass relative overflow-hidden px-6 py-5 w-full"
+      className="liquid-glass relative overflow-hidden px-3 py-3 sm:px-6 sm:py-5 w-full"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 250, damping: 25 }}
@@ -223,7 +223,7 @@ export default function MatrixCountdown() {
         }`}
       />
 
-      <div className="relative flex flex-col items-center gap-3">
+      <div className="relative flex flex-col items-center gap-2 sm:gap-3">
         {/* Header */}
         <div className="flex items-center gap-2">
           <motion.div
@@ -239,7 +239,7 @@ export default function MatrixCountdown() {
             animate={{ opacity: [1, 0.3, 1], scale: [1, 0.8, 1] }}
             transition={{ duration: urgency === 'imminent' ? 0.6 : 1.5, repeat: Infinity }}
           />
-          <span className="text-[10px] font-medium text-muted-foreground tracking-[0.2em] uppercase font-mono">
+          <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground tracking-[0.15em] sm:tracking-[0.2em] uppercase font-mono">
             BOARD EXAM COUNTDOWN
           </span>
           <motion.div
@@ -258,12 +258,12 @@ export default function MatrixCountdown() {
         </div>
 
         {/* Digits */}
-        <div className="flex items-center gap-2 flex-wrap justify-center" dir="ltr">
+        <div className="flex items-center gap-1 sm:gap-2 flex-wrap justify-center" dir="ltr">
           {units.map((u, i) => (
             <div key={u.label} className="flex items-center">
               <div className="flex flex-col items-center gap-1">
                 <Digit value={u.value} />
-                <span className="text-[10px] text-muted-foreground/50 font-medium tracking-wide">{u.label}</span>
+                <span className="text-[8px] sm:text-[10px] text-muted-foreground/50 font-medium tracking-wide">{u.label}</span>
               </div>
               {i < units.length - 1 && <ColonSeparator />}
             </div>
@@ -271,7 +271,7 @@ export default function MatrixCountdown() {
         </div>
 
         {/* Subtitle */}
-        <p className="text-muted-foreground/60 text-xs font-light tracking-wide">
+        <p className="text-muted-foreground/60 text-[10px] sm:text-xs font-light tracking-wide text-center">
           Simulator for Stage 1 Anesthesia, Intensive Care and Pain Medicine
         </p>
       </div>
