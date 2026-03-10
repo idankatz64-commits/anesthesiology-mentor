@@ -34,11 +34,11 @@ export default function DailyReportTile() {
           .select('correct_count, answered_count, topic')
           .eq('user_id', user.id)
           .gte('updated_at', todayISO),
-        (supabase
+        supabase
           .from('spaced_repetition')
           .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id) as any)
-          .eq('next_review', tomorrowDate),
+          .eq('user_id', user.id)
+          .eq('next_review_date', tomorrowDate),
       ]);
 
       const rows = answersRes.data || [];
