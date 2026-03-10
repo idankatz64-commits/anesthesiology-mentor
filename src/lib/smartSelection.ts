@@ -137,7 +137,7 @@ const PHASE_OVERRIDES: Record<Exclude<ExamPhase, 'early'>, { w2: number; w5: num
 
 // ── Interfaces ──────────────────────────────────────────────────────
 export interface SrsRecord {
-  next_review_date: string;
+  next_review: string;
 }
 
 export interface TopicStats {
