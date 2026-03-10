@@ -101,7 +101,7 @@ export default function FlashcardView() {
     if (!current) return;
     const isCorrect = level === 'confident' || level === 'hesitant';
     updateHistory(current[KEYS.ID], isCorrect, current[KEYS.TOPIC]);
-    await updateSpacedRepetition(current[KEYS.ID], isCorrect, level);
+    await updateSpacedRepetition(current[KEYS.ID], isCorrect, level, current[KEYS.TOPIC]);
     setStats(prev => ({ ...prev, [level]: prev[level] + 1 }));
 
     if (index + 1 >= cards.length) {
