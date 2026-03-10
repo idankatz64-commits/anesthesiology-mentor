@@ -263,7 +263,7 @@ export default function MatrixCountdown() {
             <div key={u.label} className="flex items-center">
               <div className="flex flex-col items-center gap-1">
                 <Digit value={u.value} />
-                <span className="text-[10px] text-muted-foreground/50 font-medium tracking-wide">{u.label}</span>
+                <span className="text-[8px] sm:text-[10px] text-muted-foreground/50 font-medium tracking-wide">{u.label}</span>
               </div>
               {i < units.length - 1 && <ColonSeparator />}
             </div>
