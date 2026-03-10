@@ -5,6 +5,7 @@ import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock,
 import { motion, AnimatePresence } from 'framer-motion';
 import { cardHoverTap } from '@/lib/animations';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
+import MatrixCountdown from '@/components/MatrixCountdown';
 
 const containerVariant = {
   hidden: {},
