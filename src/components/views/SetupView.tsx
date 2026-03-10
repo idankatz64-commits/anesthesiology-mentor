@@ -122,7 +122,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
         <span className="text-foreground">{title}</span>
       </div>
 
-      <div className="soft-card bg-card border border-border p-10">
+      <div className="deep-tile p-10">
         <h2 className="text-2xl font-bold mb-8 flex items-center gap-3 text-foreground">
           <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary text-lg">
             {isPractice ? '📖' : '⏱️'}

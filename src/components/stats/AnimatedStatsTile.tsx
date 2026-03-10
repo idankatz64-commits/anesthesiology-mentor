@@ -40,7 +40,7 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '',
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className={`bg-card border border-border rounded-2xl cursor-pointer transition-all duration-200 hover:border-primary/30 hover:shadow-[0_0_20px_hsl(var(--primary)/0.1)] ${className}`}
+        className={`deep-tile rounded-2xl cursor-pointer ${className}`}
       >
         {collapsed}
       </motion.div>

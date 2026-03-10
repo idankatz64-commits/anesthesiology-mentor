@@ -140,7 +140,7 @@ export default function ResultsView() {
       })()}
 
       {/* Question details - expanded view for simulation */}
-      <div className="text-right soft-card bg-card border border-border p-8 mb-10 max-h-[600px] overflow-y-auto">
+      <div className="text-right deep-tile p-8 mb-10 max-h-[600px] overflow-y-auto">
         <h3 className="font-bold text-foreground mb-6 border-b border-border pb-3">
           {isSimulation ? 'פירוט מלא עם הסברים' : 'פירוט שאלות'}
         </h3>

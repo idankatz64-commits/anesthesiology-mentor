@@ -40,7 +40,7 @@ export default function ReviewView() {
         </div>
       </div>
 
-      <div className="soft-card bg-card border border-border p-8 mb-10">
+      <div className="deep-tile p-8 mb-10">
         <h3 className="font-bold text-muted-foreground mb-6 text-xs uppercase tracking-wider">מפת שאלות</h3>
         <div className="grid grid-cols-5 sm:grid-cols-8 md:grid-cols-10 gap-3">
           {quiz.map((q, i) => {

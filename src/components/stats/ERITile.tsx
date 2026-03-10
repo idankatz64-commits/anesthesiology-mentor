@@ -93,7 +93,7 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
           {/* Satellite pills */}
           <div className="flex items-center gap-4 mt-4">
             {satellites.map((s) =>
-            <div key={s.label} className="flex flex-col items-center bg-muted/20 rounded-lg px-4 py-2 border border-border">
+            <div key={s.label} className="flex flex-col items-center bg-muted/20 rounded-lg px-4 py-2 border border-border/50">
                 <span className="text-lg font-black" style={{ fontFamily: "'Share Tech Mono', monospace", color: s.color }}>{s.value}</span>
                 <span className="text-[9px] text-muted-foreground">{s.label}</span>
               </div>
