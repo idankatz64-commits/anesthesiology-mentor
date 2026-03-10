@@ -497,7 +497,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       interval_days: interval,
       ease_factor: ease,
       repetitions: reps,
-    } as any, { onConflict: 'user_id,question_id' });
+    }, { onConflict: 'user_id,question_id' });
 
     if (error) {
       console.error('spaced_repetition upsert error:', error);
