@@ -1,16 +1,14 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EXAM_DATE } from '@/lib/smartSelection';
 
 interface TimeUnit {
   label: string;
   value: number;
-  max: number;
 }
 
 function getTimeLeft() {
-  const now = Date.now();
-  const diff = EXAM_DATE.getTime() - now;
+  const diff = EXAM_DATE.getTime() - Date.now();
   if (diff <= 0) return null;
 
   const totalSeconds = Math.floor(diff / 1000);
@@ -24,26 +22,100 @@ function getTimeLeft() {
   return { days, hours, minutes, seconds };
 }
 
-function Digit({ value, max }: { value: number; max: number }) {
-  const str = String(value).padStart(2, '0');
+/* ── Matrix Rain Canvas ── */
+function MatrixRain({ width, height }: { width: number; height: number }) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const columnsRef = useRef<number[]>([]);
+  const rafRef = useRef<number>(0);
+
+  const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEF';
+  const FONT_SIZE = 11;
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    ctx.fillStyle = 'rgba(13, 15, 20, 0.12)';
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = 'hsl(217 92% 76% / 0.35)';
+    ctx.font = `${FONT_SIZE}px "Share Tech Mono", monospace`;
+
+    const cols = columnsRef.current;
+    for (let i = 0; i < cols.length; i++) {
+      const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+      const x = i * FONT_SIZE;
+      const y = cols[i] * FONT_SIZE;
+
+      // Brighter leading character
+      if (Math.random() > 0.6) {
+        ctx.fillStyle = 'hsl(217 92% 76% / 0.7)';
+      } else {
+        ctx.fillStyle = 'hsl(217 92% 76% / 0.2)';
+      }
+      ctx.fillText(char, x, y);
+
+      if (y > height && Math.random() > 0.975) {
+        cols[i] = 0;
+      }
+      cols[i]++;
+    }
+
+    rafRef.current = requestAnimationFrame(draw);
+  }, [width, height]);
+
+  useEffect(() => {
+    if (!width) return;
+    const colCount = Math.floor(width / FONT_SIZE);
+    columnsRef.current = Array.from({ length: colCount }, () => Math.floor(Math.random() * (height / FONT_SIZE)));
+
+    // Clear canvas first
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.fillStyle = 'rgba(13, 15, 20, 1)';
+        ctx.fillRect(0, 0, width, height);
+      }
+    }
+
+    rafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [width, height, draw]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      width={width}
+      height={height}
+      className="absolute inset-0 pointer-events-none rounded-2xl"
+      style={{ opacity: 0.6 }}
+    />
+  );
+}
+
+/* ── Digit ── */
+function Digit({ value }: { value: number; max3?: boolean }) {
+  const str = String(value).padStart(value > 99 ? 3 : 2, '0');
   return (
     <div className="relative flex gap-[2px]">
       {str.split('').map((ch, i) => (
-        <div key={i} className="relative w-[1.6em] h-[2.2em] overflow-hidden">
-          {/* Faint scanline */}
-          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,65,0.03)_2px,rgba(0,255,65,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
-          <div className="absolute inset-0 bg-background/80 border border-matrix/20 rounded-sm" />
+        <div key={i} className="relative w-[1.8em] h-[2.4em] overflow-hidden">
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(96,165,250,0.03)_2px,rgba(96,165,250,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
+          <div className="absolute inset-0 bg-background/70 border border-matrix/20 rounded-sm" />
           <AnimatePresence mode="popLayout">
             <motion.span
               key={`${ch}-${value}`}
-              initial={{ y: -8, opacity: 0, filter: 'blur(2px)' }}
+              initial={{ y: -10, opacity: 0, filter: 'blur(3px)' }}
               animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
-              exit={{ y: 8, opacity: 0, filter: 'blur(2px)' }}
+              exit={{ y: 10, opacity: 0, filter: 'blur(3px)' }}
               transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.6 }}
-              className="absolute inset-0 flex items-center justify-center font-mono text-lg font-bold"
+              className="absolute inset-0 flex items-center justify-center font-mono text-xl font-bold"
               style={{
                 color: 'hsl(var(--matrix))',
-                textShadow: '0 0 8px hsl(var(--matrix) / 0.6), 0 0 20px hsl(var(--matrix) / 0.2)',
+                textShadow: '0 0 10px hsl(var(--matrix) / 0.6), 0 0 25px hsl(var(--matrix) / 0.15)',
               }}
             >
               {ch}
@@ -55,10 +127,11 @@ function Digit({ value, max }: { value: number; max: number }) {
   );
 }
 
+/* ── Separator ── */
 function Separator() {
   return (
     <motion.span
-      className="font-mono text-lg font-bold mx-0.5 self-center"
+      className="font-mono text-xl font-bold mx-1 self-center"
       style={{ color: 'hsl(var(--matrix) / 0.4)' }}
       animate={{ opacity: [0.3, 1, 0.3] }}
       transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
@@ -68,21 +141,33 @@ function Separator() {
   );
 }
 
+/* ── Main Component ── */
 export default function MatrixCountdown() {
   const [time, setTime] = useState(getTimeLeft);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [dims, setDims] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
     const id = setInterval(() => setTime(getTimeLeft()), 1000);
     return () => clearInterval(id);
   }, []);
 
+  useEffect(() => {
+    if (!containerRef.current) return;
+    const ro = new ResizeObserver(([entry]) => {
+      setDims({ w: Math.floor(entry.contentRect.width), h: Math.floor(entry.contentRect.height) });
+    });
+    ro.observe(containerRef.current);
+    return () => ro.disconnect();
+  }, []);
+
   if (!time) return null;
 
   const units: TimeUnit[] = [
-    { label: 'ימים', value: time.days, max: 365 },
-    { label: 'שעות', value: time.hours, max: 23 },
-    { label: 'דקות', value: time.minutes, max: 59 },
-    { label: 'שניות', value: time.seconds, max: 59 },
+    { label: 'ימים', value: time.days },
+    { label: 'שעות', value: time.hours },
+    { label: 'דקות', value: time.minutes },
+    { label: 'שניות', value: time.seconds },
   ];
 
   const totalDays = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
@@ -90,60 +175,86 @@ export default function MatrixCountdown() {
 
   return (
     <motion.div
-      className="liquid-glass relative overflow-hidden px-4 py-3 shrink-0"
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
+      ref={containerRef}
+      className="liquid-glass relative overflow-hidden px-6 py-4 w-full"
+      initial={{ opacity: 0, y: -10 }}
+      animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 250, damping: 25 }}
     >
-      {/* Matrix rain overlay */}
-      <div
-        className="absolute inset-0 pointer-events-none opacity-[0.03]"
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='40'%3E%3Ctext x='2' y='15' font-size='10' fill='%2300ff41'%3E1%3C/text%3E%3Ctext x='8' y='30' font-size='8' fill='%2300ff41'%3E0%3C/text%3E%3Ctext x='3' y='38' font-size='6' fill='%2300ff41'%3E7%3C/text%3E%3C/svg%3E")`,
-          backgroundSize: '20px 40px',
-        }}
-      />
-      {/* Glow border based on urgency */}
+      {/* Matrix rain background */}
+      {dims.w > 0 && <MatrixRain width={dims.w} height={dims.h} />}
+
+      {/* Urgency glow */}
       <div
         className={`absolute inset-0 rounded-2xl pointer-events-none ${
           urgency === 'imminent'
-            ? 'shadow-[inset_0_0_20px_hsl(0_72%_51%/0.15)]'
+            ? 'shadow-[inset_0_0_30px_hsl(0_72%_51%/0.15)]'
             : urgency === 'approaching'
-            ? 'shadow-[inset_0_0_20px_hsl(45_93%_47%/0.1)]'
+            ? 'shadow-[inset_0_0_30px_hsl(45_93%_47%/0.1)]'
             : ''
         }`}
       />
 
-      <div className="relative flex flex-col items-center gap-2">
-        {/* Title */}
+      <div className="relative flex flex-col items-center gap-3">
+        {/* Header */}
         <div className="flex items-center gap-2">
           <motion.div
             className="w-2 h-2 rounded-full"
-            style={{ backgroundColor: urgency === 'imminent' ? 'hsl(var(--destructive))' : urgency === 'approaching' ? 'hsl(var(--warning))' : 'hsl(var(--matrix))' }}
-            animate={{
-              opacity: [1, 0.3, 1],
-              scale: [1, 0.8, 1],
+            style={{
+              backgroundColor:
+                urgency === 'imminent'
+                  ? 'hsl(var(--destructive))'
+                  : urgency === 'approaching'
+                  ? 'hsl(var(--warning))'
+                  : 'hsl(var(--matrix))',
             }}
+            animate={{ opacity: [1, 0.3, 1], scale: [1, 0.8, 1] }}
             transition={{ duration: urgency === 'imminent' ? 0.6 : 1.5, repeat: Infinity }}
           />
-          <span className="text-[10px] font-medium text-muted-foreground tracking-widest uppercase font-mono">
+          <span className="text-[10px] font-medium text-muted-foreground tracking-[0.2em] uppercase font-mono">
             BOARD EXAM COUNTDOWN
           </span>
+          <motion.div
+            className="w-2 h-2 rounded-full"
+            style={{
+              backgroundColor:
+                urgency === 'imminent'
+                  ? 'hsl(var(--destructive))'
+                  : urgency === 'approaching'
+                  ? 'hsl(var(--warning))'
+                  : 'hsl(var(--matrix))',
+            }}
+            animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
+            transition={{ duration: urgency === 'imminent' ? 0.6 : 1.5, repeat: Infinity }}
+          />
         </div>
 
-        {/* Digits row */}
-        <div className="flex items-center gap-1 flex-wrap justify-center" dir="ltr">
+        {/* Digits */}
+        <div className="flex items-center gap-2 flex-wrap justify-center" dir="ltr">
           {units.map((u, i) => (
             <div key={u.label} className="flex items-center">
-              <div className="flex flex-col items-center gap-0.5">
-                <Digit value={u.value} max={u.max} />
-                <span className="text-[8px] text-muted-foreground/60 font-medium">{u.label}</span>
+              <div className="flex flex-col items-center gap-1">
+                <Digit value={u.value} />
+                <span className="text-[9px] text-muted-foreground/50 font-medium tracking-wide">{u.label}</span>
               </div>
               {i < units.length - 1 && <Separator />}
             </div>
           ))}
         </div>
+
+        {/* Subtitle */}
+        <p className="text-muted-foreground/60 text-xs font-light tracking-wide">
+          Simulator for Stage 1 Anesthesia, Intensive Care and Pain Medicine
+        </p>
       </div>
+
+      {/* Bottom glow line */}
+      <div
+        className="absolute bottom-0 left-[10%] right-[10%] h-[1px]"
+        style={{
+          background: `linear-gradient(90deg, transparent, hsl(var(--matrix) / 0.4), transparent)`,
+        }}
+      />
     </motion.div>
   );
 }
