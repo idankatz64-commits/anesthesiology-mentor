@@ -94,7 +94,7 @@ const defaultSession: SessionState = {
   sourceFilter: 'all', countFilter: 10, unseenOnly: false,
 };
 
-// React context for app state
+// React context for global app state
 const AppContext = createContext<AppContextType | null>(null);
 
 export function useApp() {
