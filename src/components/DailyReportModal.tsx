@@ -156,7 +156,7 @@ export default function DailyReportModal({ open, onClose }: { open: boolean; onC
               {loading ? <Skeleton className="h-8 w-12 mx-auto" /> : (
                 <div className="text-2xl font-bold matrix-text"><AnimatedNumber value={srsReviewed} /></div>
               )}
-              <div className="text-xs text-muted-foreground mt-1">חזרות SRS</div>
+              <div className="text-xs text-muted-foreground mt-1">כרטיסי SRS היום</div>
             </div>
           </div>
 
