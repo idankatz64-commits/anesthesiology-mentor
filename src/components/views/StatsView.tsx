@@ -4,7 +4,7 @@ import { KEYS } from '@/lib/types';
 import { Download, Upload, User, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedNumber from '@/components/AnimatedNumber';
-import ComparativeStats from './ComparativeStats';
+
 import { useStatsData } from '@/components/stats/useStatsData';
 import ERITile from '@/components/stats/ERITile';
 import WeakZoneMapTile from '@/components/stats/WeakZoneMapTile';
