@@ -49,7 +49,7 @@ export default function HomeStatsSummary() {
         <div className="text-xs text-muted-foreground font-medium mt-1">שאלות שנענו</div>
       </div>
 
-      <div className="liquid-glass p-5 text-center">
+      <div className="deep-tile p-5 text-center">
         <div className="flex justify-center mb-2">
           <Target className={`w-5 h-5 ${accuracyColor}`} />
         </div>
