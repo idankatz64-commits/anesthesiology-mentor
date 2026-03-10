@@ -1,0 +1,435 @@
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+
+interface DayData {
+  date: string;
+  total: number;
+  correct: number;
+  accuracy: number;
+  ema7: number | null;
+  ema14: number | null;
+}
+
+const COLORS = {
+  bg: '#0a0a0a',
+  card: '#0f0f0f',
+  border: '#1a1a1a',
+  gridLine: '#1a1a1a',
+  green: '#00e676',
+  orange: '#ff9800',
+  red: '#ff1744',
+  ema7: '#ff9800',
+  ema14: '#2196f3',
+  globalAvg: '#9c27b0',
+  text: '#6b7280',
+  textBright: '#e5e7eb',
+  crosshair: 'rgba(255,255,255,0.15)',
+  tooltipBg: '#0f0f0f',
+  tooltipBorder: '#3a4060',
+};
+
+function getBarColor(acc: number) {
+  if (acc >= 70) return COLORS.green;
+  if (acc >= 50) return COLORS.orange;
+  return COLORS.red;
+}
+
+function computeEMA(data: { accuracy: number }[], period: number): (number | null)[] {
+  const result: (number | null)[] = [];
+  const k = 2 / (period + 1);
+  let ema: number | null = null;
+  for (let i = 0; i < data.length; i++) {
+    if (i < period - 1) {
+      result.push(null);
+    } else if (ema === null) {
+      const slice = data.slice(0, period);
+      ema = slice.reduce((s, v) => s + v.accuracy, 0) / period;
+      result.push(Math.round(ema * 10) / 10);
+    } else {
+      ema = data[i].accuracy * k + ema * (1 - k);
+      result.push(Math.round(ema * 10) / 10);
+    }
+  }
+  return result;
+}
+
+function formatDateHeb(d: string) {
+  const dt = new Date(d + 'T00:00:00');
+  const dd = String(dt.getDate()).padStart(2, '0');
+  const mm = String(dt.getMonth() + 1).padStart(2, '0');
+  const yy = String(dt.getFullYear()).slice(2);
+  return `${dd}/${mm}/${yy}`;
+}
+
+function hexToRgba(hex: string, alpha: number) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+export default function AccuracyCanvasChart() {
+  const mainCanvasRef = useRef<HTMLCanvasElement>(null);
+  const volCanvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [data, setData] = useState<DayData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [showEma7, setShowEma7] = useState(true);
+  const [showEma14, setShowEma14] = useState(true);
+  const [showGlobalAvg, setShowGlobalAvg] = useState(true);
+  const [logScale, setLogScale] = useState(false);
+
+  const PANEL1_H = 260;
+  const PANEL2_H = 70;
+  const MARGIN = { top: 10, right: 10, bottom: 20, left: 40 };
+
+  // Fetch data
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { setLoading(false); return; }
+
+      const since = new Date();
+      since.setDate(since.getDate() - 90);
+      const sinceStr = since.toISOString();
+
+      const { data: rows, error } = await supabase
+        .from('answer_history')
+        .select('answered_at, is_correct')
+        .eq('user_id', user.id)
+        .gte('answered_at', sinceStr)
+        .order('answered_at', { ascending: true });
+
+      if (cancelled || error || !rows) { setLoading(false); return; }
+
+      // Group by date
+      const byDate: Record<string, { total: number; correct: number }> = {};
+      for (const r of rows) {
+        const d = r.answered_at.slice(0, 10);
+        if (!byDate[d]) byDate[d] = { total: 0, correct: 0 };
+        byDate[d].total++;
+        if (r.is_correct) byDate[d].correct++;
+      }
+
+      const sorted = Object.entries(byDate)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([date, v]) => ({
+          date,
+          total: v.total,
+          correct: v.correct,
+          accuracy: Math.round((v.correct / v.total) * 100 * 10) / 10,
+          ema7: null as number | null,
+          ema14: null as number | null,
+        }));
+
+      const ema7 = computeEMA(sorted, 7);
+      const ema14 = computeEMA(sorted, 14);
+      sorted.forEach((d, i) => { d.ema7 = ema7[i]; d.ema14 = ema14[i]; });
+
+      if (!cancelled) { setData(sorted); setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const globalAvg = useMemo(() => {
+    if (!data.length) return 0;
+    const totalCorrect = data.reduce((s, d) => s + d.correct, 0);
+    const totalQ = data.reduce((s, d) => s + d.total, 0);
+    return totalQ ? Math.round((totalCorrect / totalQ) * 100 * 10) / 10 : 0;
+  }, [data]);
+
+  const maxVol = useMemo(() => Math.max(1, ...data.map(d => d.total)), [data]);
+
+  const getCanvasWidth = useCallback(() => {
+    return containerRef.current?.clientWidth || 600;
+  }, []);
+
+  // Draw main panel
+  const drawMain = useCallback(() => {
+    const canvas = mainCanvasRef.current;
+    if (!canvas || !data.length) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = getCanvasWidth();
+    canvas.width = w * dpr;
+    canvas.height = PANEL1_H * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = PANEL1_H + 'px';
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, PANEL1_H);
+
+    const plotW = w - MARGIN.left - MARGIN.right;
+    const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
+    const barW = Math.max(2, (plotW / data.length) - 1);
+
+    // Grid lines
+    ctx.strokeStyle = COLORS.gridLine;
+    ctx.lineWidth = 1;
+    for (const pct of [20, 40, 60, 80, 100]) {
+      const y = MARGIN.top + plotH * (1 - pct / 100);
+      ctx.beginPath();
+      ctx.moveTo(MARGIN.left, y);
+      ctx.lineTo(w - MARGIN.right, y);
+      ctx.stroke();
+      ctx.fillStyle = COLORS.text;
+      ctx.font = '10px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${pct}%`, MARGIN.left - 4, y + 3);
+    }
+
+    // Bars
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const x = MARGIN.left + (i / data.length) * plotW + (plotW / data.length - barW) / 2;
+      let volNorm = d.total / maxVol;
+      if (logScale && d.total > 0) volNorm = Math.log(d.total + 1) / Math.log(maxVol + 1);
+      const barH = volNorm * plotH * 0.85;
+      const y = MARGIN.top + plotH - barH;
+
+      ctx.fillStyle = hexToRgba(getBarColor(d.accuracy), 0.7);
+      ctx.fillRect(x, y, barW, barH);
+
+      if (hoverIndex === i) {
+        ctx.fillStyle = hexToRgba(getBarColor(d.accuracy), 1);
+        ctx.fillRect(x, y, barW, barH);
+      }
+    }
+
+    // EMA lines helper
+    const drawLine = (getValue: (d: DayData) => number | null, color: string, dashed = false, lineW = 2) => {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lineW;
+      ctx.setLineDash(dashed ? [6, 4] : []);
+      ctx.beginPath();
+      let started = false;
+      for (let i = 0; i < data.length; i++) {
+        const val = getValue(data[i]);
+        if (val === null) { started = false; continue; }
+        const x = MARGIN.left + ((i + 0.5) / data.length) * plotW;
+        const y = MARGIN.top + plotH * (1 - val / 100);
+        if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+      ctx.setLineDash([]);
+    };
+
+    if (showEma7) drawLine(d => d.ema7, COLORS.ema7);
+    if (showEma14) drawLine(d => d.ema14, COLORS.ema14);
+    if (showGlobalAvg) drawLine(() => globalAvg, COLORS.globalAvg, true, 1.5);
+
+    // Crosshair
+    if (hoverIndex !== null && hoverIndex < data.length) {
+      const d = data[hoverIndex];
+      const x = MARGIN.left + ((hoverIndex + 0.5) / data.length) * plotW;
+      const y = MARGIN.top + plotH * (1 - d.accuracy / 100);
+      ctx.strokeStyle = COLORS.crosshair;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(x, MARGIN.top); ctx.lineTo(x, MARGIN.top + plotH); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(w - MARGIN.right, y); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, getCanvasWidth]);
+
+  // Draw volume panel
+  const drawVolume = useCallback(() => {
+    const canvas = volCanvasRef.current;
+    if (!canvas || !data.length) return;
+    const dpr = window.devicePixelRatio || 1;
+    const w = getCanvasWidth();
+    canvas.width = w * dpr;
+    canvas.height = PANEL2_H * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = PANEL2_H + 'px';
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, PANEL2_H);
+
+    const plotW = w - MARGIN.left - MARGIN.right;
+    const plotH = PANEL2_H - 5 - 15;
+    const barW = Math.max(2, (plotW / data.length) - 1);
+
+    // Y-axis label
+    ctx.fillStyle = COLORS.text;
+    ctx.font = '9px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('שאלות', MARGIN.left - 4, 14);
+
+    for (let i = 0; i < data.length; i++) {
+      const d = data[i];
+      const x = MARGIN.left + (i / data.length) * plotW + (plotW / data.length - barW) / 2;
+      let volNorm = d.total / maxVol;
+      if (logScale && d.total > 0) volNorm = Math.log(d.total + 1) / Math.log(maxVol + 1);
+      const barH = volNorm * plotH;
+      const y = 5 + plotH - barH;
+
+      ctx.fillStyle = hexToRgba(getBarColor(d.accuracy), 0.35);
+      ctx.fillRect(x, y, barW, barH);
+    }
+
+    // X-axis dates (show ~6 labels)
+    const step = Math.max(1, Math.floor(data.length / 6));
+    ctx.fillStyle = COLORS.text;
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    for (let i = 0; i < data.length; i += step) {
+      const x = MARGIN.left + ((i + 0.5) / data.length) * plotW;
+      ctx.fillText(formatDateHeb(data[i].date), x, PANEL2_H - 2);
+    }
+
+    // Crosshair vertical
+    if (hoverIndex !== null && hoverIndex < data.length) {
+      const x = MARGIN.left + ((hoverIndex + 0.5) / data.length) * plotW;
+      ctx.strokeStyle = COLORS.crosshair;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, PANEL2_H - 15); ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  }, [data, hoverIndex, maxVol, logScale, getCanvasWidth]);
+
+  useEffect(() => { drawMain(); drawVolume(); }, [drawMain, drawVolume]);
+
+  // Resize
+  useEffect(() => {
+    const onResize = () => { drawMain(); drawVolume(); };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, [drawMain, drawVolume]);
+
+  // Mouse handler
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    if (!data.length || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const w = rect.width;
+    const plotW = w - MARGIN.left - MARGIN.right;
+    const relX = x - MARGIN.left;
+    if (relX < 0 || relX > plotW) { setHoverIndex(null); setTooltipPos(null); return; }
+    const idx = Math.min(data.length - 1, Math.floor((relX / plotW) * data.length));
+    setHoverIndex(idx);
+    setTooltipPos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
+  }, [data]);
+
+  const handleMouseLeave = useCallback(() => { setHoverIndex(null); setTooltipPos(null); }, []);
+
+  // Stats bar
+  const statsBar = useMemo(() => {
+    if (!data.length) return null;
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+    const todayData = data.find(d => d.date === today);
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+    const yesterdayData = data.find(d => d.date === yesterdayStr);
+
+    const lastEma7 = [...data].reverse().find(d => d.ema7 !== null)?.ema7;
+    const lastEma14 = [...data].reverse().find(d => d.ema14 !== null)?.ema14;
+
+    const change = todayData && yesterdayData
+      ? Math.round((todayData.accuracy - yesterdayData.accuracy) * 10) / 10
+      : null;
+
+    return { todayAcc: todayData?.accuracy ?? null, todayVol: todayData?.total ?? 0, lastEma7, lastEma14, globalAvg, change };
+  }, [data, globalAvg]);
+
+  const hovered = hoverIndex !== null ? data[hoverIndex] : null;
+
+  if (loading) {
+    return (
+      <div className="rounded-2xl p-6 text-center" style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}>
+        <div className="text-sm" style={{ color: COLORS.text }}>טוען נתונים...</div>
+      </div>
+    );
+  }
+
+  if (!data.length) {
+    return (
+      <div className="rounded-2xl p-6 text-center" style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }} dir="rtl">
+        <div className="text-sm" style={{ color: COLORS.text }}>אין נתוני תרגול ב-90 הימים האחרונים</div>
+      </div>
+    );
+  }
+
+  const ToggleBtn = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => (
+    <button
+      onClick={onClick}
+      className="px-3 py-1 rounded-md text-xs font-bold transition-all"
+      style={{
+        background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
+        border: `1px solid ${active ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}`,
+        color: active ? COLORS.textBright : COLORS.text,
+      }}
+    >
+      {label}
+    </button>
+  );
+
+  const containerWidth = containerRef.current?.clientWidth || 600;
+  const tooltipFlipX = tooltipPos && tooltipPos.x > containerWidth * 0.65;
+
+  return (
+    <div className="rounded-2xl overflow-hidden" style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }} dir="rtl">
+      {/* Header + toggles */}
+      <div className="flex items-center justify-between p-4 pb-2 flex-wrap gap-2">
+        <h3 className="text-sm font-bold" style={{ color: COLORS.textBright }}>מגמת דיוק — 90 ימים</h3>
+        <div className="flex gap-1.5 flex-wrap">
+          <ToggleBtn active={showEma7} label="EMA 7" onClick={() => setShowEma7(v => !v)} />
+          <ToggleBtn active={showEma14} label="EMA 14" onClick={() => setShowEma14(v => !v)} />
+          <ToggleBtn active={showGlobalAvg} label="ממוצע כללי" onClick={() => setShowGlobalAvg(v => !v)} />
+          <ToggleBtn active={logScale} label="לוגריתמי" onClick={() => setLogScale(v => !v)} />
+        </div>
+      </div>
+
+      {/* Chart area */}
+      <div
+        ref={containerRef}
+        className="relative px-2"
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+        style={{ background: COLORS.bg }}
+      >
+        <canvas ref={mainCanvasRef} style={{ display: 'block', width: '100%' }} />
+        <canvas ref={volCanvasRef} style={{ display: 'block', width: '100%' }} />
+
+        {/* Tooltip */}
+        {hovered && tooltipPos && (
+          <div
+            className="absolute pointer-events-none rounded-lg px-3 py-2 text-xs z-50"
+            style={{
+              background: COLORS.tooltipBg,
+              border: `1px solid ${COLORS.tooltipBorder}`,
+              top: Math.min(tooltipPos.y - 10, PANEL1_H - 20),
+              ...(tooltipFlipX
+                ? { right: containerWidth - tooltipPos.x + 12 }
+                : { left: tooltipPos.x + 12 }),
+              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+              direction: 'rtl',
+            }}
+          >
+            <div className="font-bold mb-1" style={{ color: COLORS.textBright }}>{formatDateHeb(hovered.date)}</div>
+            <div style={{ color: COLORS.text }}>שאלות היום: <span className="font-bold" style={{ color: COLORS.textBright }}>{hovered.total}</span></div>
+            <div style={{ color: COLORS.text }}>דיוק: <span className="font-bold" style={{ color: getBarColor(hovered.accuracy) }}>{hovered.accuracy}%</span></div>
+            {showEma7 && hovered.ema7 !== null && <div style={{ color: COLORS.text }}>EMA 7: <span className="font-bold" style={{ color: COLORS.ema7 }}>{hovered.ema7}%</span></div>}
+            {showEma14 && hovered.ema14 !== null && <div style={{ color: COLORS.text }}>EMA 14: <span className="font-bold" style={{ color: COLORS.ema14 }}>{hovered.ema14}%</span></div>}
+            <div style={{ color: COLORS.text }}>ממוצע כללי: <span className="font-bold" style={{ color: COLORS.globalAvg }}>{globalAvg}%</span></div>
+          </div>
+        )}
+      </div>
+
+      {/* Stats bar */}
+      {statsBar && (
+        <div className="flex flex-wrap gap-x-5 gap-y-1 px-4 py-3 text-xs" style={{ borderTop: `1px solid ${COLORS.border}` }}>
+          <span style={{ color: COLORS.text }}>דיוק היום: <span className="font-bold" style={{ color: statsBar.todayAcc !== null ? getBarColor(statsBar.todayAcc) : COLORS.text }}>{statsBar.todayAcc !== null ? `${statsBar.todayAcc}%` : '—'}</span></span>
+          <span style={{ color: COLORS.text }}>EMA 7: <span className="font-bold" style={{ color: COLORS.ema7 }}>{statsBar.lastEma7 !== null && statsBar.lastEma7 !== undefined ? `${statsBar.lastEma7}%` : '—'}</span></span>
+          <span style={{ color: COLORS.text }}>EMA 14: <span className="font-bold" style={{ color: COLORS.ema14 }}>{statsBar.lastEma14 !== null && statsBar.lastEma14 !== undefined ? `${statsBar.lastEma14}%` : '—'}</span></span>
+          <span style={{ color: COLORS.text }}>ממוצע כללי: <span className="font-bold" style={{ color: COLORS.globalAvg }}>{globalAvg}%</span></span>
+          <span style={{ color: COLORS.text }}>שאלות היום: <span className="font-bold" style={{ color: COLORS.textBright }}>{statsBar.todayVol}</span></span>
+          <span style={{ color: COLORS.text }}>שינוי מאתמול: <span className="font-bold" style={{ color: statsBar.change !== null ? (statsBar.change >= 0 ? COLORS.green : COLORS.red) : COLORS.text }}>{statsBar.change !== null ? `${statsBar.change > 0 ? '+' : ''}${statsBar.change}%` : '—'}</span></span>
+        </div>
+      )}
+    </div>
+  );
+}
