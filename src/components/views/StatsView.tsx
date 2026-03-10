@@ -227,10 +227,6 @@ export default function StatsView() {
 
       </motion.div>
 
-      {/* ROW 5 — Group Position */}
-      <motion.div variants={itemVariants}>
-        <ComparativeStats />
-      </motion.div>
 
       {/* ROW 6 — Import/Export */}
       <motion.div variants={itemVariants} className="bg-card border border-border rounded-2xl p-6 transition-all duration-200" dir="rtl">
