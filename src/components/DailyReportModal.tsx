@@ -140,7 +140,7 @@ export default function DailyReportModal({ open, onClose }: { open: boolean; onC
                   <AnimatedNumber value={accuracy} suffix="%" />
                 </div>
               )}
-              <div className="text-xs text-muted-foreground mt-1">דיוק</div>
+              <div className="text-xs text-muted-foreground mt-1">דיוק היום</div>
             </div>
 
             <div className="liquid-glass p-4 text-center">
