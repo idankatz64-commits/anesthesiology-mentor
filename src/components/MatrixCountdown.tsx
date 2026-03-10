@@ -223,7 +223,7 @@ export default function MatrixCountdown() {
         }`}
       />
 
-      <div className="relative flex flex-col items-center gap-3">
+      <div className="relative flex flex-col items-center gap-2 sm:gap-3">
         {/* Header */}
         <div className="flex items-center gap-2">
           <motion.div
