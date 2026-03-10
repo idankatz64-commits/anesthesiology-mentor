@@ -490,7 +490,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { error } = await supabase.from('spaced_repetition').upsert({
       user_id: userId,
       question_id: questionId,
-      next_review_date: nextReviewDate,
+      next_review: nextReviewDate,
       confidence,
       last_correct: isCorrect,
       updated_at: new Date().toISOString(),
