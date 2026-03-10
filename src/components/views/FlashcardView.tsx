@@ -133,7 +133,7 @@ export default function FlashcardView() {
           {/* Mode A: Topics */}
           <button
             onClick={() => setMode('topics')}
-            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'topics' ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/40'}`}
+            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'topics' ? 'border-primary bg-primary/5 shadow-md' : 'border-border deep-tile hover:border-primary/40'}`}
           >
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mode === 'topics' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
