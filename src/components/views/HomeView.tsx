@@ -111,15 +111,15 @@ export default function HomeView() {
 
   return (
     <div className="max-w-6xl mx-auto">
-      <header className="mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
-        <div className="flex items-start gap-4">
-          <div>
-            <h2 className="text-3xl font-semibold text-foreground tracking-tight">
-              שלום, ד"ר <span className="text-primary">מתמחה</span> 👋
-            </h2>
-            <p className="text-muted-foreground mt-2 font-light text-lg">מוכן להמשיך בהכנות למבחן שלב א'?</p>
-          </div>
-          <MatrixCountdown />
+      {/* Matrix Countdown — full width at top */}
+      <MatrixCountdown />
+
+      <header className="mt-8 mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
+        <div>
+          <h2 className="text-3xl font-semibold text-foreground tracking-tight">
+            שלום, ד"ר <span className="text-primary">מתמחה</span> 👋
+          </h2>
+          <p className="text-muted-foreground mt-2 font-light text-lg">מוכן להמשיך בהכנות למבחן שלב א'?</p>
         </div>
         <button
           onClick={resetAllData}
