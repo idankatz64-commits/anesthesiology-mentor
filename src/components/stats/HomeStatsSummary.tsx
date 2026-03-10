@@ -37,7 +37,7 @@ export default function HomeStatsSummary() {
 
   return (
     <div className="grid grid-cols-3 gap-6">
-      <div className="liquid-glass p-5 text-center">
+      <div className="deep-tile p-5 text-center">
         <div className="flex justify-center mb-2">
           <CheckCircle className="w-5 h-5 text-primary" />
         </div>
