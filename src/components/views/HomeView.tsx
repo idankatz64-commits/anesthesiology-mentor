@@ -24,6 +24,7 @@ export default function HomeView() {
   const [loadingDue, setLoadingDue] = useState(false);
   const [resuming, setResuming] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [algoOpen, setAlgoOpen] = useState(false);
 
   // Exam proximity badge
   const examPhase = useMemo(() => getExamProximityPhase(), []);
