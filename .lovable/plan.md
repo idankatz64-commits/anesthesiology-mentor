@@ -1,62 +1,42 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## Plan: Light Mode Fix, Deep Dark Theme, Coverage Column, Sparklines
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+### 5 Tasks
 
-## Part A -- Daily Volume Bars
+**1. Fix light mode in TopicPerformanceTable**
+The table currently uses hardcoded dark colors (`#0a0a0a`, `#0f0f0f`, `#1a1a1a`, `#e0e0e0`, `#888`). Replace all inline styles with a theme-aware approach: create a `useTableTheme()` hook that checks `document.documentElement.classList.contains('light')` and returns the appropriate color set. Dark mode keeps current colors; light mode uses white/gray equivalents (`#fff`, `#f5f5f7`, `#e5e5e5`, `#1a1a1a`, `#666`).
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+**2. Apply deep dark matrix theme to entire StatsView**
+Transform StatsView tiles to use a consistent deep-dark aesthetic with subtle matrix accents:
+- Wrap entire StatsView in a container with `bg-[#050508]` and a subtle grid pattern overlay (`bg-grid-pattern` class already exists)
+- All stat tiles (question bank, personal stats, KPI gauges, import/export): replace `bg-card border-border` with `bg-[#0a0a0f]/80 border-[#1a1a2a] backdrop-blur-sm` + subtle `box-shadow: inset 0 1px 0 rgba(123,146,255,0.05), 0 4px 20px rgba(0,0,0,0.4)`
+- Add thin gradient top accent (`::before` pseudo via a utility class or inline) with `#7b92ff` → transparent
+- Section headers: add faint matrix-blue tint (`text-[#7b92ff]/80`)
+- AnimatedNumber values: keep `Share Tech Mono` font, add faint text-shadow glow
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+**3. Add "כיסוי" (Coverage) column to table**
+- Add `'coverage'` to `ColId` and `ALL_COLS` array with label `כיסוי`
+- Calculate: `coverage = totalAnswered / totalInDb * 100` (clamped 0-100)
+- Render as a colored progress bar (same 5px bar style as accuracy) with color scale:
+  - `< 25%`: `#ff1744` (red)
+  - `25-50%`: `#ff9800` (orange)  
+  - `50-75%`: `#2196f3` (blue)
+  - `≥ 75%`: `#00e676` (green)
+- Add as sortable column between "שגוי" and "דיוק"
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
+**4. Add sparkline column (7-day accuracy trend)**
+- Add `'sparkline'` to `ColId` with label `מגמה`
+- Fetch last 7 days of per-topic accuracy from `answer_history` on mount (single query, group client-side)
+- Render as inline SVG sparkline (40×16px polyline) inside each row cell
+- Color: green if trending up, red if trending down, gray if flat
+- Place column after "דיוק"
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+**5. Keep hardcoded dark for table but detect light mode**
+Since user likes the dark aesthetic but wants light mode to work: use a `useThemeMode()` hook that returns `'dark' | 'light'`. The table uses its own dark palette in dark mode and switches to a light palette in light mode. Both palettes are hardcoded (not CSS vars) for precise control.
 
-## Part B -- Daily Performance Report
-
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
-
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
+### Files Changed
+- `src/components/stats/TopicPerformanceTable.tsx` — light mode fix, coverage column, sparkline column, theme detection
+- `src/components/views/StatsView.tsx` — deep dark matrix container styling for all tiles
+- `src/components/stats/AccuracyCanvasChart.tsx` — minor: ensure dark matrix bg consistency
 
