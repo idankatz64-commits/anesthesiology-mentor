@@ -321,6 +321,7 @@ export default function FlashcardView() {
           {/* Front */}
           <div
             className="w-full rounded-2xl deep-tile p-8 md:p-12 shadow-lg"
+            style={{ backfaceVisibility: 'hidden' }}
           >
             <div className="text-xs text-muted-foreground mb-4 font-medium">
               {current[KEYS.TOPIC]} • שאלה {current[KEYS.ID]}
