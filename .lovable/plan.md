@@ -1,62 +1,54 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## Plan: Replace Accuracy Trend with Canvas-Based TradingView Chart
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+**What**: Replace the existing `LearningVelocityTile` (Recharts-based) in StatsView with a new raw Canvas chart component featuring TradingView aesthetics, dual panels, EMA lines, toggle controls, interactive tooltips, and a stats bar.
 
-## Part A -- Daily Volume Bars
+**Where**: New component `src/components/stats/AccuracyCanvasChart.tsx`, minor update to `StatsView.tsx`.
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+### Data Fetching
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+- Query `answer_history` table (not `user_answers`) for the current user, last 90 days
+- Group by `DATE(answered_at)` in JS after fetching
+- Per day: `{ date, total, correct, accuracy }`
+- Compute EMA-7, EMA-14, global average from this data
+- Fetch inside the component using `supabase` client directly
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
+### New Component: `AccuracyCanvasChart.tsx`
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+**Toggle bar** (above canvas):
+- 4 buttons: EMA 7 / EMA 14 / ממוצע כללי / לוגריתמי
+- Active = filled, inactive = outlined, using simple styled buttons
 
-## Part B -- Daily Performance Report
+**Canvas Panel 1 (~260px tall)** — Accuracy + Volume bars:
+- Each day = vertical bar, HEIGHT = volume relative to max-day volume
+- Bar COLOR by accuracy: green (#00e676) ≥70%, orange (#ff9800) 50-70%, red (#ff1744) <50%
+- Y-axis: 0-100% accuracy scale with grid lines at 20/40/60/80/100% (#1a1a1a)
+- EMA-7 (orange), EMA-14 (blue), global avg (purple dashed) drawn as lines on accuracy scale
+- Logarithmic toggle applies log scale to volume bar heights
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+**Canvas Panel 2 (~70px tall)** — Volume sub-panel:
+- Same x-axis alignment
+- Volume bars at 35% opacity, same color logic
+- Y-axis label "שאלות"
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
+**Interactive tooltip** on mousemove:
+- Vertical + horizontal crosshair lines (rgba white)
+- Dark tooltip card (#0f0f0f, border #3a4060) with date (dd/mm/yy Hebrew), volume, accuracy (colored), EMA values
+- Flips left when near right edge
 
-## Files to Modify
+**Stats bar** below canvas:
+- Row of KPIs: דיוק היום / EMA 7 / EMA 14 / ממוצע כללי / שאלות היום / שינוי מאתמול
 
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+### StatsView Changes
 
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+- Replace `LearningVelocityTile` import and usage (lines 12, 211-213) with `AccuracyCanvasChart`
+- Remove `trendData14`/`trendData30` from destructuring (no longer needed here; kept in hook for other consumers)
+
+### Style
+- Background: #0a0a0a, cards: #0f0f0f with border #1a1a1a
+- RTL layout, Hebrew labels
+- Full TradingView dark aesthetic
 
 No database changes required.
 
