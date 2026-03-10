@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Pause, Play } from 'lucide-react';
 import { EXAM_DATE } from '@/lib/smartSelection';
 
 interface TimeUnit {
@@ -27,20 +28,27 @@ function MatrixRain({ width, height }: { width: number; height: number }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const columnsRef = useRef<number[]>([]);
   const rafRef = useRef<number>(0);
+  const lastFrameRef = useRef<number>(0);
 
   const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノ0123456789ABCDEF';
   const FONT_SIZE = 11;
+  const FRAME_INTERVAL = 60; // ~16fps for slower rain
 
-  const draw = useCallback(() => {
+  const draw = useCallback((timestamp: number) => {
+    if (timestamp - lastFrameRef.current < FRAME_INTERVAL) {
+      rafRef.current = requestAnimationFrame(draw);
+      return;
+    }
+    lastFrameRef.current = timestamp;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    ctx.fillStyle = 'rgba(13, 15, 20, 0.12)';
+    ctx.fillStyle = 'rgba(13, 15, 20, 0.06)';
     ctx.fillRect(0, 0, width, height);
 
-    ctx.fillStyle = 'hsl(217 92% 76% / 0.35)';
     ctx.font = `${FONT_SIZE}px "Share Tech Mono", monospace`;
 
     const cols = columnsRef.current;
@@ -49,15 +57,14 @@ function MatrixRain({ width, height }: { width: number; height: number }) {
       const x = i * FONT_SIZE;
       const y = cols[i] * FONT_SIZE;
 
-      // Brighter leading character
       if (Math.random() > 0.6) {
-        ctx.fillStyle = 'hsl(217 92% 76% / 0.7)';
+        ctx.fillStyle = 'hsl(120 100% 50% / 0.7)';
       } else {
-        ctx.fillStyle = 'hsl(217 92% 76% / 0.2)';
+        ctx.fillStyle = 'hsl(120 100% 50% / 0.2)';
       }
       ctx.fillText(char, x, y);
 
-      if (y > height && Math.random() > 0.975) {
+      if (y > height && Math.random() > 0.985) {
         cols[i] = 0;
       }
       cols[i]++;
@@ -71,7 +78,6 @@ function MatrixRain({ width, height }: { width: number; height: number }) {
     const colCount = Math.floor(width / FONT_SIZE);
     columnsRef.current = Array.from({ length: colCount }, () => Math.floor(Math.random() * (height / FONT_SIZE)));
 
-    // Clear canvas first
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -97,14 +103,14 @@ function MatrixRain({ width, height }: { width: number; height: number }) {
 }
 
 /* ── Digit ── */
-function Digit({ value }: { value: number; max3?: boolean }) {
+function Digit({ value }: { value: number }) {
   const str = String(value).padStart(value > 99 ? 3 : 2, '0');
   return (
     <div className="relative flex gap-[2px]">
       {str.split('').map((ch, i) => (
-        <div key={i} className="relative w-[1.8em] h-[2.4em] overflow-hidden">
-          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(96,165,250,0.03)_2px,rgba(96,165,250,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
-          <div className="absolute inset-0 bg-background/70 border border-matrix/20 rounded-sm" />
+        <div key={i} className="relative w-[2.4em] h-[3.2em] overflow-hidden">
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,65,0.03)_2px,rgba(0,255,65,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
+          <div className="absolute inset-0 bg-background/70 border border-[#00ff41]/20 rounded-sm" />
           <AnimatePresence mode="popLayout">
             <motion.span
               key={`${ch}-${value}`}
@@ -112,10 +118,10 @@ function Digit({ value }: { value: number; max3?: boolean }) {
               animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
               exit={{ y: 10, opacity: 0, filter: 'blur(3px)' }}
               transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.6 }}
-              className="absolute inset-0 flex items-center justify-center font-mono text-xl font-bold"
+              className="absolute inset-0 flex items-center justify-center font-mono text-2xl font-bold"
               style={{
-                color: 'hsl(var(--matrix))',
-                textShadow: '0 0 10px hsl(var(--matrix) / 0.6), 0 0 25px hsl(var(--matrix) / 0.15)',
+                color: '#00ff41',
+                textShadow: '0 0 10px rgba(0,255,65,0.6), 0 0 25px rgba(0,255,65,0.15)',
               }}
             >
               {ch}
@@ -128,11 +134,11 @@ function Digit({ value }: { value: number; max3?: boolean }) {
 }
 
 /* ── Separator ── */
-function Separator() {
+function ColonSeparator() {
   return (
     <motion.span
-      className="font-mono text-xl font-bold mx-1 self-center"
-      style={{ color: 'hsl(var(--matrix) / 0.4)' }}
+      className="font-mono text-2xl font-bold mx-1 self-center"
+      style={{ color: 'rgba(0,255,65,0.4)' }}
       animate={{ opacity: [0.3, 1, 0.3] }}
       transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
     >
@@ -146,6 +152,10 @@ export default function MatrixCountdown() {
   const [time, setTime] = useState(getTimeLeft);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dims, setDims] = useState({ w: 0, h: 0 });
+  const [rainEnabled, setRainEnabled] = useState(() => {
+    const stored = localStorage.getItem('matrix_rain_enabled');
+    return stored === null ? true : stored === 'true';
+  });
 
   useEffect(() => {
     const id = setInterval(() => setTime(getTimeLeft()), 1000);
@@ -160,6 +170,14 @@ export default function MatrixCountdown() {
     ro.observe(containerRef.current);
     return () => ro.disconnect();
   }, []);
+
+  const toggleRain = () => {
+    setRainEnabled(prev => {
+      const next = !prev;
+      localStorage.setItem('matrix_rain_enabled', String(next));
+      return next;
+    });
+  };
 
   if (!time) return null;
 
@@ -176,13 +194,23 @@ export default function MatrixCountdown() {
   return (
     <motion.div
       ref={containerRef}
-      className="liquid-glass relative overflow-hidden px-6 py-4 w-full"
+      className="liquid-glass relative overflow-hidden px-6 py-5 w-full"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 250, damping: 25 }}
     >
       {/* Matrix rain background */}
-      {dims.w > 0 && <MatrixRain width={dims.w} height={dims.h} />}
+      {rainEnabled && dims.w > 0 && <MatrixRain width={dims.w} height={dims.h} />}
+
+      {/* Toggle button */}
+      <button
+        onClick={toggleRain}
+        className="absolute top-2 right-2 z-20 p-1.5 rounded-md opacity-30 hover:opacity-80 transition-opacity"
+        style={{ color: '#00ff41' }}
+        title={rainEnabled ? 'השהה אנימציה' : 'הפעל אנימציה'}
+      >
+        {rainEnabled ? <Pause size={14} /> : <Play size={14} />}
+      </button>
 
       {/* Urgency glow */}
       <div
@@ -206,7 +234,7 @@ export default function MatrixCountdown() {
                   ? 'hsl(var(--destructive))'
                   : urgency === 'approaching'
                   ? 'hsl(var(--warning))'
-                  : 'hsl(var(--matrix))',
+                  : '#00ff41',
             }}
             animate={{ opacity: [1, 0.3, 1], scale: [1, 0.8, 1] }}
             transition={{ duration: urgency === 'imminent' ? 0.6 : 1.5, repeat: Infinity }}
@@ -222,7 +250,7 @@ export default function MatrixCountdown() {
                   ? 'hsl(var(--destructive))'
                   : urgency === 'approaching'
                   ? 'hsl(var(--warning))'
-                  : 'hsl(var(--matrix))',
+                  : '#00ff41',
             }}
             animate={{ opacity: [0.3, 1, 0.3], scale: [0.8, 1, 0.8] }}
             transition={{ duration: urgency === 'imminent' ? 0.6 : 1.5, repeat: Infinity }}
@@ -235,9 +263,9 @@ export default function MatrixCountdown() {
             <div key={u.label} className="flex items-center">
               <div className="flex flex-col items-center gap-1">
                 <Digit value={u.value} />
-                <span className="text-[9px] text-muted-foreground/50 font-medium tracking-wide">{u.label}</span>
+                <span className="text-[10px] text-muted-foreground/50 font-medium tracking-wide">{u.label}</span>
               </div>
-              {i < units.length - 1 && <Separator />}
+              {i < units.length - 1 && <ColonSeparator />}
             </div>
           ))}
         </div>
@@ -252,7 +280,7 @@ export default function MatrixCountdown() {
       <div
         className="absolute bottom-0 left-[10%] right-[10%] h-[1px]"
         style={{
-          background: `linear-gradient(90deg, transparent, hsl(var(--matrix) / 0.4), transparent)`,
+          background: `linear-gradient(90deg, transparent, rgba(0,255,65,0.4), transparent)`,
         }}
       />
     </motion.div>
