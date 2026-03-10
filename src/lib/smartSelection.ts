@@ -117,7 +117,23 @@ const SIMULATION_PROPORTIONS: Record<string, number> = {
 };
 
 // ── Hardcoded exam date ─────────────────────────────────────────────
-const EXAM_DATE = new Date('2026-06-16');
+export const EXAM_DATE = new Date('2026-06-16T08:00:00');
+
+// ── Exam proximity phase ────────────────────────────────────────────
+export type ExamPhase = 'early' | 'approaching' | 'imminent';
+
+export function getExamProximityPhase(): ExamPhase {
+  const daysLeft = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
+  if (daysLeft > 90) return 'early';
+  if (daysLeft > 30) return 'approaching';
+  return 'imminent';
+}
+
+// ── Phase-based weight overrides (W2=topicWeakness, W5=examProximity) ─
+const PHASE_OVERRIDES: Record<Exclude<ExamPhase, 'early'>, { w2: number; w5: number }> = {
+  approaching: { w2: 0.30, w5: 0.10 },
+  imminent:    { w2: 0.35, w5: 0.20 },
+};
 
 // ── Interfaces ──────────────────────────────────────────────────────
 export interface SrsRecord {
