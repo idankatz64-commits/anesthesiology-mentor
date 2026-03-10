@@ -91,8 +91,8 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const [showGlobalAvg, setShowGlobalAvg] = useState(true);
   const [logScale, setLogScale] = useState(false);
 
-  const PANEL1_H = expanded ? 400 : 260;
-  const PANEL2_H = expanded ? 100 : 70;
+  const PANEL1_H = expanded ? 450 : 340;
+  const PANEL2_H = expanded ? 110 : 90;
   const MARGIN = { top: 10, right: 10, bottom: 20, left: 40 };
 
   useEffect(() => {
@@ -169,7 +169,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
     const plotW = w - MARGIN.left - MARGIN.right;
     const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
-    const barW = Math.max(2, (plotW / data.length) - 1);
+    const barW = Math.max(2, (plotW / data.length) * 0.5);
 
     ctx.strokeStyle = theme.gridLine;
     ctx.lineWidth = 1;
@@ -247,7 +247,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
     const plotW = w - MARGIN.left - MARGIN.right;
     const plotH = PANEL2_H - 5 - 15;
-    const barW = Math.max(2, (plotW / data.length) - 1);
+    const barW = Math.max(2, (plotW / data.length) * 0.5);
 
     ctx.fillStyle = theme.text;
     ctx.font = '9px sans-serif';

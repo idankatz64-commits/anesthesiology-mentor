@@ -55,7 +55,7 @@ function scoreBadge(score: number) {
 }
 
 function positionLabel(myAcc: number, groupAvg: number | null, totalUsers: number | null) {
-  if (groupAvg === null) return { label: '—', cls: 'text-muted-foreground' };
+  if (groupAvg === null) return { label: '—', cls: 'text-[#888]' };
   if (totalUsers && totalUsers >= 10 && myAcc >= groupAvg + 20) return { label: 'Top 10%', cls: 'text-[#00e676] font-black' };
   const diff = myAcc - groupAvg;
   if (diff > 5) return { label: 'מעל ממוצע', cls: 'text-[#00e676]' };
@@ -128,13 +128,13 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
   const colCount = 1 + ALL_COLS.filter(c => isVisible(c.id)).length;
 
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden">
+    <div className="rounded-xl overflow-hidden" style={{ background: '#0a0a0a', border: '1px solid #1a1a1a' }}>
       {/* Header */}
-      <div className="p-4 flex flex-col gap-3 border-b border-border" dir="rtl">
+      <div className="p-4 flex flex-col gap-3" style={{ borderBottom: '1px solid #1a1a1a' }} dir="rtl">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-bold text-sm text-foreground">ביצועים לפי נושא</h3>
-            <p className="text-[10px] mt-0.5 text-muted-foreground">לחץ על שורה לפירוט • מיון לפי Smart Score</p>
+            <h3 className="font-bold text-sm" style={{ color: '#e0e0e0' }}>ביצועים לפי נושא</h3>
+            <p className="text-xs mt-0.5" style={{ color: '#888' }}>לחץ על שורה לפירוט • מיון לפי Smart Score</p>
           </div>
           <div className="relative w-full sm:w-56">
             <input
@@ -142,9 +142,10 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               placeholder="חפש נושא..."
-              className="w-full py-2 px-3 pl-9 rounded-lg text-sm outline-none transition bg-background border border-border text-foreground placeholder:text-muted-foreground"
+              className="w-full py-2 px-3 pl-9 rounded-lg text-sm outline-none transition"
+              style={{ background: '#0f0f0f', border: '1px solid #1a1a1a', color: '#e0e0e0' }}
             />
-            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5 text-muted-foreground" />
+            <Search className="absolute left-3 top-2.5 w-3.5 h-3.5" style={{ color: '#888' }} />
           </div>
         </div>
 
@@ -157,11 +158,12 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
                 key={col.id}
                 onClick={() => toggleCol(col.id)}
                 whileTap={{ scale: 0.93 }}
-                className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all border ${
-                  active
-                    ? 'bg-primary/15 border-primary text-primary'
-                    : 'bg-transparent border-border text-muted-foreground'
-                }`}
+                className="px-2.5 py-1 rounded-full text-xs font-bold transition-all"
+                style={{
+                  background: active ? 'rgba(123,146,255,0.15)' : 'transparent',
+                  border: active ? '1px solid #7b92ff' : '1px solid #1a1a1a',
+                  color: active ? '#7b92ff' : '#888',
+                }}
               >
                 {col.label}
               </motion.button>
@@ -174,7 +176,7 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
         <div className="overflow-x-auto">
           <table className="w-full text-sm" dir="rtl">
             <thead>
-              <tr className="bg-background border-b border-border">
+              <tr style={{ background: '#0f0f0f', borderBottom: '1px solid #1a1a1a' }}>
                 <SortHeader label="נושא" sortKey="topic" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />
                 {isVisible('totalInDb') && <SortHeader label="במאגר" sortKey="totalInDb" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />}
                 {isVisible('totalAnswered') && <SortHeader label="נענו" sortKey="totalAnswered" currentKey={sortKey} asc={sortAsc} onSort={handleSort} />}
@@ -200,49 +202,53 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
                       initial="hidden"
                       animate="visible"
                       onClick={() => setExpandedTopic(isExpanded ? null : t.topic)}
-                      className={`cursor-pointer transition-colors border-b border-border ${
-                        isExpanded ? 'bg-accent/30' : 'hover:bg-muted/50'
-                      }`}
+                      className="cursor-pointer transition-colors"
+                      style={{
+                        background: isExpanded ? '#0a0a10' : undefined,
+                        borderBottom: '1px solid #1a1a1a',
+                      }}
+                      onMouseEnter={e => { if (!isExpanded) (e.currentTarget as HTMLElement).style.background = '#111'; }}
+                      onMouseLeave={e => { if (!isExpanded) (e.currentTarget as HTMLElement).style.background = ''; }}
                     >
-                      <td className="px-2 py-2 font-medium text-foreground text-xs">{t.topic}</td>
+                      <td className="px-2 py-2 font-medium text-sm" style={{ color: '#e0e0e0' }}>{t.topic}</td>
 
                       {isVisible('totalInDb') && (
-                        <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">{t.totalInDb}</td>
+                        <td className="px-2 py-2 text-center text-xs" style={{ color: '#888' }}>{t.totalInDb}</td>
                       )}
                       {isVisible('totalAnswered') && (
-                        <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">{t.totalAnswered}</td>
+                        <td className="px-2 py-2 text-center text-xs" style={{ color: '#888' }}>{t.totalAnswered}</td>
                       )}
                       {isVisible('correct') && (
-                        <td className="px-2 py-2 text-center text-[10px] font-bold" style={{ color: '#00e676' }}>{t.correct}</td>
+                        <td className="px-2 py-2 text-center text-xs font-bold" style={{ color: '#00e676' }}>{t.correct}</td>
                       )}
                       {isVisible('wrong') && (
-                        <td className="px-2 py-2 text-center text-[10px] font-bold" style={{ color: '#ff1744' }}>{t.wrong}</td>
+                        <td className="px-2 py-2 text-center text-xs font-bold" style={{ color: '#ff1744' }}>{t.wrong}</td>
                       )}
                       {isVisible('accuracy') && (
                         <td className="px-2 py-2 text-center">
                           <div className="flex items-center justify-center gap-1.5">
-                            <div className="w-10 h-[5px] rounded-full overflow-hidden bg-border">
+                            <div className="w-10 h-[5px] rounded-full overflow-hidden" style={{ background: '#1a1a1a' }}>
                               <div className="h-full rounded-full" style={{ width: `${t.accuracy}%`, background: accColor(t.accuracy) }} />
                             </div>
-                            <span className="text-[10px] font-bold" style={{ color: accColor(t.accuracy) }}>{t.accuracy}%</span>
+                            <span className="text-xs font-bold" style={{ color: accColor(t.accuracy) }}>{t.accuracy}%</span>
                           </div>
                         </td>
                       )}
                       {isVisible('smartScore') && (
                         <td className="px-2 py-2 text-center">
-                          <span className={`inline-flex items-center justify-center min-w-[48px] px-2 py-0.5 rounded-full text-[10px] font-black border ${badge.cls}`}>
+                          <span className={`inline-flex items-center justify-center min-w-[48px] px-2 py-0.5 rounded-full text-xs font-black border ${badge.cls}`}>
                             {t.smartScore}% {badge.label}
                           </span>
                         </td>
                       )}
                       {isVisible('groupAvg') && (
-                        <td className="px-2 py-2 text-center text-[10px] text-muted-foreground">
+                        <td className="px-2 py-2 text-center text-xs" style={{ color: '#888' }}>
                           {t.groupAvg !== null ? `${t.groupAvg}%` : '—'}
                         </td>
                       )}
                       {isVisible('position') && (
                         <td className="px-2 py-2 text-center">
-                          <span className={`text-[10px] font-bold ${pos.cls}`}>{pos.label}</span>
+                          <span className={`text-xs font-bold ${pos.cls}`}>{pos.label}</span>
                         </td>
                       )}
                     </motion.tr>
@@ -270,16 +276,17 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
           </table>
         </div>
       ) : (
-        <div className="text-center py-16 text-muted-foreground">
+        <div className="text-center py-16" style={{ color: '#888' }}>
           <p className="text-lg font-light">אין עדיין נתונים. התחל לתרגל!</p>
         </div>
       )}
 
       {filtered.length > 10 && (
-        <div className="p-3 text-center border-t border-border">
+        <div className="p-3 text-center" style={{ borderTop: '1px solid #1a1a1a' }}>
           <button
             onClick={() => setShowAll(!showAll)}
-            className="text-xs font-bold transition flex items-center gap-1 mx-auto text-primary"
+            className="text-xs font-bold transition flex items-center gap-1 mx-auto"
+            style={{ color: '#7b92ff' }}
           >
             {showAll ? <><ChevronUp className="w-3 h-3" /> הצג פחות</> : <><ChevronDown className="w-3 h-3" /> הצג הכל ({filtered.length})</>}
           </button>
@@ -298,14 +305,13 @@ function SortHeader({ label, sortKey, currentKey, asc, onSort }: {
   const active = currentKey === sortKey;
   return (
     <th
-      className={`px-2 py-2 text-[10px] font-bold cursor-pointer select-none whitespace-nowrap text-right transition ${
-        active ? 'text-primary' : 'text-muted-foreground'
-      }`}
+      className="px-2 py-2 text-xs font-bold cursor-pointer select-none whitespace-nowrap text-right transition"
+      style={{ color: active ? '#7b92ff' : '#888' }}
       onClick={() => onSort(sortKey)}
     >
       <span className="flex items-center gap-1">
         {label}
-        <ArrowUpDown className={`w-3 h-3 ${active ? 'text-primary' : 'text-muted-foreground/40'}`} />
+        <ArrowUpDown className="w-3 h-3" style={{ color: active ? '#7b92ff' : 'rgba(136,136,136,0.4)' }} />
       </span>
     </th>
   );
@@ -373,13 +379,13 @@ function ExpandedPanel({ topic, topicStat, groupAvg, totalUsers, onStartPractice
       className="overflow-hidden"
     >
       <div
-        className="p-5 bg-accent/20 border-t border-border"
+        className="p-5"
         dir="rtl"
-        style={{ borderRight: '2px solid hsl(var(--primary))' }}
+        style={{ background: '#0a0a10', borderTop: '1px solid #1a1a1a', borderRight: '3px solid #7b92ff' }}
       >
         <div className="flex items-start justify-between mb-4">
-          <h4 className="text-sm font-bold text-foreground">{topic}</h4>
-          <button onClick={e => { e.stopPropagation(); onClose(); }} className="text-muted-foreground hover:text-foreground transition">
+          <h4 className="text-sm font-bold" style={{ color: '#e0e0e0' }}>{topic}</h4>
+          <button onClick={e => { e.stopPropagation(); onClose(); }} className="transition" style={{ color: '#888' }}>
             <X className="w-4 h-4" />
           </button>
         </div>
@@ -406,15 +412,15 @@ function ExpandedPanel({ topic, topicStat, groupAvg, totalUsers, onStartPractice
 function PanelA({ sessionData }: { sessionData: { label: string; acc: number }[] }) {
   return (
     <div className="flex flex-col items-center">
-      <p className="text-[10px] mb-2 font-bold text-muted-foreground">דיוק ב-5 סשנים אחרונים</p>
+      <p className="text-xs mb-2 font-bold" style={{ color: '#888' }}>דיוק ב-5 סשנים אחרונים</p>
       {sessionData.length > 0 ? (
         <div style={{ width: '100%', height: 130 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={sessionData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
-              <XAxis dataKey="label" tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }} axisLine={false} tickLine={false} />
-              <YAxis domain={[0, 100]} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 9 }} axisLine={false} tickLine={false} />
+              <XAxis dataKey="label" tick={{ fill: '#888', fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis domain={[0, 100]} tick={{ fill: '#888', fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ background: 'hsl(var(--card))', border: '1px solid hsl(var(--border))', borderRadius: 8, fontSize: 11, color: 'hsl(var(--foreground))' }}
+                contentStyle={{ background: '#0f0f0f', border: '1px solid #1a1a1a', borderRadius: 8, fontSize: 11, color: '#e0e0e0' }}
                 formatter={(v: number) => [`${v}%`, 'דיוק']}
               />
               <Bar dataKey="acc" radius={[4, 4, 0, 0]} name="דיוק %">
@@ -426,7 +432,7 @@ function PanelA({ sessionData }: { sessionData: { label: string; acc: number }[]
           </ResponsiveContainer>
         </div>
       ) : (
-        <p className="text-[10px] mt-8 text-muted-foreground/50">אין היסטוריית סשנים עדיין</p>
+        <p className="text-xs mt-8" style={{ color: '#555' }}>אין היסטוריית סשנים עדיין</p>
       )}
     </div>
   );
@@ -436,12 +442,12 @@ function PanelA({ sessionData }: { sessionData: { label: string; acc: number }[]
 
 function PanelB({ correct, wrong, unanswered, accuracy }: { correct: number; wrong: number; unanswered: number; accuracy: number }) {
   const total = correct + wrong + unanswered;
-  if (total === 0) return <div className="flex items-center justify-center text-muted-foreground"><p className="text-xs">אין נתונים</p></div>;
+  if (total === 0) return <div className="flex items-center justify-center" style={{ color: '#888' }}><p className="text-xs">אין נתונים</p></div>;
 
   const segments = [
     { value: correct, color: '#00e676', label: 'נכון' },
     { value: wrong, color: '#ff1744', label: 'שגוי' },
-    { value: unanswered, color: 'hsl(var(--muted-foreground))', label: 'לא נענו' },
+    { value: unanswered, color: '#555', label: 'לא נענו' },
   ];
 
   const r = 50, cx = 60, cy = 60, strokeWidth = 14;
@@ -450,7 +456,7 @@ function PanelB({ correct, wrong, unanswered, accuracy }: { correct: number; wro
 
   return (
     <div className="flex flex-col items-center">
-      <p className="text-[10px] mb-2 font-bold text-muted-foreground">התפלגות תשובות</p>
+      <p className="text-xs mb-2 font-bold" style={{ color: '#888' }}>התפלגות תשובות</p>
       <svg width={120} height={120} viewBox="0 0 120 120">
         {segments.map((seg, i) => {
           const pct = seg.value / total;
@@ -471,14 +477,14 @@ function PanelB({ correct, wrong, unanswered, accuracy }: { correct: number; wro
           offset += dash;
           return el;
         })}
-        <text x={cx} y={cy - 4} textAnchor="middle" className="fill-foreground" fontSize="16" fontWeight="900">{accuracy}%</text>
-        <text x={cx} y={cy + 10} textAnchor="middle" className="fill-muted-foreground" fontSize="8">דיוק</text>
+        <text x={cx} y={cy - 4} textAnchor="middle" fill="#e0e0e0" fontSize="16" fontWeight="900">{accuracy}%</text>
+        <text x={cx} y={cy + 10} textAnchor="middle" fill="#888" fontSize="8">דיוק</text>
       </svg>
       <div className="flex gap-3 mt-2">
         {segments.map(seg => (
           <div key={seg.label} className="flex items-center gap-1">
             <div className="w-2 h-2 rounded-full" style={{ background: seg.color }} />
-            <span className="text-[9px] text-muted-foreground">{seg.label} ({seg.value})</span>
+            <span className="text-[9px]" style={{ color: '#888' }}>{seg.label} ({seg.value})</span>
           </div>
         ))}
       </div>
@@ -494,16 +500,18 @@ function PanelC({ myAccuracy, groupAvg, gap, remaining, smartScore, onStartPract
 }) {
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-[10px] font-bold text-center text-muted-foreground">מיקום בקבוצה</p>
+      <p className="text-xs font-bold text-center" style={{ color: '#888' }}>מיקום בקבוצה</p>
 
       {/* Gradient bar */}
       <div className="relative h-5 rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #ff1744, #ff9800, #00e676)' }}>
         <div
-          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border-2 border-primary bg-background"
+          className="absolute top-1/2 -translate-y-1/2 w-4 h-4 rounded-full"
           style={{
             left: `${Math.min(98, Math.max(2, myAccuracy))}%`,
             transform: 'translate(-50%, -50%)',
             top: '50%',
+            background: '#0a0a0a',
+            border: '2px solid #7b92ff',
           }}
         />
         {groupAvg !== null && (
@@ -514,10 +522,10 @@ function PanelC({ myAccuracy, groupAvg, gap, remaining, smartScore, onStartPract
         )}
       </div>
 
-      <div className="flex items-center justify-between text-[9px] px-1 text-muted-foreground">
+      <div className="flex items-center justify-between text-[9px] px-1" style={{ color: '#888' }}>
         <span>0%</span>
         <div className="flex gap-3">
-          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block bg-background border border-primary" /> אני</span>
+          <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full inline-block" style={{ background: '#0a0a0a', border: '1px solid #7b92ff' }} /> אני</span>
           {groupAvg !== null && <span className="flex items-center gap-1"><span className="w-2 h-[6px] inline-block" style={{ background: '#ff9800' }} /> ממוצע</span>}
         </div>
         <span>100%</span>
@@ -529,19 +537,20 @@ function PanelC({ myAccuracy, groupAvg, gap, remaining, smartScore, onStartPract
           { label: 'דיוק שלי', value: `${myAccuracy}%`, color: accColor(myAccuracy) },
           { label: 'ממוצע קבוצה', value: groupAvg !== null ? `${groupAvg}%` : '—', color: '#ff9800' },
           { label: 'פער', value: gap !== null ? `${gap > 0 ? '+' : ''}${gap}%` : '—', color: gap !== null ? accColor(myAccuracy) : undefined },
-          { label: 'נשאר לסגירה', value: `${remaining}`, color: 'hsl(var(--primary))' },
+          { label: 'נשאר לסגירה', value: `${remaining}`, color: '#7b92ff' },
           { label: 'Smart Score', value: `${smartScore}%`, color: accColor(smartScore) },
         ].map(s => (
-          <div key={s.label} className="rounded-lg px-1 py-1.5 bg-card">
-            <div className="text-[11px] font-black" style={{ color: s.color }}>{s.value}</div>
-            <div className="text-[8px] text-muted-foreground">{s.label}</div>
+          <div key={s.label} className="rounded-lg px-1 py-1.5" style={{ background: '#0f0f0f' }}>
+            <div className="text-sm font-black" style={{ color: s.color }}>{s.value}</div>
+            <div className="text-[8px]" style={{ color: '#888' }}>{s.label}</div>
           </div>
         ))}
       </div>
 
       <button
         onClick={e => { e.stopPropagation(); onStartPractice(); }}
-        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition bg-primary text-primary-foreground hover:bg-primary/90"
+        className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition"
+        style={{ background: '#7b92ff', color: '#0a0a0a' }}
       >
         <Play className="w-4 h-4" /> התחל תרגול בנושא זה
       </button>
