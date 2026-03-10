@@ -194,7 +194,7 @@ export default function MatrixCountdown() {
   return (
     <motion.div
       ref={containerRef}
-      className="liquid-glass relative overflow-hidden px-6 py-5 w-full"
+      className="liquid-glass relative overflow-hidden px-3 py-3 sm:px-6 sm:py-5 w-full"
       initial={{ opacity: 0, y: -10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: 'spring', stiffness: 250, damping: 25 }}
