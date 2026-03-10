@@ -1,36 +1,62 @@
 
 
-## Exam Proximity Phase: Auto-Adjusting Weights + Home Badge
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-### What This Does
-As exam day (June 16, 2026) approaches, the scoring algorithm automatically shifts emphasis toward weak topics and exam proximity. A dismissible badge on the home screen informs the user when this kicks in.
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-### Changes (2 files)
+## Part A -- Daily Volume Bars
 
-#### File 1: `src/lib/smartSelection.ts`
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-**Add phase function and weight override logic:**
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-1. Export `EXAM_DATE` (already exists on line 120, just needs `export`)
-2. Add exported `getExamProximityPhase()` function returning `'early' | 'approaching' | 'imminent'`
-3. In `selectSmartQuestions` (line 275), after getting `WEIGHT_PROFILES[sessionSize]`, apply phase-based overrides to W2 (topicWeakness) and W5 (examProximity) slots only:
-   - `early` (>90 days): no override, use session-size weights as-is
-   - `approaching` (30-90 days): W2 = 0.30, W5 = 0.10
-   - `imminent` (<30 days): W2 = 0.35, W5 = 0.20
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
+```
 
-The other 4 weight slots (W1, W3, W4, W6) remain from the session-size profile.
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-#### File 2: `src/components/views/HomeView.tsx`
+## Part B -- Daily Performance Report
 
-**Add a passive exam phase badge** near the Smart Practice card:
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-1. Import `getExamProximityPhase` from smartSelection
-2. Compute phase on render; if `'early'`, show nothing
-3. If `'approaching'`: amber badge with text "מצב התקרבות לבחינה — דגש על נושאים חלשים"
-4. If `'imminent'`: red badge with text "מצב בחינה — עדיפות מקסימלית לנושאים חלשים"
-5. Dismissible via X button, stored in `localStorage` key `exam_phase_banner_dismissed_v1` with the phase value; re-appears when phase changes (dismissed value no longer matches current phase)
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
 
-### No Other Changes
-- No DB changes, no Supabase calls, no SRS logic changes
-- Badge is purely informational — the weight adjustment happens silently in the scoring math
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+
+No database changes required.
 

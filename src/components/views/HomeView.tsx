@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cardHoverTap } from '@/lib/animations';
+import { getExamProximityPhase, type ExamPhase } from '@/lib/smartSelection';
 
 const containerVariant = {
   hidden: {},
@@ -19,6 +20,18 @@ export default function HomeView() {
   const { data, progress, navigate, resetAllData, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
   const [loadingDue, setLoadingDue] = useState(false);
   const [resuming, setResuming] = useState(false);
+
+  // Exam proximity badge
+  const examPhase = useMemo(() => getExamProximityPhase(), []);
+  const [phaseDismissed, setPhaseDismissed] = useState(() => {
+    const stored = localStorage.getItem('exam_phase_banner_dismissed_v1');
+    return stored === examPhase;
+  });
+  const showExamBadge = examPhase !== 'early' && !phaseDismissed;
+  const dismissExamBadge = () => {
+    localStorage.setItem('exam_phase_banner_dismissed_v1', examPhase);
+    setPhaseDismissed(true);
+  };
 
   let mistakes = 0;
   Object.values(progress.history).forEach(h => { if (h.lastResult === 'wrong') mistakes++; });
@@ -159,6 +172,32 @@ export default function HomeView() {
           </div>
         </motion.div>
       )}
+
+      {/* Exam proximity badge */}
+      <AnimatePresence>
+        {showExamBadge && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className={`mb-6 rounded-xl border px-5 py-3 flex items-center justify-between gap-3 ${
+              examPhase === 'imminent'
+                ? 'bg-destructive/10 border-destructive/30 text-destructive'
+                : 'bg-warning/10 border-warning/30 text-warning'
+            }`}
+          >
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {examPhase === 'imminent'
+                ? 'מצב בחינה — עדיפות מקסימלית לנושאים חלשים'
+                : 'מצב התקרבות לבחינה — דגש על נושאים חלשים'}
+            </div>
+            <button onClick={dismissExamBadge} className="p-1 rounded hover:bg-foreground/10 transition shrink-0">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
