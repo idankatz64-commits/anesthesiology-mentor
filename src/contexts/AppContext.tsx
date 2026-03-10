@@ -487,7 +487,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     nextDate.setDate(nextDate.getDate() + interval);
     const nextReviewDate = nextDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 
-    const { error } = await supabase.from('spaced_repetition').upsert({
+    const { error } = await (supabase.from('spaced_repetition') as any).upsert({
       user_id: userId,
       question_id: questionId,
       next_review: nextReviewDate,
