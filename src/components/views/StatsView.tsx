@@ -4,7 +4,7 @@ import { KEYS } from '@/lib/types';
 import { Download, Upload, User, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedNumber from '@/components/AnimatedNumber';
-import ComparativeStats from './ComparativeStats';
+
 import { useStatsData } from '@/components/stats/useStatsData';
 import ERITile from '@/components/stats/ERITile';
 import WeakZoneMapTile from '@/components/stats/WeakZoneMapTile';
@@ -227,10 +227,6 @@ export default function StatsView() {
 
       </motion.div>
 
-      {/* ROW 5 — Group Position */}
-      <motion.div variants={itemVariants}>
-        <ComparativeStats />
-      </motion.div>
 
       {/* ROW 6 — Import/Export */}
       <motion.div variants={itemVariants} className="bg-card border border-border rounded-2xl p-6 transition-all duration-200" dir="rtl">

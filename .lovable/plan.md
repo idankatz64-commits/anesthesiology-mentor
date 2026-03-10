@@ -1,42 +1,62 @@
 
 
-## Plan: Fix & Enhance TopicPerformanceTable + AccuracyCanvasChart
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-### 6 Tasks
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-**1. Fix table functionality**
-- Console shows ref warning on PanelC — fix by removing ref forwarding attempt
-- Table appears to work but needs the ref warning resolved
+## Part A -- Daily Volume Bars
 
-**2. Light mode support for table + chart**
-- Both components use hardcoded dark colors (`#0a0a0a`, `#0f0f0f`, `#1a1a1a`, `#e0e0e0`, etc.)
-- Replace with CSS variables: `hsl(var(--background))`, `hsl(var(--card))`, `hsl(var(--border))`, `hsl(var(--foreground))`, etc.
-- For AccuracyCanvasChart: read computed CSS variables at draw time for canvas colors
-- For TopicPerformanceTable: replace inline `style={{ color: '#e0e0e0' }}` with tailwind classes like `text-foreground`, `text-muted-foreground`, `bg-card`, `border-border`
-- Keep the semantic accuracy colors (#00e676, #ff1744, #ff9800) as-is since they're data-driven
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-**3. Remove ComparativeStats from StatsView**
-- In `StatsView.tsx`, remove the `<ComparativeStats />` section (lines 230-233) and its import (line 7)
-- The topic performance table now includes group position data, making it redundant
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-**4. Wrap AccuracyCanvasChart in AnimatedStatsTile for full-page expand**
-- Wrap the chart in `AnimatedStatsTile` so clicking expands it to full viewport
-- Collapsed = current chart as-is
-- Expanded = same chart rendered at full viewport size with re-draw on resize
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
+```
 
-**5. Compact table columns**
-- Reduce `px-3` padding to `px-2` on all td/th cells
-- Use `text-[10px]` instead of `text-xs` for numeric columns
-- Reduce badge min-width from 56px to 48px
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-**6. Add animations**
-- Table rows: staggered fade-in using framer-motion `motion.tr` with `variants`
-- Expanded panel: already has spring animation — keep as-is
-- AccuracyCanvasChart: add fade-in entrance animation via framer-motion wrapper
-- Column toggle pills: add `motion.button` with scale tap feedback
+## Part B -- Daily Performance Report
 
-### Files Changed
-- `src/components/stats/TopicPerformanceTable.tsx` — theme-aware colors, compact padding, row animations, fix ref warning
-- `src/components/stats/AccuracyCanvasChart.tsx` — theme-aware canvas colors, wrap in AnimatedStatsTile for expand
-- `src/components/views/StatsView.tsx` — remove ComparativeStats import + usage
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+
+No database changes required.
 

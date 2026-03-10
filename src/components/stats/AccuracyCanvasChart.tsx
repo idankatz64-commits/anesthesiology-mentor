@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import AnimatedStatsTile from './AnimatedStatsTile';
 
 interface DayData {
   date: string;
@@ -10,28 +12,36 @@ interface DayData {
   ema14: number | null;
 }
 
-const COLORS = {
-  bg: '#0a0a0a',
-  card: '#0f0f0f',
-  border: '#1a1a1a',
-  gridLine: '#1a1a1a',
+// Semantic data colors (kept as-is for accuracy thresholds)
+const DATA_COLORS = {
   green: '#00e676',
   orange: '#ff9800',
   red: '#ff1744',
   ema7: '#ff9800',
   ema14: '#2196f3',
   globalAvg: '#9c27b0',
-  text: '#6b7280',
-  textBright: '#e5e7eb',
-  crosshair: 'rgba(255,255,255,0.15)',
-  tooltipBg: '#0f0f0f',
-  tooltipBorder: '#3a4060',
 };
 
+function getThemeColors() {
+  const root = getComputedStyle(document.documentElement);
+  const getVar = (name: string) => root.getPropertyValue(name).trim();
+  return {
+    bg: `hsl(${getVar('--background')})`,
+    card: `hsl(${getVar('--card')})`,
+    border: `hsl(${getVar('--border')})`,
+    text: `hsl(${getVar('--muted-foreground')})`,
+    textBright: `hsl(${getVar('--foreground')})`,
+    crosshair: `hsl(${getVar('--foreground')} / 0.15)`,
+    tooltipBg: `hsl(${getVar('--card')})`,
+    tooltipBorder: `hsl(${getVar('--border')})`,
+    gridLine: `hsl(${getVar('--border')})`,
+  };
+}
+
 function getBarColor(acc: number) {
-  if (acc >= 70) return COLORS.green;
-  if (acc >= 50) return COLORS.orange;
-  return COLORS.red;
+  if (acc >= 70) return DATA_COLORS.green;
+  if (acc >= 50) return DATA_COLORS.orange;
+  return DATA_COLORS.red;
 }
 
 function computeEMA(data: { accuracy: number }[], period: number): (number | null)[] {
@@ -68,7 +78,7 @@ function hexToRgba(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-export default function AccuracyCanvasChart() {
+function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const mainCanvasRef = useRef<HTMLCanvasElement>(null);
   const volCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -81,11 +91,10 @@ export default function AccuracyCanvasChart() {
   const [showGlobalAvg, setShowGlobalAvg] = useState(true);
   const [logScale, setLogScale] = useState(false);
 
-  const PANEL1_H = 260;
-  const PANEL2_H = 70;
+  const PANEL1_H = expanded ? 400 : 260;
+  const PANEL2_H = expanded ? 100 : 70;
   const MARGIN = { top: 10, right: 10, bottom: 20, left: 40 };
 
-  // Fetch data
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -105,7 +114,6 @@ export default function AccuracyCanvasChart() {
 
       if (cancelled || error || !rows) { setLoading(false); return; }
 
-      // Group by date
       const byDate: Record<string, { total: number; correct: number }> = {};
       for (const r of rows) {
         const d = r.answered_at.slice(0, 10);
@@ -143,14 +151,12 @@ export default function AccuracyCanvasChart() {
 
   const maxVol = useMemo(() => Math.max(1, ...data.map(d => d.total)), [data]);
 
-  const getCanvasWidth = useCallback(() => {
-    return containerRef.current?.clientWidth || 600;
-  }, []);
+  const getCanvasWidth = useCallback(() => containerRef.current?.clientWidth || 600, []);
 
-  // Draw main panel
   const drawMain = useCallback(() => {
     const canvas = mainCanvasRef.current;
     if (!canvas || !data.length) return;
+    const theme = getThemeColors();
     const dpr = window.devicePixelRatio || 1;
     const w = getCanvasWidth();
     canvas.width = w * dpr;
@@ -165,8 +171,7 @@ export default function AccuracyCanvasChart() {
     const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
     const barW = Math.max(2, (plotW / data.length) - 1);
 
-    // Grid lines
-    ctx.strokeStyle = COLORS.gridLine;
+    ctx.strokeStyle = theme.gridLine;
     ctx.lineWidth = 1;
     for (const pct of [20, 40, 60, 80, 100]) {
       const y = MARGIN.top + plotH * (1 - pct / 100);
@@ -174,13 +179,12 @@ export default function AccuracyCanvasChart() {
       ctx.moveTo(MARGIN.left, y);
       ctx.lineTo(w - MARGIN.right, y);
       ctx.stroke();
-      ctx.fillStyle = COLORS.text;
+      ctx.fillStyle = theme.text;
       ctx.font = '10px monospace';
       ctx.textAlign = 'right';
       ctx.fillText(`${pct}%`, MARGIN.left - 4, y + 3);
     }
 
-    // Bars
     for (let i = 0; i < data.length; i++) {
       const d = data[i];
       const x = MARGIN.left + (i / data.length) * plotW + (plotW / data.length - barW) / 2;
@@ -189,16 +193,10 @@ export default function AccuracyCanvasChart() {
       const barH = volNorm * plotH * 0.85;
       const y = MARGIN.top + plotH - barH;
 
-      ctx.fillStyle = hexToRgba(getBarColor(d.accuracy), 0.7);
+      ctx.fillStyle = hexToRgba(getBarColor(d.accuracy), hoverIndex === i ? 1 : 0.7);
       ctx.fillRect(x, y, barW, barH);
-
-      if (hoverIndex === i) {
-        ctx.fillStyle = hexToRgba(getBarColor(d.accuracy), 1);
-        ctx.fillRect(x, y, barW, barH);
-      }
     }
 
-    // EMA lines helper
     const drawLine = (getValue: (d: DayData) => number | null, color: string, dashed = false, lineW = 2) => {
       ctx.strokeStyle = color;
       ctx.lineWidth = lineW;
@@ -216,28 +214,27 @@ export default function AccuracyCanvasChart() {
       ctx.setLineDash([]);
     };
 
-    if (showEma7) drawLine(d => d.ema7, COLORS.ema7);
-    if (showEma14) drawLine(d => d.ema14, COLORS.ema14);
-    if (showGlobalAvg) drawLine(() => globalAvg, COLORS.globalAvg, true, 1.5);
+    if (showEma7) drawLine(d => d.ema7, DATA_COLORS.ema7);
+    if (showEma14) drawLine(d => d.ema14, DATA_COLORS.ema14);
+    if (showGlobalAvg) drawLine(() => globalAvg, DATA_COLORS.globalAvg, true, 1.5);
 
-    // Crosshair
     if (hoverIndex !== null && hoverIndex < data.length) {
       const d = data[hoverIndex];
       const x = MARGIN.left + ((hoverIndex + 0.5) / data.length) * plotW;
       const y = MARGIN.top + plotH * (1 - d.accuracy / 100);
-      ctx.strokeStyle = COLORS.crosshair;
+      ctx.strokeStyle = theme.crosshair;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 3]);
       ctx.beginPath(); ctx.moveTo(x, MARGIN.top); ctx.lineTo(x, MARGIN.top + plotH); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(w - MARGIN.right, y); ctx.stroke();
       ctx.setLineDash([]);
     }
-  }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, getCanvasWidth]);
+  }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, getCanvasWidth, PANEL1_H]);
 
-  // Draw volume panel
   const drawVolume = useCallback(() => {
     const canvas = volCanvasRef.current;
     if (!canvas || !data.length) return;
+    const theme = getThemeColors();
     const dpr = window.devicePixelRatio || 1;
     const w = getCanvasWidth();
     canvas.width = w * dpr;
@@ -252,8 +249,7 @@ export default function AccuracyCanvasChart() {
     const plotH = PANEL2_H - 5 - 15;
     const barW = Math.max(2, (plotW / data.length) - 1);
 
-    // Y-axis label
-    ctx.fillStyle = COLORS.text;
+    ctx.fillStyle = theme.text;
     ctx.font = '9px sans-serif';
     ctx.textAlign = 'right';
     ctx.fillText('שאלות', MARGIN.left - 4, 14);
@@ -270,9 +266,8 @@ export default function AccuracyCanvasChart() {
       ctx.fillRect(x, y, barW, barH);
     }
 
-    // X-axis dates (show ~6 labels)
     const step = Math.max(1, Math.floor(data.length / 6));
-    ctx.fillStyle = COLORS.text;
+    ctx.fillStyle = theme.text;
     ctx.font = '9px monospace';
     ctx.textAlign = 'center';
     for (let i = 0; i < data.length; i += step) {
@@ -280,27 +275,31 @@ export default function AccuracyCanvasChart() {
       ctx.fillText(formatDateHeb(data[i].date), x, PANEL2_H - 2);
     }
 
-    // Crosshair vertical
     if (hoverIndex !== null && hoverIndex < data.length) {
       const x = MARGIN.left + ((hoverIndex + 0.5) / data.length) * plotW;
-      ctx.strokeStyle = COLORS.crosshair;
+      ctx.strokeStyle = theme.crosshair;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 3]);
       ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, PANEL2_H - 15); ctx.stroke();
       ctx.setLineDash([]);
     }
-  }, [data, hoverIndex, maxVol, logScale, getCanvasWidth]);
+  }, [data, hoverIndex, maxVol, logScale, getCanvasWidth, PANEL2_H]);
 
   useEffect(() => { drawMain(); drawVolume(); }, [drawMain, drawVolume]);
 
-  // Resize
   useEffect(() => {
     const onResize = () => { drawMain(); drawVolume(); };
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
   }, [drawMain, drawVolume]);
 
-  // Mouse handler
+  // Re-draw when theme changes (observe class on html element)
+  useEffect(() => {
+    const observer = new MutationObserver(() => { drawMain(); drawVolume(); });
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+    return () => observer.disconnect();
+  }, [drawMain, drawVolume]);
+
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     if (!data.length || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -316,7 +315,6 @@ export default function AccuracyCanvasChart() {
 
   const handleMouseLeave = useCallback(() => { setHoverIndex(null); setTooltipPos(null); }, []);
 
-  // Stats bar
   const statsBar = useMemo(() => {
     if (!data.length) return null;
     const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
@@ -339,29 +337,28 @@ export default function AccuracyCanvasChart() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl p-6 text-center" style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }}>
-        <div className="text-sm" style={{ color: COLORS.text }}>טוען נתונים...</div>
+      <div className="bg-card border border-border rounded-2xl p-6 text-center">
+        <div className="text-sm text-muted-foreground">טוען נתונים...</div>
       </div>
     );
   }
 
   if (!data.length) {
     return (
-      <div className="rounded-2xl p-6 text-center" style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }} dir="rtl">
-        <div className="text-sm" style={{ color: COLORS.text }}>אין נתוני תרגול ב-90 הימים האחרונים</div>
+      <div className="bg-card border border-border rounded-2xl p-6 text-center" dir="rtl">
+        <div className="text-sm text-muted-foreground">אין נתוני תרגול ב-90 הימים האחרונים</div>
       </div>
     );
   }
 
   const ToggleBtn = ({ active, label, onClick }: { active: boolean; label: string; onClick: () => void }) => (
     <button
-      onClick={onClick}
-      className="px-3 py-1 rounded-md text-xs font-bold transition-all"
-      style={{
-        background: active ? 'rgba(255,255,255,0.1)' : 'transparent',
-        border: `1px solid ${active ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.08)'}`,
-        color: active ? COLORS.textBright : COLORS.text,
-      }}
+      onClick={(e) => { e.stopPropagation(); onClick(); }}
+      className={`px-3 py-1 rounded-md text-xs font-bold transition-all border ${
+        active
+          ? 'bg-foreground/10 border-foreground/25 text-foreground'
+          : 'bg-transparent border-foreground/10 text-muted-foreground'
+      }`}
     >
       {label}
     </button>
@@ -371,10 +368,9 @@ export default function AccuracyCanvasChart() {
   const tooltipFlipX = tooltipPos && tooltipPos.x > containerWidth * 0.65;
 
   return (
-    <div className="rounded-2xl overflow-hidden" style={{ background: COLORS.card, border: `1px solid ${COLORS.border}` }} dir="rtl">
-      {/* Header + toggles */}
+    <div className="bg-card border border-border rounded-2xl overflow-hidden" dir="rtl">
       <div className="flex items-center justify-between p-4 pb-2 flex-wrap gap-2">
-        <h3 className="text-sm font-bold" style={{ color: COLORS.textBright }}>מגמת דיוק — 90 ימים</h3>
+        <h3 className="text-sm font-bold text-foreground">מגמת דיוק — 90 ימים</h3>
         <div className="flex gap-1.5 flex-wrap">
           <ToggleBtn active={showEma7} label="EMA 7" onClick={() => setShowEma7(v => !v)} />
           <ToggleBtn active={showEma14} label="EMA 14" onClick={() => setShowEma14(v => !v)} />
@@ -383,53 +379,62 @@ export default function AccuracyCanvasChart() {
         </div>
       </div>
 
-      {/* Chart area */}
       <div
         ref={containerRef}
-        className="relative px-2"
+        className="relative px-2 bg-background"
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
-        style={{ background: COLORS.bg }}
       >
         <canvas ref={mainCanvasRef} style={{ display: 'block', width: '100%' }} />
         <canvas ref={volCanvasRef} style={{ display: 'block', width: '100%' }} />
 
-        {/* Tooltip */}
         {hovered && tooltipPos && (
           <div
-            className="absolute pointer-events-none rounded-lg px-3 py-2 text-xs z-50"
+            className="absolute pointer-events-none rounded-lg px-3 py-2 text-xs z-50 bg-card border border-border shadow-xl"
             style={{
-              background: COLORS.tooltipBg,
-              border: `1px solid ${COLORS.tooltipBorder}`,
               top: Math.min(tooltipPos.y - 10, PANEL1_H - 20),
               ...(tooltipFlipX
                 ? { right: containerWidth - tooltipPos.x + 12 }
                 : { left: tooltipPos.x + 12 }),
-              boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
               direction: 'rtl',
             }}
           >
-            <div className="font-bold mb-1" style={{ color: COLORS.textBright }}>{formatDateHeb(hovered.date)}</div>
-            <div style={{ color: COLORS.text }}>שאלות היום: <span className="font-bold" style={{ color: COLORS.textBright }}>{hovered.total}</span></div>
-            <div style={{ color: COLORS.text }}>דיוק: <span className="font-bold" style={{ color: getBarColor(hovered.accuracy) }}>{hovered.accuracy}%</span></div>
-            {showEma7 && hovered.ema7 !== null && <div style={{ color: COLORS.text }}>EMA 7: <span className="font-bold" style={{ color: COLORS.ema7 }}>{hovered.ema7}%</span></div>}
-            {showEma14 && hovered.ema14 !== null && <div style={{ color: COLORS.text }}>EMA 14: <span className="font-bold" style={{ color: COLORS.ema14 }}>{hovered.ema14}%</span></div>}
-            <div style={{ color: COLORS.text }}>ממוצע כללי: <span className="font-bold" style={{ color: COLORS.globalAvg }}>{globalAvg}%</span></div>
+            <div className="font-bold mb-1 text-foreground">{formatDateHeb(hovered.date)}</div>
+            <div className="text-muted-foreground">שאלות היום: <span className="font-bold text-foreground">{hovered.total}</span></div>
+            <div className="text-muted-foreground">דיוק: <span className="font-bold" style={{ color: getBarColor(hovered.accuracy) }}>{hovered.accuracy}%</span></div>
+            {showEma7 && hovered.ema7 !== null && <div className="text-muted-foreground">EMA 7: <span className="font-bold" style={{ color: DATA_COLORS.ema7 }}>{hovered.ema7}%</span></div>}
+            {showEma14 && hovered.ema14 !== null && <div className="text-muted-foreground">EMA 14: <span className="font-bold" style={{ color: DATA_COLORS.ema14 }}>{hovered.ema14}%</span></div>}
+            <div className="text-muted-foreground">ממוצע כללי: <span className="font-bold" style={{ color: DATA_COLORS.globalAvg }}>{globalAvg}%</span></div>
           </div>
         )}
       </div>
 
-      {/* Stats bar */}
       {statsBar && (
-        <div className="flex flex-wrap gap-x-5 gap-y-1 px-4 py-3 text-xs" style={{ borderTop: `1px solid ${COLORS.border}` }}>
-          <span style={{ color: COLORS.text }}>דיוק היום: <span className="font-bold" style={{ color: statsBar.todayAcc !== null ? getBarColor(statsBar.todayAcc) : COLORS.text }}>{statsBar.todayAcc !== null ? `${statsBar.todayAcc}%` : '—'}</span></span>
-          <span style={{ color: COLORS.text }}>EMA 7: <span className="font-bold" style={{ color: COLORS.ema7 }}>{statsBar.lastEma7 !== null && statsBar.lastEma7 !== undefined ? `${statsBar.lastEma7}%` : '—'}</span></span>
-          <span style={{ color: COLORS.text }}>EMA 14: <span className="font-bold" style={{ color: COLORS.ema14 }}>{statsBar.lastEma14 !== null && statsBar.lastEma14 !== undefined ? `${statsBar.lastEma14}%` : '—'}</span></span>
-          <span style={{ color: COLORS.text }}>ממוצע כללי: <span className="font-bold" style={{ color: COLORS.globalAvg }}>{globalAvg}%</span></span>
-          <span style={{ color: COLORS.text }}>שאלות היום: <span className="font-bold" style={{ color: COLORS.textBright }}>{statsBar.todayVol}</span></span>
-          <span style={{ color: COLORS.text }}>שינוי מאתמול: <span className="font-bold" style={{ color: statsBar.change !== null ? (statsBar.change >= 0 ? COLORS.green : COLORS.red) : COLORS.text }}>{statsBar.change !== null ? `${statsBar.change > 0 ? '+' : ''}${statsBar.change}%` : '—'}</span></span>
+        <div className="flex flex-wrap gap-x-5 gap-y-1 px-4 py-3 text-xs border-t border-border">
+          <span className="text-muted-foreground">דיוק היום: <span className="font-bold" style={{ color: statsBar.todayAcc !== null ? getBarColor(statsBar.todayAcc) : undefined }}>{statsBar.todayAcc !== null ? `${statsBar.todayAcc}%` : '—'}</span></span>
+          <span className="text-muted-foreground">EMA 7: <span className="font-bold" style={{ color: DATA_COLORS.ema7 }}>{statsBar.lastEma7 !== null && statsBar.lastEma7 !== undefined ? `${statsBar.lastEma7}%` : '—'}</span></span>
+          <span className="text-muted-foreground">EMA 14: <span className="font-bold" style={{ color: DATA_COLORS.ema14 }}>{statsBar.lastEma14 !== null && statsBar.lastEma14 !== undefined ? `${statsBar.lastEma14}%` : '—'}</span></span>
+          <span className="text-muted-foreground">ממוצע כללי: <span className="font-bold" style={{ color: DATA_COLORS.globalAvg }}>{globalAvg}%</span></span>
+          <span className="text-muted-foreground">שאלות היום: <span className="font-bold text-foreground">{statsBar.todayVol}</span></span>
+          <span className="text-muted-foreground">שינוי מאתמול: <span className="font-bold" style={{ color: statsBar.change !== null ? (statsBar.change >= 0 ? DATA_COLORS.green : DATA_COLORS.red) : undefined }}>{statsBar.change !== null ? `${statsBar.change > 0 ? '+' : ''}${statsBar.change}%` : '—'}</span></span>
         </div>
       )}
     </div>
+  );
+}
+
+export default function AccuracyCanvasChart() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, ease: [0, 0, 0.2, 1] }}
+    >
+      <AnimatedStatsTile
+        collapsed={<ChartContent />}
+        expanded={<ChartContent expanded />}
+        expandedClassName="max-w-[95vw] max-h-[95vh] w-full"
+      />
+    </motion.div>
   );
 }
