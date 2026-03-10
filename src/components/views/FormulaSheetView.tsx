@@ -167,7 +167,7 @@ export default function FormulaSheetView() {
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block rounded-xl border border-border overflow-hidden bg-card">
+      <div className="hidden md:block rounded-xl overflow-hidden deep-tile">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
