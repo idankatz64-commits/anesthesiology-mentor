@@ -165,7 +165,7 @@ export default function DailyReportModal({ open, onClose }: { open: boolean; onC
             <div>
               <h4 className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3 flex items-center gap-2">
                 <TrendingDown className="w-4 h-4 text-destructive" />
-                נושאים חלשים היום
+                נושאים לחיזוק
               </h4>
               <div className="space-y-2">
                 {weakTopics.map((wt, i) => (
