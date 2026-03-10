@@ -74,7 +74,7 @@ interface AppContextType {
    // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
   getDueQuestions: () => Promise<Question[]>;
-  fetchSrsData: () => Promise<Record<string, { next_review_date: string }>>;
+  fetchSrsData: () => Promise<Record<string, { next_review: string }>>;
 
   // Session persistence
   saveSessionToDb: (timerSeconds?: number, simTimerSeconds?: number) => Promise<void>;
