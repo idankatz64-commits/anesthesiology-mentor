@@ -327,6 +327,63 @@ export default function HomeView() {
       </div>
       <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
 
+      {/* Algorithm Explainer Tile */}
+      <div className="mb-8">
+        <button
+          onClick={() => setAlgoOpen(o => !o)}
+          className="liquid-glass w-full px-6 py-4 flex items-center justify-between gap-3 text-sm font-semibold text-foreground hover:border-primary/30 transition-all"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 bg-primary/15 text-primary rounded-lg flex items-center justify-center">
+              <Info className="w-5 h-5" />
+            </div>
+            <span>איך נבחרות השאלות?</span>
+          </div>
+          <motion.div animate={{ rotate: algoOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+            <ChevronDown className="w-4 h-4 text-muted-foreground" />
+          </motion.div>
+        </button>
+
+        <AnimatePresence>
+          {algoOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="overflow-hidden"
+            >
+              <div className="liquid-glass mt-2 p-6 space-y-5 text-sm text-muted-foreground leading-relaxed" dir="rtl">
+                <p className="text-foreground font-medium">
+                  כל שאלה מקבלת ציון חכם לפי הנוסחה:
+                </p>
+                <code className="block bg-muted/50 rounded-lg px-4 py-3 text-xs font-mono text-foreground/80 overflow-x-auto" dir="ltr">
+                  smartScore = W1×srsUrgency + W2×topicWeakness + W3×recencyGap + W4×streakPenalty + W5×examProximity + W6×yieldBoost
+                </code>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                    <h4 className="font-bold text-foreground mb-1">⚡ מהיר (15 שאלות)</h4>
+                    <p>דגש על שאלות SRS דחופות ונושאים חלשים. סבב חזרה מהיר.</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                    <h4 className="font-bold text-foreground mb-1">📘 רגיל (40 שאלות)</h4>
+                    <p>ניקוד היברידי מאוזן על פני 6 פרמטרים – חזרה + חומר חדש.</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                    <h4 className="font-bold text-foreground mb-1">🔬 מעמיק (100 שאלות)</h4>
+                    <p>כיסוי רחב עם פיזור נושאים מקסימלי. לסשנים ארוכים.</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                    <h4 className="font-bold text-foreground mb-1">🎯 סימולציה (120 שאלות)</h4>
+                    <p>חלוקה פרופורציונלית לפי משקלי נושאים היסטוריים בבחינה. ללא ניקוד.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
 
       {/* DB Status */}
       <div className="mb-12">
