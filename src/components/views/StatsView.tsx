@@ -209,7 +209,7 @@ export default function StatsView() {
 
       {/* ROW 3 — Accuracy Trend Chart (full width) */}
       <motion.div variants={itemVariants}>
-        <LearningVelocityTile data={trendData14} fullData={trendData30} />
+        <AccuracyCanvasChart />
       </motion.div>
 
       {/* ROW 4 — Topic Heatmap + Table (full width) */}
