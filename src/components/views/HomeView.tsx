@@ -4,7 +4,7 @@ import { KEYS } from '@/lib/types';
 import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cardHoverTap } from '@/lib/animations';
-import { getExamProximityPhase, type ExamPhase } from '@/lib/smartSelection';
+import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 
 const containerVariant = {
   hidden: {},
@@ -111,11 +111,27 @@ export default function HomeView() {
   return (
     <div className="max-w-6xl mx-auto">
       <header className="mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
-        <div>
-          <h2 className="text-3xl font-semibold text-foreground tracking-tight">
-            שלום, ד"ר <span className="text-primary">מתמחה</span> 👋
-          </h2>
-          <p className="text-muted-foreground mt-2 font-light text-lg">מוכן להמשיך בהכנות למבחן שלב א'?</p>
+        <div className="flex items-start gap-4">
+          <div>
+            <h2 className="text-3xl font-semibold text-foreground tracking-tight">
+              שלום, ד"ר <span className="text-primary">מתמחה</span> 👋
+            </h2>
+            <p className="text-muted-foreground mt-2 font-light text-lg">מוכן להמשיך בהכנות למבחן שלב א'?</p>
+          </div>
+          {(() => {
+            const daysLeft = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
+            if (daysLeft <= 0) return null;
+            return (
+              <div className={`liquid-glass px-4 py-2.5 flex flex-col items-center min-w-[72px] shrink-0 border ${
+                daysLeft <= 30 ? 'border-destructive/30' : daysLeft <= 90 ? 'border-warning/30' : 'border-border'
+              }`}>
+                <span className={`text-2xl font-bold tabular-nums ${
+                  daysLeft <= 30 ? 'text-destructive' : daysLeft <= 90 ? 'text-warning' : 'matrix-text'
+                }`}>{daysLeft}</span>
+                <span className="text-[10px] text-muted-foreground font-medium">ימים לבחינה</span>
+              </div>
+            );
+          })()}
         </div>
         <button
           onClick={resetAllData}
