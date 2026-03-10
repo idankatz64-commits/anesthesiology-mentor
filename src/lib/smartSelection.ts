@@ -288,7 +288,15 @@ export function selectSmartQuestions(
 
   // Scored selection
   const { topicStats, globalAccuracy } = computeTopicStats(history, allData);
-  const weights = WEIGHT_PROFILES[sessionSize];
+  const weights = [...WEIGHT_PROFILES[sessionSize]];
+
+  // Apply exam proximity phase overrides to W2 and W5
+  const phase = getExamProximityPhase();
+  if (phase !== 'early') {
+    const overrides = PHASE_OVERRIDES[phase];
+    weights[1] = overrides.w2; // topicWeakness
+    weights[4] = overrides.w5; // examProximity
+  }
 
   const scored = pool.map(q => ({
     question: q,

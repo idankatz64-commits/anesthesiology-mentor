@@ -173,6 +173,32 @@ export default function HomeView() {
         </motion.div>
       )}
 
+      {/* Exam proximity badge */}
+      <AnimatePresence>
+        {showExamBadge && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className={`mb-6 rounded-xl border px-5 py-3 flex items-center justify-between gap-3 ${
+              examPhase === 'imminent'
+                ? 'bg-destructive/10 border-destructive/30 text-destructive'
+                : 'bg-warning/10 border-warning/30 text-warning'
+            }`}
+          >
+            <div className="flex items-center gap-2 text-sm font-medium">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              {examPhase === 'imminent'
+                ? 'מצב בחינה — עדיפות מקסימלית לנושאים חלשים'
+                : 'מצב התקרבות לבחינה — דגש על נושאים חלשים'}
+            </div>
+            <button onClick={dismissExamBadge} className="p-1 rounded hover:bg-foreground/10 transition shrink-0">
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
         style={{ minHeight: 300 }}
