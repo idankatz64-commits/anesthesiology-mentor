@@ -171,7 +171,7 @@ export default function FlashcardView() {
           {/* Mode C: Smart */}
           <button
             onClick={() => setMode('smart')}
-            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'smart' ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/40'}`}
+            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'smart' ? 'border-primary bg-primary/5 shadow-md' : 'border-border deep-tile hover:border-primary/40'}`}
           >
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mode === 'smart' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
