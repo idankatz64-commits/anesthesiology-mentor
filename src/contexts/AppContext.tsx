@@ -74,7 +74,7 @@ interface AppContextType {
    // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
   getDueQuestions: () => Promise<Question[]>;
-  fetchSrsData: () => Promise<Record<string, { next_review_date: string }>>;
+  fetchSrsData: () => Promise<Record<string, { next_review: string }>>;
 
   // Session persistence
   saveSessionToDb: (timerSeconds?: number, simTimerSeconds?: number) => Promise<void>;
@@ -487,10 +487,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     nextDate.setDate(nextDate.getDate() + interval);
     const nextReviewDate = nextDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 
-    const { error } = await supabase.from('spaced_repetition').upsert({
+    const { error } = await (supabase.from('spaced_repetition') as any).upsert({
       user_id: userId,
       question_id: questionId,
-      next_review_date: nextReviewDate,
+      next_review: nextReviewDate,
       confidence,
       last_correct: isCorrect,
       updated_at: new Date().toISOString(),
@@ -772,11 +772,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!userId) return [];
 
     const today = new Date().toISOString().split('T')[0];
-    const { data: dueRows } = await supabase
+    const { data: dueRows } = await (supabase
       .from('spaced_repetition')
       .select('question_id')
-      .eq('user_id', userId)
-      .lte('next_review_date', today);
+      .eq('user_id', userId) as any)
+      .lte('next_review', today);
 
     if (!dueRows || dueRows.length === 0) return [];
 
@@ -784,17 +784,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
   }, []);
 
-  const fetchSrsData = useCallback(async (): Promise<Record<string, { next_review_date: string }>> => {
+  const fetchSrsData = useCallback(async (): Promise<Record<string, { next_review: string }>> => {
     const userId = userIdRef.current;
     if (!userId) return {};
 
     const rows = await fetchAllRows<any>(() =>
-      supabase.from('spaced_repetition').select('question_id, next_review_date').eq('user_id', userId)
+      supabase.from('spaced_repetition').select('question_id, next_review').eq('user_id', userId)
     );
 
-    const map: Record<string, { next_review_date: string }> = {};
+    const map: Record<string, { next_review: string }> = {};
     for (const r of rows) {
-      map[r.question_id] = { next_review_date: r.next_review_date };
+      map[r.question_id] = { next_review: r.next_review };
     }
     return map;
   }, []);
