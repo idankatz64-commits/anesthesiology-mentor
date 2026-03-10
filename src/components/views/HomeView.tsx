@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cardHoverTap } from '@/lib/animations';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
-import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
+
 import DailyReportModal from '@/components/DailyReportModal';
 
 const containerVariant = {
