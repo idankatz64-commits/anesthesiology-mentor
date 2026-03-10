@@ -14,18 +14,14 @@ function getTimeLeft() {
   if (diff <= 0) return null;
 
   const totalSeconds = Math.floor(diff / 1000);
-  const months = Math.floor(totalSeconds / (30.44 * 24 * 3600));
-  const afterMonths = totalSeconds - months * Math.floor(30.44 * 24 * 3600);
-  const weeks = Math.floor(afterMonths / (7 * 24 * 3600));
-  const afterWeeks = afterMonths - weeks * 7 * 24 * 3600;
-  const days = Math.floor(afterWeeks / (24 * 3600));
-  const afterDays = afterWeeks - days * 24 * 3600;
+  const days = Math.floor(totalSeconds / (24 * 3600));
+  const afterDays = totalSeconds - days * 24 * 3600;
   const hours = Math.floor(afterDays / 3600);
   const afterHours = afterDays - hours * 3600;
   const minutes = Math.floor(afterHours / 60);
   const seconds = afterHours - minutes * 60;
 
-  return { months, weeks, days, hours, minutes, seconds };
+  return { days, hours, minutes, seconds };
 }
 
 function Digit({ value, max }: { value: number; max: number }) {
@@ -83,9 +79,7 @@ export default function MatrixCountdown() {
   if (!time) return null;
 
   const units: TimeUnit[] = [
-    { label: 'חודשים', value: time.months, max: 12 },
-    { label: 'שבועות', value: time.weeks, max: 4 },
-    { label: 'ימים', value: time.days, max: 6 },
+    { label: 'ימים', value: time.days, max: 365 },
     { label: 'שעות', value: time.hours, max: 23 },
     { label: 'דקות', value: time.minutes, max: 59 },
     { label: 'שניות', value: time.seconds, max: 59 },
