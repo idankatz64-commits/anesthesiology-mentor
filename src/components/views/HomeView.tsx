@@ -3,9 +3,9 @@ import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cardHoverTap } from '@/lib/animations';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import DailyReportModal from '@/components/DailyReportModal';
 
@@ -18,6 +18,28 @@ const cardVariant = {
   hidden: { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 250, damping: 25, mass: 0.8 } },
 };
+
+const PARAM_TOOLTIPS: Record<string, string> = {
+  srsUrgency: 'כמה דחוף לחזור על השאלה לפי אלגוריתם SRS — ערך גבוה = איחור גדול מתאריך החזרה',
+  topicWeakness: 'חולשה בנושא — ההפרש בין אחוז הדיוק שלך בנושא לדיוק הכללי',
+  recencyGap: 'כמה ימים עברו מאז תרגלת את הנושא הזה',
+  streakPenalty: 'עונש על רצף טעויות — אם טעית ברציפות בשאלה, הציון עולה',
+  examProximity: 'קרבה לתאריך הבחינה — ככל שהמבחן קרוב יותר, הדגש על נושאים חלשים עולה',
+  yieldBoost: 'חשיבות הנושא — Tier 1 (1.0), Tier 2 (0.6), Tier 3 (0.2)',
+};
+
+function FormulaParam({ name }: { name: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="text-primary cursor-help underline decoration-dotted underline-offset-2">{name}</span>
+      </TooltipTrigger>
+      <TooltipContent side="top" className="max-w-xs text-xs" dir="rtl">
+        <p>{PARAM_TOOLTIPS[name]}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 export default function HomeView() {
   const { data, progress, navigate, resetAllData, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
@@ -127,7 +149,7 @@ export default function HomeView() {
         </div>
         <button
           onClick={resetAllData}
-          className="group liquid-glass text-muted-foreground hover:text-destructive text-sm px-5 py-3 transition-all flex items-center gap-2"
+          className="group deep-tile text-muted-foreground hover:text-destructive text-sm px-5 py-3 transition-all flex items-center gap-2"
         >
           <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
           אפס היסטוריה והתחל מחדש
@@ -137,7 +159,7 @@ export default function HomeView() {
       {/* Resume saved session banner */}
       {!loadingSavedSession && savedSessionInfo && (
         <motion.div
-          className="mb-8 liquid-glass p-5 border-2 border-primary/30 relative overflow-hidden"
+          className="mb-8 deep-tile p-5 border-2 border-primary/30 relative overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 250, damping: 25 }}
@@ -208,14 +230,14 @@ export default function HomeView() {
       </AnimatePresence>
 
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10"
         style={{ minHeight: 300 }}
         variants={containerVariant}
         initial="hidden"
         animate="visible"
       >
         {/* Smart Practice */}
-        <motion.div variants={cardVariant} {...cardHoverTap} onClick={handleSmartPractice} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSmartPractice} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
@@ -227,7 +249,7 @@ export default function HomeView() {
         </motion.div>
 
         {/* Simulation Exam */}
-        <motion.div variants={cardVariant} {...cardHoverTap} onClick={handleSimulation} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSimulation} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
@@ -239,7 +261,7 @@ export default function HomeView() {
         </motion.div>
 
         {/* Spaced Repetition */}
-        <motion.div variants={cardVariant} {...cardHoverTap} onClick={handleSpacedRepetition} className={`liquid-glass p-6 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`} style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSpacedRepetition} className={`deep-tile p-5 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`} style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -251,7 +273,7 @@ export default function HomeView() {
         </motion.div>
 
         {/* Flashcards */}
-        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('flashcards')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('flashcards')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
@@ -262,7 +284,7 @@ export default function HomeView() {
           </div>
         </motion.div>
 
-        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
             <div className="w-12 h-12 bg-muted text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Dumbbell className="w-6 h-6" />
@@ -273,7 +295,7 @@ export default function HomeView() {
         </motion.div>
 
         {/* Mistakes */}
-        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-destructive/6 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -287,7 +309,7 @@ export default function HomeView() {
         </motion.div>
 
         {/* Favorites */}
-        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('setup-practice')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -301,7 +323,7 @@ export default function HomeView() {
         </motion.div>
 
         {/* Notebook */}
-        <motion.div variants={cardVariant} {...cardHoverTap} onClick={() => navigate('notebook')} className="liquid-glass p-6 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('notebook')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
           <div className="relative">
             <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
@@ -315,11 +337,11 @@ export default function HomeView() {
         </motion.div>
       </motion.div>
 
-      {/* Daily Report Button */}
-      <div className="mb-8 flex justify-center">
+      {/* Daily Report — slim horizontal tile */}
+      <div className="mb-6">
         <button
           onClick={() => setReportOpen(true)}
-          className="liquid-glass px-6 py-3 flex items-center gap-2 text-sm font-semibold text-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
+          className="deep-tile w-full px-6 py-3 flex items-center justify-center gap-2 text-sm font-semibold text-primary"
         >
           <ClipboardList className="w-5 h-5" />
           דו״ח יומי
@@ -328,84 +350,80 @@ export default function HomeView() {
       <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
 
       {/* Algorithm Explainer Tile */}
-      <div className="mb-8">
-        <button
-          onClick={() => setAlgoOpen(o => !o)}
-          className="liquid-glass w-full px-6 py-4 flex items-center justify-between gap-3 text-sm font-semibold text-foreground hover:border-primary/30 transition-all"
-        >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 bg-primary/15 text-primary rounded-lg flex items-center justify-center">
-              <Info className="w-5 h-5" />
+      <TooltipProvider delayDuration={200}>
+        <div className="mb-6">
+          <button
+            onClick={() => setAlgoOpen(o => !o)}
+            className="deep-tile w-full px-6 py-4 flex items-center justify-between gap-3 text-sm font-semibold text-foreground"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 bg-primary/15 text-primary rounded-lg flex items-center justify-center">
+                <Info className="w-5 h-5" />
+              </div>
+              <span>איך נבחרות השאלות?</span>
             </div>
-            <span>איך נבחרות השאלות?</span>
-          </div>
-          <motion.div animate={{ rotate: algoOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-            <ChevronDown className="w-4 h-4 text-muted-foreground" />
-          </motion.div>
-        </button>
+            <motion.div animate={{ rotate: algoOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+              <ChevronDown className="w-4 h-4 text-muted-foreground" />
+            </motion.div>
+          </button>
 
-        <AnimatePresence>
-          {algoOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="overflow-hidden"
-            >
-              <div className="liquid-glass mt-2 p-6 space-y-5 text-sm text-muted-foreground leading-relaxed" dir="rtl">
-                <p className="text-foreground font-medium">
-                  כל שאלה מקבלת ציון חכם לפי הנוסחה:
-                </p>
-                <code className="block bg-muted/50 rounded-lg px-4 py-3 text-xs font-mono text-foreground/80 overflow-x-auto" dir="ltr">
-                  smartScore = W1×srsUrgency + W2×topicWeakness + W3×recencyGap + W4×streakPenalty + W5×examProximity + W6×yieldBoost
-                </code>
+          <AnimatePresence>
+            {algoOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                className="overflow-hidden"
+              >
+                <div className="deep-tile mt-2 p-6 space-y-5 text-sm text-muted-foreground leading-relaxed" dir="rtl">
+                  <p className="text-foreground font-medium">
+                    כל שאלה מקבלת ציון חכם לפי הנוסחה:
+                  </p>
+                  <div className="bg-muted/30 rounded-lg px-4 py-3 text-xs font-mono text-foreground/80 overflow-x-auto" dir="ltr">
+                    smartScore = W1×<FormulaParam name="srsUrgency" /> + W2×<FormulaParam name="topicWeakness" /> + W3×<FormulaParam name="recencyGap" /> + W4×<FormulaParam name="streakPenalty" /> + W5×<FormulaParam name="examProximity" /> + W6×<FormulaParam name="yieldBoost" />
+                  </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                    <h4 className="font-bold text-foreground mb-1">⚡ מהיר (15 שאלות)</h4>
-                    <p>דגש על שאלות SRS דחופות ונושאים חלשים. סבב חזרה מהיר.</p>
-                  </div>
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                    <h4 className="font-bold text-foreground mb-1">📘 רגיל (40 שאלות)</h4>
-                    <p>ניקוד היברידי מאוזן על פני 6 פרמטרים – חזרה + חומר חדש.</p>
-                  </div>
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                    <h4 className="font-bold text-foreground mb-1">🔬 מעמיק (100 שאלות)</h4>
-                    <p>כיסוי רחב עם פיזור נושאים מקסימלי. לסשנים ארוכים.</p>
-                  </div>
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                    <h4 className="font-bold text-foreground mb-1">🎯 סימולציה (120 שאלות)</h4>
-                    <p>חלוקה פרופורציונלית לפי משקלי נושאים היסטוריים בבחינה. ללא ניקוד.</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                      <h4 className="font-bold text-foreground mb-1">⚡ מהיר (15 שאלות)</h4>
+                      <p>דגש על שאלות SRS דחופות ונושאים חלשים. סבב חזרה מהיר.</p>
+                    </div>
+                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                      <h4 className="font-bold text-foreground mb-1">📘 רגיל (40 שאלות)</h4>
+                      <p>ניקוד היברידי מאוזן על פני 6 פרמטרים – חזרה + חומר חדש.</p>
+                    </div>
+                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                      <h4 className="font-bold text-foreground mb-1">🔬 מעמיק (100 שאלות)</h4>
+                      <p>כיסוי רחב עם פיזור נושאים מקסימלי. לסשנים ארוכים.</p>
+                    </div>
+                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                      <h4 className="font-bold text-foreground mb-1">🎯 סימולציה (120 שאלות)</h4>
+                      <p>חלוקה פרופורציונלית לפי משקלי נושאים היסטוריים בבחינה. ללא ניקוד.</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </TooltipProvider>
 
-      {/* DB Status */}
+      {/* DB Status — slim horizontal bar */}
       <div className="mb-12">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-widest px-1 matrix-title">סטטוס מאגר שאלות</h3>
-        <div className="grid grid-cols-3 gap-6">
-          <div className="liquid-glass p-5 text-center">
-            <div className="text-3xl font-bold matrix-text">{data.length}</div>
-            <div className="text-xs text-muted-foreground font-medium mt-1">סה"כ שאלות</div>
+        <h3 className="text-xs font-bold text-muted-foreground uppercase mb-3 tracking-widest px-1 matrix-title">סטטוס מאגר שאלות</h3>
+        <div className="grid grid-cols-3 gap-3">
+          <div className="deep-tile p-4 text-center">
+            <div className="text-2xl font-bold matrix-text">{data.length}</div>
+            <div className="text-[10px] text-muted-foreground font-medium mt-1">סה"כ שאלות</div>
           </div>
-          <div className="liquid-glass p-5 text-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-success/8 to-transparent rounded-2xl pointer-events-none" />
-            <div className="relative">
-              <div className="text-3xl font-bold text-success matrix-text">{withExp}</div>
-              <div className="text-xs text-success/70 font-medium mt-1">כוללות הסבר</div>
-            </div>
+          <div className="deep-tile p-4 text-center">
+            <div className="text-2xl font-bold text-success matrix-text">{withExp}</div>
+            <div className="text-[10px] text-success/70 font-medium mt-1">כוללות הסבר</div>
           </div>
-          <div className="liquid-glass p-5 text-center">
-            <div className="absolute inset-0 bg-gradient-to-br from-warning/8 to-transparent rounded-2xl pointer-events-none" />
-            <div className="relative">
-              <div className="text-3xl font-bold text-warning matrix-text">{withoutExp}</div>
-              <div className="text-xs text-warning/70 font-medium mt-1">ללא הסבר</div>
-            </div>
+          <div className="deep-tile p-4 text-center">
+            <div className="text-2xl font-bold text-warning matrix-text">{withoutExp}</div>
+            <div className="text-[10px] text-warning/70 font-medium mt-1">ללא הסבר</div>
           </div>
         </div>
       </div>
