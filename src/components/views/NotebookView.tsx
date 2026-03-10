@@ -51,7 +51,7 @@ export default function NotebookView() {
             const qData = data.find(d => d[KEYS.ID] === id);
             if (!qData) return null;
             return (
-              <div key={id} className="soft-card bg-card border border-border p-6 relative hover:shadow-lg hover-glow transition group card-accent-top">
+              <div key={id} className="deep-tile p-6 relative group card-accent-top">
                 <div className="absolute top-4 left-4 flex items-center gap-2">
                   <button
                     onClick={() => { if (confirm('למחוק את ההערה?')) deleteNote(id); }}

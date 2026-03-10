@@ -133,7 +133,7 @@ export default function FlashcardView() {
           {/* Mode A: Topics */}
           <button
             onClick={() => setMode('topics')}
-            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'topics' ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/40'}`}
+            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'topics' ? 'border-primary bg-primary/5 shadow-md' : 'border-border deep-tile hover:border-primary/40'}`}
           >
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mode === 'topics' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
@@ -150,7 +150,7 @@ export default function FlashcardView() {
           {/* Mode B: Mistakes */}
           <button
             onClick={() => setMode('mistakes')}
-            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'mistakes' ? 'border-destructive bg-destructive/5 shadow-md' : 'border-border bg-card hover:border-destructive/40'}`}
+            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'mistakes' ? 'border-destructive bg-destructive/5 shadow-md' : 'border-border deep-tile hover:border-destructive/40'}`}
           >
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mode === 'mistakes' ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-muted-foreground'}`}>
@@ -171,7 +171,7 @@ export default function FlashcardView() {
           {/* Mode C: Smart */}
           <button
             onClick={() => setMode('smart')}
-            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'smart' ? 'border-primary bg-primary/5 shadow-md' : 'border-border bg-card hover:border-primary/40'}`}
+            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'smart' ? 'border-primary bg-primary/5 shadow-md' : 'border-border deep-tile hover:border-primary/40'}`}
           >
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mode === 'smart' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
@@ -262,15 +262,15 @@ export default function FlashcardView() {
         <h2 className="text-2xl font-bold text-foreground mb-2">סיימת! 🎉</h2>
         <p className="text-muted-foreground mb-8">עברת על {total} כרטיסיות</p>
         <div className="grid grid-cols-3 gap-4 mb-8">
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="deep-tile rounded-xl p-4">
             <div className="text-2xl font-bold text-success">{stats.confident}</div>
             <div className="text-xs text-muted-foreground mt-1">בטוח</div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="deep-tile rounded-xl p-4">
             <div className="text-2xl font-bold text-warning">{stats.hesitant}</div>
             <div className="text-xs text-muted-foreground mt-1">מתלבט</div>
           </div>
-          <div className="bg-card border border-border rounded-xl p-4">
+          <div className="deep-tile rounded-xl p-4">
             <div className="text-2xl font-bold text-destructive">{stats.guessed}</div>
             <div className="text-xs text-muted-foreground mt-1">ניחוש</div>
           </div>
@@ -320,7 +320,7 @@ export default function FlashcardView() {
         >
           {/* Front */}
           <div
-            className="w-full rounded-2xl border border-border bg-card p-8 md:p-12 shadow-lg"
+            className="w-full rounded-2xl deep-tile p-8 md:p-12 shadow-lg"
             style={{ backfaceVisibility: 'hidden' }}
           >
             <div className="text-xs text-muted-foreground mb-4 font-medium">
@@ -341,7 +341,7 @@ export default function FlashcardView() {
 
           {/* Back */}
           <div
-            className="w-full rounded-2xl border border-border bg-card p-8 md:p-12 shadow-lg absolute top-0 left-0"
+            className="w-full rounded-2xl deep-tile p-8 md:p-12 shadow-lg absolute top-0 left-0"
             style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
           >
             <div className="text-xs text-muted-foreground mb-4 font-medium">תשובה</div>

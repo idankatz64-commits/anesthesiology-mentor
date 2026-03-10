@@ -324,7 +324,7 @@ export default function SessionView() {
       </div>
 
       {/* Question Card */}
-      <div className="soft-card bg-card border border-border overflow-hidden relative card-accent-top">
+      <div className="deep-tile overflow-hidden relative card-accent-top">
         {/* Meta bar */}
         <div className="bg-muted/50 px-8 py-4 border-b border-border flex flex-wrap gap-4 text-xs text-muted-foreground font-medium justify-between items-center">
           <div className="flex flex-wrap gap-4 items-center">

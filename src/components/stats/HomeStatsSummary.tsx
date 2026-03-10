@@ -37,7 +37,7 @@ export default function HomeStatsSummary() {
 
   return (
     <div className="grid grid-cols-3 gap-6">
-      <div className="liquid-glass p-5 text-center">
+      <div className="deep-tile p-5 text-center">
         <div className="flex justify-center mb-2">
           <CheckCircle className="w-5 h-5 text-primary" />
         </div>
@@ -49,7 +49,7 @@ export default function HomeStatsSummary() {
         <div className="text-xs text-muted-foreground font-medium mt-1">שאלות שנענו</div>
       </div>
 
-      <div className="liquid-glass p-5 text-center">
+      <div className="deep-tile p-5 text-center">
         <div className="flex justify-center mb-2">
           <Target className={`w-5 h-5 ${accuracyColor}`} />
         </div>
@@ -61,7 +61,7 @@ export default function HomeStatsSummary() {
         <div className="text-xs text-muted-foreground font-medium mt-1">דיוק</div>
       </div>
 
-      <div className="liquid-glass p-5 text-center">
+      <div className="deep-tile p-5 text-center">
         <div className="flex justify-center mb-2">
           <CalendarClock className="w-5 h-5 text-primary" />
         </div>

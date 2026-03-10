@@ -83,7 +83,7 @@ export default function DailyReportTile() {
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" dir="rtl">
       {tiles.map((t) => (
-        <div key={t.label} className="bg-card border border-border rounded-xl p-3 text-center flex flex-col items-center gap-1">
+        <div key={t.label} className="deep-tile rounded-xl p-3 text-center flex flex-col items-center gap-1">
           <t.icon className="w-4 h-4 text-muted-foreground" />
           <AnimatedNumber
             value={t.value}

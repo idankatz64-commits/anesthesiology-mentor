@@ -167,7 +167,7 @@ export default function FormulaSheetView() {
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block rounded-xl border border-border overflow-hidden bg-card">
+      <div className="hidden md:block rounded-xl overflow-hidden deep-tile">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b border-border bg-muted/50">
@@ -207,7 +207,7 @@ export default function FormulaSheetView() {
             </div>
             <div className="space-y-2">
               {items.map(f => (
-                <div key={f.id} className="bg-card border border-border rounded-xl p-4 space-y-2">
+                <div key={f.id} className="deep-tile rounded-xl p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <Badge variant="outline" className="text-[10px] mb-1">{f.chapter}</Badge>
