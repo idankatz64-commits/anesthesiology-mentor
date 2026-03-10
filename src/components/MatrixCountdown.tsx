@@ -239,7 +239,7 @@ export default function MatrixCountdown() {
             animate={{ opacity: [1, 0.3, 1], scale: [1, 0.8, 1] }}
             transition={{ duration: urgency === 'imminent' ? 0.6 : 1.5, repeat: Infinity }}
           />
-          <span className="text-[10px] font-medium text-muted-foreground tracking-[0.2em] uppercase font-mono">
+          <span className="text-[8px] sm:text-[10px] font-medium text-muted-foreground tracking-[0.15em] sm:tracking-[0.2em] uppercase font-mono">
             BOARD EXAM COUNTDOWN
           </span>
           <motion.div
