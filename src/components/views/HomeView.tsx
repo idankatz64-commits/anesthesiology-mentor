@@ -21,6 +21,18 @@ export default function HomeView() {
   const [loadingDue, setLoadingDue] = useState(false);
   const [resuming, setResuming] = useState(false);
 
+  // Exam proximity badge
+  const examPhase = useMemo(() => getExamProximityPhase(), []);
+  const [phaseDismissed, setPhaseDismissed] = useState(() => {
+    const stored = localStorage.getItem('exam_phase_banner_dismissed_v1');
+    return stored === examPhase;
+  });
+  const showExamBadge = examPhase !== 'early' && !phaseDismissed;
+  const dismissExamBadge = () => {
+    localStorage.setItem('exam_phase_banner_dismissed_v1', examPhase);
+    setPhaseDismissed(true);
+  };
+
   let mistakes = 0;
   Object.values(progress.history).forEach(h => { if (h.lastResult === 'wrong') mistakes++; });
   const notesCount = Object.keys(progress.notes).length;
