@@ -5,6 +5,7 @@ import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock,
 import { motion, AnimatePresence } from 'framer-motion';
 import { cardHoverTap } from '@/lib/animations';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
+import MatrixCountdown from '@/components/MatrixCountdown';
 
 const containerVariant = {
   hidden: {},
@@ -118,20 +119,7 @@ export default function HomeView() {
             </h2>
             <p className="text-muted-foreground mt-2 font-light text-lg">מוכן להמשיך בהכנות למבחן שלב א'?</p>
           </div>
-          {(() => {
-            const daysLeft = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
-            if (daysLeft <= 0) return null;
-            return (
-              <div className={`liquid-glass px-4 py-2.5 flex flex-col items-center min-w-[72px] shrink-0 border ${
-                daysLeft <= 30 ? 'border-destructive/30' : daysLeft <= 90 ? 'border-warning/30' : 'border-border'
-              }`}>
-                <span className={`text-2xl font-bold tabular-nums ${
-                  daysLeft <= 30 ? 'text-destructive' : daysLeft <= 90 ? 'text-warning' : 'matrix-text'
-                }`}>{daysLeft}</span>
-                <span className="text-[10px] text-muted-foreground font-medium">ימים לבחינה</span>
-              </div>
-            );
-          })()}
+          <MatrixCountdown />
         </div>
         <button
           onClick={resetAllData}
