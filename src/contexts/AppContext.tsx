@@ -776,7 +776,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .from('spaced_repetition')
       .select('question_id')
       .eq('user_id', userId)
-      .lte('next_review_date', today);
+      .lte('next_review', today);
 
     if (!dueRows || dueRows.length === 0) return [];
 
