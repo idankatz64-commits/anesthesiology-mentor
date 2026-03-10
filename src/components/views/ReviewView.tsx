@@ -26,15 +26,15 @@ export default function ReviewView() {
       </h2>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="soft-card bg-card border border-border p-6 text-center border-t-4 border-t-primary">
+        <div className="deep-tile p-6 text-center border-t-4 border-t-primary">
           <div className="text-3xl font-bold text-primary">{answeredCount}</div>
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">נענו</div>
         </div>
-        <div className="soft-card bg-card border border-border p-6 text-center border-t-4 border-t-muted-foreground">
+        <div className="deep-tile p-6 text-center border-t-4 border-t-muted-foreground">
           <div className="text-3xl font-bold text-muted-foreground">{skippedCount}</div>
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">דולגו / טרם נענו</div>
         </div>
-        <div className="soft-card bg-card border border-border p-6 text-center border-t-4 border-t-warning">
+        <div className="deep-tile p-6 text-center border-t-4 border-t-warning">
           <div className="text-3xl font-bold text-warning">{flagged.size}</div>
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest mt-1">סומנו לדגל</div>
         </div>
