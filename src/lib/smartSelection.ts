@@ -171,7 +171,7 @@ function computeSmartScore(q: Question, params: ScoringParams): number {
   let srsUrgency = 0.5; // default if no SRS entry
   const srs = srsData[qId];
   if (srs) {
-    const reviewDate = new Date(srs.next_review_date);
+    const reviewDate = new Date(srs.next_review);
     const daysOverdue = (now - reviewDate.getTime()) / (1000 * 60 * 60 * 24);
     if (daysOverdue <= 0) {
       srsUrgency = 0; // not yet due

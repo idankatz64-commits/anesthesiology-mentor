@@ -38,7 +38,7 @@ export default function DailyReportTile() {
           .from('spaced_repetition')
           .select('id', { count: 'exact', head: true })
           .eq('user_id', user.id)
-          .eq('next_review_date', tomorrowDate),
+          .eq('next_review', tomorrowDate),
       ]);
 
       const rows = answersRes.data || [];

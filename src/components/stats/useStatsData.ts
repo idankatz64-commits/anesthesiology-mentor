@@ -142,7 +142,7 @@ export function useStatsData() {
         fetchAllRows<any>(() =>
           supabase
             .from('spaced_repetition')
-            .select('question_id, next_review_date, last_correct, updated_at, confidence')
+            .select('question_id, next_review, last_correct, updated_at, confidence')
             .eq('user_id', session.user.id)
         ),
         fetchAllRows<any>(() =>
