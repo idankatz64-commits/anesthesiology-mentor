@@ -79,9 +79,7 @@ export default function MatrixCountdown() {
   if (!time) return null;
 
   const units: TimeUnit[] = [
-    { label: 'חודשים', value: time.months, max: 12 },
-    { label: 'שבועות', value: time.weeks, max: 4 },
-    { label: 'ימים', value: time.days, max: 6 },
+    { label: 'ימים', value: time.days, max: 365 },
     { label: 'שעות', value: time.hours, max: 23 },
     { label: 'דקות', value: time.minutes, max: 59 },
     { label: 'שניות', value: time.seconds, max: 59 },
