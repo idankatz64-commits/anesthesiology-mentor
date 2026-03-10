@@ -326,11 +326,6 @@ export default function HomeView() {
       </div>
       <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
 
-      {/* Personal Stats Summary */}
-      <div className="mb-12">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase mb-4 tracking-widest px-1 matrix-title">סיכום אישי</h3>
-        <HomeStatsSummary />
-      </div>
 
       {/* DB Status */}
       <div className="mb-12">
