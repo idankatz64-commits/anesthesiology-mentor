@@ -150,7 +150,7 @@ export default function FlashcardView() {
           {/* Mode B: Mistakes */}
           <button
             onClick={() => setMode('mistakes')}
-            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'mistakes' ? 'border-destructive bg-destructive/5 shadow-md' : 'border-border bg-card hover:border-destructive/40'}`}
+            className={`w-full text-right rounded-2xl border-2 p-5 transition-all ${mode === 'mistakes' ? 'border-destructive bg-destructive/5 shadow-md' : 'border-border deep-tile hover:border-destructive/40'}`}
           >
             <div className="flex items-start gap-4">
               <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${mode === 'mistakes' ? 'bg-destructive text-destructive-foreground' : 'bg-muted text-muted-foreground'}`}>
