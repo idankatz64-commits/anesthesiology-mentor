@@ -118,7 +118,7 @@ function Digit({ value }: { value: number }) {
               animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
               exit={{ y: 10, opacity: 0, filter: 'blur(3px)' }}
               transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.6 }}
-              className="absolute inset-0 flex items-center justify-center font-mono text-2xl font-bold"
+              className="absolute inset-0 flex items-center justify-center font-mono text-base sm:text-2xl font-bold"
               style={{
                 color: '#00ff41',
                 textShadow: '0 0 10px rgba(0,255,65,0.6), 0 0 25px rgba(0,255,65,0.15)',
