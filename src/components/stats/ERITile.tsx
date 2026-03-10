@@ -84,7 +84,7 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className="bg-card border border-border rounded-xl cursor-pointer hover:border-primary/30 hover:shadow-lg transition-shadow h-full">
+        className="deep-tile rounded-xl cursor-pointer h-full">
 
         <div className="flex flex-col items-center py-6 px-4">
           <ERIRing value={value} size={240} />
