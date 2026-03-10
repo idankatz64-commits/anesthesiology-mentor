@@ -772,10 +772,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!userId) return [];
 
     const today = new Date().toISOString().split('T')[0];
-    const { data: dueRows } = await supabase
+    const { data: dueRows } = await (supabase
       .from('spaced_repetition')
       .select('question_id')
-      .eq('user_id', userId)
+      .eq('user_id', userId) as any)
       .lte('next_review', today);
 
     if (!dueRows || dueRows.length === 0) return [];
