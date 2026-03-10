@@ -511,7 +511,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     supabase.from('answer_history').insert({
       user_id: userId,
       question_id: questionId,
-      topic: confidence ? undefined : null, // topic will be passed by caller via updateHistory
+      topic: topic || null,
       is_correct: isCorrect,
       answered_at: new Date().toISOString(),
     }).then(({ error: ahErr }) => {
