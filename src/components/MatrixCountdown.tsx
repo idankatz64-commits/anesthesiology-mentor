@@ -137,7 +137,7 @@ function Digit({ value }: { value: number }) {
 function ColonSeparator() {
   return (
     <motion.span
-      className="font-mono text-2xl font-bold mx-1 self-center"
+      className="font-mono text-base sm:text-2xl font-bold mx-0.5 sm:mx-1 self-center"
       style={{ color: 'rgba(0,255,65,0.4)' }}
       animate={{ opacity: [0.3, 1, 0.3] }}
       transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
