@@ -102,11 +102,11 @@ export default function ResultsView() {
       </p>
 
       <div className="grid grid-cols-2 gap-6 mb-10">
-        <div className="soft-card bg-card border border-border p-8">
+        <div className="deep-tile p-8">
           <div className="text-5xl font-black text-primary mb-2">{results.pct}%</div>
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">ציון סופי</div>
         </div>
-        <div className="soft-card bg-card border border-border p-8">
+        <div className="deep-tile p-8">
           <div className="text-5xl font-black text-foreground mb-2">{results.score}/{quiz.length}</div>
           <div className="text-xs font-bold text-muted-foreground uppercase tracking-widest">תשובות נכונות</div>
         </div>
