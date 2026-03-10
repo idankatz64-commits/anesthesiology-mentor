@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle } from 'lucide-react';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle, ClipboardList } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cardHoverTap } from '@/lib/animations';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
 import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
+import DailyReportModal from '@/components/DailyReportModal';
 
 const containerVariant = {
   hidden: {},
@@ -22,6 +23,7 @@ export default function HomeView() {
   const { data, progress, navigate, resetAllData, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
   const [loadingDue, setLoadingDue] = useState(false);
   const [resuming, setResuming] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
 
   // Exam proximity badge
   const examPhase = useMemo(() => getExamProximityPhase(), []);
@@ -311,6 +313,18 @@ export default function HomeView() {
           </div>
         </motion.div>
       </motion.div>
+
+      {/* Daily Report Button */}
+      <div className="mb-8 flex justify-center">
+        <button
+          onClick={() => setReportOpen(true)}
+          className="liquid-glass px-6 py-3 flex items-center gap-2 text-sm font-semibold text-primary hover:scale-[1.02] active:scale-[0.98] transition-all"
+        >
+          <ClipboardList className="w-5 h-5" />
+          דו״ח יומי
+        </button>
+      </div>
+      <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
 
       {/* Personal Stats Summary */}
       <div className="mb-12">
