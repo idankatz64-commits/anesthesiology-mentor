@@ -177,7 +177,7 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
 
     const byDate: Record<string, { total: number; correct: number }> = {};
     for (const r of filtered) {
-      const d = r.answered_at.slice(0, 10);
+      const d = toIsraelDateStr(new Date(r.answered_at));
       if (!byDate[d]) byDate[d] = { total: 0, correct: 0 };
       byDate[d].total++;
       if (r.is_correct) byDate[d].correct++;
