@@ -115,7 +115,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const [showEma7, setShowEma7] = useState(true);
   const [showEma14, setShowEma14] = useState(true);
   const [showGlobalAvg, setShowGlobalAvg] = useState(true);
-  const [logScale, setLogScale] = useState(false);
+  const [logScale, setLogScale] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [topicSearchOpen, setTopicSearchOpen] = useState(false);
 
