@@ -302,8 +302,8 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.setLineDash([]);
     };
 
-    if (showEma7) drawLine(d => d.ema7, DATA_COLORS.ema7);
-    if (showEma14) drawLine(d => d.ema14, DATA_COLORS.ema14);
+    if (showEma7) drawLine(d => d.ema7, DATA_COLORS.ema7, true, 2); // dotted orange
+    if (showEma14) drawLine(d => d.ema14, DATA_COLORS.ema14, true, 1.5);
 
     // Group daily average trend line (dynamic, not flat)
     if (showGlobalAvg) {
