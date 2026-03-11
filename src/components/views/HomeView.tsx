@@ -242,19 +242,21 @@ function SessionPanel({
   };
 
   return (
-    <div className="deep-tile rounded-none border-t-0 px-5 py-3 relative overflow-hidden">
+    <div className="deep-tile rounded-none border-t-0 lg:border-t lg:border-r-0 px-5 py-4 relative overflow-hidden h-full flex flex-col justify-center">
       {hasSaved ? (
         <>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
-          <div className="relative flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex-1 min-w-0 flex items-center gap-3">
+          <div className="relative flex flex-col gap-3">
+            <div className="flex items-center gap-3">
               <Play className="w-5 h-5 text-primary shrink-0" />
               <div>
                 <span className="font-bold text-foreground text-sm">יש לך סשן שמור!</span>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {modeLabel(savedSessionInfo.mode)}{' '}
                   — שאלה {savedSessionInfo.index + 1} מתוך {savedSessionInfo.questionIds.length}
-                  {' · '}נשמר ב-{new Date(savedSessionInfo.createdAt).toLocaleDateString('he-IL')}
+                </p>
+                <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+                  נשמר ב-{new Date(savedSessionInfo.createdAt).toLocaleDateString('he-IL')}
                 </p>
               </div>
             </div>
@@ -262,7 +264,7 @@ function SessionPanel({
               <button
                 onClick={onResume}
                 disabled={resuming}
-                className="bg-primary text-primary-foreground px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center gap-2 shadow-lg disabled:opacity-50"
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center gap-2 shadow-lg disabled:opacity-50 flex-1 justify-center"
               >
                 <Play className="w-4 h-4" />
                 {resuming ? 'טוען...' : 'המשך סשן'}
@@ -278,35 +280,42 @@ function SessionPanel({
           </div>
         </>
       ) : lastSession ? (
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">{lastSession.pct >= 80 ? '🏆' : lastSession.pct >= 60 ? '💪' : '📚'}</span>
-              <span className="text-xs text-muted-foreground">סשן אחרון:</span>
-              <span className="text-sm font-bold text-foreground tabular-nums">{lastSession.score}/{lastSession.total}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-primary" />
-              <span className={`text-sm font-bold tabular-nums ${
-                lastSession.pct >= 70 ? 'text-success' : lastSession.pct >= 50 ? 'text-warning' : 'text-destructive'
-              }`}>{lastSession.pct}%</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[10px] text-muted-foreground/60">{modeLabel(lastSession.mode)}</span>
-              <span className="text-muted-foreground/30">·</span>
-              <span className="text-[10px] text-muted-foreground/60">{timeAgo(lastSession.timestamp)}</span>
-            </div>
-            {lastSession.topics.length > 0 && (
-              <div className="hidden lg:flex items-center gap-1.5">
-                {lastSession.topics.map(t => (
-                  <span key={t} className="text-[10px] bg-muted/30 text-muted-foreground px-2 py-0.5 rounded-full truncate max-w-[120px]">{t}</span>
-                ))}
-              </div>
-            )}
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <span className="text-lg">{lastSession.pct >= 80 ? '🏆' : lastSession.pct >= 60 ? '💪' : '📚'}</span>
+            <span className="text-xs font-semibold text-muted-foreground">סשן אחרון</span>
           </div>
+          <div className="flex items-baseline gap-2">
+            <span className="text-2xl font-bold text-foreground tabular-nums">{lastSession.score}/{lastSession.total}</span>
+            <span className={`text-sm font-bold tabular-nums ${
+              lastSession.pct >= 70 ? 'text-success' : lastSession.pct >= 50 ? 'text-warning' : 'text-destructive'
+            }`}>({lastSession.pct}%)</span>
+          </div>
+          {/* Progress bar */}
+          <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
+            <motion.div
+              className="h-full rounded-full"
+              style={{ backgroundColor: lastSession.pct >= 70 ? '#22c55e' : lastSession.pct >= 50 ? '#f59f0a' : '#ef4444' }}
+              initial={{ width: 0 }}
+              animate={{ width: `${lastSession.pct}%` }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+            />
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-[10px] text-muted-foreground/60">{modeLabel(lastSession.mode)}</span>
+            <span className="text-muted-foreground/30">·</span>
+            <span className="text-[10px] text-muted-foreground/60">{timeAgo(lastSession.timestamp)}</span>
+          </div>
+          {lastSession.topics.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {lastSession.topics.map(t => (
+                <span key={t} className="text-[10px] bg-muted/30 text-muted-foreground px-2 py-0.5 rounded-full truncate max-w-[140px]">{t}</span>
+              ))}
+            </div>
+          )}
         </div>
       ) : (
-        <div className="flex items-center justify-center gap-2 py-0.5">
+        <div className="flex items-center justify-center h-full">
           <span className="text-xs text-muted-foreground/50">עדיין לא השלמת סשן</span>
         </div>
       )}
