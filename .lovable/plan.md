@@ -1,62 +1,57 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## תוכנית תיקונים למסך הסטטיסטיקה
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+### שינויים מבוקשים
 
-## Part A -- Daily Volume Bars
+**1. כל המספרים למעלה — שורות מספריות בראש הדף**
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
-
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
-
-### Data shape (extended)
-Each point in `chartData` will gain:
+הלייאאוט החדש יהיה:
 ```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
+┌─────────────────────────────────────────────────────┐
+│ ROW 1: SRS מחר | נושאים | דיוק | שאלות היום         │  ← 4 KPI (גדול, עם אייקונים)
+├─────────────────────────────────────────────────────┤
+│ ROW 2: סה"כ שאלות | כוללות הסבר | ללא הסבר          │  ← 3 DB status
+├─────────────────────────────────────────────────────┤
+│ ROW 3: "הסטטיסטיקה שלי" — 6 כרטיסים בשורה          │  ← Personal stats
+│  שאלות שבוצעו | ייחודיות | טעויות |                 │
+│  מתוקנות | לא תוקנו | טעויות חוזרות                 │
+├──────────────────────────┬──────────────────────────┤
+│ ROW 4: Topic Treemap     │ Forgetting Risk Treemap  │  ← שתי מפות חום באותה שורה
+├──────────────────────────┴──────────────────────────┤
+│ ROW 5: Accuracy Chart (full width)                  │  ← כמו תמונה 2
+├──────────────────────────┬──────────────────────────┤
+│ ROW 6: ERI + מדדים + מפת חולשות (merged)            │  ← חלון אחד עשיר
+├──────────────────────────┴──────────────────────────┤
+│ ROW 7: Topic Performance Table                      │
+├─────────────────────────────────────────────────────┤
+│ ROW 8: Daily Summary + Import/Export                │
+└─────────────────────────────────────────────────────┘
 ```
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+**2. מפות חום באותה שורה**
+- Topic Treemap ו-Forgetting Risk Treemap יהיו `grid-cols-2` באותה שורה
+- Strengths/Weaknesses tile יעבור לתוך חלון ה-ERI (בלחיצה)
 
-## Part B -- Daily Performance Report
+**3. הכנסת נתונים חסרים לחלון ERI**
+- חלון ERI יכלול: טבעת ERI (מרכז), מדדים עיקריים (3 gauges: דיוק, כיסוי, רצף), מפת חולשות (3 gauges: נרכש, לא נרכש, אזור מת)
+- אם אין מקום — לחיצה על ERI תפתח modal מפורט עם כל הנתונים (כולל חוזקות/חולשות)
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+**4. הסרת כפילויות**
+- `שאלות היום` מופיע ב-KPI וב-Personal Stats → ב-KPI ישאר, ב-Personal Stats יוחלף ב-`שאלות שבוצעו` (סה"כ מצטבר)
+- `דיוק` מופיע ב-KPI וב-ERI satellites → ב-KPI ישאר, satellites של ERI ישארו רק כחלק מה-modal
+- `טעויות` מופיע ב-KPI וב-Personal Stats → ב-KPI ישאר כ"טעויות פתוחות" (uncorrected), ב-Personal Stats ישאר כ"טעויות" (total)
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
+**5. גרף כמו תמונה 2**
+- הגרף כבר דומה מאוד. שינויים קטנים: וידוא שה-area fill (ירוק שקוף) מוצג, קו EMA בכתום מנוקד, והכל תואם את הסגנון
 
-## Files to Modify
+**6. הגדלת מספרים חשובים + Gauge dials**
+- שורת KPI: מספרים ב-`text-3xl font-black` עם אייקונים בראש
+- שורת DB status: מספרים ב-`text-2xl font-black` עם צבעים (primary/green/red)
+- Personal Stats: כותרת "הסטטיסטיקה שלי" עם אייקון, מספרים ב-`text-xl`
 
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
+### קבצים שישתנו
+1. **`src/components/views/StatsView.tsx`** — שינוי מבני: סדר שורות חדש, הסרת כפילויות, הוספת שורת DB status, שתי מפות חום בשורה אחת
+2. **`src/components/stats/ERITile.tsx`** — הרחבה: הכנסת gauges מדדים + מפת חולשות לתוך ה-modal
+3. **`src/components/stats/StrengthsWeaknessesTile.tsx`** — מחיקה (התוכן עובר ל-ERI modal)
 
