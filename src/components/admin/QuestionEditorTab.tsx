@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useApp } from '@/contexts/AppContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -176,6 +177,7 @@ function BatchChapterUpdate() {
 }
 
 export default function QuestionEditorTab() {
+  const { invalidateQuestions } = useApp();
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
@@ -321,6 +323,7 @@ export default function QuestionEditorTab() {
 
       if (error) throw error;
       toast.success('השאלה עודכנה בהצלחה');
+      invalidateQuestions();
 
       // Fire-and-forget edit log
       if (editForm && editQuestion) {
@@ -354,6 +357,7 @@ export default function QuestionEditorTab() {
       const { error } = await supabase.from('questions').delete().eq('id', deleteId);
       if (error) throw error;
       toast.success('השאלה נמחקה');
+      invalidateQuestions();
       setDeleteId(null);
       fetchQuestions();
     } catch (err: any) {
