@@ -177,6 +177,7 @@ function BatchChapterUpdate() {
 }
 
 export default function QuestionEditorTab() {
+  const { invalidateQuestions } = useApp();
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
