@@ -134,10 +134,10 @@ export function useStatsData() {
       const [answersData, srData, detailedData] = await Promise.all([
         fetchAllRows<any>(() =>
           supabase
-            .from('user_answers')
-            .select('updated_at, is_correct, topic')
+            .from('answer_history')
+            .select('answered_at, is_correct, topic')
             .eq('user_id', session.user.id)
-            .gte('updated_at', startStr + 'T00:00:00Z')
+            .gte('answered_at', startStr + 'T00:00:00Z')
         ),
         fetchAllRows<any>(() =>
           supabase
@@ -161,7 +161,7 @@ export function useStatsData() {
         buckets[toIsraelDateStr(d)] = { count: 0, correct: 0 };
       }
       answersData.forEach((r: any) => {
-        const day = toIsraelDateStr(new Date(r.updated_at));
+        const day = toIsraelDateStr(new Date(r.answered_at));
         if (buckets[day]) {
           buckets[day].count++;
           if (r.is_correct) buckets[day].correct++;
