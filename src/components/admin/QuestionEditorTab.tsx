@@ -357,6 +357,7 @@ export default function QuestionEditorTab() {
       const { error } = await supabase.from('questions').delete().eq('id', deleteId);
       if (error) throw error;
       toast.success('השאלה נמחקה');
+      invalidateQuestions();
       setDeleteId(null);
       fetchQuestions();
     } catch (err: any) {
