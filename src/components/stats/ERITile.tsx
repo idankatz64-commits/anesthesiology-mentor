@@ -36,7 +36,7 @@ function ERIRing({ value, size = 140 }: {value: number;size?: number;}) {
 
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-5xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
+        <span className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
         <span className="text-xs text-muted-foreground font-medium mt-1">{getLabel(value)}</span>
       </div>
     </div>);
