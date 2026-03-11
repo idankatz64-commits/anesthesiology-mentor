@@ -161,7 +161,7 @@ export function useStatsData() {
         buckets[toIsraelDateStr(d)] = { count: 0, correct: 0 };
       }
       answersData.forEach((r: any) => {
-        const day = toIsraelDateStr(new Date(r.updated_at));
+        const day = toIsraelDateStr(new Date(r.answered_at));
         if (buckets[day]) {
           buckets[day].count++;
           if (r.is_correct) buckets[day].correct++;
