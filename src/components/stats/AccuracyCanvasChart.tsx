@@ -92,6 +92,31 @@ function computeEMA(data: { accuracy: number }[], period: number): (number | nul
   return result;
 }
 
+function fetchAllRows<T>(buildQuery: () => any): Promise<T[]> {
+  const PAGE = 1000;
+  const run = async () => {
+    let allData: T[] = [];
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await buildQuery().range(from, from + PAGE - 1);
+      if (error) {
+        console.error('fetchAllRows (AccuracyCanvasChart) error:', error);
+        break;
+      }
+      if (!data || data.length === 0) break;
+
+      allData = allData.concat(data as T[]);
+      if (data.length < PAGE) break;
+      from += PAGE;
+    }
+
+    return allData;
+  };
+
+  return run();
+}
+
 function formatDateHeb(d: string) {
   const dt = new Date(d + 'T00:00:00');
   const dd = String(dt.getDate()).padStart(2, '0');
@@ -140,18 +165,20 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
       since.setDate(since.getDate() - 90);
       const sinceStr = since.toISOString();
 
-      const [userRes, groupRes] = await Promise.all([
-        supabase
-          .from('answer_history')
-          .select('answered_at, is_correct, topic')
-          .eq('user_id', user.id)
-          .gte('answered_at', sinceStr)
-          .order('answered_at', { ascending: true }),
+      const [userRows, groupRes] = await Promise.all([
+        fetchAllRows<{ answered_at: string; is_correct: boolean; topic: string | null }>(() =>
+          supabase
+            .from('answer_history')
+            .select('answered_at, is_correct, topic')
+            .eq('user_id', user.id)
+            .gte('answered_at', sinceStr)
+            .order('answered_at', { ascending: true })
+        ),
         supabase.rpc('get_global_daily_accuracy', { since_date: sinceStr }),
       ]);
 
       if (cancelled) return;
-      if (!userRes.error && userRes.data) setRawRows(userRes.data);
+      setRawRows(userRows);
       if (!groupRes.error && groupRes.data) {
         const map: Record<string, number> = {};
         (groupRes.data as any[]).forEach((r: any) => { map[r.day] = Number(r.avg_accuracy); });
@@ -586,7 +613,7 @@ export default function AccuracyCanvasChart() {
   const refreshKey = useMemo(() => {
     const history = progress.history || {};
     const keys = Object.keys(history);
-    const totalAnswered = Object.values(history).reduce((sum: number, h: any) => sum + (h?.answeredCount || 1), 0);
+    const totalAnswered = Object.values(history).reduce((sum: number, h: any) => sum + (h?.answered ?? 0), 0);
     return keys.length * 10000 + totalAnswered;
   }, [progress.history]);
 
