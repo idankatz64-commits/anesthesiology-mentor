@@ -73,6 +73,7 @@ export default function SessionView() {
     session, progress, navigate, setAnswer, setConfidence, setSessionIndex,
     toggleFlag, skipQuestion, updateHistory, updateSpacedRepetition, syncAnswerToDb, toggleFavorite,
     saveNote, setRating, addTag, removeTag, saveSessionToDb, clearSavedSession,
+    invalidateQuestions,
   } = useApp();
   const { toast } = useToast();
   const isAdmin = useIsAdmin();
