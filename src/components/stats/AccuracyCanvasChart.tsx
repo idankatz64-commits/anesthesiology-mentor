@@ -444,8 +444,54 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden" dir="rtl">
       <div className="flex items-center justify-between p-4 pb-2 flex-wrap gap-2">
-        <h3 className="text-sm font-bold text-foreground">מגמת דיוק — 90 ימים</h3>
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-bold text-foreground">
+            מגמת דיוק — 90 ימים
+            {selectedTopic && <span className="text-xs font-normal text-muted-foreground mr-1">({selectedTopic})</span>}
+          </h3>
+        </div>
+        <div className="flex gap-1.5 flex-wrap items-center">
+          {/* Topic filter */}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setTopicSearchOpen(v => !v); }}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-all border flex items-center gap-1 ${
+                selectedTopic
+                  ? 'bg-primary/15 border-primary/30 text-primary'
+                  : 'bg-transparent border-foreground/10 text-muted-foreground'
+              }`}
+            >
+              <Filter className="w-3 h-3" />
+              {selectedTopic ? 'מסנן' : 'נושא'}
+            </button>
+            {selectedTopic && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setSelectedTopic(''); }}
+                className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            )}
+            {topicSearchOpen && (
+              <div className="absolute top-full mt-1 left-0 z-50 bg-card border border-border rounded-lg shadow-xl w-64 max-h-60 overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => { setSelectedTopic(''); setTopicSearchOpen(false); }}
+                  className={`w-full text-right px-3 py-2 text-xs hover:bg-muted/50 transition ${!selectedTopic ? 'font-bold text-primary' : 'text-foreground'}`}
+                >
+                  כל הנושאים
+                </button>
+                {availableTopics.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => { setSelectedTopic(t); setTopicSearchOpen(false); }}
+                    className={`w-full text-right px-3 py-2 text-xs hover:bg-muted/50 transition truncate ${selectedTopic === t ? 'font-bold text-primary bg-primary/5' : 'text-foreground'}`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <ToggleBtn active={showEma7} label="EMA 7" onClick={() => setShowEma7(v => !v)} />
           <ToggleBtn active={showEma14} label="EMA 14" onClick={() => setShowEma14(v => !v)} />
           <ToggleBtn active={showGlobalAvg} label="ממוצע כללי" onClick={() => setShowGlobalAvg(v => !v)} />
