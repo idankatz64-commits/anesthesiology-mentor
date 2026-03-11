@@ -491,6 +491,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
         onMouseLeave={handleMouseLeave}
       >
         <canvas ref={mainCanvasRef} style={{ display: 'block', width: '100%' }} />
+        <div className="border-t border-border mx-2" />
         <canvas ref={volCanvasRef} style={{ display: 'block', width: '100%' }} />
 
         {hovered && tooltipPos && (
