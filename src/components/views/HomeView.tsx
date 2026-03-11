@@ -281,9 +281,9 @@ export default function HomeView() {
           </div>
         </motion.div>
 
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-muted text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-muted text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Dumbbell className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">תרגול מותאם</h3>
