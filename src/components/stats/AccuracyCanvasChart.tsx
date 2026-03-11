@@ -24,6 +24,10 @@ const DATA_COLORS = {
   globalAvg: '#9c27b0',
 };
 
+function toIsraelDateStr(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+}
+
 function getThemeColors() {
   const root = getComputedStyle(document.documentElement);
   const getVar = (name: string) => root.getPropertyValue(name).trim();
