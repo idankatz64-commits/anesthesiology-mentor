@@ -267,7 +267,7 @@ export default function MatrixCountdown() {
       transition={{ type: 'spring', stiffness: 250, damping: 25 }}
     >
       {/* Inner padding wrapper so canvas covers full area */}
-      <div className="relative px-3 py-3 sm:px-6 sm:py-5">
+      <div className="relative px-4 py-4 sm:px-8 sm:py-7">
         {/* Matrix rain background — covers entire tile */}
         {rainEnabled && dims.w > 0 && <MatrixRain width={dims.w} height={dims.h} isDark={isDark} />}
 
