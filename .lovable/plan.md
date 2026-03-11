@@ -1,62 +1,73 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## תוכנית: תיקון עדכון הטבלה והגרף ב-EditorActivityTab
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+### בעיות שזוהו
 
-## Part A -- Daily Volume Bars
+1. **טעינה חד-פעמית בלבד** — ה-`useEffect` ב-`EditorActivityTab` רץ עם `[]` (dependency array ריק). הרכיב נטען פעם אחת ולעולם לא מרענן, גם כשחוזרים אליו מטאב אחר (React לא עושה remount כי הוא נשאר ב-DOM).
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+2. **מגבלת 1000 שורות** — השאילתה מ-`question_edit_log` לא מגדירה `.limit()`, אז Supabase מחזיר מקסימום 1000 שורות כברירת מחדל. אם יש יותר מ-1000 רשומות לוג, נתונים חסרים.
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+3. **חישוב "היום" ב-UTC** — `todayStart.setUTCHours(0,0,0,0)` משתמש ב-UTC במקום שעון ישראל, כך ש"עריכות היום" עלולות להיות לא מדויקות.
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
+4. **אין רענון אחרי עריכה** — כשעורכים שאלה ב-`QuestionEditorTab` וחוזרים לטאב `EditorActivityTab`, הנתונים לא מתרעננים.
+
+---
+
+### פתרון
+
+#### א. רענון אוטומטי בכל מעבר טאב
+ב-`AdminDashboard.tsx` — להוסיף `key={activeTab}` לרכיב `EditorActivityTab` כדי לכפות remount בכל פעם שנכנסים לטאב:
+
+```tsx
+{activeTab === 'editor-activity' && <EditorActivityTab key="editor-activity-live" />}
 ```
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+**אלטרנטיבה טובה יותר**: להעביר `activeTab` כ-prop ולהפעיל refetch כשהטאב הופך פעיל:
 
-## Part B -- Daily Performance Report
+```tsx
+<EditorActivityTab isActive={activeTab === 'editor-activity'} />
+```
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+ואז ב-`EditorActivityTab`:
+```tsx
+useEffect(() => { if (isActive) load(); }, [isActive]);
+```
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
+#### ב. תיקון מגבלת 1000 שורות
+להוסיף `.limit(5000)` לשאילתה, או לשנות לגישת pagination/aggregation. מאחר שזה דוח admin ולא צפוי להגיע ל-5000+ עריכות בקרוב, limit גבוה מספיק:
 
-## Files to Modify
+```tsx
+supabase
+  .from('question_edit_log')
+  .select('editor_id, edited_at, question_id')
+  .order('edited_at', { ascending: false })
+  .limit(5000)
+```
 
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+#### ג. תיקון חישוב שעון ישראל
+להחליף את `setUTCHours` בחישוב מבוסס timezone ישראלי (כמו שנעשה ב-`DailyReportTile`):
 
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+```tsx
+function toIsraelDateStr(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+}
+const todayStr = toIsraelDateStr(new Date());
+```
 
-No database changes required.
+ולהשוות תאריכי לוג מול `todayStr` במקום `todayStart`.
+
+#### ד. כפתור רענון ידני
+להוסיף כפתור `RefreshCw` בכותרת "דוח עורכים" שמפעיל `load()` מחדש — כדי שהאדמין יוכל לרענן בכל רגע.
+
+---
+
+### קבצים שישתנו
+
+| קובץ | שינוי |
+|---|---|
+| `src/components/admin/EditorActivityTab.tsx` | תיקון dependency array, limit, timezone, כפתור refresh |
+| `src/pages/AdminDashboard.tsx` | העברת `isActive` prop או שימוש ב-key לרענון |
+
+אין שינויי מסד נתונים.
 
