@@ -15,8 +15,8 @@ export default function HomeStatsSummary() {
     // Count today's answers
     const today = new Date().toDateString();
     const todayAnswered = entries.filter(h => {
-      if (!h.lastDate) return false;
-      return new Date(h.lastDate).toDateString() === today;
+      if (!h.timestamp) return false;
+      return new Date(h.timestamp).toDateString() === today;
     }).length;
 
     return {
