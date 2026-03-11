@@ -123,10 +123,11 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
   const PANEL2_H = expanded ? 110 : 90;
   const MARGIN = { top: 10, right: 10, bottom: 20, left: 40 };
 
-  // Fetch raw rows once
+  // Fetch raw rows — re-fetch when refreshKey changes
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
@@ -154,7 +155,7 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshKey]);
 
   // Available topics
   const availableTopics = useMemo(() => {
