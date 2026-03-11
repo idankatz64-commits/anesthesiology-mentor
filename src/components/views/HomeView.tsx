@@ -318,15 +318,14 @@ export default function HomeView() {
         </motion.div>
 
         {/* Notebook */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('notebook')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('notebook')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <StickyNote className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">המחברת שלי</h3>
             <p className="text-sm text-muted-foreground font-light">
-              צפייה ב-<span className="matrix-text font-medium">{notesCount}</span> הערות
+              צפייה ב-<span className="text-primary font-medium">{notesCount}</span> הערות
             </p>
           </div>
         </motion.div>
