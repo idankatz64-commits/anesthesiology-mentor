@@ -320,7 +320,8 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       const barH = volNorm * plotH;
       const y = 5 + plotH - barH;
 
-      ctx.fillStyle = hexToRgba(getBarColor(d.accuracy), 0.35);
+      const barColor = getBarColor(d.accuracy);
+      ctx.fillStyle = barColor.replace('rgb(', 'rgba(').replace(')', ', 0.7)');
       ctx.fillRect(x, y, barW, barH);
     }
 
