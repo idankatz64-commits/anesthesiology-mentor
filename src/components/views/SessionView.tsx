@@ -412,7 +412,7 @@ export default function SessionView() {
                         (qData as any)[KEYS.B] = answersDraft.B;
                         (qData as any)[KEYS.C] = answersDraft.C;
                         (qData as any)[KEYS.D] = answersDraft.D;
-                        sessionStorage.removeItem('questions_cache');
+                        invalidateQuestions();
                         setEditingQuestion(false);
                         toast({ title: 'השאלה עודכנה ✅' });
                       }
