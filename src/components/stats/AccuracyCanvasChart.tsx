@@ -279,16 +279,6 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.beginPath(); ctx.moveTo(x, MARGIN.top); ctx.lineTo(x, MARGIN.top + plotH); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(w - MARGIN.right, y); ctx.stroke();
       ctx.setLineDash([]);
-
-      // Price label on Y axis
-      ctx.fillStyle = getBarColor(d.accuracy);
-      const labelW = 42;
-      const labelH = 16;
-      ctx.fillRect(0, y - labelH / 2, MARGIN.left - 2, labelH);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 9px monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText(`${d.accuracy}%`, MARGIN.left - 5, y + 4);
     }
   }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, getCanvasWidth, PANEL1_H]);
 
