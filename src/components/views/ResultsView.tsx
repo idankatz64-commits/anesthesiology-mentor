@@ -85,6 +85,33 @@ export default function ResultsView() {
     }
   }, [mode, quiz, answers, updateHistory]);
 
+  // Save last session results to localStorage
+  const lastSessionSaved = useRef(false);
+  useEffect(() => {
+    if (quiz.length > 0 && !lastSessionSaved.current) {
+      lastSessionSaved.current = true;
+      // Collect top topics
+      const topicCount: Record<string, number> = {};
+      quiz.forEach(q => {
+        const t = q[KEYS.TOPIC];
+        if (t) topicCount[t] = (topicCount[t] || 0) + 1;
+      });
+      const topTopics = Object.entries(topicCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([t]) => t);
+
+      localStorage.setItem('last_session_results', JSON.stringify({
+        score: results.score,
+        total: quiz.length,
+        pct: results.pct,
+        mode,
+        topics: topTopics,
+        timestamp: Date.now(),
+      }));
+    }
+  }, [quiz, results, mode]);
+
   const handleRestart = () => {
     startSession(quiz, quiz.length, 'practice');
   };
