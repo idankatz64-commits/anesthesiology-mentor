@@ -533,31 +533,14 @@ export default function HomeView() {
         </AnimatePresence>
       </TooltipProvider>
 
-      {/* ═══ DAILY REPORT + DB STATUS ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <button
-          onClick={() => setReportOpen(true)}
-          className="deep-tile w-full px-6 py-3 flex items-center justify-center gap-2 text-sm font-semibold text-primary"
-        >
-          <ClipboardList className="w-5 h-5" />
-          דו״ח יומי
-        </button>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold matrix-text">{data.length}</div>
-            <div className="text-[9px] text-muted-foreground font-medium mt-0.5">סה"כ שאלות</div>
-          </div>
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold text-success matrix-text">{withExp}</div>
-            <div className="text-[9px] text-success/70 font-medium mt-0.5">כוללות הסבר</div>
-          </div>
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold text-warning matrix-text">{withoutExp}</div>
-            <div className="text-[9px] text-warning/70 font-medium mt-0.5">ללא הסבר</div>
-          </div>
-        </div>
-      </div>
+      {/* ═══ DAILY REPORT ═══ */}
+      <button
+        onClick={() => setReportOpen(true)}
+        className="deep-tile w-full px-6 py-3 flex items-center justify-center gap-2 text-sm font-semibold text-primary"
+      >
+        <ClipboardList className="w-5 h-5" />
+        דו״ח יומי
+      </button>
 
       <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>

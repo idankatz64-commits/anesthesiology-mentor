@@ -60,7 +60,7 @@ export default function HomeTopicHeatmap() {
   }
 
   return (
-    <div className="glass-tile p-4 h-full">
+    <div className="glass-tile p-3 h-full">
       <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em] mb-3">
         נושאים להתמקד בהם
       </h3>
