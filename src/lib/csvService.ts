@@ -3,15 +3,22 @@ import { KEYS, type Question } from './types';
 
 const CACHE_KEY = 'questions_cache';
 
+/** Clear the sessionStorage question cache so next fetchQuestions re-fetches from DB */
+export function invalidateQuestionsCache(): void {
+  sessionStorage.removeItem(CACHE_KEY);
+}
+
 /** Fetch all questions from the Supabase questions table with retry + sessionStorage cache */
-export async function fetchQuestions(retries = 3): Promise<Question[]> {
-  // Check sessionStorage cache first
-  const cached = sessionStorage.getItem(CACHE_KEY);
-  if (cached) {
-    try {
-      const parsed = JSON.parse(cached) as Question[];
-      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
-    } catch { /* ignore bad cache */ }
+export async function fetchQuestions(retries = 3, skipCache = false): Promise<Question[]> {
+  // Check sessionStorage cache first (unless explicitly skipped)
+  if (!skipCache) {
+    const cached = sessionStorage.getItem(CACHE_KEY);
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached) as Question[];
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch { /* ignore bad cache */ }
+    }
   }
 
   for (let attempt = 1; attempt <= retries; attempt++) {
