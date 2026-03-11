@@ -283,7 +283,14 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
     if (showEma7) drawLine(d => d.ema7, DATA_COLORS.ema7);
     if (showEma14) drawLine(d => d.ema14, DATA_COLORS.ema14);
-    if (showGlobalAvg) drawLine(() => globalAvg, DATA_COLORS.globalAvg, true, 1.5);
+
+    // Group daily average trend line (dynamic, not flat)
+    if (showGlobalAvg) {
+      drawLine(d => {
+        const gVal = groupDailyAvg[d.date];
+        return gVal !== undefined ? gVal : null;
+      }, DATA_COLORS.globalAvg, false, 2);
+    }
 
     // Crosshair on hover
     if (hoverIndex !== null && hoverIndex < data.length) {
