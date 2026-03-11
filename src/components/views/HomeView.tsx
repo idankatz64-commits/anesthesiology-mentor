@@ -6,6 +6,7 @@ import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
+import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import DailyReportModal from '@/components/DailyReportModal';
