@@ -284,7 +284,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
         const val = getValue(data[i]);
         if (val === null) { started = false; continue; }
         const x = MARGIN.left + ((i + 0.5) / data.length) * plotW;
-        const y = MARGIN.top + plotH * (1 - val / 100);
+        const y = toY(val);
         if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
       }
       ctx.stroke();
