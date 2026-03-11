@@ -741,6 +741,13 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_global_daily_accuracy: {
+        Args: { since_date: string }
+        Returns: {
+          avg_accuracy: number
+          day: string
+        }[]
+      }
       get_global_topic_stats: {
         Args: never
         Returns: {
