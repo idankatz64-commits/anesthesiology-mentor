@@ -108,6 +108,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rawRows, setRawRows] = useState<{ answered_at: string; is_correct: boolean; topic: string | null }[]>([]);
   const [data, setData] = useState<DayData[]>([]);
+  const [groupDailyAvg, setGroupDailyAvg] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
@@ -133,15 +134,24 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       since.setDate(since.getDate() - 90);
       const sinceStr = since.toISOString();
 
-      const { data: rows, error } = await supabase
-        .from('answer_history')
-        .select('answered_at, is_correct, topic')
-        .eq('user_id', user.id)
-        .gte('answered_at', sinceStr)
-        .order('answered_at', { ascending: true });
+      const [userRes, groupRes] = await Promise.all([
+        supabase
+          .from('answer_history')
+          .select('answered_at, is_correct, topic')
+          .eq('user_id', user.id)
+          .gte('answered_at', sinceStr)
+          .order('answered_at', { ascending: true }),
+        supabase.rpc('get_global_daily_accuracy', { since_date: sinceStr }),
+      ]);
 
-      if (cancelled || error || !rows) { setLoading(false); return; }
-      if (!cancelled) { setRawRows(rows); setLoading(false); }
+      if (cancelled) return;
+      if (!userRes.error && userRes.data) setRawRows(userRes.data);
+      if (!groupRes.error && groupRes.data) {
+        const map: Record<string, number> = {};
+        (groupRes.data as any[]).forEach((r: any) => { map[r.day] = Number(r.avg_accuracy); });
+        setGroupDailyAvg(map);
+      }
+      setLoading(false);
     })();
     return () => { cancelled = true; };
   }, []);
@@ -273,7 +283,14 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
     if (showEma7) drawLine(d => d.ema7, DATA_COLORS.ema7);
     if (showEma14) drawLine(d => d.ema14, DATA_COLORS.ema14);
-    if (showGlobalAvg) drawLine(() => globalAvg, DATA_COLORS.globalAvg, true, 1.5);
+
+    // Group daily average trend line (dynamic, not flat)
+    if (showGlobalAvg) {
+      drawLine(d => {
+        const gVal = groupDailyAvg[d.date];
+        return gVal !== undefined ? gVal : null;
+      }, DATA_COLORS.globalAvg, false, 2);
+    }
 
     // Crosshair on hover
     if (hoverIndex !== null && hoverIndex < data.length) {
@@ -287,7 +304,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(w - MARGIN.right, y); ctx.stroke();
       ctx.setLineDash([]);
     }
-  }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, getCanvasWidth, PANEL1_H]);
+  }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, groupDailyAvg, getCanvasWidth, PANEL1_H]);
 
   const drawVolume = useCallback(() => {
     const canvas = volCanvasRef.current;
@@ -510,7 +527,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
             <div className="text-muted-foreground">דיוק: <span className="font-bold" style={{ color: getBarColor(hovered.accuracy) }}>{hovered.accuracy}%</span></div>
             {showEma7 && hovered.ema7 !== null && <div className="text-muted-foreground">EMA 7: <span className="font-bold" style={{ color: DATA_COLORS.ema7 }}>{hovered.ema7}%</span></div>}
             {showEma14 && hovered.ema14 !== null && <div className="text-muted-foreground">EMA 14: <span className="font-bold" style={{ color: DATA_COLORS.ema14 }}>{hovered.ema14}%</span></div>}
-            <div className="text-muted-foreground">ממוצע כללי: <span className="font-bold" style={{ color: DATA_COLORS.globalAvg }}>{globalAvg}%</span></div>
+            {showGlobalAvg && groupDailyAvg[hovered.date] !== undefined && <div className="text-muted-foreground">ממוצע קבוצה: <span className="font-bold" style={{ color: DATA_COLORS.globalAvg }}>{groupDailyAvg[hovered.date]}%</span></div>}
           </div>
         )}
       </div>
