@@ -11,45 +11,45 @@
 
 @layer base {
   :root {
-    --background: 260 30% 4%;
+    --background: 220 15% 7%;
     --foreground: 220 20% 90%;
 
-    --card: 260 25% 11%;
+    --card: 220 10% 12%;
     --card-foreground: 220 20% 90%;
 
-    --popover: 260 25% 11%;
+    --popover: 220 10% 12%;
     --popover-foreground: 220 20% 90%;
 
-    --primary: 25 95% 53%;
+    --primary: 36 96% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 260 20% 14%;
+    --secondary: 220 10% 15%;
     --secondary-foreground: 220 20% 90%;
 
-    --muted: 260 20% 14%;
-    --muted-foreground: 220 15% 65%;
+    --muted: 220 10% 15%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 25 95% 53%;
+    --accent: 36 96% 50%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 260 20% 18%;
-    --input: 260 20% 14%;
-    --ring: 25 95% 53%;
+    --border: 220 10% 17%;
+    --input: 220 10% 15%;
+    --ring: 36 96% 50%;
 
     --radius: 1rem;
 
     /* Data blue — for all statistics and neutral numbers */
-    --matrix: 217 92% 76%;
+    --matrix: 36 96% 50%;
     --matrix-foreground: 0 0% 100%;
-    --matrix-muted: 217 40% 12%;
+    --matrix-muted: 36 40% 12%;
 
     /* Custom semantic tokens */
-    --brand: 25 95% 53%;
+    --brand: 36 96% 50%;
     --brand-foreground: 0 0% 100%;
-    --brand-muted: 25 95% 10%;
+    --brand-muted: 36 95% 10%;
 
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
@@ -62,25 +62,25 @@
     --info: 217 92% 76%;
     --info-foreground: 0 0% 100%;
 
-    /* Feature — same as primary (no purple) */
-    --feature: 25 95% 53%;
+    /* Feature — same as primary */
+    --feature: 36 96% 50%;
     --feature-foreground: 0 0% 100%;
 
     /* Glow effects */
-    --glow-primary: 0 0 20px hsl(25 95% 53% / 0.3);
+    --glow-primary: 0 0 20px hsl(36 96% 50% / 0.3);
     --glow-success: 0 0 20px hsl(142 71% 45% / 0.3);
     --glow-destructive: 0 0 20px hsl(0 72% 51% / 0.3);
-    --glow-matrix: 0 0 20px hsl(217 92% 76% / 0.25);
-    --glow-feature: 0 0 20px hsl(25 95% 53% / 0.3);
+    --glow-matrix: 0 0 20px hsl(36 96% 50% / 0.25);
+    --glow-feature: 0 0 20px hsl(36 96% 50% / 0.3);
 
-    --sidebar-background: 260 28% 5%;
-    --sidebar-foreground: 220 15% 50%;
-    --sidebar-border: 260 20% 12%;
-    --sidebar-primary: 25 95% 53%;
+    --sidebar-background: 220 12% 8%;
+    --sidebar-foreground: 220 10% 50%;
+    --sidebar-border: 220 10% 14%;
+    --sidebar-primary: 36 96% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 260 20% 12%;
-    --sidebar-accent-foreground: 25 95% 63%;
-    --sidebar-ring: 25 95% 53%;
+    --sidebar-accent: 220 10% 14%;
+    --sidebar-accent-foreground: 36 96% 60%;
+    --sidebar-ring: 36 96% 50%;
     --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
     --font-serif: "Crimson Text", ui-serif, Georgia, serif;
     --font-mono: "JetBrains Mono", "Space Mono", ui-monospace, monospace;
