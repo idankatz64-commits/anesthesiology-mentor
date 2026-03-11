@@ -582,8 +582,13 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
 
 export default function AccuracyCanvasChart() {
   const { progress } = useApp();
-  // Use history length as refresh key so chart re-fetches after new answers
-  const refreshKey = useMemo(() => Object.keys(progress.history || {}).length, [progress.history]);
+  // Use a composite key: question count + total answer count to detect re-answers too
+  const refreshKey = useMemo(() => {
+    const history = progress.history || {};
+    const keys = Object.keys(history);
+    const totalAnswered = Object.values(history).reduce((sum: number, h: any) => sum + (h?.answeredCount || 1), 0);
+    return keys.length * 10000 + totalAnswered;
+  }, [progress.history]);
 
   return (
     <motion.div
