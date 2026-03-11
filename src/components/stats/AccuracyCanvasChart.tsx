@@ -249,12 +249,8 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.fillText(`${pct}%`, MARGIN.left - 4, y + 3);
     }
 
-    // Draw accuracy as a connected line with dots (like TradingView price line)
-    const accColor = '#42a5f5'; // light blue line
-    ctx.strokeStyle = accColor;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    let started = false;
+    // Draw accuracy as area chart with green fill (TradingView style)
+    const accColor = '#26a69a'; // TradingView green
     const accPoints: { x: number; y: number; acc: number }[] = [];
     for (let i = 0; i < data.length; i++) {
       const d = data[i];
@@ -262,16 +258,31 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       const x = MARGIN.left + ((i + 0.5) / data.length) * plotW;
       const y = toY(d.accuracy);
       accPoints.push({ x, y, acc: d.accuracy });
-      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
     }
-    ctx.stroke();
-    // Dots on data points
-    for (const pt of accPoints) {
+
+    // Area fill — gradient from green to transparent
+    if (accPoints.length > 1) {
+      const areaGrad = ctx.createLinearGradient(0, MARGIN.top, 0, MARGIN.top + plotH);
+      areaGrad.addColorStop(0, 'rgba(38, 166, 154, 0.35)');
+      areaGrad.addColorStop(1, 'rgba(38, 166, 154, 0.02)');
+      ctx.fillStyle = areaGrad;
       ctx.beginPath();
-      ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
-      ctx.fillStyle = accColor;
+      ctx.moveTo(accPoints[0].x, MARGIN.top + plotH); // bottom-left
+      for (const pt of accPoints) ctx.lineTo(pt.x, pt.y);
+      ctx.lineTo(accPoints[accPoints.length - 1].x, MARGIN.top + plotH); // bottom-right
+      ctx.closePath();
       ctx.fill();
     }
+
+    // Line on top of area
+    ctx.strokeStyle = accColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    let started = false;
+    for (const pt of accPoints) {
+      if (!started) { ctx.moveTo(pt.x, pt.y); started = true; } else ctx.lineTo(pt.x, pt.y);
+    }
+    ctx.stroke();
 
     // EMA / average lines
     const drawLine = (getValue: (d: DayData) => number | null, color: string, dashed = false, lineW = 2) => {
