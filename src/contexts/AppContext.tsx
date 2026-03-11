@@ -439,16 +439,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         }
       })();
 
-      // Log to answer_history for trend analytics (every answer must be logged)
-      supabase.from('answer_history').insert({
-        user_id: userId,
-        question_id: id,
-        topic: topic || null,
-        is_correct: isCorrect,
-        answered_at: new Date().toISOString(),
-      }).then(({ error: ahErr }) => {
-        if (ahErr) console.error('answer_history insert error:', ahErr);
-      });
+      // answer_history is populated automatically by the DB trigger
+      // trg_sync_answer_history on user_answers — no manual insert needed
     }
   }, []);
 
