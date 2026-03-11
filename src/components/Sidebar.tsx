@@ -179,7 +179,7 @@ export default function Sidebar() {
               title="מצב תצוגה"
               className={glassButtonCollapsed}
             >
-              {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
             </button>
           </>
         )}
