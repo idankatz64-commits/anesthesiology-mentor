@@ -467,11 +467,15 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden" dir="rtl">
       <div className="flex items-center justify-between p-4 pb-2 flex-wrap gap-2">
-        <div className="flex items-center gap-2">
-          <h3 className="text-sm font-bold text-foreground">
-            מגמת דיוק — 90 ימים
-            {selectedTopic && <span className="text-xs font-normal text-muted-foreground mr-1">({selectedTopic})</span>}
-          </h3>
+        <div className="flex items-center gap-2.5">
+          <span className="text-base">📈</span>
+          <div>
+            <h3 className="text-sm font-bold text-foreground leading-tight">
+              Technical Performance Analysis
+              {selectedTopic && <span className="text-xs font-normal text-muted-foreground mr-2">({selectedTopic})</span>}
+            </h3>
+            <p className="text-[10px] text-muted-foreground leading-tight">Historical performance relative to moving averages</p>
+          </div>
         </div>
         <div className="flex gap-1.5 flex-wrap items-center">
           {/* Topic filter */}
