@@ -63,7 +63,7 @@ function MiniStat({
 }) {
   return (
     <div
-      className="glass-tile relative overflow-hidden p-4 text-center flex flex-col items-center justify-center gap-1"
+      className="glass-tile relative overflow-hidden p-3 text-center flex flex-col items-center justify-center gap-0.5"
     >
       <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">
         {label}
