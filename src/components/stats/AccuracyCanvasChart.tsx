@@ -115,7 +115,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const [showEma7, setShowEma7] = useState(true);
   const [showEma14, setShowEma14] = useState(true);
   const [showGlobalAvg, setShowGlobalAvg] = useState(true);
-  const [logScale, setLogScale] = useState(false);
+  const [logScale, setLogScale] = useState(true);
   const [selectedTopic, setSelectedTopic] = useState<string>('');
   const [topicSearchOpen, setTopicSearchOpen] = useState(false);
 
@@ -224,11 +224,21 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
     const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
     const slotW = plotW / data.length;
 
-    // Grid lines
+    // Log scale helper: maps 0-100% → 0-1 (normalized), then to canvas Y
+    const LOG_BASE = Math.log(101); // log(1+100)
+    const toY = (pct: number) => {
+      const norm = logScale
+        ? Math.log(1 + Math.max(0, Math.min(100, pct))) / LOG_BASE
+        : pct / 100;
+      return MARGIN.top + plotH * (1 - norm);
+    };
+
+    // Grid lines – pick nice percentage ticks
+    const gridTicks = logScale ? [5, 10, 20, 40, 60, 80, 100] : [20, 40, 60, 80, 100];
     ctx.strokeStyle = theme.gridLine;
     ctx.lineWidth = 1;
-    for (const pct of [20, 40, 60, 80, 100]) {
-      const y = MARGIN.top + plotH * (1 - pct / 100);
+    for (const pct of gridTicks) {
+      const y = toY(pct);
       ctx.beginPath();
       ctx.moveTo(MARGIN.left, y);
       ctx.lineTo(w - MARGIN.right, y);
@@ -250,7 +260,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       const d = data[i];
       if (d.total === 0) continue;
       const x = MARGIN.left + ((i + 0.5) / data.length) * plotW;
-      const y = MARGIN.top + plotH * (1 - d.accuracy / 100);
+      const y = toY(d.accuracy);
       accPoints.push({ x, y, acc: d.accuracy });
       if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
     }
@@ -274,7 +284,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
         const val = getValue(data[i]);
         if (val === null) { started = false; continue; }
         const x = MARGIN.left + ((i + 0.5) / data.length) * plotW;
-        const y = MARGIN.top + plotH * (1 - val / 100);
+        const y = toY(val);
         if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
       }
       ctx.stroke();
@@ -296,7 +306,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
     if (hoverIndex !== null && hoverIndex < data.length) {
       const d = data[hoverIndex];
       const x = MARGIN.left + ((hoverIndex + 0.5) / data.length) * plotW;
-      const y = MARGIN.top + plotH * (1 - d.accuracy / 100);
+      const y = toY(d.accuracy);
       ctx.strokeStyle = theme.crosshair;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 3]);
