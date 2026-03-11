@@ -201,29 +201,45 @@ function SmallCard({
   );
 }
 
+/* ── Last Session Results type ── */
+interface LastSessionResults {
+  score: number;
+  total: number;
+  pct: number;
+  mode: string;
+  topics: string[];
+  timestamp: number;
+}
+
 /* ── Session Panel (always visible) ── */
 function SessionPanel({
-  savedSessionInfo, loadingSavedSession, resuming, onResume, onClear, progress,
+  savedSessionInfo, loadingSavedSession, resuming, onResume, onClear,
 }: {
   savedSessionInfo: any; loadingSavedSession: boolean; resuming: boolean;
   onResume: () => void; onClear: () => void;
   progress: UserProgress; data: Question[];
 }) {
-  const todayStats = useMemo(() => {
-    const now = new Date();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
-    let answered = 0, correct = 0;
-    Object.values(progress.history).forEach(h => {
-      if (h.timestamp >= todayStart) {
-        answered++;
-        if (h.lastResult === 'correct') correct++;
-      }
-    });
-    const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
-    return { answered, correct, accuracy };
-  }, [progress.history]);
+  const lastSession = useMemo<LastSessionResults | null>(() => {
+    try {
+      const raw = localStorage.getItem('last_session_results');
+      return raw ? JSON.parse(raw) : null;
+    } catch { return null; }
+  }, []);
 
   const hasSaved = !loadingSavedSession && savedSessionInfo;
+
+  const modeLabel = (m: string) =>
+    m === 'simulation' ? 'סימולציה' : m === 'exam' ? 'בחינה' : 'תרגול';
+
+  const timeAgo = (ts: number) => {
+    const diff = Date.now() - ts;
+    const mins = Math.floor(diff / 60000);
+    if (mins < 60) return `לפני ${mins} דקות`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `לפני ${hrs} שעות`;
+    const days = Math.floor(hrs / 24);
+    return `לפני ${days} ימים`;
+  };
 
   return (
     <div className="deep-tile rounded-none border-t-0 px-5 py-3 relative overflow-hidden">
@@ -236,8 +252,7 @@ function SessionPanel({
               <div>
                 <span className="font-bold text-foreground text-sm">יש לך סשן שמור!</span>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {savedSessionInfo.mode === 'simulation' ? 'סימולציה' :
-                   savedSessionInfo.mode === 'exam' ? 'בחינה' : 'תרגול'}{' '}
+                  {modeLabel(savedSessionInfo.mode)}{' '}
                   — שאלה {savedSessionInfo.index + 1} מתוך {savedSessionInfo.questionIds.length}
                   {' · '}נשמר ב-{new Date(savedSessionInfo.createdAt).toLocaleDateString('he-IL')}
                 </p>
@@ -262,34 +277,37 @@ function SessionPanel({
             </div>
           </div>
         </>
-      ) : (
+      ) : lastSession ? (
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-success" />
-              <span className="text-xs text-muted-foreground">היום:</span>
-              <span className="text-sm font-bold text-foreground tabular-nums">{todayStats.answered}</span>
-              <span className="text-xs text-muted-foreground">שאלות</span>
+              <span className="text-lg">{lastSession.pct >= 80 ? '🏆' : lastSession.pct >= 60 ? '💪' : '📚'}</span>
+              <span className="text-xs text-muted-foreground">סשן אחרון:</span>
+              <span className="text-sm font-bold text-foreground tabular-nums">{lastSession.score}/{lastSession.total}</span>
             </div>
-            {todayStats.answered > 0 && (
-              <>
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4 text-primary" />
-                  <span className="text-xs text-muted-foreground">דיוק:</span>
-                  <span className={`text-sm font-bold tabular-nums ${
-                    todayStats.accuracy >= 70 ? 'text-success' : todayStats.accuracy >= 50 ? 'text-warning' : 'text-destructive'
-                  }`}>{todayStats.accuracy}%</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground">{todayStats.correct}/{todayStats.answered} נכונות</span>
-                </div>
-              </>
+            <div className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
+              <span className={`text-sm font-bold tabular-nums ${
+                lastSession.pct >= 70 ? 'text-success' : lastSession.pct >= 50 ? 'text-warning' : 'text-destructive'
+              }`}>{lastSession.pct}%</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] text-muted-foreground/60">{modeLabel(lastSession.mode)}</span>
+              <span className="text-muted-foreground/30">·</span>
+              <span className="text-[10px] text-muted-foreground/60">{timeAgo(lastSession.timestamp)}</span>
+            </div>
+            {lastSession.topics.length > 0 && (
+              <div className="hidden lg:flex items-center gap-1.5">
+                {lastSession.topics.map(t => (
+                  <span key={t} className="text-[10px] bg-muted/30 text-muted-foreground px-2 py-0.5 rounded-full truncate max-w-[120px]">{t}</span>
+                ))}
+              </div>
             )}
           </div>
-          {todayStats.answered === 0 && (
-            <span className="text-xs text-muted-foreground/60">עדיין לא תרגלת היום</span>
-          )}
+        </div>
+      ) : (
+        <div className="flex items-center justify-center gap-2 py-0.5">
+          <span className="text-xs text-muted-foreground/50">עדיין לא השלמת סשן</span>
         </div>
       )}
     </div>
