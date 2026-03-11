@@ -158,25 +158,29 @@ export default function StatsView() {
     },
     {
       label: 'טעויות פתוחות', value: personalStats.uncorrected, icon: XCircle, color: 'text-destructive',
-      change: null as number | null,
+      change: dailyChanges.errorsChange, invertColor: true,
     },
     {
       label: 'כיסוי מאגר', value: stats.coverage, suffix: '%', icon: BookOpen, color: 'text-primary',
-      change: null as number | null,
+      change: dailyChanges.coverageChangeToday, changeSuffix: '%',
     },
   ];
 
-  return (
-    <>
-      <motion.div
-        className="fade-in w-full mx-auto flex flex-col gap-3"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        {/* ROW 1 — 4 KPI Cards */}
-        <motion.div variants={itemVariants} className="grid grid-cols-2 sm:grid-cols-4 gap-3" dir="rtl">
-          {kpiCards.map(k => (
+  // Helper to render a change badge
+  const ChangeBadge = ({ change, suffix, invertColor }: { change: number | null | undefined; suffix?: string; invertColor?: boolean }) => {
+    if (change === null || change === undefined) return null;
+    const isPositive = change >= 0;
+    const colorClass = invertColor
+      ? (isPositive ? 'text-destructive' : 'text-green-500')
+      : (isPositive ? 'text-green-500' : 'text-destructive');
+    return (
+      <div className={`flex items-center justify-center gap-0.5 mt-0.5 text-[10px] font-bold ${colorClass}`}>
+        {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+        <span>{change > 0 ? '+' : ''}{change}{suffix || ''}</span>
+        <span className="text-muted-foreground font-normal mr-0.5">מאתמול</span>
+      </div>
+    );
+  };
             <div key={k.label} className="glass-tile rounded-xl p-3 text-center">
               <div className="flex items-center justify-center gap-1.5 mb-1">
                 <k.icon className="w-3.5 h-3.5 text-muted-foreground" />
