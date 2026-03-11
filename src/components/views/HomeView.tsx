@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { KEYS } from '@/lib/types';
+import { KEYS, Question, UserProgress } from '@/lib/types';
+import { CheckCircle, TrendingUp, Clock } from 'lucide-react';
 import {
   Sparkles, Timer, RefreshCcw, Heart, BookOpen, Cpu,
   Layers, SlidersHorizontal, AlertCircle,
