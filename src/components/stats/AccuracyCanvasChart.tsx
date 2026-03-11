@@ -165,18 +165,20 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
       since.setDate(since.getDate() - 90);
       const sinceStr = since.toISOString();
 
-      const [userRes, groupRes] = await Promise.all([
-        supabase
-          .from('answer_history')
-          .select('answered_at, is_correct, topic')
-          .eq('user_id', user.id)
-          .gte('answered_at', sinceStr)
-          .order('answered_at', { ascending: true }),
+      const [userRows, groupRes] = await Promise.all([
+        fetchAllRows<{ answered_at: string; is_correct: boolean; topic: string | null }>(() =>
+          supabase
+            .from('answer_history')
+            .select('answered_at, is_correct, topic')
+            .eq('user_id', user.id)
+            .gte('answered_at', sinceStr)
+            .order('answered_at', { ascending: true })
+        ),
         supabase.rpc('get_global_daily_accuracy', { since_date: sinceStr }),
       ]);
 
       if (cancelled) return;
-      if (!userRes.error && userRes.data) setRawRows(userRes.data);
+      setRawRows(userRows);
       if (!groupRes.error && groupRes.data) {
         const map: Record<string, number> = {};
         (groupRes.data as any[]).forEach((r: any) => { map[r.day] = Number(r.avg_accuracy); });
