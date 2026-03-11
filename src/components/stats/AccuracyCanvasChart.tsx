@@ -304,7 +304,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(w - MARGIN.right, y); ctx.stroke();
       ctx.setLineDash([]);
     }
-  }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, getCanvasWidth, PANEL1_H]);
+  }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, groupDailyAvg, getCanvasWidth, PANEL1_H]);
 
   const drawVolume = useCallback(() => {
     const canvas = volCanvasRef.current;
