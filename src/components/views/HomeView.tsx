@@ -242,7 +242,7 @@ function SessionPanel({
   };
 
   return (
-    <div className="deep-tile rounded-none border-t-0 lg:border-t lg:border-r-0 px-5 py-4 relative overflow-hidden h-full flex flex-col justify-center">
+    <div className="glass-tile px-5 py-4 relative overflow-hidden h-full flex flex-col justify-center">
       {hasSaved ? (
         <>
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
