@@ -376,7 +376,7 @@ export default function SessionView() {
         <div className="px-8 pt-6 pb-2 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="bg-primary/15 text-primary text-xs font-bold px-4 py-1.5 rounded-full border border-primary/20 uppercase tracking-wide">
-              {qData[KEYS.TOPIC] || 'General'}
+              {qData[KEYS.CHAPTER] ? getChapterDisplay(qData[KEYS.CHAPTER]) : (qData[KEYS.TOPIC] || 'General')}
             </span>
             <span className="text-muted-foreground text-xs font-medium bidi-text">
               שאלה {questionId} (#{serialNumber})
