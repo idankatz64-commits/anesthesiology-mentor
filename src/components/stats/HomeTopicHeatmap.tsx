@@ -48,7 +48,7 @@ export default function HomeTopicHeatmap() {
 
     // Sort by accuracy ascending (weakest first), take top 7
     stats.sort((a, b) => a.accuracy - b.accuracy);
-    return stats.slice(0, 7);
+    return stats.slice(0, 5);
   }, [data, progress.history]);
 
   if (weakTopics.length === 0) {
