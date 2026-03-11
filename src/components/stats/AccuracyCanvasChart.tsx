@@ -306,7 +306,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
     if (hoverIndex !== null && hoverIndex < data.length) {
       const d = data[hoverIndex];
       const x = MARGIN.left + ((hoverIndex + 0.5) / data.length) * plotW;
-      const y = MARGIN.top + plotH * (1 - d.accuracy / 100);
+      const y = toY(d.accuracy);
       ctx.strokeStyle = theme.crosshair;
       ctx.lineWidth = 1;
       ctx.setLineDash([4, 3]);
