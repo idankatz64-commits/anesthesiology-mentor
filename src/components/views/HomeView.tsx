@@ -1,14 +1,18 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown } from 'lucide-react';
+import {
+  Sparkles, Timer, RefreshCcw, Heart, BookOpen, Cpu,
+  Layers, SlidersHorizontal, AlertCircle,
+  RotateCcw, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown,
+} from 'lucide-react';
 import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
+import { getExamProximityPhase, EXAM_DATE } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
 import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
+import HomeTopicHeatmap from '@/components/stats/HomeTopicHeatmap';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
 import DailyReportModal from '@/components/DailyReportModal';
 
 const containerVariant = {
@@ -21,6 +25,97 @@ const cardVariant = {
   visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 250, damping: 25, mass: 0.8 } },
 };
 
+/* ── Animated Icon Wrappers ── */
+function PulseIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      animate={{ scale: [1, 1.15, 1], opacity: [0.85, 1, 0.85] }}
+      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function SpinIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      animate={{ rotate: 360 }}
+      transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function RotateIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      animate={{ rotate: [0, -30, 0, 30, 0] }}
+      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function FlipIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      animate={{ rotateY: [0, 180, 360] }}
+      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+      style={{ perspective: 200 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function BounceIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      animate={{ y: [0, -4, 0] }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function ShakeIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      animate={{ x: [0, -2, 2, -2, 0] }}
+      transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function BeatIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      animate={{ scale: [1, 1.2, 1, 1.15, 1] }}
+      transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 2 }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function BlinkIcon({ children }: { children: React.ReactNode }) {
+  return (
+    <motion.div
+      animate={{ opacity: [1, 0.3, 1] }}
+      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+/* ── Param Tooltips ── */
 const PARAM_TOOLTIPS: Record<string, string> = {
   srsUrgency: 'כמה דחוף לחזור על השאלה לפי אלגוריתם SRS — ערך גבוה = איחור גדול מתאריך החזרה',
   topicWeakness: 'חולשה בנושא — ההפרש בין אחוז הדיוק שלך בנושא לדיוק הכללי',
@@ -43,6 +138,69 @@ function FormulaParam({ name }: { name: string }) {
   );
 }
 
+/* ── Focus Card (larger, decorative) ── */
+function FocusCard({
+  icon, title, description, onClick, accentColor, disabled,
+}: {
+  icon: React.ReactNode; title: string; description: string;
+  onClick: () => void; accentColor: string; disabled?: boolean;
+}) {
+  return (
+    <motion.div
+      variants={cardVariant}
+      whileTap={{ scale: 0.97 }}
+      onClick={disabled ? undefined : onClick}
+      className={`glass-tile relative overflow-hidden p-6 cursor-pointer group ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
+      style={{ willChange: 'transform', borderColor: accentColor + '33' }}
+    >
+      {/* Decorative circle */}
+      <div
+        className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 pointer-events-none"
+        style={{ background: accentColor }}
+      />
+      <div className="relative">
+        <div
+          className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
+          style={{ background: accentColor + '22', color: accentColor }}
+        >
+          {icon}
+        </div>
+        <h3 className="font-bold text-lg mb-1.5 text-foreground">{title}</h3>
+        <p className="text-sm text-muted-foreground font-light leading-relaxed">{description}</p>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Small Card ── */
+function SmallCard({
+  icon, title, subtitle, onClick,
+}: {
+  icon: React.ReactNode; title: string; subtitle: React.ReactNode;
+  onClick: () => void;
+}) {
+  return (
+    <motion.div
+      variants={cardVariant}
+      whileTap={{ scale: 0.97 }}
+      onClick={onClick}
+      className="glass-tile p-4 cursor-pointer group"
+      style={{ willChange: 'transform' }}
+    >
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 bg-primary/15 text-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-semibold text-sm text-foreground">{title}</h3>
+          <p className="text-xs text-muted-foreground font-light mt-0.5">{subtitle}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
+
+/* ── Main Component ── */
 export default function HomeView() {
   const { data, progress, navigate, resetAllData, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
   const [loadingDue, setLoadingDue] = useState(false);
@@ -50,7 +208,6 @@ export default function HomeView() {
   const [reportOpen, setReportOpen] = useState(false);
   const [algoOpen, setAlgoOpen] = useState(false);
 
-  // Exam proximity badge
   const examPhase = useMemo(() => getExamProximityPhase(), []);
   const [phaseDismissed, setPhaseDismissed] = useState(() => {
     const stored = localStorage.getItem('exam_phase_banner_dismissed_v1');
@@ -138,35 +295,14 @@ export default function HomeView() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
-      {/* Matrix Countdown — full width at top */}
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* ═══ COUNTDOWN ═══ */}
       <MatrixCountdown />
 
-      {/* Metrics Summary Bar */}
-      <div className="mt-6">
-        <HomeStatsSummary />
-      </div>
-
-      <header className="mt-8 mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
-        <div className="flex items-center gap-3">
-          <img src={jigsawImg} alt="Jigsaw" className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)] animate-pulse" />
-          <h2 className="text-3xl font-semibold text-foreground tracking-tight matrix-title">
-            Let's Play A Game<span className="text-primary">...</span>
-          </h2>
-        </div>
-        <button
-          onClick={resetAllData}
-          className="group deep-tile text-muted-foreground hover:text-destructive text-sm px-5 py-3 transition-all flex items-center gap-2"
-        >
-          <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-          אפס היסטוריה והתחל מחדש
-        </button>
-      </header>
-
-      {/* Resume saved session banner */}
+      {/* ═══ RESUME SESSION BANNER ═══ */}
       {!loadingSavedSession && savedSessionInfo && (
         <motion.div
-          className="mb-8 deep-tile p-5 border-2 border-primary/30 relative overflow-hidden"
+          className="deep-tile p-5 border-2 border-primary/30 relative overflow-hidden"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ type: 'spring', stiffness: 250, damping: 25 }}
@@ -210,14 +346,14 @@ export default function HomeView() {
         </motion.div>
       )}
 
-      {/* Exam proximity badge */}
+      {/* ═══ EXAM BADGE ═══ */}
       <AnimatePresence>
         {showExamBadge && (
           <motion.div
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className={`mb-6 rounded-xl border px-5 py-3 flex items-center justify-between gap-3 ${
+            className={`rounded-xl border px-5 py-3 flex items-center justify-between gap-3 ${
               examPhase === 'imminent'
                 ? 'bg-destructive/10 border-destructive/30 text-destructive'
                 : 'bg-warning/10 border-warning/30 text-warning'
@@ -236,126 +372,110 @@ export default function HomeView() {
         )}
       </AnimatePresence>
 
+      {/* ═══ ANALYTICS ROW — Rings + Topic Heatmap ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        <div className="lg:col-span-5">
+          <HomeStatsSummary />
+        </div>
+        <div className="lg:col-span-7">
+          <HomeTopicHeatmap />
+        </div>
+      </div>
+
+      {/* ═══ HEADER ═══ */}
+      <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+        <div className="flex items-center gap-3">
+          <img src={jigsawImg} alt="Jigsaw" className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)] animate-pulse" />
+          <h2 className="text-2xl font-semibold text-foreground tracking-tight matrix-title">
+            Let's Play A Game<span className="text-primary">...</span>
+          </h2>
+        </div>
+        <button
+          onClick={resetAllData}
+          className="group deep-tile text-muted-foreground hover:text-destructive text-sm px-4 py-2.5 transition-all flex items-center gap-2"
+        >
+          <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+          אפס היסטוריה
+        </button>
+      </header>
+
+      {/* ═══ FOCUS SESSIONS — 3 large cards ═══ */}
       <motion.div
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 mb-10"
-        style={{ minHeight: 300 }}
+        className="grid grid-cols-1 md:grid-cols-3 gap-5"
         variants={containerVariant}
         initial="hidden"
         animate="visible"
       >
-        {/* Smart Practice */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSmartPractice} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
-              <Brain className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-lg mb-1 text-foreground">Smart Practice</h3>
-            <p className="text-sm text-muted-foreground font-light">אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה.</p>
-          </div>
-        </motion.div>
-
-        {/* Simulation Exam */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSimulation} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
-              <FileCheck className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-lg mb-1 text-foreground">מבחן סימולציה</h3>
-            <p className="text-sm text-muted-foreground font-light">120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי.</p>
-          </div>
-        </motion.div>
-
-        {/* Spaced Repetition */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSpacedRepetition} className={`glass-tile p-5 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`} style={{ willChange: 'transform' }}>
-          <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <CalendarClock className="w-6 h-6" />
-            </div>
-            <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה מרווחת</h3>
-            <p className="text-sm text-muted-foreground font-light">שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS.</p>
-          </div>
-        </motion.div>
-
-        {/* Flashcards */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('flashcards')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
-              <Layers className="w-6 h-6" />
-            </div>
-            <h3 className="font-bold text-lg mb-1 text-foreground">תרגול כרטיסיות</h3>
-            <p className="text-sm text-muted-foreground font-light">כרטיסיות Anki – צפה בשאלה, חשוב, והצג תשובה.</p>
-          </div>
-        </motion.div>
-
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="relative">
-            <div className="w-12 h-12 bg-muted text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Dumbbell className="w-6 h-6" />
-            </div>
-            <h3 className="font-semibold text-lg mb-1 text-foreground">תרגול מותאם</h3>
-            <p className="text-sm text-muted-foreground font-light">בחר נושאים, מקורות ומספר שאלות באופן ידני.</p>
-          </div>
-        </motion.div>
-
-        {/* Mistakes */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="relative">
-            <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <RotateCcw className="w-6 h-6" />
-            </div>
-            <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה על טעויות</h3>
-            <p className="text-sm text-muted-foreground font-light">
-              יש לך <span className="text-primary font-medium">{mistakes}</span> טעויות פתוחות
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Favorites */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <Star className="w-6 h-6" />
-            </div>
-            <h3 className="font-semibold text-lg mb-1 text-foreground">מועדפים</h3>
-            <p className="text-sm text-muted-foreground font-light">
-              <span className="text-primary font-medium">{favsCount}</span> שאלות שסימנת
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Notebook */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('notebook')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-              <StickyNote className="w-6 h-6" />
-            </div>
-            <h3 className="font-semibold text-lg mb-1 text-foreground">המחברת שלי</h3>
-            <p className="text-sm text-muted-foreground font-light">
-              צפייה ב-<span className="text-primary font-medium">{notesCount}</span> הערות
-            </p>
-          </div>
-        </motion.div>
-
-        {/* Algorithm Explainer — in grid, same size as other cards */}
-        <TooltipProvider delayDuration={200}>
-          <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => setAlgoOpen(o => !o)} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-            <div className="relative">
-              <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                <Info className="w-6 h-6" />
-              </div>
-              <div className="flex items-center justify-between">
-                <h3 className="font-semibold text-lg mb-1 text-foreground">איך נבחרות השאלות?</h3>
-                <motion.div animate={{ rotate: algoOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                </motion.div>
-              </div>
-              <p className="text-sm text-muted-foreground font-light">הצצה לאלגוריתם הניקוד החכם שמנהל את הסדר.</p>
-            </div>
-          </motion.div>
-        </TooltipProvider>
+        <FocusCard
+          icon={<PulseIcon><Sparkles className="w-7 h-7" /></PulseIcon>}
+          title="Smart Practice"
+          description="אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה."
+          onClick={handleSmartPractice}
+          accentColor="#f59f0a"
+        />
+        <FocusCard
+          icon={<RotateIcon><RefreshCcw className="w-7 h-7" /></RotateIcon>}
+          title="חזרה מרווחת"
+          description="שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS."
+          onClick={handleSpacedRepetition}
+          accentColor="#10b981"
+          disabled={loadingDue}
+        />
+        <FocusCard
+          icon={<SpinIcon><Timer className="w-7 h-7" /></SpinIcon>}
+          title="מבחן סימולציה"
+          description="120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי."
+          onClick={handleSimulation}
+          accentColor="#6366f1"
+        />
       </motion.div>
 
-      {/* Algorithm Explainer expanded content — below grid */}
+      {/* ═══ SECONDARY CARDS — smaller, 2-3 cols ═══ */}
+      <motion.div
+        className="grid grid-cols-2 lg:grid-cols-3 gap-3"
+        variants={containerVariant}
+        initial="hidden"
+        animate="visible"
+      >
+        <SmallCard
+          icon={<FlipIcon><Layers className="w-5 h-5" /></FlipIcon>}
+          title="תרגול כרטיסיות"
+          subtitle="כרטיסיות Anki – שאלה ותשובה"
+          onClick={() => navigate('flashcards')}
+        />
+        <SmallCard
+          icon={<BounceIcon><SlidersHorizontal className="w-5 h-5" /></BounceIcon>}
+          title="תרגול מותאם"
+          subtitle="בחר נושאים ומספר שאלות ידנית"
+          onClick={() => navigate('setup-practice')}
+        />
+        <SmallCard
+          icon={<ShakeIcon><AlertCircle className="w-5 h-5" /></ShakeIcon>}
+          title="חזרה על טעויות"
+          subtitle={<><span className="text-primary font-medium">{mistakes}</span> טעויות פתוחות</>}
+          onClick={() => navigate('setup-practice')}
+        />
+        <SmallCard
+          icon={<BeatIcon><Heart className="w-5 h-5" /></BeatIcon>}
+          title="מועדפים"
+          subtitle={<><span className="text-primary font-medium">{favsCount}</span> שאלות שסימנת</>}
+          onClick={() => navigate('setup-practice')}
+        />
+        <SmallCard
+          icon={<BookOpen className="w-5 h-5" />}
+          title="המחברת שלי"
+          subtitle={<><span className="text-primary font-medium">{notesCount}</span> הערות</>}
+          onClick={() => navigate('notebook')}
+        />
+        <SmallCard
+          icon={<BlinkIcon><Cpu className="w-5 h-5" /></BlinkIcon>}
+          title="איך נבחרות השאלות?"
+          subtitle="הצצה לאלגוריתם הניקוד"
+          onClick={() => setAlgoOpen(o => !o)}
+        />
+      </motion.div>
+
+      {/* ═══ ALGORITHM EXPLAINER ═══ */}
       <TooltipProvider delayDuration={200}>
         <AnimatePresence>
           {algoOpen && (
@@ -364,7 +484,7 @@ export default function HomeView() {
               animate={{ height: 'auto', opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="overflow-hidden mb-10 -mt-5"
+              className="overflow-hidden"
             >
               <div className="deep-tile p-6 space-y-5 text-sm text-muted-foreground leading-relaxed" dir="rtl">
                 <p className="text-foreground font-medium">
@@ -398,8 +518,8 @@ export default function HomeView() {
         </AnimatePresence>
       </TooltipProvider>
 
-      {/* Daily Report — slim horizontal tile */}
-      <div className="mb-6">
+      {/* ═══ DAILY REPORT + DB STATUS ═══ */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <button
           onClick={() => setReportOpen(true)}
           className="deep-tile w-full px-6 py-3 flex items-center justify-center gap-2 text-sm font-semibold text-primary"
@@ -407,27 +527,24 @@ export default function HomeView() {
           <ClipboardList className="w-5 h-5" />
           דו״ח יומי
         </button>
-      </div>
-      <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
 
-      {/* DB Status — slim horizontal bar */}
-      <div className="mb-12">
-        <h3 className="text-xs font-bold text-muted-foreground uppercase mb-3 tracking-widest px-1 matrix-title">סטטוס מאגר שאלות</h3>
         <div className="grid grid-cols-3 gap-3">
-          <div className="deep-tile p-4 text-center">
-            <div className="text-2xl font-bold matrix-text">{data.length}</div>
-            <div className="text-[10px] text-muted-foreground font-medium mt-1">סה"כ שאלות</div>
+          <div className="deep-tile p-3 text-center">
+            <div className="text-xl font-bold matrix-text">{data.length}</div>
+            <div className="text-[9px] text-muted-foreground font-medium mt-0.5">סה"כ שאלות</div>
           </div>
-          <div className="deep-tile p-4 text-center">
-            <div className="text-2xl font-bold text-success matrix-text">{withExp}</div>
-            <div className="text-[10px] text-success/70 font-medium mt-1">כוללות הסבר</div>
+          <div className="deep-tile p-3 text-center">
+            <div className="text-xl font-bold text-success matrix-text">{withExp}</div>
+            <div className="text-[9px] text-success/70 font-medium mt-0.5">כוללות הסבר</div>
           </div>
-          <div className="deep-tile p-4 text-center">
-            <div className="text-2xl font-bold text-warning matrix-text">{withoutExp}</div>
-            <div className="text-[10px] text-warning/70 font-medium mt-1">ללא הסבר</div>
+          <div className="deep-tile p-3 text-center">
+            <div className="text-xl font-bold text-warning matrix-text">{withoutExp}</div>
+            <div className="text-[9px] text-warning/70 font-medium mt-0.5">ללא הסבר</div>
           </div>
         </div>
       </div>
+
+      <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>
   );
 }
