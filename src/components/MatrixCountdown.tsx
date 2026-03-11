@@ -138,7 +138,7 @@ function Digit({ value, isDark }: { value: number; isDark: boolean }) {
               animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
               exit={{ y: 10, opacity: 0, filter: 'blur(3px)' }}
               transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.6 }}
-              className="absolute inset-0 flex items-center justify-center font-mono text-base sm:text-2xl font-bold"
+              className="absolute inset-0 flex items-center justify-center font-mono text-lg sm:text-3xl font-bold"
               style={{
                 color: digitColor,
                 textShadow: glowColor,
