@@ -45,19 +45,22 @@ export default function Sidebar() {
   });
   const pct = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
 
+  const glassButton = "w-full flex items-center justify-between p-3 rounded-xl bg-card/40 border border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all duration-200 text-xs font-bold";
+  const glassButtonCollapsed = "w-full flex items-center justify-center p-3 rounded-xl bg-card/40 border border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all duration-200";
+
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-72'} glass-card border-l flex-col shadow-lg z-20 hidden md:flex transition-all duration-300 relative`}>
+    <aside className={`${isCollapsed ? 'w-16' : 'w-72'} bg-background/60 backdrop-blur-xl border-l border-border/50 flex-col shadow-lg z-20 hidden md:flex transition-all duration-300 relative`}>
       {/* Collapse toggle button */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute top-1/2 -translate-y-1/2 -left-3 w-6 h-6 rounded-full bg-muted border border-border flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-accent transition-colors z-30 shadow-sm"
+        className="absolute top-1/2 -translate-y-1/2 -left-3 w-6 h-6 rounded-full bg-card border border-border/50 flex items-center justify-center text-muted-foreground hover:text-primary hover:border-primary/30 transition-all duration-200 z-30 shadow-sm"
       >
         {isCollapsed ? <ChevronRight className="w-3.5 h-3.5" /> : <ChevronLeft className="w-3.5 h-3.5" />}
       </button>
 
       {/* Header */}
-      <div className={`border-b border-border flex items-center gap-4 ${isCollapsed ? 'p-4 justify-center' : 'p-8'}`}>
-        <div className="bg-primary/15 text-primary p-3 rounded-2xl shadow-sm glow-border transition-colors shrink-0">
+      <div className={`border-b border-border/50 flex items-center gap-4 ${isCollapsed ? 'p-4 justify-center' : 'p-8'}`}>
+        <div className="bg-primary/10 text-primary p-3 rounded-2xl shadow-[0_0_15px_hsl(var(--primary)/0.15)] border border-primary/20 shrink-0 transition-colors">
           <Heart className="w-5 h-5" />
         </div>
         {!isCollapsed && (
@@ -69,7 +72,7 @@ export default function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className={`flex-grow ${isCollapsed ? 'p-2' : 'p-4'} space-y-2 overflow-y-auto relative`}>
+      <nav className={`flex-grow ${isCollapsed ? 'p-2' : 'p-4'} space-y-1.5 overflow-y-auto relative`}>
         {navItems.map(item => {
           const isActive = currentView === item.id ||
             (item.id === 'setup-practice' && currentView === 'setup-practice') ||
@@ -79,16 +82,16 @@ export default function Sidebar() {
               key={item.id}
               onClick={() => navigate(item.id)}
               title={isCollapsed ? item.label : undefined}
-              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3' : 'gap-3 px-4 py-4'} rounded-xl text-sm transition-all duration-200 relative
+              className={`w-full flex items-center ${isCollapsed ? 'justify-center px-2 py-3.5' : 'gap-3 px-4 py-3.5'} rounded-xl text-sm transition-all duration-200 relative
                 ${isActive
                   ? 'text-primary font-semibold'
-                  : 'text-muted-foreground hover:text-foreground'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-card/40'
                 }`}
             >
               {isActive && (
                 <motion.div
                   layoutId="sidebar-active"
-                  className={`absolute inset-0 bg-primary/10 border-r-[3px] border-primary rounded-xl shadow-[inset_0_0_20px_hsl(25_95%_53%/0.05)]`}
+                  className="absolute inset-0 bg-primary/10 border-r-[3px] border-primary rounded-xl shadow-[inset_0_0_20px_hsl(var(--primary)/0.08)]"
                   transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                   style={{ willChange: 'transform' }}
                 />
@@ -111,12 +114,12 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer */}
-      <div className={`${isCollapsed ? 'p-2' : 'p-6'} space-y-4`}>
+      <div className={`${isCollapsed ? 'p-2' : 'p-6'} space-y-3`}>
         {!isCollapsed ? (
           <>
             <button
               onClick={() => setFeedbackOpen(true)}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition text-xs font-bold"
+              className={glassButton}
             >
               <span>דווח על טעות / פידבק</span>
               <MessageSquareWarning className="w-4 h-4 text-primary" />
@@ -124,7 +127,7 @@ export default function Sidebar() {
             {isAdmin && (
               <Link
                 to="/admin"
-                className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition text-xs font-bold"
+                className={glassButton}
               >
                 <span>Admin</span>
                 <ShieldAlert className="w-4 h-4" />
@@ -132,20 +135,20 @@ export default function Sidebar() {
             )}
             <button
               onClick={toggleTheme}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition text-xs font-bold"
+              className={glassButton}
             >
               <span>מצב תצוגה</span>
-              {isDark ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
             </button>
 
-            <div className="bg-muted/50 p-4 rounded-2xl border border-border transition-colors">
+            <div className="bg-card/40 p-4 rounded-2xl border border-border/50 transition-colors">
               <div className="flex justify-between items-end mb-2">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">התקדמות</div>
-                <span className="text-xl font-bold text-primary matrix-text">{pct}%</span>
+                <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">PROGRESS</div>
+                <span className="text-xl font-bold text-primary">{pct}%</span>
               </div>
-              <div className="w-full bg-border h-1.5 rounded-full overflow-hidden">
+              <div className="w-full bg-border/50 h-1.5 rounded-full overflow-hidden">
                 <motion.div
-                  className="bg-primary h-full rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]"
+                  className="bg-gradient-to-l from-primary to-primary/70 h-full rounded-full shadow-[0_0_10px_hsl(var(--primary)/0.4)]"
                   initial={{ width: 0 }}
                   animate={{ width: `${pct}%` }}
                   transition={{ duration: 0.8, ease: 'easeOut' }}
@@ -158,7 +161,7 @@ export default function Sidebar() {
             <button
               onClick={() => setFeedbackOpen(true)}
               title="דווח על טעות / פידבק"
-              className="w-full flex items-center justify-center p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition"
+              className={glassButtonCollapsed}
             >
               <MessageSquareWarning className="w-4 h-4 text-primary" />
             </button>
@@ -166,7 +169,7 @@ export default function Sidebar() {
               <Link
                 to="/admin"
                 title="Admin"
-                className="w-full flex items-center justify-center p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 transition"
+                className={glassButtonCollapsed}
               >
                 <ShieldAlert className="w-4 h-4" />
               </Link>
@@ -174,9 +177,9 @@ export default function Sidebar() {
             <button
               onClick={toggleTheme}
               title="מצב תצוגה"
-              className="w-full flex items-center justify-center p-3 rounded-xl bg-muted text-muted-foreground hover:bg-muted/80 hover:text-foreground transition"
+              className={glassButtonCollapsed}
             >
-              {isDark ? <Sun className="w-4 h-4 text-warning" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
             </button>
           </>
         )}
