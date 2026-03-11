@@ -92,6 +92,31 @@ function computeEMA(data: { accuracy: number }[], period: number): (number | nul
   return result;
 }
 
+function fetchAllRows<T>(buildQuery: () => any): Promise<T[]> {
+  const PAGE = 1000;
+  const run = async () => {
+    let allData: T[] = [];
+    let from = 0;
+
+    while (true) {
+      const { data, error } = await buildQuery().range(from, from + PAGE - 1);
+      if (error) {
+        console.error('fetchAllRows (AccuracyCanvasChart) error:', error);
+        break;
+      }
+      if (!data || data.length === 0) break;
+
+      allData = allData.concat(data as T[]);
+      if (data.length < PAGE) break;
+      from += PAGE;
+    }
+
+    return allData;
+  };
+
+  return run();
+}
+
 function formatDateHeb(d: string) {
   const dt = new Date(d + 'T00:00:00');
   const dd = String(dt.getDate()).padStart(2, '0');
