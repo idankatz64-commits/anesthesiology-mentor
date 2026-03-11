@@ -249,13 +249,12 @@ export default function HomeView() {
         </motion.div>
 
         {/* Simulation Exam */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSimulation} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSimulation} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
               <FileCheck className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">מבחן סימולציה</h3>
+            <h3 className="font-bold text-lg mb-1 text-foreground">מבחן סימולציה</h3>
             <p className="text-sm text-muted-foreground font-light">120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי.</p>
           </div>
         </motion.div>
