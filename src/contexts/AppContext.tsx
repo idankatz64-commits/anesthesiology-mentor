@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { fetchQuestions, syncQuestionsFromSheet } from '@/lib/csvService';
+import { fetchQuestions, syncQuestionsFromSheet, invalidateQuestionsCache } from '@/lib/csvService';
 import {
   KEYS, WELCOME_KEY,
   type Question, type UserProgress, type SessionState,
