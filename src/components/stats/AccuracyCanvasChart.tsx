@@ -527,7 +527,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
             <div className="text-muted-foreground">דיוק: <span className="font-bold" style={{ color: getBarColor(hovered.accuracy) }}>{hovered.accuracy}%</span></div>
             {showEma7 && hovered.ema7 !== null && <div className="text-muted-foreground">EMA 7: <span className="font-bold" style={{ color: DATA_COLORS.ema7 }}>{hovered.ema7}%</span></div>}
             {showEma14 && hovered.ema14 !== null && <div className="text-muted-foreground">EMA 14: <span className="font-bold" style={{ color: DATA_COLORS.ema14 }}>{hovered.ema14}%</span></div>}
-            <div className="text-muted-foreground">ממוצע כללי: <span className="font-bold" style={{ color: DATA_COLORS.globalAvg }}>{globalAvg}%</span></div>
+            {showGlobalAvg && groupDailyAvg[hovered.date] !== undefined && <div className="text-muted-foreground">ממוצע קבוצה: <span className="font-bold" style={{ color: DATA_COLORS.globalAvg }}>{groupDailyAvg[hovered.date]}%</span></div>}
           </div>
         )}
       </div>
