@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS, type SessionMode } from '@/lib/types';
-import { ChevronDown, Search, EyeOff, BookOpen, Calendar, Building2, Tag, Brain, Zap, ArrowRight, Clock, Hash } from 'lucide-react';
+import { ChevronDown, Search, EyeOff, BookOpen, Calendar, Building2, Tag, Brain, Zap, ArrowRight, Clock, Hash, SlidersHorizontal, AlertTriangle } from 'lucide-react';
 import { selectSmartQuestions, SESSION_SIZE_CONFIG, type SessionSize } from '@/lib/smartSelection';
 
 function MultiSelectDropdown({
@@ -26,37 +26,39 @@ function MultiSelectDropdown({
     : `${set.size} נבחרו`;
 
   return (
-    <div className="p-5 rounded-xl bg-primary/5 border border-primary/10 hover:border-primary/30 transition-all group relative">
+    <div className="p-6 rounded-xl bg-primary/5 border border-primary/10 hover:border-primary/30 transition-all group relative min-h-[140px]">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 rounded-lg bg-primary/20 text-primary">
+        <div className="p-2.5 rounded-lg bg-primary/20 text-primary">
           {icon}
         </div>
-        <span className="font-bold text-sm text-foreground">{label}</span>
+        <span className="font-bold text-base text-foreground">{label}</span>
       </div>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full p-3 bg-background border border-border rounded-lg text-right text-foreground text-sm font-medium flex justify-between items-center focus:outline-none focus:border-primary transition-all duration-200"
+        className="w-full p-3.5 bg-background border border-border rounded-lg text-right text-foreground text-base font-medium flex justify-between items-center focus:outline-none focus:border-primary transition-all duration-200"
       >
         <span className="text-muted-foreground">{displayLabel}</span>
-        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-5 h-5 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute z-20 left-5 right-5 bg-card border border-border shadow-xl rounded-xl mt-2 max-h-60 overflow-y-auto p-2">
+          <div className="absolute z-20 left-4 right-4 bg-card border border-border shadow-xl rounded-xl mt-2 max-h-80 overflow-y-auto p-2">
             <div
               onClick={() => { toggleMultiSelect(type as any, 'all'); }}
-              className={`p-3 rounded-lg cursor-pointer flex items-center gap-3 transition-all duration-200 ${
+              className={`p-4 rounded-lg cursor-pointer flex items-center gap-3 text-base transition-all duration-200 border-b border-border/50 ${
                 set.has('all') ? 'bg-primary/10 text-primary font-bold' : 'text-foreground hover:bg-muted'
               }`}
             >
               {set.has('all') ? '☑' : '☐'} הכל
             </div>
-            {values.map(val => (
+            {values.map((val, i) => (
               <div
                 key={val}
                 onClick={() => toggleMultiSelect(type as any, val)}
-                className={`p-3 rounded-lg cursor-pointer flex items-center gap-3 transition-all duration-200 ${
+                className={`p-4 rounded-lg cursor-pointer flex items-center gap-3 text-base transition-all duration-200 ${
+                  i < values.length - 1 ? 'border-b border-border/30' : ''
+                } ${
                   set.has(val) ? 'bg-primary/10 text-primary font-bold' : 'text-foreground hover:bg-muted'
                 }`}
               >
@@ -79,8 +81,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
     toggleMultiSelect, fetchSrsData,
   } = useApp();
 
-  const [sessionSize, setSessionSize] = useState<SessionSize>('regular');
-  const count = SESSION_SIZE_CONFIG[sessionSize].count;
+  const [sessionSize, setSessionSize] = useState<SessionSize | 'custom'>('regular');
+  const [customCount, setCustomCount] = useState(30);
+  const isCustom = sessionSize === 'custom';
+  const count = isCustom ? customCount : SESSION_SIZE_CONFIG[sessionSize as SessionSize].count;
   const [serial, setSerial] = useState('');
   const [textSearch, setTextSearch] = useState('');
   const [starting, setStarting] = useState(false);
@@ -107,9 +111,14 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
     if (pool.length === 0) { alert('לא נמצאו שאלות תואמות לסינון.'); return; }
     setStarting(true);
     try {
-      const srsData = await fetchSrsData();
-      const smartPool = selectSmartQuestions(pool, count, sessionSize, srsData, progress.history, data);
-      startSession(smartPool, smartPool.length, mode);
+      if (isCustom) {
+        // Custom mode — random selection, no smart algorithm
+        startSession(pool, customCount, mode);
+      } else {
+        const srsData = await fetchSrsData();
+        const smartPool = selectSmartQuestions(pool, count, sessionSize as SessionSize, srsData, progress.history, data);
+        startSession(smartPool, smartPool.length, mode);
+      }
     } catch (e) {
       console.error('Smart selection failed, falling back to random:', e);
       startSession(pool, count, mode);
@@ -124,7 +133,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   const estMinutes = Math.round(count * 1.4);
 
   return (
-    <div className="fade-in max-w-5xl mx-auto p-4 lg:p-8 space-y-8">
+    <div className="fade-in w-full p-4 lg:p-8 space-y-8">
       {/* Header */}
       <section>
         <div className="flex items-center gap-3 mb-2">
@@ -139,7 +148,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
       {/* Session Intensity */}
       <section className="space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">עוצמת מפגש</h3>
-        <div className="flex p-1 bg-primary/5 rounded-xl border border-primary/10 max-w-lg">
+        <div className="flex flex-wrap p-1 bg-primary/5 rounded-xl border border-primary/10">
           {SESSION_SIZES.map(size => {
             const cfg = SESSION_SIZE_CONFIG[size];
             const isSelected = sessionSize === size;
@@ -147,7 +156,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
               <button
                 key={size}
                 onClick={() => setSessionSize(size)}
-                className={`flex-1 flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all ${
+                className={`flex-1 min-w-[80px] flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all ${
                   isSelected
                     ? 'bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20'
                     : 'text-muted-foreground hover:text-foreground'
@@ -158,7 +167,37 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
               </button>
             );
           })}
+          <button
+            onClick={() => setSessionSize('custom')}
+            className={`flex-1 min-w-[80px] flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all ${
+              isCustom
+                ? 'bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            <SlidersHorizontal className="w-4 h-4 mb-0.5" />
+            <span className="text-sm font-bold">מותאם אישית</span>
+          </button>
         </div>
+        {isCustom && (
+          <div className="flex items-center gap-4 p-4 rounded-xl bg-accent/50 border border-accent">
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium text-foreground whitespace-nowrap">מספר שאלות:</label>
+              <input
+                type="number"
+                min={1}
+                max={500}
+                value={customCount}
+                onChange={e => setCustomCount(Math.max(1, Math.min(500, Number(e.target.value) || 1)))}
+                className="w-24 p-2.5 bg-background border border-border rounded-lg text-center text-foreground text-base font-bold focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
+              <span>ללא אלגוריתם חכם — בחירה אקראית</span>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* Source Filter Pills */}
@@ -202,9 +241,9 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
               value={textSearch}
               onChange={e => setTextSearch(e.target.value)}
               placeholder="חפש תרופה, מחלה או מושג..."
-              className="w-full p-3 pl-10 bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground placeholder-muted-foreground text-sm"
+              className="w-full p-3.5 pl-10 bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground placeholder-muted-foreground text-base"
             />
-            <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+            <Search className="absolute left-3 top-4 w-4 h-4 text-muted-foreground" />
           </div>
           <div className="relative">
             <input
@@ -212,9 +251,9 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
               value={serial}
               onChange={e => setSerial(e.target.value)}
               placeholder="מס' סידורי (למשל: 120)"
-              className="w-full p-3 pl-10 bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground placeholder-muted-foreground text-sm"
+              className="w-full p-3.5 pl-10 bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground placeholder-muted-foreground text-base"
             />
-            <Hash className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+            <Hash className="absolute left-3 top-4 w-4 h-4 text-muted-foreground" />
           </div>
         </div>
       </section>
