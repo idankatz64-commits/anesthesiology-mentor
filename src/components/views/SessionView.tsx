@@ -647,7 +647,7 @@ export default function SessionView() {
                             toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
                           } else {
                             qData[KEYS.CORRECT] = correctAnswerDraft;
-                            sessionStorage.removeItem('questions_cache');
+                            invalidateQuestions();
                             setEditingCorrectAnswer(false);
                             setShowConfirmSave(false);
                             toast({ title: 'התשובה הנכונה עודכנה ✅' });
