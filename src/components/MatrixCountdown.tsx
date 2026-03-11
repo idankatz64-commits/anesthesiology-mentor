@@ -128,7 +128,7 @@ function Digit({ value, isDark }: { value: number; isDark: boolean }) {
   return (
     <div className="relative flex gap-[2px]">
       {str.split('').map((ch, i) => (
-        <div key={i} className="relative w-[1.6em] h-[2.2em] sm:w-[2.4em] sm:h-[3.2em] overflow-hidden">
+        <div key={i} className="relative w-[1.8em] h-[2.4em] sm:w-[2.8em] sm:h-[3.6em] overflow-hidden">
           <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(245,159,10,0.03)_2px,rgba(245,159,10,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
           <div className={`absolute inset-0 bg-background/70 border ${borderColor} rounded-sm`} />
           <AnimatePresence mode="popLayout">
