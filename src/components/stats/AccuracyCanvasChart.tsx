@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { useApp } from '@/contexts/AppContext';
 import { Filter, X } from 'lucide-react';
 import AnimatedStatsTile from './AnimatedStatsTile';
 
@@ -102,7 +103,7 @@ function hexToRgba(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function ChartContent({ expanded = false }: { expanded?: boolean }) {
+function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean; refreshKey?: number }) {
   const mainCanvasRef = useRef<HTMLCanvasElement>(null);
   const volCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -123,10 +124,11 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const PANEL2_H = expanded ? 110 : 90;
   const MARGIN = { top: 10, right: 10, bottom: 20, left: 40 };
 
-  // Fetch raw rows once
+  // Fetch raw rows — re-fetch when refreshKey changes
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      setLoading(true);
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
@@ -154,7 +156,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       setLoading(false);
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [refreshKey]);
 
   // Available topics
   const availableTopics = useMemo(() => {
@@ -575,6 +577,10 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 }
 
 export default function AccuracyCanvasChart() {
+  const { progress } = useApp();
+  // Use history length as refresh key so chart re-fetches after new answers
+  const refreshKey = useMemo(() => Object.keys(progress.history || {}).length, [progress.history]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -582,8 +588,8 @@ export default function AccuracyCanvasChart() {
       transition={{ duration: 0.4, ease: [0, 0, 0.2, 1] }}
     >
       <AnimatedStatsTile
-        collapsed={<ChartContent />}
-        expanded={<ChartContent expanded />}
+        collapsed={<ChartContent refreshKey={refreshKey} />}
+        expanded={<ChartContent expanded refreshKey={refreshKey} />}
         expandedClassName="max-w-[95vw] max-h-[95vh] w-full"
       />
     </motion.div>

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Download, Upload, AlertTriangle, BookOpen, Target, Brain, BarChart3, CheckCircle, XCircle, Repeat } from 'lucide-react';
+import { Download, Upload, AlertTriangle, BookOpen, Target, Brain, BarChart3, CheckCircle, XCircle, Repeat, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedNumber from '@/components/AnimatedNumber';
 
@@ -32,11 +32,35 @@ export default function StatsView() {
     personalStats,
     detailedAnswers,
     repeatedErrorsByTopic,
+    dailyData90,
   } = useStatsData();
   const [drilldownMetric, setDrilldownMetric] = useState<DrilldownMetric | null>(null);
 
   const withExp = data.filter((q) => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
+
+  // Daily change calculations
+  const dailyChanges = useMemo(() => {
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+    const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+
+    const todayData = dailyData90.find(d => d.date === todayStr);
+    const yesterdayData = dailyData90.find(d => d.date === yesterdayStr);
+
+    const todayQuestions = todayData?.count || 0;
+    const yesterdayQuestions = yesterdayData?.count || 0;
+    const todayAccuracy = todayData?.rate ?? null;
+    const yesterdayAccuracy = yesterdayData?.rate ?? null;
+
+    return {
+      todayQuestions,
+      questionsChange: yesterdayQuestions > 0 ? todayQuestions - yesterdayQuestions : null,
+      accuracyChange: todayAccuracy !== null && yesterdayAccuracy !== null && yesterdayData && yesterdayData.count > 0
+        ? Math.round((todayAccuracy - yesterdayAccuracy) * 10) / 10
+        : null,
+    };
+  }, [dailyData90]);
 
   const handleTopicClick = (topic: string) => {
     const topicQuestions = data.filter((q) => q[KEYS.TOPIC] === topic);
@@ -95,12 +119,25 @@ export default function StatsView() {
     e.target.value = '';
   };
 
-  // ROW 1 — Main KPI
+  // ROW 1 — Main KPI with daily change
   const kpiCards = [
-    { label: 'שאלות היום', value: personalStats.totalAttempts, icon: BarChart3, color: 'text-foreground' },
-    { label: 'דיוק', value: stats.accuracy, suffix: '%', icon: Target, color: stats.accuracy >= 70 ? 'text-green-500' : stats.accuracy >= 50 ? 'text-yellow-500' : 'text-destructive' },
-    { label: 'טעויות פתוחות', value: personalStats.uncorrected, icon: XCircle, color: 'text-destructive' },
-    { label: 'כיסוי מאגר', value: stats.coverage, suffix: '%', icon: BookOpen, color: 'text-primary' },
+    {
+      label: 'שאלות היום', value: dailyChanges.todayQuestions, icon: BarChart3, color: 'text-foreground',
+      change: dailyChanges.questionsChange,
+    },
+    {
+      label: 'דיוק', value: stats.accuracy, suffix: '%', icon: Target,
+      color: stats.accuracy >= 70 ? 'text-green-500' : stats.accuracy >= 50 ? 'text-yellow-500' : 'text-destructive',
+      change: dailyChanges.accuracyChange, changeSuffix: '%',
+    },
+    {
+      label: 'טעויות פתוחות', value: personalStats.uncorrected, icon: XCircle, color: 'text-destructive',
+      change: null as number | null,
+    },
+    {
+      label: 'כיסוי מאגר', value: stats.coverage, suffix: '%', icon: BookOpen, color: 'text-primary',
+      change: null as number | null,
+    },
   ];
 
   return (
@@ -125,6 +162,13 @@ export default function StatsView() {
                 className={`text-3xl font-black ${k.color}`}
                 style={{ fontFamily: "'Share Tech Mono', monospace" }}
               />
+              {k.change !== null && k.change !== undefined && (
+                <div className={`flex items-center justify-center gap-0.5 mt-0.5 text-[10px] font-bold ${k.change >= 0 ? 'text-green-500' : 'text-destructive'}`}>
+                  {k.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  <span>{k.change > 0 ? '+' : ''}{k.change}{k.changeSuffix || ''}</span>
+                  <span className="text-muted-foreground font-normal mr-0.5">מאתמול</span>
+                </div>
+              )}
             </div>
           ))}
         </motion.div>
