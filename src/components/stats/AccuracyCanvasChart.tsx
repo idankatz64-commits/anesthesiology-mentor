@@ -39,10 +39,33 @@ function getThemeColors() {
   };
 }
 
-function getBarColor(acc: number) {
-  if (acc >= 70) return DATA_COLORS.bullish;
-  if (acc >= 50) return DATA_COLORS.neutral;
-  return DATA_COLORS.bearish;
+// S&P 500 style gradient for bar colors (matches Topic Treemap)
+function interpolateColorRgb(c1: [number,number,number], c2: [number,number,number], t: number): [number,number,number] {
+  return [
+    Math.round(c1[0] + (c2[0] - c1[0]) * t),
+    Math.round(c1[1] + (c2[1] - c1[1]) * t),
+    Math.round(c1[2] + (c2[2] - c1[2]) * t),
+  ];
+}
+
+function getBarColor(acc: number): string {
+  const stops: { at: number; rgb: [number,number,number] }[] = [
+    { at: 0,   rgb: [139, 0, 0] },     // #8B0000 deep red
+    { at: 40,  rgb: [204, 0, 0] },     // #CC0000 red
+    { at: 55,  rgb: [74, 74, 74] },    // #4A4A4A neutral
+    { at: 70,  rgb: [46, 125, 50] },   // #2E7D32 green
+    { at: 100, rgb: [0, 200, 83] },    // #00C853 deep green
+  ];
+  const clamped = Math.max(0, Math.min(100, acc));
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (clamped <= stops[i + 1].at) {
+      const t = (clamped - stops[i].at) / (stops[i + 1].at - stops[i].at);
+      const [r, g, b] = interpolateColorRgb(stops[i].rgb, stops[i + 1].rgb, t);
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+  const last = stops[stops.length - 1].rgb;
+  return `rgb(${last[0]},${last[1]},${last[2]})`;
 }
 
 function computeEMA(data: { accuracy: number }[], period: number): (number | null)[] {
