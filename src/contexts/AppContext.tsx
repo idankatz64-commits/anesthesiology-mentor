@@ -438,6 +438,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           toast.error('שגיאה בשמירת התקדמות');
         }
       })();
+
+      // Log to answer_history for trend analytics (every answer must be logged)
+      supabase.from('answer_history').insert({
+        user_id: userId,
+        question_id: id,
+        topic: topic || null,
+        is_correct: isCorrect,
+        answered_at: new Date().toISOString(),
+      }).then(({ error: ahErr }) => {
+        if (ahErr) console.error('answer_history insert error:', ahErr);
+      });
     }
   }, []);
 
