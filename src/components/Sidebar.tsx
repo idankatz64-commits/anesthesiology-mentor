@@ -138,7 +138,7 @@ export default function Sidebar() {
               className={glassButton}
             >
               <span>מצב תצוגה</span>
-              {isDark ? <Sun className="w-4 h-4 text-yellow-500" /> : <Moon className="w-4 h-4" />}
+              {isDark ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
             </button>
 
             <div className="bg-card/40 p-4 rounded-2xl border border-border/50 transition-colors">
