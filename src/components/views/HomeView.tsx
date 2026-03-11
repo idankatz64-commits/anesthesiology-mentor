@@ -332,10 +332,9 @@ export default function HomeView() {
 
         {/* Algorithm Explainer — in grid, same size as other cards */}
         <TooltipProvider delayDuration={200}>
-          <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => setAlgoOpen(o => !o)} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
+          <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => setAlgoOpen(o => !o)} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
             <div className="relative">
-              <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Info className="w-6 h-6" />
               </div>
               <div className="flex items-center justify-between">
