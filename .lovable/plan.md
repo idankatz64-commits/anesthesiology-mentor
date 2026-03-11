@@ -1,62 +1,41 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## תוכנית: עיצוב מחדש של SetupView ו-ResultsView
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+עיצוב שני המסכים בהשראת התמונות המצורפות — שמירה על כל הפונקציונליות הקיימת, שינוי ויזואלי בלבד.
 
-## Part A -- Daily Volume Bars
+---
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+### 1. SetupView (הגדרות תרגול) — בהשראת screen-11
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+**שינויים ויזואליים:**
+- **כותרת עליונה**: "Setup Your Session" בפונט גדול + תת-כותרת מתארת, עם אייקון primary
+- **Session Intensity**: שלושת/ארבעת כפתורי הגודל בשורה אחת עם border-primary למצב פעיל (סגנון pill/tab כמו בתמונה), ללא אימוג'י — טקסט נקי
+- **פילטרים**: כרטיסים עם אייקון + כותרת (Topic Specialty, Question Year, Institution, Content Tags, Confidence Level) בגריד 3 עמודות — כל כרטיס עם border דק primary/10, אייקון amber, ו-dropdown בתוכו
+- **סקשן מקור שאלות**: משולב כ-tabs או pills במקום grid של כפתורים
+- **פוטר**: שורה תחתונה עם EST. DURATION + QUESTIONS count בצד שמאל, וכפתור START PRACTICE amber גדול בצד ימין
+- **הסרת deep-tile wrapper** — עיצוב שטוח יותר עם כרטיסים בודדים
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
+**אלמנטים שנשמרים**: כל הלוגיקה של MultiSelectDropdown, חיפוש חופשי, מס' סידורי, unseen only, handleStart
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+---
 
-## Part B -- Daily Performance Report
+### 2. ResultsView (סיכום ביצועים) — בהשראת screen-12
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+**שינויים ויזואליים:**
+- **Hero section**: כרטיס גדול עם streak/status badge (כמו "ELITE CANDIDATE STATUS"), אייקון גביע amber, ו-Top X% percentile badge
+- **Exam countdown**: כרטיס צד עם ספירה לאחור (DAYS/HRS/MIN) — שימוש בנתוני MatrixCountdown הקיימים
+- **שני rings**: Accuracy % ו-Bank Progress % בכרטיסים קטנים עם שינוי שבועי/יומי
+- **Activity Heatmap**: grid של ריבועים צבעוניים (14 ימים אחרונים) מבוסס על progress.history
+- **Recent Session Review**: רשימת שאלות מהסשן האחרון עם אייקוני ✓/✗ ו-badges (CORRECT/INCORRECT/FLAGGED) — זה ה-details הקיים בעיצוב חדש
+- **כפתורי פעולה תחתונים**: "REVIEW ERRORS" (primary/destructive) + "BACK TO DASHBOARD" (neutral) — בשורה אחת
+- **נושאים לחיזוק**: נשאר, מעוצב כ-card נקי
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
+**אלמנטים שנשמרים**: כל הלוגיקה של results, weak topics, expanded question details, history update, localStorage save
 
-## Files to Modify
+---
 
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
+### קבצים שישתנו
+1. **`src/components/views/SetupView.tsx`** — עיצוב מחדש מלא (כל הלוגיקה נשארת)
+2. **`src/components/views/ResultsView.tsx`** — עיצוב מחדש מלא (כל הלוגיקה נשארת)
 
