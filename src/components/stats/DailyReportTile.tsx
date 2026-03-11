@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CalendarCheck, Target, BookOpen, Clock } from 'lucide-react';
+import { FileText, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 
 interface DailyData {
   questionsToday: number;
@@ -57,43 +57,45 @@ export default function DailyReportTile() {
     fetchData();
   }, []);
 
-  const accuracyColor = data
-    ? data.accuracy >= 70 ? 'text-green-500' : data.accuracy >= 50 ? 'text-yellow-500' : 'text-destructive'
-    : '';
-
   if (loading) {
-    return (
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" dir="rtl">
-        {[...Array(4)].map((_, i) => (
-          <Skeleton key={i} className="h-20 rounded-xl" />
-        ))}
-      </div>
-    );
+    return <Skeleton className="h-16 rounded-xl" />;
   }
 
   if (!data) return null;
 
-  const tiles = [
-    { icon: CalendarCheck, label: 'שאלות היום', value: data.questionsToday, colorClass: 'text-foreground' },
-    { icon: Target, label: 'דיוק', value: data.accuracy, colorClass: accuracyColor, suffix: '%' },
-    { icon: BookOpen, label: 'נושאים', value: data.distinctTopics, colorClass: 'text-foreground' },
-    { icon: Clock, label: 'SRS מחר', value: data.srsTomorrow, colorClass: 'text-primary' },
-  ];
+  const accuracyColor = data.accuracy >= 70 ? 'text-green-500' : data.accuracy >= 50 ? 'text-yellow-500' : 'text-destructive';
+  const TrendIcon = data.accuracy >= 70 ? TrendingUp : data.accuracy >= 50 ? Minus : TrendingDown;
+  const trendColor = data.accuracy >= 70 ? 'text-green-500' : data.accuracy >= 50 ? 'text-yellow-500' : 'text-destructive';
+
+  const summaryText = data.questionsToday === 0
+    ? 'עדיין לא תרגלת היום — התחל עכשיו!'
+    : data.accuracy >= 70
+      ? `יום מצוין! ${data.questionsToday} שאלות ב-${data.accuracy}% דיוק`
+      : `תרגלת ${data.questionsToday} שאלות — המשך לשפר!`;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3" dir="rtl">
-      {tiles.map((t) => (
-        <div key={t.label} className="deep-tile rounded-xl p-3 text-center flex flex-col items-center gap-1">
-          <t.icon className="w-4 h-4 text-muted-foreground" />
-          <AnimatedNumber
-            value={t.value}
-            suffix={t.suffix}
-            className={`text-2xl font-black ${t.colorClass}`}
-            style={{ fontFamily: "'Share Tech Mono', monospace" }}
-          />
-          <div className="text-[10px] text-muted-foreground">{t.label}</div>
+    <div className="glass-tile rounded-xl p-4 border-r-4 border-r-green-500/60 flex items-center gap-4" dir="rtl">
+      <FileText className="w-5 h-5 text-green-500 shrink-0" />
+      <div className="flex-1 flex flex-wrap items-center gap-x-6 gap-y-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">שאלות היום:</span>
+          <AnimatedNumber value={data.questionsToday} className="text-sm font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
         </div>
-      ))}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">דיוק:</span>
+          <AnimatedNumber value={data.accuracy} suffix="%" className={`text-sm font-black ${accuracyColor}`} style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+          <TrendIcon className={`w-3.5 h-3.5 ${trendColor}`} />
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">נושאים:</span>
+          <span className="text-sm font-bold text-foreground">{data.distinctTopics}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">SRS מחר:</span>
+          <span className="text-sm font-bold text-primary">{data.srsTomorrow}</span>
+        </div>
+      </div>
+      <span className="text-[11px] text-muted-foreground hidden sm:block max-w-[200px]">{summaryText}</span>
     </div>
   );
 }

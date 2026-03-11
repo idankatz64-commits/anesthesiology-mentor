@@ -18,8 +18,8 @@ interface ERITileProps {
 
 const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
-function ERIRing({ value, size = 240 }: {value: number;size?: number;}) {
-  const strokeWidth = 12;
+function ERIRing({ value, size = 140 }: {value: number;size?: number;}) {
+  const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - value / 100 * circumference;
