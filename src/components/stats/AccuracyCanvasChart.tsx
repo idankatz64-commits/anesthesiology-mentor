@@ -224,11 +224,21 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
     const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
     const slotW = plotW / data.length;
 
-    // Grid lines
+    // Log scale helper: maps 0-100% → 0-1 (normalized), then to canvas Y
+    const LOG_BASE = Math.log(101); // log(1+100)
+    const toY = (pct: number) => {
+      const norm = logScale
+        ? Math.log(1 + Math.max(0, Math.min(100, pct))) / LOG_BASE
+        : pct / 100;
+      return MARGIN.top + plotH * (1 - norm);
+    };
+
+    // Grid lines – pick nice percentage ticks
+    const gridTicks = logScale ? [5, 10, 20, 40, 60, 80, 100] : [20, 40, 60, 80, 100];
     ctx.strokeStyle = theme.gridLine;
     ctx.lineWidth = 1;
-    for (const pct of [20, 40, 60, 80, 100]) {
-      const y = MARGIN.top + plotH * (1 - pct / 100);
+    for (const pct of gridTicks) {
+      const y = toY(pct);
       ctx.beginPath();
       ctx.moveTo(MARGIN.left, y);
       ctx.lineTo(w - MARGIN.right, y);
