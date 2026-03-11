@@ -438,6 +438,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           toast.error('שגיאה בשמירת התקדמות');
         }
       })();
+
+      // Log to answer_history for trend analytics (every answer must be logged)
+      supabase.from('answer_history').insert({
+        user_id: userId,
+        question_id: id,
+        topic: topic || null,
+        is_correct: isCorrect,
+        answered_at: new Date().toISOString(),
+      }).then(({ error: ahErr }) => {
+        if (ahErr) console.error('answer_history insert error:', ahErr);
+      });
     }
   }, []);
 
@@ -506,17 +517,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Keep local confidenceMap in sync
       setConfidenceMap(prev => ({ ...prev, [questionId]: confidence }));
     }
-
-    // Fire-and-forget: log to answer_history for trend analytics
-    supabase.from('answer_history').insert({
-      user_id: userId,
-      question_id: questionId,
-      topic: topic || null,
-      is_correct: isCorrect,
-      answered_at: new Date().toISOString(),
-    }).then(({ error: ahErr }) => {
-      if (ahErr) console.error('answer_history insert error:', ahErr);
-    });
+    // answer_history insert is now handled by updateHistory — no duplicate here
   }, []);
 
   // syncAnswerToDb is now handled by updateHistory, but kept for backward compat
