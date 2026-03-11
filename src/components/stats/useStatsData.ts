@@ -134,10 +134,10 @@ export function useStatsData() {
       const [answersData, srData, detailedData] = await Promise.all([
         fetchAllRows<any>(() =>
           supabase
-            .from('user_answers')
-            .select('updated_at, is_correct, topic')
+            .from('answer_history')
+            .select('answered_at, is_correct, topic')
             .eq('user_id', session.user.id)
-            .gte('updated_at', startStr + 'T00:00:00Z')
+            .gte('answered_at', startStr + 'T00:00:00Z')
         ),
         fetchAllRows<any>(() =>
           supabase
