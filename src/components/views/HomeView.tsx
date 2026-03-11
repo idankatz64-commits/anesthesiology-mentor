@@ -4,7 +4,7 @@ import { KEYS } from '@/lib/types';
 import {
   Sparkles, Timer, RefreshCcw, Heart, BookOpen, Cpu,
   Layers, SlidersHorizontal, AlertCircle,
-  RotateCcw, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown,
+  Play, X, AlertTriangle, ClipboardList, Info, ChevronDown,
 } from 'lucide-react';
 import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence } from 'framer-motion';
