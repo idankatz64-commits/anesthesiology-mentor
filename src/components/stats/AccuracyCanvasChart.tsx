@@ -12,11 +12,11 @@ interface DayData {
   ema14: number | null;
 }
 
-// Semantic data colors (kept as-is for accuracy thresholds)
+// TradingView-inspired colors
 const DATA_COLORS = {
-  green: '#00e676',
-  orange: '#ff9800',
-  red: '#ff1744',
+  bullish: '#26a69a',    // TradingView green
+  bearish: '#ef5350',    // TradingView red
+  neutral: '#ff9800',    // amber for mid-range
   ema7: '#ff9800',
   ema14: '#2196f3',
   globalAvg: '#9c27b0',
@@ -39,9 +39,9 @@ function getThemeColors() {
 }
 
 function getBarColor(acc: number) {
-  if (acc >= 70) return DATA_COLORS.green;
-  if (acc >= 50) return DATA_COLORS.orange;
-  return DATA_COLORS.red;
+  if (acc >= 70) return DATA_COLORS.bullish;
+  if (acc >= 50) return DATA_COLORS.neutral;
+  return DATA_COLORS.bearish;
 }
 
 function computeEMA(data: { accuracy: number }[], period: number): (number | null)[] {
@@ -169,8 +169,10 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
     const plotW = w - MARGIN.left - MARGIN.right;
     const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
-    const barW = Math.max(2, (plotW / data.length) * 0.5);
+    const slotW = plotW / data.length;
+    const bodyW = Math.max(3, slotW * 0.55);
 
+    // Grid lines
     ctx.strokeStyle = theme.gridLine;
     ctx.lineWidth = 1;
     for (const pct of [20, 40, 60, 80, 100]) {
@@ -185,18 +187,59 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.fillText(`${pct}%`, MARGIN.left - 4, y + 3);
     }
 
+    // Draw candlesticks: position = accuracy on Y, height = volume
     for (let i = 0; i < data.length; i++) {
       const d = data[i];
-      const x = MARGIN.left + (i / data.length) * plotW + (plotW / data.length - barW) / 2;
+      if (d.total === 0) continue;
+
+      const centerX = MARGIN.left + (i + 0.5) * slotW;
+      const color = getBarColor(d.accuracy);
+      const isHovered = hoverIndex === i;
+
+      // Candle center Y = accuracy position
+      const centerY = MARGIN.top + plotH * (1 - d.accuracy / 100);
+
+      // Body height proportional to volume (scaled so max volume fills ~40% of chart)
       let volNorm = d.total / maxVol;
       if (logScale && d.total > 0) volNorm = Math.log(d.total + 1) / Math.log(maxVol + 1);
-      const barH = volNorm * plotH * 0.85;
-      const y = MARGIN.top + plotH - barH;
+      const bodyH = Math.max(4, volNorm * plotH * 0.4);
 
-      ctx.fillStyle = hexToRgba(getBarColor(d.accuracy), hoverIndex === i ? 1 : 0.7);
-      ctx.fillRect(x, y, barW, barH);
+      const bodyTop = centerY - bodyH / 2;
+      const bodyBottom = centerY + bodyH / 2;
+
+      // Wick (extends 30% beyond body on each side)
+      const wickExtend = bodyH * 0.3;
+      const wickTop = Math.max(MARGIN.top, bodyTop - wickExtend);
+      const wickBottom = Math.min(MARGIN.top + plotH, bodyBottom + wickExtend);
+
+      // Draw wick
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(centerX, wickTop);
+      ctx.lineTo(centerX, wickBottom);
+      ctx.stroke();
+
+      // Draw body
+      ctx.fillStyle = isHovered ? color : hexToRgba(color, 0.85);
+      ctx.fillRect(centerX - bodyW / 2, bodyTop, bodyW, bodyH);
+
+      // Body border
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(centerX - bodyW / 2, bodyTop, bodyW, bodyH);
+
+      // Glow effect on hover
+      if (isHovered) {
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 8;
+        ctx.fillStyle = hexToRgba(color, 0.3);
+        ctx.fillRect(centerX - bodyW / 2 - 2, bodyTop - 2, bodyW + 4, bodyH + 4);
+        ctx.shadowBlur = 0;
+      }
     }
 
+    // EMA / average lines
     const drawLine = (getValue: (d: DayData) => number | null, color: string, dashed = false, lineW = 2) => {
       ctx.strokeStyle = color;
       ctx.lineWidth = lineW;
@@ -218,6 +261,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
     if (showEma14) drawLine(d => d.ema14, DATA_COLORS.ema14);
     if (showGlobalAvg) drawLine(() => globalAvg, DATA_COLORS.globalAvg, true, 1.5);
 
+    // Crosshair on hover
     if (hoverIndex !== null && hoverIndex < data.length) {
       const d = data[hoverIndex];
       const x = MARGIN.left + ((hoverIndex + 0.5) / data.length) * plotW;
@@ -228,6 +272,16 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.beginPath(); ctx.moveTo(x, MARGIN.top); ctx.lineTo(x, MARGIN.top + plotH); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(w - MARGIN.right, y); ctx.stroke();
       ctx.setLineDash([]);
+
+      // Price label on Y axis
+      ctx.fillStyle = getBarColor(d.accuracy);
+      const labelW = 42;
+      const labelH = 16;
+      ctx.fillRect(0, y - labelH / 2, MARGIN.left - 2, labelH);
+      ctx.fillStyle = '#fff';
+      ctx.font = 'bold 9px monospace';
+      ctx.textAlign = 'right';
+      ctx.fillText(`${d.accuracy}%`, MARGIN.left - 5, y + 4);
     }
   }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, getCanvasWidth, PANEL1_H]);
 
@@ -416,7 +470,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
           <span className="text-muted-foreground">EMA 14: <span className="font-bold" style={{ color: DATA_COLORS.ema14 }}>{statsBar.lastEma14 !== null && statsBar.lastEma14 !== undefined ? `${statsBar.lastEma14}%` : '—'}</span></span>
           <span className="text-muted-foreground">ממוצע כללי: <span className="font-bold" style={{ color: DATA_COLORS.globalAvg }}>{globalAvg}%</span></span>
           <span className="text-muted-foreground">שאלות היום: <span className="font-bold text-foreground">{statsBar.todayVol}</span></span>
-          <span className="text-muted-foreground">שינוי מאתמול: <span className="font-bold" style={{ color: statsBar.change !== null ? (statsBar.change >= 0 ? DATA_COLORS.green : DATA_COLORS.red) : undefined }}>{statsBar.change !== null ? `${statsBar.change > 0 ? '+' : ''}${statsBar.change}%` : '—'}</span></span>
+          <span className="text-muted-foreground">שינוי מאתמול: <span className="font-bold" style={{ color: statsBar.change !== null ? (statsBar.change >= 0 ? DATA_COLORS.bullish : DATA_COLORS.bearish) : undefined }}>{statsBar.change !== null ? `${statsBar.change > 0 ? '+' : ''}${statsBar.change}%` : '—'}</span></span>
         </div>
       )}
     </div>
