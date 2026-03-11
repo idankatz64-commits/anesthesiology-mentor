@@ -119,17 +119,17 @@ function MatrixRain({ width, height, isDark }: { width: number; height: number; 
 /* ── Digit ── */
 function Digit({ value, isDark }: { value: number; isDark: boolean }) {
   const str = String(value).padStart(value > 99 ? 3 : 2, '0');
-  const digitColor = isDark ? '#00ff41' : '#2563eb';
+  const digitColor = isDark ? '#f59f0a' : '#2563eb';
   const glowColor = isDark
-    ? '0 0 10px rgba(0,255,65,0.6), 0 0 25px rgba(0,255,65,0.15)'
+    ? '0 0 10px rgba(245,159,10,0.6), 0 0 25px rgba(245,159,10,0.15)'
     : '0 0 10px rgba(37,99,235,0.5), 0 0 25px rgba(37,99,235,0.15)';
-  const borderColor = isDark ? 'border-[#00ff41]/20' : 'border-primary/20';
+  const borderColor = isDark ? 'border-primary/20' : 'border-primary/20';
 
   return (
     <div className="relative flex gap-[2px]">
       {str.split('').map((ch, i) => (
         <div key={i} className="relative w-[1.6em] h-[2.2em] sm:w-[2.4em] sm:h-[3.2em] overflow-hidden">
-          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(0,255,65,0.03)_2px,rgba(0,255,65,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
+          <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(245,159,10,0.03)_2px,rgba(245,159,10,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
           <div className={`absolute inset-0 bg-background/70 border ${borderColor} rounded-sm`} />
           <AnimatePresence mode="popLayout">
             <motion.span
