@@ -66,10 +66,11 @@ interface AppContextType {
   setSourceFilter: (source: SessionState['sourceFilter']) => void;
   toggleUnseenOnly: () => void;
   
-  // Sync
+  // Sync & cache
   syncStatus: 'idle' | 'syncing' | 'done' | 'error';
   lastSyncTime: string | null;
   triggerSync: () => Promise<{ count: number } | null>;
+  invalidateQuestions: () => Promise<void>;
   
    // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
