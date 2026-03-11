@@ -39,7 +39,7 @@ export default function StatsView() {
   const withExp = data.filter((q) => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
 
-  // Daily change calculations
+  // Daily change calculations — derive "today" metrics from progress.history timestamps
   const dailyChanges = useMemo(() => {
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -53,14 +53,40 @@ export default function StatsView() {
     const todayAccuracy = todayData?.rate ?? null;
     const yesterdayAccuracy = yesterdayData?.rate ?? null;
 
+    // Count unique questions first answered today & yesterday from progress.history
+    let newUniqueToday = 0;
+    let newUniqueYesterday = 0;
+    let errorsToday = 0;
+    let errorsYesterday = 0;
+    Object.values(progress.history || {}).forEach(h => {
+      if (!h.timestamp) return;
+      const d = new Date(h.timestamp).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+      if (d === todayStr) {
+        // If answered === 1 it's a new unique question
+        if (h.answered === 1) newUniqueToday++;
+        if (h.lastResult === 'wrong') errorsToday++;
+      } else if (d === yesterdayStr) {
+        if (h.answered === 1) newUniqueYesterday++;
+        if (h.lastResult === 'wrong') errorsYesterday++;
+      }
+    });
+
+    // Coverage change: new unique questions today as % of total DB
+    const coverageChangeToday = data.length > 0 ? Math.round((newUniqueToday / data.length) * 1000) / 10 : 0;
+
     return {
       todayQuestions,
       questionsChange: yesterdayQuestions > 0 ? todayQuestions - yesterdayQuestions : null,
       accuracyChange: todayAccuracy !== null && yesterdayAccuracy !== null && yesterdayData && yesterdayData.count > 0
         ? Math.round((todayAccuracy - yesterdayAccuracy) * 10) / 10
         : null,
+      newUniqueToday,
+      newUniqueChange: newUniqueYesterday > 0 ? newUniqueToday - newUniqueYesterday : (newUniqueToday > 0 ? newUniqueToday : null),
+      coverageChangeToday: coverageChangeToday > 0 ? coverageChangeToday : null,
+      errorsToday,
+      errorsChange: errorsYesterday > 0 ? errorsToday - errorsYesterday : null,
     };
-  }, [dailyData90]);
+  }, [dailyData90, progress.history, data.length]);
 
   const handleTopicClick = (topic: string) => {
     const topicQuestions = data.filter((q) => q[KEYS.TOPIC] === topic);
