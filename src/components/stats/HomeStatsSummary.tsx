@@ -63,7 +63,7 @@ function MiniStat({
 }) {
   return (
     <div
-      className="glass-tile relative overflow-hidden p-4 text-center flex flex-col items-center justify-center gap-1"
+      className="glass-tile relative overflow-hidden p-3 text-center flex flex-col items-center justify-center gap-0.5"
     >
       <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">
         {label}
@@ -122,26 +122,26 @@ export default function HomeStatsSummary() {
   const completionColor = '#10b981';
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {/* Accuracy Ring */}
-      <div className="glass-tile p-4 flex items-center justify-center">
+      <div className="glass-tile p-3 flex items-center justify-center">
         <DonutRing
           value={accuracy}
           color={accuracyColor}
           label="דיוק כללי"
-          size={90}
-          strokeWidth={7}
+          size={75}
+          strokeWidth={6}
         />
       </div>
 
       {/* Completion Ring */}
-      <div className="glass-tile p-4 flex items-center justify-center">
+      <div className="glass-tile p-3 flex items-center justify-center">
         <DonutRing
           value={completionPct}
           color={completionColor}
           label="כיסוי מאגר"
-          size={90}
-          strokeWidth={7}
+          size={75}
+          strokeWidth={6}
         />
       </div>
 

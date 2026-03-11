@@ -48,7 +48,7 @@ export default function HomeTopicHeatmap() {
 
     // Sort by accuracy ascending (weakest first), take top 7
     stats.sort((a, b) => a.accuracy - b.accuracy);
-    return stats.slice(0, 7);
+    return stats.slice(0, 5);
   }, [data, progress.history]);
 
   if (weakTopics.length === 0) {
@@ -64,14 +64,14 @@ export default function HomeTopicHeatmap() {
       <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em] mb-3">
         נושאים להתמקד בהם
       </h3>
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 gap-1.5">
         {weakTopics.map((t, i) => (
           <motion.div
             key={t.topic}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: i * 0.05 }}
-            className="flex items-center gap-3 rounded-lg px-3 py-2 transition-colors hover:bg-muted/20"
+            className="flex items-center gap-3 rounded-lg px-3 py-1.5 transition-colors hover:bg-muted/20"
             style={{ background: getAccuracyBg(t.accuracy) }}
           >
             <div
