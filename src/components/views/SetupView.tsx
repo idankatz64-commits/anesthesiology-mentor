@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS, type SessionMode } from '@/lib/types';
-import { ChevronDown, Search, EyeOff } from 'lucide-react';
+import { ChevronDown, Search, EyeOff, BookOpen, Calendar, Building2, Tag, Brain, Zap, ArrowRight, Clock, Hash } from 'lucide-react';
 import { selectSmartQuestions, SESSION_SIZE_CONFIG, type SessionSize } from '@/lib/smartSelection';
 
 function MultiSelectDropdown({
@@ -9,34 +9,41 @@ function MultiSelectDropdown({
   type,
   values,
   labelMap,
+  icon,
 }: {
   label: string;
   type: string;
   values: string[];
   labelMap?: Record<string, string>;
+  icon?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const { multiSelect, toggleMultiSelect } = useApp();
   const set = multiSelect[type as keyof typeof multiSelect];
 
   const displayLabel = set.has('all')
-    ? label
+    ? 'הכל'
     : `${set.size} נבחרו`;
 
   return (
-    <div className="relative">
-      <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">{label}</label>
+    <div className="p-5 rounded-xl bg-primary/5 border border-primary/10 hover:border-primary/30 transition-all group relative">
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 rounded-lg bg-primary/20 text-primary">
+          {icon}
+        </div>
+        <span className="font-bold text-sm text-foreground">{label}</span>
+      </div>
       <button
         onClick={() => setOpen(!open)}
-        className="w-full p-4 bg-card border border-border rounded-2xl text-right text-foreground text-sm font-medium flex justify-between items-center focus:outline-none focus:border-primary transition-all duration-200 shadow-sm"
+        className="w-full p-3 bg-background border border-border rounded-lg text-right text-foreground text-sm font-medium flex justify-between items-center focus:outline-none focus:border-primary transition-all duration-200"
       >
-        <span>{displayLabel}</span>
-        <ChevronDown className="w-4 h-4 text-muted-foreground" />
+        <span className="text-muted-foreground">{displayLabel}</span>
+        <ChevronDown className={`w-4 h-4 text-muted-foreground transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute z-20 w-full bg-card border border-border shadow-xl rounded-2xl mt-2 max-h-60 overflow-y-auto p-2">
+          <div className="absolute z-20 left-5 right-5 bg-card border border-border shadow-xl rounded-xl mt-2 max-h-60 overflow-y-auto p-2">
             <div
               onClick={() => { toggleMultiSelect(type as any, 'all'); }}
               className={`p-3 rounded-lg cursor-pointer flex items-center gap-3 transition-all duration-200 ${
@@ -114,145 +121,170 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   const isPractice = mode === 'practice';
   const title = isPractice ? 'הגדרות תרגול' : 'הגדרות בחינה';
 
+  const estMinutes = Math.round(count * 1.4);
+
   return (
-    <div className="fade-in max-w-3xl mx-auto">
-      <div className="mb-8 flex items-center gap-2 text-sm text-muted-foreground font-medium px-2">
-        <span onClick={() => navigate('home')} className="cursor-pointer hover:text-primary transition-all duration-200">ראשי</span>
-        <span>/</span>
-        <span className="text-foreground">{title}</span>
-      </div>
-
-      <div className="deep-tile p-10">
-        <h2 className="text-2xl font-bold mb-8 flex items-center gap-3 text-foreground">
-          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary text-lg">
-            {isPractice ? '📖' : '⏱️'}
+    <div className="fade-in max-w-5xl mx-auto p-4 lg:p-8 space-y-8">
+      {/* Header */}
+      <section>
+        <div className="flex items-center gap-3 mb-2">
+          <div className="p-1.5 rounded-lg bg-primary text-primary-foreground">
+            <BookOpen className="w-5 h-5" />
           </div>
-          {title}
-        </h2>
+          <h1 className="text-3xl font-bold text-foreground tracking-tight">{title}</h1>
+        </div>
+        <p className="text-muted-foreground">התאם את חוויית התרגול לצרכים שלך.</p>
+      </section>
 
-        {/* Section 1: מקור שאלות */}
-        <div className="bg-muted/30 rounded-2xl p-6 mb-8">
-          <h3 className="text-sm font-bold text-foreground mb-4">מקור שאלות</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-            {(['all', 'mistakes', 'fixed', 'favorites'] as const).map(src => (
+      {/* Session Intensity */}
+      <section className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">עוצמת מפגש</h3>
+        <div className="flex p-1 bg-primary/5 rounded-xl border border-primary/10 max-w-lg">
+          {SESSION_SIZES.map(size => {
+            const cfg = SESSION_SIZE_CONFIG[size];
+            const isSelected = sessionSize === size;
+            return (
               <button
-                key={src}
-                onClick={() => setSourceFilter(src)}
-                className={`p-4 border rounded-2xl text-sm font-medium transition-all duration-200 ${
-                  session.sourceFilter === src
-                    ? 'bg-primary/10 text-primary border-primary/30'
-                    : 'bg-card text-muted-foreground border-border hover:bg-muted'
+                key={size}
+                onClick={() => setSessionSize(size)}
+                className={`flex-1 flex flex-col items-center justify-center py-3 px-2 rounded-lg transition-all ${
+                  isSelected
+                    ? 'bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {src === 'all' ? 'כל המאגר' : src === 'mistakes' ? 'הטעויות שלי' : src === 'fixed' ? 'שאלות שתוקנו' : 'מועדפים ⭐'}
+                <span className="text-sm font-bold">{cfg.label}</span>
+                <span className={`text-[10px] ${isSelected ? 'opacity-80' : 'opacity-60'}`}>{cfg.count} שאלות</span>
               </button>
-            ))}
-          </div>
+            );
+          })}
+        </div>
+      </section>
 
+      {/* Source Filter Pills */}
+      <section className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">מקור שאלות</h3>
+        <div className="flex flex-wrap gap-2">
+          {(['all', 'mistakes', 'fixed', 'favorites'] as const).map(src => (
+            <button
+              key={src}
+              onClick={() => setSourceFilter(src)}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all border ${
+                session.sourceFilter === src
+                  ? 'bg-primary/10 text-primary border-primary/30'
+                  : 'bg-card text-muted-foreground border-border hover:bg-muted'
+              }`}
+            >
+              {src === 'all' ? 'כל המאגר' : src === 'mistakes' ? 'הטעויות שלי' : src === 'fixed' ? 'שאלות שתוקנו' : '⭐ מועדפים'}
+            </button>
+          ))}
           <button
             onClick={toggleUnseenOnly}
-            className={`w-full p-4 border rounded-2xl text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 ${
+            className={`px-4 py-2 rounded-full text-sm font-medium transition-all border flex items-center gap-2 ${
               session.unseenOnly
                 ? 'bg-primary/10 text-primary border-primary/30'
                 : 'bg-card text-muted-foreground border-border hover:bg-muted'
             }`}
           >
-            <EyeOff className="w-4 h-4" />
-            שאלות חדשות בלבד (טרם נצפו) {session.unseenOnly ? '(פעיל)' : ''}
+            <EyeOff className="w-3.5 h-3.5" />
+            חדשות בלבד
           </button>
         </div>
+      </section>
 
-        {/* Section 2: סינון מתקדם */}
-        <div className="bg-muted/30 rounded-2xl p-6 mb-8">
-          <h3 className="text-sm font-bold text-foreground mb-4">סינון מתקדם</h3>
-          <div className="space-y-8">
-            <div>
-              <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">חיפוש חופשי</label>
-              <div className="relative">
-                <input
-                  type="text"
-                  value={textSearch}
-                  onChange={e => setTextSearch(e.target.value)}
-                  placeholder="חפש תרופה, מחלה או מושג..."
-                  className="w-full p-4 pl-12 bg-muted border border-border rounded-2xl outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all duration-200 text-foreground placeholder-muted-foreground"
-                />
-                <Search className="absolute left-5 top-5 w-4 h-4 text-muted-foreground" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <MultiSelectDropdown label="נושא (Topic)" type="topic" values={topics} />
-              <MultiSelectDropdown label="סוג (Kind)" type="kind" values={kinds} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <MultiSelectDropdown label="שנה (Year)" type="year" values={years} />
-              <MultiSelectDropdown label="מוסד (Institution)" type="institution" values={institutions} />
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <MultiSelectDropdown label="תיוג (Tags)" type="usertags" values={userTags} />
-              <MultiSelectDropdown 
-                label="ביטחון (Confidence)" 
-                type="confidence" 
-                values={['confident', 'hesitant', 'guessed']} 
-                labelMap={confidenceLabelMap}
-              />
-            </div>
-            <div className="grid grid-cols-1 gap-6">
-              <div>
-                <label className="block text-xs font-bold text-muted-foreground uppercase mb-2 tracking-wide">מס' סידורי</label>
-                <input
-                  type="text"
-                  value={serial}
-                  onChange={e => setSerial(e.target.value)}
-                  placeholder="למשל: 120"
-                  className="w-full p-4 bg-muted border border-border rounded-2xl outline-none focus:border-primary transition-all duration-200 text-foreground placeholder-muted-foreground"
-                />
-              </div>
-            </div>
+      {/* Free text search */}
+      <section className="space-y-4">
+        <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">חיפוש</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="relative">
+            <input
+              type="text"
+              value={textSearch}
+              onChange={e => setTextSearch(e.target.value)}
+              placeholder="חפש תרופה, מחלה או מושג..."
+              className="w-full p-3 pl-10 bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground placeholder-muted-foreground text-sm"
+            />
+            <Search className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              value={serial}
+              onChange={e => setSerial(e.target.value)}
+              placeholder="מס' סידורי (למשל: 120)"
+              className="w-full p-3 pl-10 bg-background border border-border rounded-lg outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-foreground placeholder-muted-foreground text-sm"
+            />
+            <Hash className="absolute left-3 top-3.5 w-4 h-4 text-muted-foreground" />
           </div>
         </div>
+      </section>
 
-        {/* Section 3: גודל מפגש */}
-        <div className="bg-muted/30 rounded-2xl p-6 mb-8">
-          <h3 className="text-sm font-bold text-foreground mb-4">כמה שאלות?</h3>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {SESSION_SIZES.map(size => {
-              const cfg = SESSION_SIZE_CONFIG[size];
-              const isSelected = sessionSize === size;
-              return (
-                <button
-                  key={size}
-                  onClick={() => setSessionSize(size)}
-                  className={`p-4 border rounded-2xl text-center transition-all duration-200 ${
-                    isSelected
-                      ? 'bg-primary/10 text-primary border-primary/30 ring-2 ring-primary/20'
-                      : 'bg-card text-muted-foreground border-border hover:bg-muted'
-                  }`}
-                >
-                  <div className="text-2xl mb-1">{cfg.emoji}</div>
-                  <div className="font-bold text-sm">{cfg.label}</div>
-                  <div className="text-xs font-semibold mt-1">{cfg.count} שאלות</div>
-                  <div className="text-[10px] mt-2 leading-tight opacity-70">{cfg.desc}</div>
-                </button>
-              );
-            })}
+      {/* Filters Grid */}
+      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <MultiSelectDropdown
+          label="נושא (Topic)"
+          type="topic"
+          values={topics}
+          icon={<BookOpen className="w-5 h-5" />}
+        />
+        <MultiSelectDropdown
+          label="שנה (Year)"
+          type="year"
+          values={years}
+          icon={<Calendar className="w-5 h-5" />}
+        />
+        <MultiSelectDropdown
+          label="מוסד (Institution)"
+          type="institution"
+          values={institutions}
+          icon={<Building2 className="w-5 h-5" />}
+        />
+        <MultiSelectDropdown
+          label="סוג (Kind)"
+          type="kind"
+          values={kinds}
+          icon={<Tag className="w-5 h-5" />}
+        />
+        <MultiSelectDropdown
+          label="תיוג (Tags)"
+          type="usertags"
+          values={userTags}
+          icon={<Tag className="w-5 h-5" />}
+        />
+        <MultiSelectDropdown
+          label="ביטחון (Confidence)"
+          type="confidence"
+          values={['confident', 'hesitant', 'guessed']}
+          labelMap={confidenceLabelMap}
+          icon={<Brain className="w-5 h-5" />}
+        />
+      </section>
+
+      {/* Bottom Action Bar */}
+      <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
+          <div className="flex flex-col">
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">זמן משוער</span>
+            <span className="text-xl font-bold text-foreground flex items-center gap-2">
+              <Clock className="w-4 h-4 text-primary" />
+              ~{estMinutes} דק׳
+            </span>
           </div>
-
-          <div className={`text-center text-sm font-bold p-3 rounded-xl border mt-6 ${
-            pool.length > 0
-              ? 'text-primary bg-primary/10 border-primary/20'
-              : 'text-destructive bg-destructive/10 border-destructive/20'
-          }`}>
-            נמצאו {pool.length} שאלות זמינות
+          <div className="w-px h-10 bg-border" />
+          <div className="flex flex-col">
+            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">שאלות זמינות</span>
+            <span className={`text-xl font-bold ${pool.length > 0 ? 'text-foreground' : 'text-destructive'}`}>
+              {pool.length} שאלות
+            </span>
           </div>
         </div>
-
         <button
           onClick={handleStart}
-          disabled={starting}
-          className="w-full bg-gradient-to-r from-[hsl(25,95%,53%)] to-[hsl(30,93%,58%)] text-primary-foreground font-semibold text-lg py-5 rounded-2xl shadow-lg transition-all duration-200 transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-3 disabled:opacity-60"
+          disabled={starting || pool.length === 0}
+          className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-lg px-12 py-4 rounded-xl shadow-2xl shadow-primary/30 flex items-center gap-3 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
         >
-          {starting ? 'מכין שאלות...' : `התחל ${isPractice ? 'תרגול' : 'בחינה'} ←`}
+          {starting ? 'מכין שאלות...' : `התחל ${isPractice ? 'תרגול' : 'בחינה'}`}
+          <ArrowRight className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </button>
       </div>
     </div>
