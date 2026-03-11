@@ -39,7 +39,7 @@ export default function StatsView() {
   const withExp = data.filter((q) => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
 
-  // Daily change calculations
+  // Daily change calculations — derive "today" metrics from progress.history timestamps
   const dailyChanges = useMemo(() => {
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
     const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
@@ -53,14 +53,40 @@ export default function StatsView() {
     const todayAccuracy = todayData?.rate ?? null;
     const yesterdayAccuracy = yesterdayData?.rate ?? null;
 
+    // Count unique questions first answered today & yesterday from progress.history
+    let newUniqueToday = 0;
+    let newUniqueYesterday = 0;
+    let errorsToday = 0;
+    let errorsYesterday = 0;
+    Object.values(progress.history || {}).forEach(h => {
+      if (!h.timestamp) return;
+      const d = new Date(h.timestamp).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+      if (d === todayStr) {
+        // If answered === 1 it's a new unique question
+        if (h.answered === 1) newUniqueToday++;
+        if (h.lastResult === 'wrong') errorsToday++;
+      } else if (d === yesterdayStr) {
+        if (h.answered === 1) newUniqueYesterday++;
+        if (h.lastResult === 'wrong') errorsYesterday++;
+      }
+    });
+
+    // Coverage change: new unique questions today as % of total DB
+    const coverageChangeToday = data.length > 0 ? Math.round((newUniqueToday / data.length) * 1000) / 10 : 0;
+
     return {
       todayQuestions,
       questionsChange: yesterdayQuestions > 0 ? todayQuestions - yesterdayQuestions : null,
       accuracyChange: todayAccuracy !== null && yesterdayAccuracy !== null && yesterdayData && yesterdayData.count > 0
         ? Math.round((todayAccuracy - yesterdayAccuracy) * 10) / 10
         : null,
+      newUniqueToday,
+      newUniqueChange: newUniqueYesterday > 0 ? newUniqueToday - newUniqueYesterday : (newUniqueToday > 0 ? newUniqueToday : null),
+      coverageChangeToday: coverageChangeToday > 0 ? coverageChangeToday : null,
+      errorsToday,
+      errorsChange: errorsYesterday > 0 ? errorsToday - errorsYesterday : null,
     };
-  }, [dailyData90]);
+  }, [dailyData90, progress.history, data.length]);
 
   const handleTopicClick = (topic: string) => {
     const topicQuestions = data.filter((q) => q[KEYS.TOPIC] === topic);
@@ -132,13 +158,29 @@ export default function StatsView() {
     },
     {
       label: 'טעויות פתוחות', value: personalStats.uncorrected, icon: XCircle, color: 'text-destructive',
-      change: null as number | null,
+      change: dailyChanges.errorsChange, invertColor: true,
     },
     {
       label: 'כיסוי מאגר', value: stats.coverage, suffix: '%', icon: BookOpen, color: 'text-primary',
-      change: null as number | null,
+      change: dailyChanges.coverageChangeToday, changeSuffix: '%',
     },
   ];
+
+  // Helper to render a change badge
+  const ChangeBadge = ({ change, suffix, invertColor }: { change: number | null | undefined; suffix?: string; invertColor?: boolean }) => {
+    if (change === null || change === undefined) return null;
+    const isPositive = change >= 0;
+    const colorClass = invertColor
+      ? (isPositive ? 'text-destructive' : 'text-green-500')
+      : (isPositive ? 'text-green-500' : 'text-destructive');
+    return (
+      <div className={`flex items-center justify-center gap-0.5 mt-0.5 text-[10px] font-bold ${colorClass}`}>
+        {isPositive ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+        <span>{change > 0 ? '+' : ''}{change}{suffix || ''}</span>
+        <span className="text-muted-foreground font-normal mr-0.5">מאתמול</span>
+      </div>
+    );
+  };
 
   return (
     <>
@@ -162,13 +204,7 @@ export default function StatsView() {
                 className={`text-3xl font-black ${k.color}`}
                 style={{ fontFamily: "'Share Tech Mono', monospace" }}
               />
-              {k.change !== null && k.change !== undefined && (
-                <div className={`flex items-center justify-center gap-0.5 mt-0.5 text-[10px] font-bold ${k.change >= 0 ? 'text-green-500' : 'text-destructive'}`}>
-                  {k.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                  <span>{k.change > 0 ? '+' : ''}{k.change}{k.changeSuffix || ''}</span>
-                  <span className="text-muted-foreground font-normal mr-0.5">מאתמול</span>
-                </div>
-              )}
+              <ChangeBadge change={k.change} suffix={k.changeSuffix} invertColor={k.invertColor} />
             </div>
           ))}
         </motion.div>
@@ -182,10 +218,12 @@ export default function StatsView() {
           <div className="glass-tile rounded-xl p-2.5 text-center">
             <div className="text-[9px] text-muted-foreground mb-0.5">כוללות הסבר</div>
             <AnimatedNumber value={withExp} className="text-2xl font-black text-green-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+            <div className="text-[9px] text-muted-foreground mt-0.5">{data.length > 0 ? Math.round((withExp / data.length) * 100) : 0}% מהמאגר</div>
           </div>
           <div className="glass-tile rounded-xl p-2.5 text-center">
             <div className="text-[9px] text-muted-foreground mb-0.5">ללא הסבר</div>
             <AnimatedNumber value={withoutExp} className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
+            <div className="text-[9px] text-muted-foreground mt-0.5">{data.length > 0 ? Math.round((withoutExp / data.length) * 100) : 0}% מהמאגר</div>
           </div>
         </motion.div>
 
@@ -197,9 +235,9 @@ export default function StatsView() {
           </div>
           <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {[
-              { value: personalStats.totalAttempts, label: 'שאלות שבוצעו', icon: BarChart3 },
-              { value: personalStats.uniqueQuestions, label: 'שאלות ייחודיות', icon: BookOpen },
-              { value: personalStats.totalErrors, label: 'טעויות', icon: AlertTriangle, color: 'text-destructive', iconColor: 'text-destructive' },
+              { value: personalStats.totalAttempts, label: 'שאלות שבוצעו', icon: BarChart3, change: dailyChanges.todayQuestions > 0 ? dailyChanges.todayQuestions : null, changeSuffix: ' היום' },
+              { value: personalStats.uniqueQuestions, label: 'שאלות ייחודיות', icon: BookOpen, change: dailyChanges.newUniqueChange, changeSuffix: ' חדשות' },
+              { value: personalStats.totalErrors, label: 'טעויות', icon: AlertTriangle, color: 'text-destructive', iconColor: 'text-destructive', change: dailyChanges.errorsChange, invertColor: true },
               { value: personalStats.corrected, label: 'מתוקנות', click: () => setDrilldownMetric('corrected'), color: 'text-green-500', icon: CheckCircle, iconColor: 'text-green-500' },
               { value: personalStats.uncorrected, label: 'לא תוקנו', click: () => setDrilldownMetric('uncorrected'), color: 'text-primary', icon: XCircle, iconColor: 'text-primary' },
               { value: personalStats.repeatedErrors, label: 'טעויות חוזרות', click: () => setDrilldownMetric('repeatedErrors'), color: 'text-destructive', icon: Repeat, iconColor: 'text-destructive' },
@@ -218,6 +256,16 @@ export default function StatsView() {
                   style={{ fontFamily: "var(--font-matrix)" }}
                 />
                 <div className="text-[9px] text-muted-foreground leading-tight">{item.label}</div>
+                {'change' in item && item.change !== null && item.change !== undefined && (
+                  <div className={`flex items-center justify-center gap-0.5 mt-0.5 text-[9px] font-bold ${
+                    item.invertColor
+                      ? (item.change >= 0 ? 'text-destructive' : 'text-green-500')
+                      : (item.change >= 0 ? 'text-green-500' : 'text-destructive')
+                  }`}>
+                    {item.change >= 0 ? <TrendingUp className="w-2.5 h-2.5" /> : <TrendingDown className="w-2.5 h-2.5" />}
+                    <span>{item.change > 0 ? '+' : ''}{item.change}{item.changeSuffix || ''}</span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -236,7 +284,7 @@ export default function StatsView() {
           <AccuracyCanvasChart />
         </motion.div>
 
-        {/* ROW 6 — ERI (with gauges, weak zones, strengths inside) */}
+        {/* ROW 6 — ERI */}
         <motion.div variants={itemVariants}>
           <ERITile
             value={eri.value}
