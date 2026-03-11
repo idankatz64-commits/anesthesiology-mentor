@@ -779,7 +779,7 @@ export default function SessionView() {
                         manually_edited: true,
                       }).eq('id', serialNumber);
                       if (!error) {
-                        sessionStorage.removeItem('questions_cache');
+                        invalidateQuestions();
                         (qData as any)[KEYS.CHAPTER] = chapterVal;
                         (qData as any)[KEYS.MILLER] = String(chapterVal);
                         (qData as any)[KEYS.TOPIC] = chapterName;
