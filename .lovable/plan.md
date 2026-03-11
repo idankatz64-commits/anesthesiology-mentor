@@ -1,62 +1,85 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+# תוכנית עיצוב מחדש — מסך ראשי (v2)
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+## סיכום הבקשה
+המסך הנוכחי נראה גנרי מדי — כל האריחים באותו גודל, אייקונים פשוטים, חסרים אלמנטים ויזואליים בסטטיסטיקה. הרפרנס מראה layout מגוון עם אריחים בגדלים שונים, מפת חום נושאים, ואלמנטים גרפיים (rings/gauges).
 
-## Part A -- Daily Volume Bars
+## שינויים מתוכננים
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+### 1. Layout מחודש — אריחים בגדלים שונים (`HomeView.tsx`)
+במקום grid 3x3 אחיד, מעבר ל-layout מגוון בהשראת הרפרנס:
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
-
-### Data shape (extended)
-Each point in `chartData` will gain:
 ```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
+┌──────────────────────────────────────────────────────┐
+│              COUNTDOWN (full width, larger)           │
+├──────────────────────────────────────────────────────┤
+│  Accuracy Ring  │  Completion Ring  │  Topic Heatmap  │
+│  (col-span-2)   │  (col-span-2)     │  (col-span-8)   │
+├──────────────────────────────────────────────────────┤
+│  FOCUS SESSIONS title                                │
+│  Smart Practice    │ Spaced Repetition │  Simulation   │
+│  (col-span-4)      │ (col-span-4)      │ (col-span-4)  │
+│  (taller, accent)  │ (taller, accent)  │               │
+├──────────────────────────────────────────────────────┤
+│  smaller cards: Flashcards │ Custom │ Mistakes        │
+│  Favorites │ Notebook │ Algorithm                     │
+├──────────────────────────────────────────────────────┤
+│  Daily Report │ DB Status                             │
+└──────────────────────────────────────────────────────┘
 ```
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+- שורה עליונה (analytics): grid `lg:grid-cols-12` — שתי עיגולי progress (4 cols) + מפת חום נושאים (8 cols)
+- שורה אמצעית (focus): 3 כרטיסים ראשיים גדולים יותר (Smart Practice, Spaced Repetition, Simulation) עם border צבעוני ועיגול דקורטיבי ברקע
+- שורה תחתונה: 6 כרטיסים קטנים יותר ב-grid-cols-3
 
-## Part B -- Daily Performance Report
+### 2. מרכיב ויזואלי בסטטיסטיקה — Progress Rings (`HomeStatsSummary.tsx`)
+החלפת 4 כרטיסי מספרים ב-2 SVG rings + 2 כרטיסי מספרים:
+- **Overall Accuracy** — SVG donut ring עם אחוז במרכז (amber/green)
+- **Completion Rate** — SVG donut ring (emerald) המראה כמה שאלות נענו מתוך הכלל
+- **שאלות היום** + **טעויות פתוחות** — נשארים כמספרים אבל עם mini progress bar / color scale
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+### 3. מפת חום נושאים חדשה (`HomeTopicHeatmap.tsx` — קומפוננטה חדשה)
+- Grid של 5-7 תאים צבעוניים (top weak topics)
+- כל תא: שם הנושא + אחוז דיוק
+- צבע רקע: ירוק (>80%), amber (50-80%), אדום (<50%)
+- Hover: overlay עם אחוז מדויק
+- נתונים מ-`progress.history` + `data` (חישוב accuracy per topic)
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
+### 4. אייקונים מיוחדים + אנימציות
+החלפת אייקונים גנריים:
+- **Smart Practice**: `Sparkles` (lucide) + אנימציית pulse
+- **Simulation**: `Timer` + אנימציית spin איטי
+- **Spaced Repetition**: `RefreshCcw` + אנימציית rotate
+- **Flashcards**: `Layers` + flip animation
+- **Custom Practice**: `SlidersHorizontal` + bounce
+- **Mistakes**: `AlertCircle` + shake
+- **Favorites**: `Heart` + beat animation
+- **Notebook**: `BookOpen` + page-turn
+- **Algorithm**: `Cpu` + blink
 
-## Files to Modify
+כל אייקון מקבל motion wrapper עם `animate` loop עדין (opacity, rotate, scale) שפועל תמיד, לא רק ב-hover.
 
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+### 5. שעון — הגדלה + הדגשת ציטוטים
+- הגדלת digit size: `sm:text-3xl` (במקום `sm:text-2xl`)
+- הגדלת ה-container padding
+- ציטוט: `text-sm sm:text-base` + `font-medium` (במקום `text-xs sm:text-sm font-light`)
 
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+### 6. Focus Cards עם אפקט דקורטיבי
+3 הכרטיסים הראשיים (Smart Practice, Simulation, Spaced Repetition):
+- Border צבעוני ייחודי לכל אחד (emerald, amber, slate)
+- עיגול דקורטיבי (absolute, -right-4 -bottom-4) כמו ברפרנס
+- Padding גדול יותר (p-6)
+- אייקון גדול יותר (text-3xl)
 
-No database changes required.
+## קבצים שמשתנים
+
+| קובץ | שינוי |
+|---|---|
+| `src/components/views/HomeView.tsx` | Layout מחודש, אייקונים חדשים, focus cards, grid מגוון |
+| `src/components/stats/HomeStatsSummary.tsx` | SVG progress rings + mini bars |
+| `src/components/stats/HomeTopicHeatmap.tsx` | **חדש** — מפת חום 5-7 נושאים חלשים |
+| `src/components/MatrixCountdown.tsx` | הגדלת digits + הדגשת ציטוט |
+
+אין שינויים ב-DB או בלוגיקה עסקית.
 
