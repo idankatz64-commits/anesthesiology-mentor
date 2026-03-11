@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown } from 'lucide-react';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown, Swords } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
@@ -141,11 +141,11 @@ export default function HomeView() {
       <MatrixCountdown />
 
       <header className="mt-8 mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
-        <div>
-          <h2 className="text-3xl font-semibold text-foreground tracking-tight">
-            שלום, ד"ר <span className="text-primary">מתמחה</span> 👋
+        <div className="flex items-center gap-3">
+          <Swords className="w-8 h-8 text-primary" />
+          <h2 className="text-3xl font-semibold text-foreground tracking-tight matrix-title">
+            Let's Play A Game<span className="text-primary">...</span>
           </h2>
-          <p className="text-muted-foreground mt-2 font-light text-lg">מוכן להמשיך בהכנות למבחן שלב א'?</p>
         </div>
         <button
           onClick={resetAllData}
@@ -335,7 +335,69 @@ export default function HomeView() {
             </p>
           </div>
         </motion.div>
+
+        {/* Algorithm Explainer — in grid, same size as other cards */}
+        <TooltipProvider delayDuration={200}>
+          <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => setAlgoOpen(o => !o)} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
+            <div className="relative">
+              <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                <Info className="w-6 h-6" />
+              </div>
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-lg mb-1 text-foreground">איך נבחרות השאלות?</h3>
+                <motion.div animate={{ rotate: algoOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                </motion.div>
+              </div>
+              <p className="text-sm text-muted-foreground font-light">הצצה לאלגוריתם הניקוד החכם שמנהל את הסדר.</p>
+            </div>
+          </motion.div>
+        </TooltipProvider>
       </motion.div>
+
+      {/* Algorithm Explainer expanded content — below grid */}
+      <TooltipProvider delayDuration={200}>
+        <AnimatePresence>
+          {algoOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              className="overflow-hidden mb-10 -mt-5"
+            >
+              <div className="deep-tile p-6 space-y-5 text-sm text-muted-foreground leading-relaxed" dir="rtl">
+                <p className="text-foreground font-medium">
+                  כל שאלה מקבלת ציון חכם לפי הנוסחה:
+                </p>
+                <div className="bg-muted/30 rounded-lg px-4 py-3 text-xs font-mono text-foreground/80 overflow-x-auto" dir="ltr">
+                  smartScore = W1×<FormulaParam name="srsUrgency" /> + W2×<FormulaParam name="topicWeakness" /> + W3×<FormulaParam name="recencyGap" /> + W4×<FormulaParam name="streakPenalty" /> + W5×<FormulaParam name="examProximity" /> + W6×<FormulaParam name="yieldBoost" />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                    <h4 className="font-bold text-foreground mb-1">⚡ מהיר (15 שאלות)</h4>
+                    <p>דגש על שאלות SRS דחופות ונושאים חלשים. סבב חזרה מהיר.</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                    <h4 className="font-bold text-foreground mb-1">📘 רגיל (40 שאלות)</h4>
+                    <p>ניקוד היברידי מאוזן על פני 6 פרמטרים – חזרה + חומר חדש.</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                    <h4 className="font-bold text-foreground mb-1">🔬 מעמיק (100 שאלות)</h4>
+                    <p>כיסוי רחב עם פיזור נושאים מקסימלי. לסשנים ארוכים.</p>
+                  </div>
+                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
+                    <h4 className="font-bold text-foreground mb-1">🎯 סימולציה (120 שאלות)</h4>
+                    <p>חלוקה פרופורציונלית לפי משקלי נושאים היסטוריים בבחינה. ללא ניקוד.</p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </TooltipProvider>
 
       {/* Daily Report — slim horizontal tile */}
       <div className="mb-6">
@@ -348,66 +410,6 @@ export default function HomeView() {
         </button>
       </div>
       <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
-
-      {/* Algorithm Explainer Tile */}
-      <TooltipProvider delayDuration={200}>
-        <div className="mb-6">
-          <button
-            onClick={() => setAlgoOpen(o => !o)}
-            className="deep-tile w-full px-6 py-4 flex items-center justify-between gap-3 text-sm font-semibold text-foreground"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 bg-primary/15 text-primary rounded-lg flex items-center justify-center">
-                <Info className="w-5 h-5" />
-              </div>
-              <span>איך נבחרות השאלות?</span>
-            </div>
-            <motion.div animate={{ rotate: algoOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
-              <ChevronDown className="w-4 h-4 text-muted-foreground" />
-            </motion.div>
-          </button>
-
-          <AnimatePresence>
-            {algoOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                className="overflow-hidden"
-              >
-                <div className="deep-tile mt-2 p-6 space-y-5 text-sm text-muted-foreground leading-relaxed" dir="rtl">
-                  <p className="text-foreground font-medium">
-                    כל שאלה מקבלת ציון חכם לפי הנוסחה:
-                  </p>
-                  <div className="bg-muted/30 rounded-lg px-4 py-3 text-xs font-mono text-foreground/80 overflow-x-auto" dir="ltr">
-                    smartScore = W1×<FormulaParam name="srsUrgency" /> + W2×<FormulaParam name="topicWeakness" /> + W3×<FormulaParam name="recencyGap" /> + W4×<FormulaParam name="streakPenalty" /> + W5×<FormulaParam name="examProximity" /> + W6×<FormulaParam name="yieldBoost" />
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                      <h4 className="font-bold text-foreground mb-1">⚡ מהיר (15 שאלות)</h4>
-                      <p>דגש על שאלות SRS דחופות ונושאים חלשים. סבב חזרה מהיר.</p>
-                    </div>
-                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                      <h4 className="font-bold text-foreground mb-1">📘 רגיל (40 שאלות)</h4>
-                      <p>ניקוד היברידי מאוזן על פני 6 פרמטרים – חזרה + חומר חדש.</p>
-                    </div>
-                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                      <h4 className="font-bold text-foreground mb-1">🔬 מעמיק (100 שאלות)</h4>
-                      <p>כיסוי רחב עם פיזור נושאים מקסימלי. לסשנים ארוכים.</p>
-                    </div>
-                    <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                      <h4 className="font-bold text-foreground mb-1">🎯 סימולציה (120 שאלות)</h4>
-                      <p>חלוקה פרופורציונלית לפי משקלי נושאים היסטוריים בבחינה. ללא ניקוד.</p>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </TooltipProvider>
 
       {/* DB Status — slim horizontal bar */}
       <div className="mb-12">
