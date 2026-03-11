@@ -260,7 +260,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       const d = data[i];
       if (d.total === 0) continue;
       const x = MARGIN.left + ((i + 0.5) / data.length) * plotW;
-      const y = MARGIN.top + plotH * (1 - d.accuracy / 100);
+      const y = toY(d.accuracy);
       accPoints.push({ x, y, acc: d.accuracy });
       if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
     }
