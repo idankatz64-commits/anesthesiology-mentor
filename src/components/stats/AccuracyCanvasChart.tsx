@@ -213,7 +213,6 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
     const plotW = w - MARGIN.left - MARGIN.right;
     const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
     const slotW = plotW / data.length;
-    const bodyW = Math.max(3, slotW * 0.55);
 
     // Grid lines
     ctx.strokeStyle = theme.gridLine;
