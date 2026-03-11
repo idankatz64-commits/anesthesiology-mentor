@@ -33,7 +33,7 @@ function FormulaParam({ name }: { name: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <span className="text-primary cursor-help underline decoration-dotted underline-offset-2">{name}</span>
+        <button type="button" className="text-primary cursor-help underline decoration-dotted underline-offset-2 bg-transparent border-none p-0 font-mono text-xs inline">{name}</button>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs text-xs" dir="rtl">
         <p>{PARAM_TOOLTIPS[name]}</p>
