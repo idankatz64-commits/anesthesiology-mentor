@@ -225,6 +225,30 @@
   @apply bg-card/70 backdrop-blur-xl border border-border/60;
 }
 
+/* Glass tile — action cards */
+.glass-tile {
+  @apply relative rounded-2xl overflow-hidden transition-all duration-300 cursor-pointer;
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.3);
+}
+.glass-tile:hover {
+  transform: translateY(-3px);
+  border-color: hsl(var(--primary) / 0.2);
+  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.4), 0 0 20px hsl(var(--primary) / 0.06);
+}
+.light .glass-tile {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+.light .glass-tile:hover {
+  border-color: hsl(var(--primary) / 0.3);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
 /* Liquid glass — Apple-inspired frosted tiles */
 .liquid-glass {
   @apply relative rounded-2xl overflow-hidden transition-all duration-300;
