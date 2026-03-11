@@ -613,7 +613,7 @@ export default function AccuracyCanvasChart() {
   const refreshKey = useMemo(() => {
     const history = progress.history || {};
     const keys = Object.keys(history);
-    const totalAnswered = Object.values(history).reduce((sum: number, h: any) => sum + (h?.answeredCount || 1), 0);
+    const totalAnswered = Object.values(history).reduce((sum: number, h: any) => sum + (h?.answered ?? 0), 0);
     return keys.length * 10000 + totalAnswered;
   }, [progress.history]);
 
