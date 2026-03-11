@@ -267,7 +267,7 @@ export default function MatrixCountdown() {
       transition={{ type: 'spring', stiffness: 250, damping: 25 }}
     >
       {/* Inner padding wrapper so canvas covers full area */}
-      <div className="relative px-4 py-4 sm:px-8 sm:py-7">
+      <div className="relative px-4 py-2 sm:px-8 sm:py-4">
         {/* Matrix rain background — covers entire tile */}
         {rainEnabled && dims.w > 0 && <MatrixRain width={dims.w} height={dims.h} isDark={isDark} />}
 
@@ -292,7 +292,7 @@ export default function MatrixCountdown() {
           }`}
         />
 
-        <div className="relative flex flex-col items-center gap-2 sm:gap-3">
+        <div className="relative flex flex-col items-center gap-1.5 sm:gap-2">
           {/* Header */}
           <div className="flex items-center gap-2">
             <motion.div

@@ -4,7 +4,7 @@ import { KEYS } from '@/lib/types';
 import {
   Sparkles, Timer, RefreshCcw, Heart, BookOpen, Cpu,
   Layers, SlidersHorizontal, AlertCircle,
-  RotateCcw, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown,
+  Play, X, AlertTriangle, ClipboardList, Info, ChevronDown,
 } from 'lucide-react';
 import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -202,7 +202,7 @@ function SmallCard({
 
 /* ── Main Component ── */
 export default function HomeView() {
-  const { data, progress, navigate, resetAllData, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
+  const { data, progress, navigate, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
   const [loadingDue, setLoadingDue] = useState(false);
   const [resuming, setResuming] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -374,29 +374,44 @@ export default function HomeView() {
 
       {/* ═══ ANALYTICS ROW — Rings + Topic Heatmap ═══ */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-        <div className="lg:col-span-5">
+        <div className="lg:col-span-7">
           <HomeStatsSummary />
         </div>
-        <div className="lg:col-span-7">
+        <div className="lg:col-span-5">
           <HomeTopicHeatmap />
         </div>
       </div>
 
-      {/* ═══ HEADER ═══ */}
-      <header className="flex flex-col md:flex-row md:justify-between md:items-end gap-4">
+      {/* ═══ DB STATUS — moved below analytics ═══ */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="deep-tile p-3 text-center">
+          <div className="text-xl font-bold matrix-text">{data.length}</div>
+          <div className="text-[9px] text-muted-foreground font-medium mt-0.5">סה"כ שאלות</div>
+        </div>
+        <div className="deep-tile p-3 text-center">
+          <div className="text-xl font-bold text-success matrix-text">{withExp}</div>
+          <div className="text-[9px] text-success/70 font-medium mt-0.5">כוללות הסבר</div>
+        </div>
+        <div className="deep-tile p-3 text-center">
+          <div className="text-xl font-bold text-warning matrix-text">{withoutExp}</div>
+          <div className="text-[9px] text-warning/70 font-medium mt-0.5">ללא הסבר</div>
+        </div>
+      </div>
+
+      {/* ═══ HEADER — centered, LTR ═══ */}
+      <header className="flex justify-center" dir="ltr">
         <div className="flex items-center gap-3">
-          <img src={jigsawImg} alt="Jigsaw" className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)] animate-pulse" />
           <h2 className="text-2xl font-semibold text-foreground tracking-tight matrix-title">
             Let's Play A Game<span className="text-primary">...</span>
           </h2>
+          <motion.img
+            src={jigsawImg}
+            alt="Jigsaw"
+            className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)]"
+            animate={{ rotate: [0, -15, 15, -10, 0], scale: [1, 1.1, 1, 1.05, 1] }}
+            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
+          />
         </div>
-        <button
-          onClick={resetAllData}
-          className="group deep-tile text-muted-foreground hover:text-destructive text-sm px-4 py-2.5 transition-all flex items-center gap-2"
-        >
-          <RotateCcw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
-          אפס היסטוריה
-        </button>
       </header>
 
       {/* ═══ FOCUS SESSIONS — 3 large cards ═══ */}
@@ -518,31 +533,14 @@ export default function HomeView() {
         </AnimatePresence>
       </TooltipProvider>
 
-      {/* ═══ DAILY REPORT + DB STATUS ═══ */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <button
-          onClick={() => setReportOpen(true)}
-          className="deep-tile w-full px-6 py-3 flex items-center justify-center gap-2 text-sm font-semibold text-primary"
-        >
-          <ClipboardList className="w-5 h-5" />
-          דו״ח יומי
-        </button>
-
-        <div className="grid grid-cols-3 gap-3">
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold matrix-text">{data.length}</div>
-            <div className="text-[9px] text-muted-foreground font-medium mt-0.5">סה"כ שאלות</div>
-          </div>
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold text-success matrix-text">{withExp}</div>
-            <div className="text-[9px] text-success/70 font-medium mt-0.5">כוללות הסבר</div>
-          </div>
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold text-warning matrix-text">{withoutExp}</div>
-            <div className="text-[9px] text-warning/70 font-medium mt-0.5">ללא הסבר</div>
-          </div>
-        </div>
-      </div>
+      {/* ═══ DAILY REPORT ═══ */}
+      <button
+        onClick={() => setReportOpen(true)}
+        className="deep-tile w-full px-6 py-3 flex items-center justify-center gap-2 text-sm font-semibold text-primary"
+      >
+        <ClipboardList className="w-5 h-5" />
+        דו״ח יומי
+      </button>
 
       <DailyReportModal open={reportOpen} onClose={() => setReportOpen(false)} />
     </div>

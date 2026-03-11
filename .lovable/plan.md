@@ -1,31 +1,62 @@
 
 
-# שיפורי עיצוב — מסך ראשי (v2.1)
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-## סיכום 5 השינויים
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
-### 1. DB Status (סה"כ שאלות / כוללות הסבר / ללא הסבר) — העברה מתחת לסטטיסטיקות
-כרגע ה-3 כרטיסים (שורות 531-544) נמצאים בתחתית ליד Daily Report. הם יעברו להיות שורה נוספת מתחת ל-`HomeStatsSummary`, ממלאים את כל הרוחב כ-3 כרטיסים אופקיים בגודל שווה (כמו בתמונת הרפרנס).
+## Part A -- Daily Volume Bars
 
-### 2. Header — מרכוז + כיוון LTR + אנימציה למסור
-הכותרת "Let's Play A Game..." עם אייקון המסור תעבור למרכז, בכיוון LTR (כמו בתמונה — `...Let's Play A Game` עם האייקון בצד ימין). האייקון יקבל אנימציית `framer-motion` מיוחדת — סיבוב + נדנוד עדין (rotate + wobble) במקום ה-`animate-pulse` הגנרי הנוכחי.
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-### 3. הקטנת מלבן "נושאים להתמקד בהם"
-`HomeTopicHeatmap` — הקטנת ה-col-span מ-7 ל-5, והפחתת ה-padding. הסטטיסטיקות יקבלו יותר מקום (col-span-7 במקום 5).
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-### 4. הקטנת גובה השעון
-`MatrixCountdown` — הפחתת padding פנימי (`py-4 sm:py-7` → `py-2 sm:py-4`), הקטנת gap בין אלמנטים, כדי שהשעון יתפוס פחות גובה מבלי לפגוע בקריאות.
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
+```
 
-### 5. הסרת "אפס היסטוריה" מהמסך הראשי
-כפתור `resetAllData` יוסר מ-HomeView לגמרי. הפונקציונליות כבר זמינה דרך מקומות אחרים (הגדרות / admin), ואם לא — ניתן להוסיף אותו ל-TopNav dropdown בעתיד.
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-## קבצים
+## Part B -- Daily Performance Report
 
-| קובץ | שינוי |
-|---|---|
-| `src/components/views/HomeView.tsx` | העברת DB status, מרכוז header, אנימציית מסור, הסרת reset button |
-| `src/components/MatrixCountdown.tsx` | הקטנת padding/gaps |
-| `src/components/stats/HomeTopicHeatmap.tsx` | הקטנת padding |
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-אין שינויים ב-DB או בלוגיקה.
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
+
+## Files to Modify
+
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+
+No database changes required.
 
