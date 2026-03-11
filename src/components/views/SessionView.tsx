@@ -7,6 +7,7 @@ import ReactMarkdown from 'react-markdown';
 import {
   X, Flag, Star, ChevronRight, ChevronLeft, SkipForward, BookOpen,
   StickyNote, Tag, Plus, ExternalLink, Copy, Send, Calculator, Pencil, Check,
+  FileText, AlertTriangle, Brain, Lightbulb, Target, Zap, Image as ImageIcon,
 } from 'lucide-react';
 import FormulaCalculatorPanel from '@/components/FormulaCalculatorPanel';
 import RichTextEditor from '@/components/RichTextEditor';
@@ -66,6 +67,43 @@ function ExplanationRenderer({ text }: { text: string }) {
       {processed}
     </ReactMarkdown>
   );
+}
+
+/** Split explanation text by --- or <hr> into sections with optional titles */
+function splitExplanation(text: string): { title: string | null; content: string }[] {
+  if (!text) return [{ title: null, content: 'אין הסבר' }];
+  
+  // Split by <hr>, <hr/>, <hr />, or --- on its own line
+  const parts = text.split(/(?:<hr\s*\/?>|\n---\n|\n---$|^---\n)/i).map(p => p.trim()).filter(Boolean);
+  
+  if (parts.length <= 1) return [{ title: null, content: text }];
+  
+  return parts.map(part => {
+    // Check if first line looks like a title (short, possibly bold/uppercase)
+    const lines = part.split('\n');
+    const firstLine = lines[0].replace(/<\/?(?:strong|b|em|h[1-6])>/gi, '').trim();
+    
+    // If first line is short and rest has content, treat as title
+    if (firstLine.length < 80 && lines.length > 1) {
+      return {
+        title: firstLine,
+        content: lines.slice(1).join('\n').trim(),
+      };
+    }
+    return { title: null, content: part };
+  });
+}
+
+/** Get icon for section title based on keywords */
+function getSectionIcon(title: string | null) {
+  if (!title) return <Lightbulb className="w-4 h-4" />;
+  const t = title.toUpperCase();
+  if (t.includes('EXECUTIVE') || t.includes('SUMMARY') || t.includes('סיכום')) return <FileText className="w-4 h-4" />;
+  if (t.includes('TRAP') || t.includes('מלכודת') || t.includes('טעות')) return <AlertTriangle className="w-4 h-4" />;
+  if (t.includes('MILLER') || t.includes('DEEP DIVE') || t.includes('העמקה')) return <Brain className="w-4 h-4" />;
+  if (t.includes('TIP') || t.includes('טיפ') || t.includes('CHEAT')) return <Zap className="w-4 h-4" />;
+  if (t.includes('KEY') || t.includes('מפתח') || t.includes('POINT')) return <Target className="w-4 h-4" />;
+  return <Lightbulb className="w-4 h-4" />;
 }
 
 export default function SessionView() {
@@ -154,11 +192,9 @@ export default function SessionView() {
 
   const handleAnswer = (opt: string) => {
     if (isPracticeRevealed || isReviewMode) return;
-    if (isSimulation && savedAns !== null) return; // can change in sim? No, lock it.
+    if (isSimulation && savedAns !== null) return;
     setAnswer(index, opt);
-    // For simulation/exam, don't reveal or update history yet
     if (isSimulation || isExam) return;
-    // For practice, wait for confidence before updating history
   };
 
   const handleConfidenceSelect = (level: ConfidenceLevel) => {
@@ -235,7 +271,6 @@ export default function SessionView() {
     setTagInput('');
   };
 
-
   const formatTime = (s: number) =>
     `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
 
@@ -247,11 +282,11 @@ export default function SessionView() {
   };
 
   const getOptionClasses = (opt: string) => {
-    let base = 'w-full text-right p-5 rounded-2xl border transition relative flex items-center group ';
+    let base = 'w-full text-right p-5 rounded-xl border transition relative flex items-center group backdrop-blur-sm ';
 
     if (isSimulation) {
       if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]';
-      return base + 'bg-card border-border hover:border-primary/30 hover:shadow-sm';
+      return base + 'bg-white/[0.03] border-border hover:border-primary/30 hover:bg-white/[0.06]';
     }
 
     if (isReviewMode) {
@@ -267,84 +302,96 @@ export default function SessionView() {
     }
 
     if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]';
-    return base + 'bg-card border-border hover:border-primary/30 hover:shadow-sm';
+    return base + 'bg-white/[0.03] border-border hover:border-primary/30 hover:bg-white/[0.06]';
   };
+
+  const progressPercent = ((index + 1) / quiz.length) * 100;
+
+  // Split explanation sections
+  const explanationSections = splitExplanation(qData[KEYS.EXPLANATION] || '');
 
   return (
     <div className="w-full pb-24" ref={mainRef} style={{ minHeight: '60vh' }}>
-      {/* Top Bar */}
-      <div className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-3">
-          <span className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
-            isSimulation ? 'bg-primary/10 text-primary border-primary/20' :
-            mode === 'practice' ? 'bg-primary/10 text-primary border-primary/20' :
-            isExam ? 'bg-primary/10 text-primary border-primary/20' :
-            'bg-warning/10 text-warning border-warning/20'
-          }`}>
-            {isSimulation ? 'סימולציה' : mode === 'practice' ? 'תרגול' : isExam ? 'בחינה' : 'תחקור'}
-          </span>
-          {isSimulation && (
-            <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg border ${
-              simTimerSeconds < 600 ? 'bg-destructive/10 text-destructive border-destructive/20 animate-pulse' : 'bg-card text-success border-border'
-            }`}>
-              ⏱ {formatCountdown(simTimerSeconds)}
-            </span>
-          )}
-          {isExam && (
-            <span className="bg-card text-success text-xs font-mono font-bold px-3 py-1.5 rounded-lg border border-border">
-              {formatTime(timerSeconds)}
-            </span>
-          )}
-          {(isExam || isSimulation) && (
-            <button
-              onClick={() => toggleFlag(index)}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition border shadow-sm ${
-                flagged.has(index) ? 'bg-warning/10 text-warning border-warning/30' : 'bg-card text-muted-foreground border-border hover:text-warning'
-              }`}
-            >
-              <Flag className="w-3 h-3" />
-            </button>
-          )}
-        </div>
-        <span className="text-muted-foreground text-sm font-medium bg-card px-3 py-1 rounded-lg border border-border matrix-text">
-          שאלה {index + 1} מתוך {quiz.length}
-        </span>
-        <button onClick={handleExit} className="text-muted-foreground hover:text-destructive text-sm font-medium px-3 py-1 rounded-lg hover:bg-destructive/10 transition">
-          <X className="w-4 h-4 inline ml-1" /> צא
-        </button>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="w-full bg-muted h-2.5 rounded-full mb-8 overflow-hidden">
-        <motion.div
-          className="bg-primary h-full rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]"
-          layout
-          style={{ width: `${((index + 1) / quiz.length) * 100}%` }}
-          transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-        />
-      </div>
-
-      {/* Question Card */}
-      <div className="deep-tile overflow-hidden relative card-accent-top">
-        {/* Meta bar */}
-        <div className="bg-muted/50 px-8 py-4 border-b border-border flex flex-wrap gap-4 text-xs text-muted-foreground font-medium justify-between items-center">
-          <div className="flex flex-wrap gap-4 items-center">
-            <span className="text-foreground font-bold bidi-text">
-              שאלה {questionId} (מספר סידורי: {serialNumber})
-            </span>
-            <span className="flex items-center gap-1.5">📁 <span className="text-foreground">{qData[KEYS.TOPIC]}</span></span>
-            <span className="flex items-center gap-1.5">📅 <span className="text-foreground">{qData[KEYS.YEAR]}</span></span>
-            {qData[KEYS.SOURCE] && qData[KEYS.SOURCE] !== 'N/A' && (
-              <span className="flex items-center gap-1.5">🏛 <span className="text-foreground">{qData[KEYS.SOURCE]}</span></span>
-            )}
-            {qData[KEYS.CHAPTER] ? (
-              <span className="flex items-center gap-1.5">📖 <span className="text-foreground">{getChapterDisplay(qData[KEYS.CHAPTER])}</span></span>
-            ) : null}
-          </div>
+      {/* ── Unified Top Bar: Progress + Counter + Timer ── */}
+      <div className="glass-card rounded-xl p-4 mb-6">
+        <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
+            <span className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
+              isSimulation ? 'bg-primary/10 text-primary border-primary/20' :
+              mode === 'practice' ? 'bg-primary/10 text-primary border-primary/20' :
+              isExam ? 'bg-primary/10 text-primary border-primary/20' :
+              'bg-warning/10 text-warning border-warning/20'
+            }`}>
+              {isSimulation ? 'סימולציה' : mode === 'practice' ? 'תרגול' : isExam ? 'בחינה' : 'תחקור'}
+            </span>
+            {(isExam || isSimulation) && (
+              <button
+                onClick={() => toggleFlag(index)}
+                className={`w-8 h-8 rounded-full flex items-center justify-center transition border ${
+                  flagged.has(index) ? 'bg-warning/10 text-warning border-warning/30' : 'bg-card text-muted-foreground border-border hover:text-warning'
+                }`}
+              >
+                <Flag className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+
+          <span className="text-foreground text-sm font-bold matrix-text">
+            {index + 1} / {quiz.length}
+          </span>
+
+          <div className="flex items-center gap-3">
+            {isSimulation && (
+              <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg border ${
+                simTimerSeconds < 600 ? 'bg-destructive/10 text-destructive border-destructive/20 animate-pulse' : 'bg-card text-success border-border'
+              }`}>
+                ⏱ {formatCountdown(simTimerSeconds)}
+              </span>
+            )}
+            {isExam && (
+              <span className="bg-card text-success text-xs font-mono font-bold px-3 py-1.5 rounded-lg border border-border">
+                {formatTime(timerSeconds)}
+              </span>
+            )}
+            <button onClick={handleExit} className="text-muted-foreground hover:text-destructive text-sm font-medium px-2 py-1 rounded-lg hover:bg-destructive/10 transition">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Progress Bar */}
+        <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+          <motion.div
+            className="bg-primary h-full rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]"
+            layout
+            style={{ width: `${progressPercent}%` }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+          />
+        </div>
+      </div>
+
+      {/* ── Question Card ── */}
+      <div className="glass-card rounded-xl overflow-hidden relative">
+        {/* Topic Badge */}
+        <div className="px-8 pt-6 pb-2 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <span className="bg-primary/15 text-primary text-xs font-bold px-4 py-1.5 rounded-full border border-primary/20 uppercase tracking-wide">
+              {qData[KEYS.TOPIC] || 'General'}
+            </span>
+            <span className="text-muted-foreground text-xs font-medium bidi-text">
+              שאלה {questionId} (#{serialNumber})
+            </span>
+            {qData[KEYS.YEAR] && qData[KEYS.YEAR] !== 'N/A' && (
+              <span className="text-muted-foreground text-xs">📅 {qData[KEYS.YEAR]}</span>
+            )}
+            {qData[KEYS.SOURCE] && qData[KEYS.SOURCE] !== 'N/A' && (
+              <span className="text-muted-foreground text-xs">🏛 {qData[KEYS.SOURCE]}</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
             <button
               onClick={() => setCalcOpen(true)}
-              className="text-muted-foreground hover:text-primary transition flex items-center gap-1.5 text-xs font-bold bg-muted px-3 py-1.5 rounded-lg hover:bg-primary/10"
+              className="text-muted-foreground hover:text-primary transition flex items-center gap-1.5 text-xs font-bold bg-muted px-3 py-1.5 rounded-lg hover:bg-primary/10 border border-border"
               title="Formula Calculator"
             >
               <Calculator className="w-3.5 h-3.5" /> Σ
@@ -425,7 +472,7 @@ export default function SessionView() {
               </div>
             ) : (
               <>
-                <div className="text-foreground text-lg leading-relaxed font-medium flex-grow">
+                <div className="text-foreground text-xl md:text-2xl leading-relaxed font-bold flex-grow">
                   <SmartContent text={qData[KEYS.QUESTION]} />
                 </div>
                 {isAdmin && (
@@ -463,9 +510,33 @@ export default function SessionView() {
             </div>
           )}
 
+          {/* Hidden Image Infrastructure — ready for future backend */}
+          {false && (
+            <div className="mb-6 glass-card rounded-xl p-4 border border-border">
+              <div className="flex items-center gap-2 mb-3">
+                <ImageIcon className="w-4 h-4 text-primary" />
+                <span className="text-sm font-bold text-foreground">CRITICAL VISUALS</span>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="bg-muted rounded-lg aspect-video flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 text-center">Image caption 1</p>
+                </div>
+                <div>
+                  <div className="bg-muted rounded-lg aspect-video flex items-center justify-center">
+                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 text-center">Image caption 2</p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Options */}
           {!editingQuestion && (
-          <div className="space-y-5">
+          <div className="space-y-4">
             {(['A', 'B', 'C', 'D'] as const).map(opt => {
               const text = qData[KEYS[opt]];
               if (!text) return null;
@@ -476,7 +547,7 @@ export default function SessionView() {
                   disabled={isPracticeRevealed || isReviewMode || (isSimulation && savedAns !== null)}
                   className={getOptionClasses(opt)}
                 >
-                  <span className="w-8 h-8 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center ml-3 text-sm group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                  <span className="w-9 h-9 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center ml-4 text-sm group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
                     {opt}
                   </span>
                   <span className="flex-grow text-foreground text-lg font-light leading-snug bidi-text">{text}</span>
@@ -488,29 +559,26 @@ export default function SessionView() {
           </div>
           )}
 
-          {/* Confidence Tracker - Practice mode only */}
+          {/* Confidence Tracker - Segmented Control */}
           {needsConfidence && (
-            <div className="mt-6 p-6 bg-muted/50 rounded-2xl border border-border">
-              <p className="text-sm font-bold text-foreground mb-4 text-center">עד כמה אתה בטוח בתשובה?</p>
-              <div className="flex gap-3 justify-center">
-                <button
-                  onClick={() => handleConfidenceSelect('confident')}
-                  className="px-6 py-3 rounded-xl text-sm font-bold bg-success/15 text-success border border-success/30 hover:bg-success/25 transition"
-                >
-                  ✅ בטוח
-                </button>
-                <button
-                  onClick={() => handleConfidenceSelect('hesitant')}
-                  className="px-6 py-3 rounded-xl text-sm font-bold bg-warning/15 text-warning border border-warning/30 hover:bg-warning/25 transition"
-                >
-                  🤔 מתלבט
-                </button>
-                <button
-                  onClick={() => handleConfidenceSelect('guessed')}
-                  className="px-6 py-3 rounded-xl text-sm font-bold bg-destructive/15 text-destructive border border-destructive/30 hover:bg-destructive/25 transition"
-                >
-                  🎲 ניחוש
-                </button>
+            <div className="mt-8">
+              <p className="text-sm font-bold text-muted-foreground mb-3 text-center">עד כמה אתה בטוח בתשובה?</p>
+              <div className="flex rounded-xl overflow-hidden border border-border bg-muted/50">
+                {([
+                  { level: 'confident' as ConfidenceLevel, label: 'בטוח', color: 'bg-success/20 text-success border-success/30' },
+                  { level: 'hesitant' as ConfidenceLevel, label: 'מתלבט', color: 'bg-warning/20 text-warning border-warning/30' },
+                  { level: 'guessed' as ConfidenceLevel, label: 'ניחוש', color: 'bg-destructive/20 text-destructive border-destructive/30' },
+                ] as const).map(({ level, label, color }, i) => (
+                  <button
+                    key={level}
+                    onClick={() => handleConfidenceSelect(level)}
+                    className={`flex-1 py-3.5 text-sm font-bold transition-all ${
+                      i < 2 ? 'border-l border-border' : ''
+                    } hover:${color} text-muted-foreground hover:text-foreground`}
+                  >
+                    {label}
+                  </button>
+                ))}
               </div>
             </div>
           )}
@@ -584,9 +652,9 @@ export default function SessionView() {
           )}
         </div>
 
-        {/* Feedback - NOT shown in simulation mode */}
+        {/* ── Feedback Section — Split Explanation Cards ── */}
         {showFeedback && (
-          <div className="bg-muted/30 border-t border-border p-5 md:p-10 space-y-6">
+          <div className="border-t border-border p-5 md:p-10 space-y-6 bg-muted/20">
             {/* (1) Correct/Wrong indicator + admin edit correct answer */}
             <div className="font-bold text-lg flex items-center gap-2 flex-wrap">
               {savedAns === correctAns ? (
@@ -686,62 +754,99 @@ export default function SessionView() {
 
             <div className="border-t border-border" />
 
-            {/* (2) Explanation text */}
-            <div className="bg-card p-6 rounded-2xl border border-border text-foreground shadow-sm font-light">
-              <strong className="block text-foreground mb-3 font-medium flex items-center gap-2 text-sm">
-                💡 הסבר:
-                {isAdmin && !editingExplanation && (
+            {/* (2) Explanation — split into cards */}
+            {editingExplanation ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <strong className="text-sm font-medium text-foreground flex items-center gap-2">
+                    💡 עריכת הסבר:
+                  </strong>
+                  <button
+                    onClick={() => {
+                      if (!explanationDraft.includes('<hr>') && !explanationDraft.includes('---')) {
+                        setExplanationDraft(prev => prev + '\n<hr>\n');
+                        toast({ title: 'הוסף separator', description: 'נוסף מפריד — טקסט מעליו ומתחתיו יוצגו בכרטיסים נפרדים' });
+                      }
+                    }}
+                    className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition border border-primary/20"
+                  >
+                    ✂️ פצל לחלונות
+                  </button>
+                </div>
+                <RichTextEditor
+                  content={explanationDraft}
+                  onChange={setExplanationDraft}
+                  minHeight="120px"
+                />
+                <div className="flex gap-2 justify-end">
+                  <button
+                    onClick={() => setEditingExplanation(false)}
+                    className="px-4 py-2 text-xs font-bold text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/80 transition"
+                  >
+                    ביטול
+                  </button>
+                  <button
+                    disabled={savingExplanation}
+                    onClick={async () => {
+                      setSavingExplanation(true);
+                      const { error } = await supabase
+                        .from('questions')
+                        .update({ explanation: explanationDraft, manually_edited: true })
+                        .eq('id', serialNumber);
+                      setSavingExplanation(false);
+                      if (error) {
+                        toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
+                      } else {
+                        qData[KEYS.EXPLANATION] = explanationDraft;
+                        invalidateQuestions();
+                        setEditingExplanation(false);
+                        toast({ title: 'ההסבר עודכן ✅' });
+                      }
+                    }}
+                    className="px-4 py-2 text-xs font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition disabled:opacity-50"
+                  >
+                    {savingExplanation ? '...' : 'שמור'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {explanationSections.map((section, i) => (
+                  <div key={i} className="glass-card rounded-xl p-6 border border-border">
+                    {section.title ? (
+                      <div className="flex items-center gap-2 mb-3 text-primary">
+                        {getSectionIcon(section.title)}
+                        <h4 className="font-bold text-sm uppercase tracking-wide">{section.title}</h4>
+                      </div>
+                    ) : explanationSections.length === 1 ? (
+                      <div className="flex items-center gap-2 mb-3">
+                        <Lightbulb className="w-4 h-4 text-primary" />
+                        <strong className="text-sm font-medium text-foreground">הסבר:</strong>
+                        {isAdmin && (
+                          <button
+                            onClick={() => { setExplanationDraft(qData[KEYS.EXPLANATION] || ''); setEditingExplanation(true); }}
+                            className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
+                            title="ערוך הסבר"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    ) : null}
+                    <SmartContent text={section.content} />
+                  </div>
+                ))}
+                {/* Admin edit button when multiple sections */}
+                {explanationSections.length > 1 && isAdmin && (
                   <button
                     onClick={() => { setExplanationDraft(qData[KEYS.EXPLANATION] || ''); setEditingExplanation(true); }}
-                    className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
-                    title="ערוך הסבר"
+                    className="text-xs font-bold text-primary flex items-center gap-1.5 hover:underline"
                   >
-                    <Pencil className="w-3.5 h-3.5" />
+                    <Pencil className="w-3 h-3" /> ערוך הסבר
                   </button>
                 )}
-              </strong>
-              {editingExplanation ? (
-                <div className="space-y-3">
-                  <RichTextEditor
-                    content={explanationDraft}
-                    onChange={setExplanationDraft}
-                    minHeight="120px"
-                  />
-                  <div className="flex gap-2 justify-end">
-                    <button
-                      onClick={() => setEditingExplanation(false)}
-                      className="px-4 py-2 text-xs font-bold text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/80 transition"
-                    >
-                      ביטול
-                    </button>
-                    <button
-                      disabled={savingExplanation}
-                      onClick={async () => {
-                        setSavingExplanation(true);
-                        const { error } = await supabase
-                          .from('questions')
-                          .update({ explanation: explanationDraft, manually_edited: true })
-                          .eq('id', serialNumber);
-                        setSavingExplanation(false);
-                        if (error) {
-                          toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
-                        } else {
-                          qData[KEYS.EXPLANATION] = explanationDraft;
-                          invalidateQuestions();
-                          setEditingExplanation(false);
-                          toast({ title: 'ההסבר עודכן ✅' });
-                        }
-                      }}
-                      className="px-4 py-2 text-xs font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition disabled:opacity-50"
-                    >
-                      {savingExplanation ? '...' : 'שמור'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <SmartContent text={qData[KEYS.EXPLANATION] || 'אין הסבר'} />
-              )}
-            </div>
+              </div>
+            )}
 
             <div className="border-t border-border" />
 
@@ -825,19 +930,29 @@ export default function SessionView() {
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="bg-card border-t border-border p-6 flex justify-between items-center sticky bottom-0 z-10 shadow-sm rounded-b-2xl">
+        {/* ── Bottom Navigation ── */}
+        <div className="border-t border-border p-5 flex justify-between items-center sticky bottom-0 z-10 bg-card/80 backdrop-blur-md rounded-b-xl">
           <button
             onClick={handlePrev}
-            className={`text-muted-foreground hover:text-foreground px-4 py-2 font-medium transition flex items-center gap-2 ${index === 0 ? 'invisible' : ''}`}
+            className={`text-muted-foreground hover:text-foreground px-4 py-2.5 font-medium transition flex items-center gap-2 rounded-xl hover:bg-muted ${index === 0 ? 'invisible' : ''}`}
           >
             <ChevronRight className="w-4 h-4" /> הקודם
           </button>
 
           <div className="flex items-center gap-3">
             {!isReviewMode && !isSimulation && (
-              <button onClick={handleSkip} className="text-muted-foreground hover:text-foreground text-xs font-bold px-4 tracking-wider uppercase">
+              <button onClick={handleSkip} className="text-muted-foreground hover:text-foreground text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-muted transition tracking-wider uppercase">
                 דלג <SkipForward className="w-3 h-3 inline mr-1" />
+              </button>
+            )}
+            {mode === 'practice' && !isReviewMode && (
+              <button
+                onClick={() => toggleFlag(index)}
+                className={`px-3 py-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition border ${
+                  flagged.has(index) ? 'bg-warning/10 text-warning border-warning/30' : 'text-muted-foreground border-border hover:text-warning hover:bg-warning/10'
+                }`}
+              >
+                <Flag className="w-3 h-3" /> סמן
               </button>
             )}
             {isSimulation && index === quiz.length - 1 && (
@@ -853,7 +968,7 @@ export default function SessionView() {
           <button
             onClick={handleNext}
             disabled={needsConfidence}
-            className={`bg-primary text-primary-foreground px-8 py-3.5 rounded-xl hover:opacity-90 font-medium shadow-lg transition flex items-center gap-2 text-base ${
+            className={`bg-primary text-primary-foreground px-8 py-3 rounded-xl hover:opacity-90 font-bold shadow-lg transition flex items-center gap-2 text-base ${
               needsConfidence ? 'opacity-50 cursor-not-allowed' : ''
             }`}
           >

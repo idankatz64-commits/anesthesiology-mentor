@@ -1,54 +1,62 @@
 
 
-## תוכנית: עיצוב מחדש של SessionView
+# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
 
-שינוי ויזואלי בלבד + תשתית מוכנה לתמונות (מוסתרת) + מנגנון חלונות הסבר מפוצלים.
+## Overview
+Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
 
----
+## Part A -- Daily Volume Bars
 
-### 1. עיצוב ויזואלי — בהשראת screen-13
+### Approach
+Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
 
-**כותרת/Topic badge**: badge קטן צבעוני (amber/primary) מעל השאלה עם שם הנושא (כמו "OBSTETRIC ANESTHESIA" בתמונה), במקום שורת המטא הנוכחית.
+### Implementation in `VelocityChart` component
+1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
+2. Replace the single `LineChart` with a vertical stack:
+   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
+   - Bottom: new `BarChart` (~100px height) with:
+     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
+     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
+     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
+     - `YAxis` showing question count
+3. Wrap both charts in a flex column container so they align vertically
 
-**טקסט השאלה**: הגדלת הפונט מ-`text-lg` ל-`text-xl md:text-2xl`, `font-bold`, `leading-relaxed` — כמו בתמונה.
+### Data shape (extended)
+Each point in `chartData` will gain:
+```text
+{ date, count, rate, ma7, ma14, volumeMA14 }
+```
 
-**כרטיסי תשובות**: כל תשובה ב-glass-card עם `bg-white/[0.03]` ו-border דק, padding גדול יותר, ללא הרדיוס הגדול הנוכחי (מעבר מ-`rounded-2xl` ל-`rounded-xl`).
+`volumeMA14` = average of `count` over the previous 14 active days.
 
-**Confidence Rating**: עיצוב כ-segmented control אופקי (כמו בתמונה — "Sure | Hesitant | Guess") עם pill פעיל ב-amber, במקום שלושה כפתורים נפרדים.
+## Part B -- Daily Performance Report
 
-**Progress bar**: שורה עליונה עם progress bar + counter ("142/500") + system timer בצד ימין — מאוחד כמו בתמונה.
+### Approach
+Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
 
-**Bottom nav**: כפתורי "Back" (שמאל), "Flag" + "Next Question" (ימין) — עיצוב נקי יותר תואם לתמונה.
+### Implementation
+1. From the `chartData` array, extract:
+   - `todayRate`: accuracy of the last data point (today or most recent day)
+   - `todayCount`: question count of today
+   - `avg7Rate`: average accuracy of last 7 active days
+   - `avg14Rate`: average accuracy of last 14 active days
+   - `avg14Volume`: average count of last 14 active days
+2. Render a styled section:
+   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
+   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
+   - Auto-generated summary text with conditional logic:
+     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
+     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
+     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
+3. Show a condensed version in collapsed view, full version in expanded view
 
-**Feedback section**: הסבר מוצג ב-glass-card אחיד, עם כותרות bold (כמו "EXECUTIVE SUMMARY", "THE TRAP", "MILLER'S DEEP DIVE" בתמונה) — אבל זה יבוא מהמנגנון של חלונות מפוצלים (סעיף 3).
+## Files to Modify
 
----
+| File | Changes |
+|------|---------|
+| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
 
-### 2. תשתית תמונות (מוסתרת)
+No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
 
-- הוספת סקשן "CRITICAL VISUALS" ב-UI עם `{false && (...)}` — הקוד קיים אבל לא מוצג.
-- הסקשן יכלול grid של 2 תמונות עם caption מתחת — מבנה מוכן לכשיחובר ה-backend.
-- לא יופיע למשתמש, לא יהיה כפתור, רק קוד מוכן.
-
----
-
-### 3. חלון הסבר אחד — עם אפשרות פיצול לאדמין
-
-**ברירת מחדל**: ההסבר הנוכחי (`KEYS.EXPLANATION`) מוצג כחלון אחד שלם ב-glass-card.
-
-**לאדמין בעריכה**: כשהאדמין לוחץ "ערוך הסבר", מופיעה אפשרות "פצל לחלונות" — כפתור שמוסיף separator `---` בטקסט. כל חלק מופרד ב-`---` מוצג ככרטיס נפרד עם אפשרות לתת לו כותרת (השורה הראשונה אחרי ה-separator הופכת לכותרת).
-
-**מנגנון**: פונקציית `splitExplanation(text)` שמחלקת את הטקסט לפי `---` או `<hr>`. אם יש רק חלק אחד — חלון אחד. אם יש מספר חלקים — כל אחד מוצג בכרטיס נפרד עם כותרת אם יש (שורה ראשונה בולטת).
-
-**אייקונים לכותרות**: אם הכותרת מכילה מילות מפתח מוכרות (כמו "EXECUTIVE SUMMARY", "THE TRAP", "MILLER") — מוצג אייקון מתאים אוטומטית.
-
----
-
-### קבצים שישתנו
-
-| קובץ | שינוי |
-|---|---|
-| `src/components/views/SessionView.tsx` | עיצוב מחדש מלא + splitExplanation + תשתית תמונות מוסתרת |
-
-כל הלוגיקה הקיימת (handleAnswer, confidence, admin editing, tags, notes, community, timers) נשמרת ללא שינוי.
+No database changes required.
 
