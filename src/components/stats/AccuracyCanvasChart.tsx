@@ -39,10 +39,33 @@ function getThemeColors() {
   };
 }
 
-function getBarColor(acc: number) {
-  if (acc >= 70) return DATA_COLORS.bullish;
-  if (acc >= 50) return DATA_COLORS.neutral;
-  return DATA_COLORS.bearish;
+// S&P 500 style gradient for bar colors (matches Topic Treemap)
+function interpolateColorRgb(c1: [number,number,number], c2: [number,number,number], t: number): [number,number,number] {
+  return [
+    Math.round(c1[0] + (c2[0] - c1[0]) * t),
+    Math.round(c1[1] + (c2[1] - c1[1]) * t),
+    Math.round(c1[2] + (c2[2] - c1[2]) * t),
+  ];
+}
+
+function getBarColor(acc: number): string {
+  const stops: { at: number; rgb: [number,number,number] }[] = [
+    { at: 0,   rgb: [139, 0, 0] },     // #8B0000 deep red
+    { at: 40,  rgb: [204, 0, 0] },     // #CC0000 red
+    { at: 55,  rgb: [74, 74, 74] },    // #4A4A4A neutral
+    { at: 70,  rgb: [46, 125, 50] },   // #2E7D32 green
+    { at: 100, rgb: [0, 200, 83] },    // #00C853 deep green
+  ];
+  const clamped = Math.max(0, Math.min(100, acc));
+  for (let i = 0; i < stops.length - 1; i++) {
+    if (clamped <= stops[i + 1].at) {
+      const t = (clamped - stops[i].at) / (stops[i + 1].at - stops[i].at);
+      const [r, g, b] = interpolateColorRgb(stops[i].rgb, stops[i + 1].rgb, t);
+      return `rgb(${r},${g},${b})`;
+    }
+  }
+  const last = stops[stops.length - 1].rgb;
+  return `rgb(${last[0]},${last[1]},${last[2]})`;
 }
 
 function computeEMA(data: { accuracy: number }[], period: number): (number | null)[] {
@@ -190,7 +213,6 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
     const plotW = w - MARGIN.left - MARGIN.right;
     const plotH = PANEL1_H - MARGIN.top - MARGIN.bottom;
     const slotW = plotW / data.length;
-    const bodyW = Math.max(3, slotW * 0.55);
 
     // Grid lines
     ctx.strokeStyle = theme.gridLine;
@@ -207,56 +229,20 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.fillText(`${pct}%`, MARGIN.left - 4, y + 3);
     }
 
-    // Draw candlesticks: position = accuracy on Y, height = volume
+    // Draw bars: bottom-anchored, height = accuracy, color = S&P gradient
+    const barW = Math.max(2, slotW * 0.5);
     for (let i = 0; i < data.length; i++) {
       const d = data[i];
       if (d.total === 0) continue;
 
-      const centerX = MARGIN.left + (i + 0.5) * slotW;
+      const x = MARGIN.left + i * slotW + (slotW - barW) / 2;
+      const barH = (d.accuracy / 100) * plotH;
+      const y = MARGIN.top + plotH - barH;
       const color = getBarColor(d.accuracy);
       const isHovered = hoverIndex === i;
 
-      // Candle center Y = accuracy position
-      const centerY = MARGIN.top + plotH * (1 - d.accuracy / 100);
-
-      // Body height proportional to volume (scaled so max volume fills ~40% of chart)
-      let volNorm = d.total / maxVol;
-      if (logScale && d.total > 0) volNorm = Math.log(d.total + 1) / Math.log(maxVol + 1);
-      const bodyH = Math.max(4, volNorm * plotH * 0.4);
-
-      const bodyTop = centerY - bodyH / 2;
-      const bodyBottom = centerY + bodyH / 2;
-
-      // Wick (extends 30% beyond body on each side)
-      const wickExtend = bodyH * 0.3;
-      const wickTop = Math.max(MARGIN.top, bodyTop - wickExtend);
-      const wickBottom = Math.min(MARGIN.top + plotH, bodyBottom + wickExtend);
-
-      // Draw wick
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(centerX, wickTop);
-      ctx.lineTo(centerX, wickBottom);
-      ctx.stroke();
-
-      // Draw body
-      ctx.fillStyle = isHovered ? color : hexToRgba(color, 0.85);
-      ctx.fillRect(centerX - bodyW / 2, bodyTop, bodyW, bodyH);
-
-      // Body border
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(centerX - bodyW / 2, bodyTop, bodyW, bodyH);
-
-      // Glow effect on hover
-      if (isHovered) {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = hexToRgba(color, 0.3);
-        ctx.fillRect(centerX - bodyW / 2 - 2, bodyTop - 2, bodyW + 4, bodyH + 4);
-        ctx.shadowBlur = 0;
-      }
+      ctx.fillStyle = isHovered ? color : color.replace('rgb', 'rgba').replace(')', ',0.75)');
+      ctx.fillRect(x, y, barW, barH);
     }
 
     // EMA / average lines
@@ -292,16 +278,6 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.beginPath(); ctx.moveTo(x, MARGIN.top); ctx.lineTo(x, MARGIN.top + plotH); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(MARGIN.left, y); ctx.lineTo(w - MARGIN.right, y); ctx.stroke();
       ctx.setLineDash([]);
-
-      // Price label on Y axis
-      ctx.fillStyle = getBarColor(d.accuracy);
-      const labelW = 42;
-      const labelH = 16;
-      ctx.fillRect(0, y - labelH / 2, MARGIN.left - 2, labelH);
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 9px monospace';
-      ctx.textAlign = 'right';
-      ctx.fillText(`${d.accuracy}%`, MARGIN.left - 5, y + 4);
     }
   }, [data, hoverIndex, maxVol, showEma7, showEma14, showGlobalAvg, logScale, globalAvg, getCanvasWidth, PANEL1_H]);
 
