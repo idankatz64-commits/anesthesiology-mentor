@@ -82,6 +82,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const mainCanvasRef = useRef<HTMLCanvasElement>(null);
   const volCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [rawRows, setRawRows] = useState<{ answered_at: string; is_correct: boolean; topic: string | null }[]>([]);
   const [data, setData] = useState<DayData[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -90,11 +91,14 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const [showEma14, setShowEma14] = useState(true);
   const [showGlobalAvg, setShowGlobalAvg] = useState(true);
   const [logScale, setLogScale] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string>('');
+  const [topicSearchOpen, setTopicSearchOpen] = useState(false);
 
   const PANEL1_H = expanded ? 450 : 340;
   const PANEL2_H = expanded ? 110 : 90;
   const MARGIN = { top: 10, right: 10, bottom: 20, left: 40 };
 
+  // Fetch raw rows once
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -107,40 +111,55 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
       const { data: rows, error } = await supabase
         .from('answer_history')
-        .select('answered_at, is_correct')
+        .select('answered_at, is_correct, topic')
         .eq('user_id', user.id)
         .gte('answered_at', sinceStr)
         .order('answered_at', { ascending: true });
 
       if (cancelled || error || !rows) { setLoading(false); return; }
-
-      const byDate: Record<string, { total: number; correct: number }> = {};
-      for (const r of rows) {
-        const d = r.answered_at.slice(0, 10);
-        if (!byDate[d]) byDate[d] = { total: 0, correct: 0 };
-        byDate[d].total++;
-        if (r.is_correct) byDate[d].correct++;
-      }
-
-      const sorted = Object.entries(byDate)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, v]) => ({
-          date,
-          total: v.total,
-          correct: v.correct,
-          accuracy: Math.round((v.correct / v.total) * 100 * 10) / 10,
-          ema7: null as number | null,
-          ema14: null as number | null,
-        }));
-
-      const ema7 = computeEMA(sorted, 7);
-      const ema14 = computeEMA(sorted, 14);
-      sorted.forEach((d, i) => { d.ema7 = ema7[i]; d.ema14 = ema14[i]; });
-
-      if (!cancelled) { setData(sorted); setLoading(false); }
+      if (!cancelled) { setRawRows(rows); setLoading(false); }
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Available topics
+  const availableTopics = useMemo(() => {
+    const topics = new Set<string>();
+    rawRows.forEach(r => { if (r.topic) topics.add(r.topic); });
+    return Array.from(topics).sort();
+  }, [rawRows]);
+
+  // Process rows into chart data (filtered by topic)
+  useEffect(() => {
+    const filtered = selectedTopic
+      ? rawRows.filter(r => r.topic === selectedTopic)
+      : rawRows;
+
+    const byDate: Record<string, { total: number; correct: number }> = {};
+    for (const r of filtered) {
+      const d = r.answered_at.slice(0, 10);
+      if (!byDate[d]) byDate[d] = { total: 0, correct: 0 };
+      byDate[d].total++;
+      if (r.is_correct) byDate[d].correct++;
+    }
+
+    const sorted = Object.entries(byDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({
+        date,
+        total: v.total,
+        correct: v.correct,
+        accuracy: Math.round((v.correct / v.total) * 100 * 10) / 10,
+        ema7: null as number | null,
+        ema14: null as number | null,
+      }));
+
+    const ema7 = computeEMA(sorted, 7);
+    const ema14 = computeEMA(sorted, 14);
+    sorted.forEach((d, i) => { d.ema7 = ema7[i]; d.ema14 = ema14[i]; });
+
+    setData(sorted);
+  }, [rawRows, selectedTopic]);
 
   const globalAvg = useMemo(() => {
     if (!data.length) return 0;
