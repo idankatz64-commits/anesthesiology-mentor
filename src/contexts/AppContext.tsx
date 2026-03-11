@@ -805,21 +805,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
 
+  /** Invalidate question cache and re-fetch fresh data from DB */
+  const invalidateQuestions = useCallback(async () => {
+    invalidateQuestionsCache();
+    const questions = await fetchQuestions(3, true);
+    setData(questions);
+  }, []);
+
   const triggerSync = useCallback(async () => {
     setSyncStatus('syncing');
     try {
       const result = await syncQuestionsFromSheet();
       setLastSyncTime(result.synced_at);
-      const questions = await fetchQuestions();
-      setData(questions);
+      await invalidateQuestions();
       setSyncStatus('done');
-      return { count: questions.length };
+      return { count: data.length };
     } catch (e) {
       console.error('Manual sync failed:', e);
       setSyncStatus('error');
       return null;
     }
-  }, []);
+  }, [invalidateQuestions, data.length]);
 
   const saveSessionToDb = useCallback(async (timerSeconds?: number, simTimerSeconds?: number) => {
     const userId = userIdRef.current;
