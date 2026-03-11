@@ -229,20 +229,28 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.fillText(`${pct}%`, MARGIN.left - 4, y + 3);
     }
 
-    // Draw bars: bottom-anchored, height = accuracy, color = S&P gradient
-    const barW = Math.max(2, slotW * 0.5);
+    // Draw accuracy as a connected line with dots (like TradingView price line)
+    const accColor = '#42a5f5'; // light blue line
+    ctx.strokeStyle = accColor;
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    let started = false;
+    const accPoints: { x: number; y: number; acc: number }[] = [];
     for (let i = 0; i < data.length; i++) {
       const d = data[i];
       if (d.total === 0) continue;
-
-      const x = MARGIN.left + i * slotW + (slotW - barW) / 2;
-      const barH = (d.accuracy / 100) * plotH;
-      const y = MARGIN.top + plotH - barH;
-      const color = getBarColor(d.accuracy);
-      const isHovered = hoverIndex === i;
-
-      ctx.fillStyle = isHovered ? color : color.replace('rgb', 'rgba').replace(')', ',0.75)');
-      ctx.fillRect(x, y, barW, barH);
+      const x = MARGIN.left + ((i + 0.5) / data.length) * plotW;
+      const y = MARGIN.top + plotH * (1 - d.accuracy / 100);
+      accPoints.push({ x, y, acc: d.accuracy });
+      if (!started) { ctx.moveTo(x, y); started = true; } else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    // Dots on data points
+    for (const pt of accPoints) {
+      ctx.beginPath();
+      ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = accColor;
+      ctx.fill();
     }
 
     // EMA / average lines
