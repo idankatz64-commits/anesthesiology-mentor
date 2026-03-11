@@ -162,6 +162,13 @@ export default function StatsView() {
                 className={`text-3xl font-black ${k.color}`}
                 style={{ fontFamily: "'Share Tech Mono', monospace" }}
               />
+              {k.change !== null && k.change !== undefined && (
+                <div className={`flex items-center justify-center gap-0.5 mt-0.5 text-[10px] font-bold ${k.change >= 0 ? 'text-green-500' : 'text-destructive'}`}>
+                  {k.change >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+                  <span>{k.change > 0 ? '+' : ''}{k.change}{k.changeSuffix || ''}</span>
+                  <span className="text-muted-foreground font-normal mr-0.5">מאתמול</span>
+                </div>
+              )}
             </div>
           ))}
         </motion.div>

@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useApp } from '@/contexts/AppContext';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+
+function toIsraelDateStr(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+}
 
 interface DailyData {
   questionsToday: number;
@@ -12,6 +17,7 @@ interface DailyData {
 }
 
 export default function DailyReportTile() {
+  const { progress } = useApp();
   const [data, setData] = useState<DailyData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -20,20 +26,21 @@ export default function DailyReportTile() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
-      const todayISO = todayStart.toISOString();
+      // Use Israel timezone for "today" boundaries
+      const now = new Date();
+      const todayStr = toIsraelDateStr(now);
+      const todayISO = todayStr + 'T00:00:00+03:00'; // Israel timezone offset
 
-      const tomorrow = new Date(todayStart);
-      tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-      const tomorrowDate = tomorrow.toISOString().split('T')[0];
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const tomorrowDate = toIsraelDateStr(tomorrow);
 
       const [answersRes, srsRes] = await Promise.all([
         supabase
-          .from('user_answers')
-          .select('correct_count, answered_count, topic')
+          .from('answer_history')
+          .select('is_correct, topic')
           .eq('user_id', user.id)
-          .gte('updated_at', todayISO),
+          .gte('answered_at', todayISO),
         supabase
           .from('spaced_repetition')
           .select('id', { count: 'exact', head: true })
@@ -42,12 +49,12 @@ export default function DailyReportTile() {
       ]);
 
       const rows = answersRes.data || [];
-      const totalCorrect = rows.reduce((s, r) => s + (r.correct_count || 0), 0);
-      const totalAnswered = rows.reduce((s, r) => s + (r.answered_count || 0), 0);
+      const totalCorrect = rows.filter(r => r.is_correct).length;
+      const totalAnswered = rows.length;
       const topics = new Set(rows.map(r => r.topic).filter(Boolean));
 
       setData({
-        questionsToday: rows.length,
+        questionsToday: totalAnswered,
         accuracy: totalAnswered > 0 ? Math.round(totalCorrect / totalAnswered * 100) : 0,
         distinctTopics: topics.size,
         srsTomorrow: srsRes.count ?? 0,
@@ -55,7 +62,7 @@ export default function DailyReportTile() {
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [progress]);
 
   if (loading) {
     return <Skeleton className="h-16 rounded-xl" />;
