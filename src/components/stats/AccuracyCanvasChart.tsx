@@ -576,6 +576,10 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
 }
 
 export default function AccuracyCanvasChart() {
+  const { progress } = useApp();
+  // Use history length as refresh key so chart re-fetches after new answers
+  const refreshKey = useMemo(() => Object.keys(progress.history || {}).length, [progress.history]);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -583,8 +587,8 @@ export default function AccuracyCanvasChart() {
       transition={{ duration: 0.4, ease: [0, 0, 0.2, 1] }}
     >
       <AnimatedStatsTile
-        collapsed={<ChartContent />}
-        expanded={<ChartContent expanded />}
+        collapsed={<ChartContent refreshKey={refreshKey} />}
+        expanded={<ChartContent expanded refreshKey={refreshKey} />}
         expandedClassName="max-w-[95vw] max-h-[95vh] w-full"
       />
     </motion.div>
