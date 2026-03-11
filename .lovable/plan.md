@@ -1,62 +1,86 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## תוכנית עיצוב מחדש למסך הסטטיסטיקה
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+### מצב נוכחי
+מסך הסטטיסטיקה (`StatsView`) מכיל הרבה מידע אבל עם רווחים מיותרים, חלונות גדולים מדי, ופריסה לא אופטימלית. הלייאאוט הנוכחי הוא בעיקר עמודה אחת עם `space-y-5`.
 
-## Part A -- Daily Volume Bars
+### כיוון עיצובי — בהשראת התמונה המצורפת
+הלייאאוט בתמונה מציג:
+1. **שורת KPI קומפקטית** (4 כרטיסים) — מספרים גדולים + תוויות + שינוי באחוזים
+2. **שורה מפוצלת 2:1** — Heatmap גדול משמאל + Strengths/Weaknesses מימין
+3. **גרף ביצועים** ברוחב מלא (TradingView style)
+4. **Daily Summary** ברוחב מלא
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+### מה ישתנה
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+**1. שורת KPI עליונה (4 כרטיסים ב-row)**
+- ימזג את DailyReportTile + קטע ה-Question Bank Status לשורה אחת קומפקטית של 4 כרטיסים בסגנון glass:
+  - שאלות היום | דיוק יומי | טעויות מצטברות | כיסוי מאגר
+- כל כרטיס: תווית קטנה למעלה, מספר גדול, שינוי באחוזים (ירוק/אדום)
+- גובה קבוע ~120px, ללא שטח מיותר
 
-### Data shape (extended)
-Each point in `chartData` will gain:
+**2. שורה מפוצלת — Topic Treemap (2/3) + Strengths & Weaknesses (1/3)**
+- Topic Treemap ייקח `lg:col-span-2` בתוך `grid-cols-3`
+- חלון חדש **"חוזקות וחולשות"** ייקח `lg:col-span-1`:
+  - TOP PERFORMANCE: 2 נושאים חזקים + progress bars ירוקים
+  - ACTION REQUIRED: 2 נושאים חלשים + progress bars אדומים
+  - נגזר מ-`stats.topicData` (מיון לפי accuracy)
+- לחיצה על חלון פותחת את הפירוט המלא (WeakZoneMap + Forgetting Risk)
+
+**3. גרף AccuracyCanvasChart — ברוחב מלא, ללא שינוי**
+- כבר קיים ועובד טוב, רק יעבור מ-AnimatedStatsTile wrapper רגיל
+
+**4. שורת Personal Stats קומפקטית**
+- 6 הנתונים האישיים (שאלות שבוצעו, ייחודיות, טעויות, מתוקנות, לא תוקנו, טעויות חוזרות) יצומצמו ל-**שורה אחת של 6 כרטיסים קטנים** במקום grid של 3x2
+- גובה מינימלי, פונט קטן יותר
+
+**5. שילוב ERI + Gauges**
+- ERI tile + Gauge tile ימוזגו לכרטיס אחד קומפקטי יותר, מתחת ל-Personal Stats
+- הטבעת במקום טבעת ענקית בגודל 240px → 140px
+- Satellites (דיוק/כיסוי/רצף) ישארו כפילים קטנים
+
+**6. Topic Performance Table + Import/Export**
+- טבלת נושאים — נשארת כמו שהיא
+- Import/Export — נשאר למטה, קומפקטי
+
+**7. Daily Summary Report**
+- יוצג בתחתית כמו בתמונה, עם border-left ירוק ואייקון
+
+### סיכום פריסה חדשה
 ```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
+┌─────────────────────────────────────────────────┐
+│  KPI: שאלות היום | דיוק | טעויות | כיסוי       │  ← 4 כרטיסים בשורה
+├──────────────────────────┬──────────────────────┤
+│  Topic Treemap (2/3)     │ חוזקות/חולשות (1/3)  │  ← grid 3 cols
+├──────────────────────────┴──────────────────────┤
+│  Technical Performance Analysis (chart)          │  ← full width
+├─────────────────────────────────────────────────┤
+│  Personal Stats: 6 מדדים בשורה אחת              │  ← compact row
+├──────────────────────────┬──────────────────────┤
+│  ERI + Gauges (compact)  │ Forgetting Risk      │  ← grid 2 cols
+├──────────────────────────┴──────────────────────┤
+│  Topic Performance Table                         │  ← full width
+├─────────────────────────────────────────────────┤
+│  Daily Summary Report                            │  ← full width, green border
+├─────────────────────────────────────────────────┤
+│  Import/Export                                   │  ← compact
+└─────────────────────────────────────────────────┘
 ```
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+### שינויים בסגנון
+- כל הכרטיסים ישתמשו ב-`glass-tile` (כמו HomeView) במקום `deep-tile`
+- צבעים: Amber Gold primary, Green success, Red destructive — בדיוק כמו ב-Home
+- `gap-4` בין שורות (במקום `space-y-5`)
+- ללא header נפרד "דשבורד ביצועים" — הכותרת תהיה חלק מה-TopNav
 
-## Part B -- Daily Performance Report
+### קבצים שישתנו
+1. **`src/components/views/StatsView.tsx`** — שינוי מבני מלא של הלייאאוט
+2. **`src/components/stats/ERITile.tsx`** — הקטנת הטבעת ל-140px, קומפקטי יותר
+3. **יצירת `src/components/stats/StrengthsWeaknessesTile.tsx`** — כרטיס חדש לחוזקות/חולשות
+4. **`src/components/stats/DailyReportTile.tsx`** — עיצוב מחדש לסגנון Daily Summary עם border-left
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
-
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
+### הצעות לאלמנטים חדשים
+- **כרטיס "חוזקות וחולשות"** — ויזואליזציה ברורה של 2 נושאים חזקים + 2 חלשים עם progress bars
+- **שינוי % יומי** על כל KPI card (כמו בתמונה: +12%, -0.8%) — השוואה לממוצע
 
