@@ -323,6 +323,7 @@ export default function QuestionEditorTab() {
 
       if (error) throw error;
       toast.success('השאלה עודכנה בהצלחה');
+      invalidateQuestions();
 
       // Fire-and-forget edit log
       if (editForm && editQuestion) {
