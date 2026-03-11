@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown, Swords } from 'lucide-react';
+import { Brain, Dumbbell, RotateCcw, Star, StickyNote, FileCheck, CalendarClock, Layers, Play, X, AlertTriangle, ClipboardList, Info, ChevronDown } from 'lucide-react';
+import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
