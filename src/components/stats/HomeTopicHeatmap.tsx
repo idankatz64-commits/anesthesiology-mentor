@@ -64,7 +64,7 @@ export default function HomeTopicHeatmap() {
       <h3 className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em] mb-3">
         נושאים להתמקד בהם
       </h3>
-      <div className="grid grid-cols-1 gap-2">
+      <div className="grid grid-cols-1 gap-1.5">
         {weakTopics.map((t, i) => (
           <motion.div
             key={t.topic}
