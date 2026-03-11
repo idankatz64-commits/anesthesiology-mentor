@@ -108,6 +108,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [rawRows, setRawRows] = useState<{ answered_at: string; is_correct: boolean; topic: string | null }[]>([]);
   const [data, setData] = useState<DayData[]>([]);
+  const [groupDailyAvg, setGroupDailyAvg] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
