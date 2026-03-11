@@ -230,56 +230,20 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
       ctx.fillText(`${pct}%`, MARGIN.left - 4, y + 3);
     }
 
-    // Draw candlesticks: position = accuracy on Y, height = volume
+    // Draw bars: bottom-anchored, height = accuracy, color = S&P gradient
+    const barW = Math.max(2, slotW * 0.5);
     for (let i = 0; i < data.length; i++) {
       const d = data[i];
       if (d.total === 0) continue;
 
-      const centerX = MARGIN.left + (i + 0.5) * slotW;
+      const x = MARGIN.left + i * slotW + (slotW - barW) / 2;
+      const barH = (d.accuracy / 100) * plotH;
+      const y = MARGIN.top + plotH - barH;
       const color = getBarColor(d.accuracy);
       const isHovered = hoverIndex === i;
 
-      // Candle center Y = accuracy position
-      const centerY = MARGIN.top + plotH * (1 - d.accuracy / 100);
-
-      // Body height proportional to volume (scaled so max volume fills ~40% of chart)
-      let volNorm = d.total / maxVol;
-      if (logScale && d.total > 0) volNorm = Math.log(d.total + 1) / Math.log(maxVol + 1);
-      const bodyH = Math.max(4, volNorm * plotH * 0.4);
-
-      const bodyTop = centerY - bodyH / 2;
-      const bodyBottom = centerY + bodyH / 2;
-
-      // Wick (extends 30% beyond body on each side)
-      const wickExtend = bodyH * 0.3;
-      const wickTop = Math.max(MARGIN.top, bodyTop - wickExtend);
-      const wickBottom = Math.min(MARGIN.top + plotH, bodyBottom + wickExtend);
-
-      // Draw wick
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(centerX, wickTop);
-      ctx.lineTo(centerX, wickBottom);
-      ctx.stroke();
-
-      // Draw body
-      ctx.fillStyle = isHovered ? color : hexToRgba(color, 0.85);
-      ctx.fillRect(centerX - bodyW / 2, bodyTop, bodyW, bodyH);
-
-      // Body border
-      ctx.strokeStyle = color;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(centerX - bodyW / 2, bodyTop, bodyW, bodyH);
-
-      // Glow effect on hover
-      if (isHovered) {
-        ctx.shadowColor = color;
-        ctx.shadowBlur = 8;
-        ctx.fillStyle = hexToRgba(color, 0.3);
-        ctx.fillRect(centerX - bodyW / 2 - 2, bodyTop - 2, bodyW + 4, bodyH + 4);
-        ctx.shadowBlur = 0;
-      }
+      ctx.fillStyle = isHovered ? color : color.replace('rgb', 'rgba').replace(')', ',0.75)');
+      ctx.fillRect(x, y, barW, barH);
     }
 
     // EMA / average lines
