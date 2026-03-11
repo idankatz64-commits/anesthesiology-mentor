@@ -18,8 +18,8 @@ interface ERITileProps {
 
 const spring = { type: 'spring' as const, stiffness: 300, damping: 30 };
 
-function ERIRing({ value, size = 240 }: {value: number;size?: number;}) {
-  const strokeWidth = 12;
+function ERIRing({ value, size = 140 }: {value: number;size?: number;}) {
+  const strokeWidth = 10;
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - value / 100 * circumference;
@@ -36,7 +36,7 @@ function ERIRing({ value, size = 240 }: {value: number;size?: number;}) {
 
       </svg>
       <div className="absolute flex flex-col items-center">
-        <span className="text-5xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
+        <span className="text-3xl font-black text-foreground" style={{ fontFamily: "'Share Tech Mono', monospace" }}>{value}%</span>
         <span className="text-xs text-muted-foreground font-medium mt-1">{getLabel(value)}</span>
       </div>
     </div>);
@@ -84,11 +84,11 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className="deep-tile rounded-xl cursor-pointer h-full">
+        className="deep-tile rounded-xl cursor-pointer h-full p-0">
 
-        <div className="flex flex-col items-center py-6 px-4">
-          <ERIRing value={value} size={240} />
-          <p className="mt-2 font-mono font-bold text-xl text-primary">מדד מוכנות למבחן</p>
+        <div className="flex flex-col items-center py-4 px-3">
+          <ERIRing value={value} size={140} />
+          <p className="mt-1 font-mono font-bold text-sm text-primary">מדד מוכנות למבחן</p>
 
           {/* Satellite pills */}
           <div className="flex items-center gap-4 mt-4">
