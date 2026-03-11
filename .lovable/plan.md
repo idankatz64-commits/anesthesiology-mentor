@@ -1,62 +1,44 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## Plan: Home Layout, Countdown Light Mode, Header & Quotes
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+### 5 Changes
 
-## Part A -- Daily Volume Bars
+**1. Reorganize home grid layout**
+Current: 3×3 grid (8 cards) → Daily Report → Algorithm Explainer → DB Status
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+New layout:
+- Row 1 (3 cols): Smart Practice, Simulation, Spaced Repetition
+- Row 2 (3 cols): Flashcards, Custom Practice, Mistakes
+- Row 3 (3 cols): Favorites, Notebook, **Algorithm Explainer** (same size as other cards, collapsible content opens below grid)
+- Below grid: Daily Report (slim bar) → DB Status (slim bar)
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+The Algorithm Explainer card moves into the grid at bottom-left (RTL = left visually). When clicked, the expanded content renders below the entire grid as a full-width panel.
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
+**2. Fix countdown light mode — blue futuristic theme**
+In `MatrixCountdown.tsx`, detect light mode via `document.documentElement.classList`. In light mode:
+- Matrix rain: change `hsl(120 100% 50%)` (green) to `hsl(220 80% 60%)` (futuristic blue `#4477ff`)
+- Canvas fade: `rgba(245,245,250,0.06)` instead of dark
+- Digit color: `#2563eb` with blue glow instead of green
+- Colon separator: blue tint
+- Bottom glow line: blue gradient
+- LED dots: blue instead of green
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+**3. Fix countdown canvas filling entire tile**
+The canvas currently uses `absolute inset-0` but the container may have padding causing visual mismatch. Set `overflow-hidden rounded-2xl` on the container and ensure the canvas covers the full area. Also set the initial canvas fill color to match the container background (transparent/themed instead of hardcoded dark).
 
-## Part B -- Daily Performance Report
+**4. Replace header text**
+- Remove "שלום, ד"ר מתמחה 👋" and "מוכן להמשיך בהכנות למבחן שלב א'?"
+- Replace with: `Let's Play A Game...` with a `Puzzle` (jigsaw/saw) icon from lucide-react
+- Style: matrix-title font, slightly eerie/playful vibe
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+**5. Replace countdown subtitle with rotating motivational quotes**
+- Remove static "Simulator for Stage 1 Anesthesia..." text
+- Import `motivationalQuotes` and pick a random quote (rotating every ~15 seconds with fade animation)
+- Display as: `"quote" — character` in smaller text below the digits
+- Keep it concise (single line, truncated if needed)
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
+### Files Changed
+- `src/components/views/HomeView.tsx` — grid reorganization, header text change
+- `src/components/MatrixCountdown.tsx` — light mode blue theme, canvas fix, rotating quotes subtitle
 
