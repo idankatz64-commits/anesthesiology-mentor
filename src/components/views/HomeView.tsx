@@ -142,6 +142,11 @@ export default function HomeView() {
       {/* Matrix Countdown — full width at top */}
       <MatrixCountdown />
 
+      {/* Metrics Summary Bar */}
+      <div className="mt-6">
+        <HomeStatsSummary />
+      </div>
+
       <header className="mt-8 mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
         <div className="flex items-center gap-3">
           <img src={jigsawImg} alt="Jigsaw" className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)] animate-pulse" />
