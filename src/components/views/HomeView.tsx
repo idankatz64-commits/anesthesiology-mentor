@@ -143,7 +143,7 @@ export default function HomeView() {
 
       <header className="mt-8 mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
         <div className="flex items-center gap-3">
-          <img src={jigsawImg} alt="Jigsaw" className="w-10 h-10 object-contain" />
+          <img src={jigsawImg} alt="Jigsaw" className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)] animate-pulse" />
           <h2 className="text-3xl font-semibold text-foreground tracking-tight matrix-title">
             Let's Play A Game<span className="text-primary">...</span>
           </h2>
