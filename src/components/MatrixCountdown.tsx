@@ -155,7 +155,7 @@ function Digit({ value, isDark }: { value: number; isDark: boolean }) {
 
 /* ── Separator ── */
 function ColonSeparator({ isDark }: { isDark: boolean }) {
-  const color = isDark ? 'rgba(0,255,65,0.4)' : 'rgba(37,99,235,0.4)';
+  const color = isDark ? 'rgba(245,159,10,0.4)' : 'rgba(37,99,235,0.4)';
   return (
     <motion.span
       className="font-mono text-base sm:text-2xl font-bold mx-0.5 sm:mx-1 self-center"
