@@ -12,11 +12,11 @@ interface DayData {
   ema14: number | null;
 }
 
-// Semantic data colors (kept as-is for accuracy thresholds)
+// TradingView-inspired colors
 const DATA_COLORS = {
-  green: '#00e676',
-  orange: '#ff9800',
-  red: '#ff1744',
+  bullish: '#26a69a',    // TradingView green
+  bearish: '#ef5350',    // TradingView red
+  neutral: '#ff9800',    // amber for mid-range
   ema7: '#ff9800',
   ema14: '#2196f3',
   globalAvg: '#9c27b0',
