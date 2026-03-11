@@ -128,7 +128,7 @@ function Digit({ value, isDark }: { value: number; isDark: boolean }) {
   return (
     <div className="relative flex gap-[2px]">
       {str.split('').map((ch, i) => (
-        <div key={i} className="relative w-[1.6em] h-[2.2em] sm:w-[2.4em] sm:h-[3.2em] overflow-hidden">
+        <div key={i} className="relative w-[1.8em] h-[2.4em] sm:w-[2.8em] sm:h-[3.6em] overflow-hidden">
           <div className="absolute inset-0 bg-[repeating-linear-gradient(0deg,transparent,transparent_2px,rgba(245,159,10,0.03)_2px,rgba(245,159,10,0.03)_4px)] pointer-events-none z-10 rounded-sm" />
           <div className={`absolute inset-0 bg-background/70 border ${borderColor} rounded-sm`} />
           <AnimatePresence mode="popLayout">
@@ -138,7 +138,7 @@ function Digit({ value, isDark }: { value: number; isDark: boolean }) {
               animate={{ y: 0, opacity: 1, filter: 'blur(0px)' }}
               exit={{ y: 10, opacity: 0, filter: 'blur(3px)' }}
               transition={{ type: 'spring', stiffness: 400, damping: 30, mass: 0.6 }}
-              className="absolute inset-0 flex items-center justify-center font-mono text-base sm:text-2xl font-bold"
+              className="absolute inset-0 flex items-center justify-center font-mono text-lg sm:text-3xl font-bold"
               style={{
                 color: digitColor,
                 textShadow: glowColor,
@@ -193,7 +193,7 @@ function RotatingQuote() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -5 }}
         transition={{ duration: 0.5 }}
-        className="text-muted-foreground/60 text-xs sm:text-sm font-light tracking-wide text-center max-w-lg mx-auto leading-relaxed"
+        className="text-muted-foreground/70 text-sm sm:text-base font-medium tracking-wide text-center max-w-lg mx-auto leading-relaxed"
       >
         "{q.quote}" <span className="text-muted-foreground/40">— {q.character}</span>
       </motion.p>
@@ -267,7 +267,7 @@ export default function MatrixCountdown() {
       transition={{ type: 'spring', stiffness: 250, damping: 25 }}
     >
       {/* Inner padding wrapper so canvas covers full area */}
-      <div className="relative px-3 py-3 sm:px-6 sm:py-5">
+      <div className="relative px-4 py-4 sm:px-8 sm:py-7">
         {/* Matrix rain background — covers entire tile */}
         {rainEnabled && dims.w > 0 && <MatrixRain width={dims.w} height={dims.h} isDark={isDark} />}
 
