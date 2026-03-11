@@ -448,13 +448,13 @@ export default function HomeView() {
         )}
       </AnimatePresence>
 
-      {/* ═══ UNIFIED ANALYTICS BLOCK — no gaps ═══ */}
-      <div className="flex flex-col gap-0 rounded-2xl overflow-hidden">
+      {/* ═══ ANALYTICS BLOCK ═══ */}
+      <div className="flex flex-col gap-3 rounded-2xl">
         {/* Stats Row — full width */}
         <HomeStatsSummary />
 
         {/* Second Row — Topic Heatmap + Session Panel side by side */}
-        <div className="grid grid-cols-1 lg:grid-cols-12">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
           <div className="lg:col-span-7">
             <HomeTopicHeatmap />
           </div>
@@ -476,16 +476,16 @@ export default function HomeView() {
         </div>
 
         {/* DB Status */}
-        <div className="grid grid-cols-3">
-          <div className="deep-tile rounded-none border-t-0 p-3 text-center">
+        <div className="grid grid-cols-3 gap-3">
+          <div className="deep-tile p-3 text-center">
             <div className="text-xl font-bold matrix-text">{data.length}</div>
             <div className="text-[9px] text-muted-foreground font-medium mt-0.5">סה"כ שאלות</div>
           </div>
-          <div className="deep-tile rounded-none border-t-0 border-x-0 p-3 text-center">
+          <div className="deep-tile p-3 text-center">
             <div className="text-xl font-bold text-success matrix-text">{withExp}</div>
             <div className="text-[9px] text-success/70 font-medium mt-0.5">כוללות הסבר</div>
           </div>
-          <div className="deep-tile rounded-none border-t-0 p-3 text-center">
+          <div className="deep-tile p-3 text-center">
             <div className="text-xl font-bold text-warning matrix-text">{withoutExp}</div>
             <div className="text-[9px] text-warning/70 font-medium mt-0.5">ללא הסבר</div>
           </div>
