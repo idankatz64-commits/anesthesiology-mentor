@@ -73,6 +73,7 @@ export default function SessionView() {
     session, progress, navigate, setAnswer, setConfidence, setSessionIndex,
     toggleFlag, skipQuestion, updateHistory, updateSpacedRepetition, syncAnswerToDb, toggleFavorite,
     saveNote, setRating, addTag, removeTag, saveSessionToDb, clearSavedSession,
+    invalidateQuestions,
   } = useApp();
   const { toast } = useToast();
   const isAdmin = useIsAdmin();
@@ -411,7 +412,7 @@ export default function SessionView() {
                         (qData as any)[KEYS.B] = answersDraft.B;
                         (qData as any)[KEYS.C] = answersDraft.C;
                         (qData as any)[KEYS.D] = answersDraft.D;
-                        sessionStorage.removeItem('questions_cache');
+                        invalidateQuestions();
                         setEditingQuestion(false);
                         toast({ title: 'השאלה עודכנה ✅' });
                       }
@@ -646,7 +647,7 @@ export default function SessionView() {
                             toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
                           } else {
                             qData[KEYS.CORRECT] = correctAnswerDraft;
-                            sessionStorage.removeItem('questions_cache');
+                            invalidateQuestions();
                             setEditingCorrectAnswer(false);
                             setShowConfirmSave(false);
                             toast({ title: 'התשובה הנכונה עודכנה ✅' });
@@ -726,7 +727,7 @@ export default function SessionView() {
                           toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
                         } else {
                           qData[KEYS.EXPLANATION] = explanationDraft;
-                          sessionStorage.removeItem('questions_cache');
+                          invalidateQuestions();
                           setEditingExplanation(false);
                           toast({ title: 'ההסבר עודכן ✅' });
                         }
@@ -778,7 +779,7 @@ export default function SessionView() {
                         manually_edited: true,
                       }).eq('id', serialNumber);
                       if (!error) {
-                        sessionStorage.removeItem('questions_cache');
+                        invalidateQuestions();
                         (qData as any)[KEYS.CHAPTER] = chapterVal;
                         (qData as any)[KEYS.MILLER] = String(chapterVal);
                         (qData as any)[KEYS.TOPIC] = chapterName;

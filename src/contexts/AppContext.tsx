@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { fetchQuestions, syncQuestionsFromSheet } from '@/lib/csvService';
+import { fetchQuestions, syncQuestionsFromSheet, invalidateQuestionsCache } from '@/lib/csvService';
 import {
   KEYS, WELCOME_KEY,
   type Question, type UserProgress, type SessionState,
@@ -66,10 +66,11 @@ interface AppContextType {
   setSourceFilter: (source: SessionState['sourceFilter']) => void;
   toggleUnseenOnly: () => void;
   
-  // Sync
+  // Sync & cache
   syncStatus: 'idle' | 'syncing' | 'done' | 'error';
   lastSyncTime: string | null;
   triggerSync: () => Promise<{ count: number } | null>;
+  invalidateQuestions: () => Promise<void>;
   
    // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
@@ -804,21 +805,27 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
 
+  /** Invalidate question cache and re-fetch fresh data from DB */
+  const invalidateQuestions = useCallback(async () => {
+    invalidateQuestionsCache();
+    const questions = await fetchQuestions(3, true);
+    setData(questions);
+  }, []);
+
   const triggerSync = useCallback(async () => {
     setSyncStatus('syncing');
     try {
       const result = await syncQuestionsFromSheet();
       setLastSyncTime(result.synced_at);
-      const questions = await fetchQuestions();
-      setData(questions);
+      await invalidateQuestions();
       setSyncStatus('done');
-      return { count: questions.length };
+      return { count: data.length };
     } catch (e) {
       console.error('Manual sync failed:', e);
       setSyncStatus('error');
       return null;
     }
-  }, []);
+  }, [invalidateQuestions, data.length]);
 
   const saveSessionToDb = useCallback(async (timerSeconds?: number, simTimerSeconds?: number) => {
     const userId = userIdRef.current;
@@ -893,7 +900,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
     isAdmin, isEditor,
-    syncStatus, lastSyncTime, triggerSync,
+    syncStatus, lastSyncTime, triggerSync, invalidateQuestions,
     navigate, toggleTheme, closeWelcome,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
     updateHistory, updateSpacedRepetition, syncAnswerToDb,
