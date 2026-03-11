@@ -1,93 +1,168 @@
 import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { CheckCircle, Target, CalendarClock, TrendingUp, TrendingDown } from 'lucide-react';
+import { motion } from 'framer-motion';
 import AnimatedNumber from '@/components/AnimatedNumber';
 
-export default function HomeStatsSummary() {
-  const { progress } = useApp();
+/* ── SVG Donut Ring ── */
+function DonutRing({ 
+  value, 
+  max = 100, 
+  size = 100, 
+  strokeWidth = 8, 
+  color, 
+  bgColor = 'hsl(var(--muted))',
+  label,
+  suffix = '%',
+}: { 
+  value: number; max?: number; size?: number; strokeWidth?: number; 
+  color: string; bgColor?: string; label: string; suffix?: string;
+}) {
+  const radius = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const pct = max > 0 ? Math.min(value / max, 1) : 0;
+  const offset = circumference * (1 - pct);
 
-  const { totalAnswered, accuracy, mistakes, todayCount } = useMemo(() => {
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="relative" style={{ width: size, height: size }}>
+        <svg width={size} height={size} className="-rotate-90">
+          <circle
+            cx={size / 2} cy={size / 2} r={radius}
+            fill="none" stroke={bgColor} strokeWidth={strokeWidth}
+            opacity={0.3}
+          />
+          <motion.circle
+            cx={size / 2} cy={size / 2} r={radius}
+            fill="none" stroke={color} strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset: offset }}
+            transition={{ duration: 1.2, ease: 'easeOut', delay: 0.3 }}
+          />
+        </svg>
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="text-xl font-bold text-foreground" style={{ fontFamily: 'var(--font-matrix)' }}>
+            <AnimatedNumber value={value} suffix={suffix} />
+          </span>
+        </div>
+      </div>
+      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">
+        {label}
+      </span>
+    </div>
+  );
+}
+
+/* ── Mini Stat Card with color bar ── */
+function MiniStat({ 
+  label, value, suffix = '', color, badgeText, badgeColor, barPct,
+}: { 
+  label: string; value: number; suffix?: string; color: string; 
+  badgeText?: string | null; badgeColor?: string; barPct?: number;
+}) {
+  return (
+    <div
+      className="glass-tile relative overflow-hidden p-4 text-center flex flex-col items-center justify-center gap-1"
+    >
+      <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.12em]">
+        {label}
+      </div>
+      <div className={`text-2xl font-bold ${color}`} style={{ fontFamily: 'var(--font-matrix)' }}>
+        <AnimatedNumber value={value} suffix={suffix} />
+      </div>
+      {badgeText && (
+        <div className={`text-[10px] font-medium ${badgeColor}`}>
+          {badgeText}
+        </div>
+      )}
+      {barPct !== undefined && (
+        <div className="w-full h-1 rounded-full bg-muted/30 mt-1 overflow-hidden">
+          <motion.div
+            className="h-full rounded-full"
+            style={{ backgroundColor: color.includes('destructive') ? 'hsl(var(--destructive))' : 'hsl(var(--primary))' }}
+            initial={{ width: 0 }}
+            animate={{ width: `${Math.min(barPct, 100)}%` }}
+            transition={{ duration: 1, ease: 'easeOut', delay: 0.5 }}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function HomeStatsSummary() {
+  const { progress, data } = useApp();
+
+  const { totalAnswered, accuracy, mistakes, todayCount, completionPct } = useMemo(() => {
     const entries = Object.values(progress.history || {});
     const total = entries.length;
     const correct = entries.filter(h => h.lastResult === 'correct').length;
     const wrong = entries.filter(h => h.lastResult === 'wrong').length;
 
-    // Count today's answers
     const today = new Date().toDateString();
     const todayAnswered = entries.filter(h => {
       if (!h.timestamp) return false;
       return new Date(h.timestamp).toDateString() === today;
     }).length;
 
+    const totalQuestions = data?.length || 1;
+    const completion = Math.round((total / totalQuestions) * 100);
+
     return {
       totalAnswered: total,
       accuracy: total > 0 ? Math.round((correct / total) * 100) : 0,
       mistakes: wrong,
       todayCount: todayAnswered,
+      completionPct: Math.min(completion, 100),
     };
-  }, [progress.history]);
+  }, [progress.history, data]);
 
-  const metrics = [
-    {
-      label: 'שאלות היום',
-      value: todayCount,
-      suffix: '',
-      color: 'text-primary',
-      badgeText: todayCount >= 10 ? 'קצב טוב' : null,
-      badgeColor: 'text-success',
-    },
-    {
-      label: 'טעויות פתוחות',
-      value: mistakes,
-      suffix: '',
-      color: 'text-destructive',
-      badgeText: mistakes > 0 ? `${mistakes} לחזרה` : null,
-      badgeColor: 'text-destructive',
-    },
-    {
-      label: 'סה״כ נענו',
-      value: totalAnswered,
-      suffix: '',
-      color: 'text-foreground',
-      badgeText: null,
-      badgeColor: '',
-    },
-    {
-      label: 'דיוק כללי',
-      value: accuracy,
-      suffix: '%',
-      color: accuracy >= 70 ? 'text-success' : accuracy >= 50 ? 'text-warning' : 'text-destructive',
-      badgeText: accuracy >= 70 ? 'מצוין' : accuracy >= 50 ? 'בינוני' : 'צריך שיפור',
-      badgeColor: accuracy >= 70 ? 'text-success' : accuracy >= 50 ? 'text-warning' : 'text-destructive',
-    },
-  ];
+  const accuracyColor = accuracy >= 70 ? '#22c55e' : accuracy >= 50 ? '#f59f0a' : '#ef4444';
+  const completionColor = '#10b981';
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-      {metrics.map((m) => (
-        <div
-          key={m.label}
-          className="relative rounded-2xl overflow-hidden p-5 text-center"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            backdropFilter: 'blur(12px)',
-            WebkitBackdropFilter: 'blur(12px)',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}
-        >
-          <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-[0.15em] mb-3">
-            {m.label}
-          </div>
-          <div className={`text-3xl font-bold ${m.color}`} style={{ fontFamily: 'var(--font-matrix)' }}>
-            <AnimatedNumber value={m.value} suffix={m.suffix} />
-          </div>
-          {m.badgeText && (
-            <div className={`text-[10px] font-medium mt-2 ${m.badgeColor}`}>
-              {m.badgeText}
-            </div>
-          )}
-        </div>
-      ))}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Accuracy Ring */}
+      <div className="glass-tile p-4 flex items-center justify-center">
+        <DonutRing
+          value={accuracy}
+          color={accuracyColor}
+          label="דיוק כללי"
+          size={90}
+          strokeWidth={7}
+        />
+      </div>
+
+      {/* Completion Ring */}
+      <div className="glass-tile p-4 flex items-center justify-center">
+        <DonutRing
+          value={completionPct}
+          color={completionColor}
+          label="כיסוי מאגר"
+          size={90}
+          strokeWidth={7}
+        />
+      </div>
+
+      {/* Today's Questions */}
+      <MiniStat
+        label="שאלות היום"
+        value={todayCount}
+        color="text-primary"
+        badgeText={todayCount >= 10 ? 'קצב טוב' : null}
+        badgeColor="text-success"
+        barPct={Math.min(todayCount * 10, 100)}
+      />
+
+      {/* Open Mistakes */}
+      <MiniStat
+        label="טעויות פתוחות"
+        value={mistakes}
+        color="text-destructive"
+        badgeText={mistakes > 0 ? `${mistakes} לחזרה` : null}
+        badgeColor="text-destructive"
+      />
     </div>
   );
 }
