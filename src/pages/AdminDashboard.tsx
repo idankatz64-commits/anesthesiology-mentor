@@ -88,7 +88,7 @@ export default function AdminDashboard() {
           {activeTab === 'user-management' && <UserManagementTab />}
           {activeTab === 'import-questions' && <ImportQuestionsTab />}
           {activeTab === 'formula-management' && <FormulaManagementTab />}
-          {activeTab === 'editor-activity' && <EditorActivityTab />}
+          {activeTab === 'editor-activity' && <EditorActivityTab isActive={activeTab === 'editor-activity'} />}
         </div>
       </main>
     </motion.div>
