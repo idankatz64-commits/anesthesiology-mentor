@@ -39,9 +39,9 @@ function getThemeColors() {
 }
 
 function getBarColor(acc: number) {
-  if (acc >= 70) return DATA_COLORS.green;
-  if (acc >= 50) return DATA_COLORS.orange;
-  return DATA_COLORS.red;
+  if (acc >= 70) return DATA_COLORS.bullish;
+  if (acc >= 50) return DATA_COLORS.neutral;
+  return DATA_COLORS.bearish;
 }
 
 function computeEMA(data: { accuracy: number }[], period: number): (number | null)[] {
