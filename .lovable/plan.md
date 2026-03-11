@@ -1,62 +1,49 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## תוכנית: עדכון עיצוב Sidebar + TopNav
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+התאמת שני הרכיבים לשפה העיצובית של האפליקציה — Dark Charcoal/Slate עם Amber Gold, glassmorphism, ואנימציות framer-motion.
 
-## Part A -- Daily Volume Bars
+---
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+### 1. TopNav — עיצוב מחודש
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+**רקע**: שדרוג מ-`bg-card/60` ל-`bg-white/[0.03] backdrop-blur-xl` (glassmorphism אחיד עם שאר האפליקציה). border תחתון עם gradient amber עדין יותר.
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
+**כותרת מרכזית**: הוספת אייקון קטן (Stethoscope או Activity) ב-amber לצד הטקסט "Simulator for Stage 1...". הקטנת הפונט במובייל (`text-xs md:text-sm`) ושמירתו ב-LTR. הוספת שורה שנייה עם כיתוב עברי קצר או הסתרתה במובייל.
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+**כפתור NotebookLM**: שדרוג לאייקון עם `bg-white/[0.03]` ו-border דק `border-white/10`, hover amber glow.
 
-## Part B -- Daily Performance Report
+**אזור משתמש**: avatar circle עם `bg-primary/15` ו-border amber — שדרוג ה-dropdown ל-glass-card עם `bg-white/[0.05] backdrop-blur-xl border-white/10`. הוספת אנימציית framer-motion fade+slide ל-dropdown.
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+**כפתורי Login/Signup**: כפתור "הרשם" — amber מלא עם glow shadow. כפתור "התחבר" — ghost עם border דק.
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
+**Sync indicator**: עיצוב אחיד עם pill amber.
 
-## Files to Modify
+---
 
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
+### 2. Sidebar — עיצוב מחודש
 
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
+**Container**: שדרוג מ-`glass-card` ל-`bg-white/[0.03] backdrop-blur-xl border-l border-white/10` — glassmorphism אמיתי.
 
-No database changes required.
+**Header**: אייקון ב-`bg-primary/10` עם amber glow עדין. טקסט "סימולטור" בפונט bold, תת-כותרת muted.
+
+**Nav items**: הגדלת padding ל-`py-3.5`, הוספת hover effect `bg-white/[0.05]`. Active indicator — amber border-right + `bg-primary/8` עם subtle amber inner glow (שמירת ה-layoutId animation הקיים).
+
+**Footer buttons** (Feedback, Theme, Admin): שדרוג ל-`bg-white/[0.04] border border-white/8 hover:border-primary/30` — גישה אחידה של glass buttons.
+
+**Progress bar**: שדרוג עם amber gradient ו-glow animation. הוספת label "PROGRESS" באנגלית uppercase עם tracking-widest (תואם לשפה העיצובית של הכותרות במסכים אחרים).
+
+**Collapse toggle**: שדרוג לעיגול amber-on-hover עם transition חלק.
+
+---
+
+### קבצים שישתנו
+
+| קובץ | שינוי |
+|---|---|
+| `src/components/TopNav.tsx` | עיצוב glassmorphism, dropdown animation, אייקון לכותרת |
+| `src/components/Sidebar.tsx` | עיצוב glassmorphism, nav items, footer, progress bar |
+
+כל הלוגיקה נשמרת — שינוי ויזואלי בלבד.
 
