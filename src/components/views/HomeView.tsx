@@ -201,6 +201,101 @@ function SmallCard({
   );
 }
 
+/* ── Session Panel (always visible) ── */
+function SessionPanel({
+  savedSessionInfo, loadingSavedSession, resuming, onResume, onClear, progress,
+}: {
+  savedSessionInfo: any; loadingSavedSession: boolean; resuming: boolean;
+  onResume: () => void; onClear: () => void;
+  progress: UserProgress; data: Question[];
+}) {
+  const todayStats = useMemo(() => {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    let answered = 0, correct = 0;
+    Object.values(progress.history).forEach(h => {
+      if (h.timestamp >= todayStart) {
+        answered++;
+        if (h.lastResult === 'correct') correct++;
+      }
+    });
+    const accuracy = answered > 0 ? Math.round((correct / answered) * 100) : 0;
+    return { answered, correct, accuracy };
+  }, [progress.history]);
+
+  const hasSaved = !loadingSavedSession && savedSessionInfo;
+
+  return (
+    <div className="deep-tile rounded-none border-t-0 px-5 py-3 relative overflow-hidden">
+      {hasSaved ? (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent pointer-events-none" />
+          <div className="relative flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex-1 min-w-0 flex items-center gap-3">
+              <Play className="w-5 h-5 text-primary shrink-0" />
+              <div>
+                <span className="font-bold text-foreground text-sm">יש לך סשן שמור!</span>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {savedSessionInfo.mode === 'simulation' ? 'סימולציה' :
+                   savedSessionInfo.mode === 'exam' ? 'בחינה' : 'תרגול'}{' '}
+                  — שאלה {savedSessionInfo.index + 1} מתוך {savedSessionInfo.questionIds.length}
+                  {' · '}נשמר ב-{new Date(savedSessionInfo.createdAt).toLocaleDateString('he-IL')}
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={onResume}
+                disabled={resuming}
+                className="bg-primary text-primary-foreground px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center gap-2 shadow-lg disabled:opacity-50"
+              >
+                <Play className="w-4 h-4" />
+                {resuming ? 'טוען...' : 'המשך סשן'}
+              </button>
+              <button
+                onClick={onClear}
+                className="text-muted-foreground hover:text-destructive p-2 rounded-xl hover:bg-destructive/10 transition"
+                title="מחק סשן שמור"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="w-4 h-4 text-success" />
+              <span className="text-xs text-muted-foreground">היום:</span>
+              <span className="text-sm font-bold text-foreground tabular-nums">{todayStats.answered}</span>
+              <span className="text-xs text-muted-foreground">שאלות</span>
+            </div>
+            {todayStats.answered > 0 && (
+              <>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4 text-primary" />
+                  <span className="text-xs text-muted-foreground">דיוק:</span>
+                  <span className={`text-sm font-bold tabular-nums ${
+                    todayStats.accuracy >= 70 ? 'text-success' : todayStats.accuracy >= 50 ? 'text-warning' : 'text-destructive'
+                  }`}>{todayStats.accuracy}%</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">{todayStats.correct}/{todayStats.answered} נכונות</span>
+                </div>
+              </>
+            )}
+          </div>
+          {todayStats.answered === 0 && (
+            <span className="text-xs text-muted-foreground/60">עדיין לא תרגלת היום</span>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ── Main Component ── */
 export default function HomeView() {
   const { data, progress, navigate, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
