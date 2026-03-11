@@ -179,7 +179,7 @@ function RotatingQuote() {
         do { next = Math.floor(Math.random() * motivationalQuotes.length); } while (next === prev && motivationalQuotes.length > 1);
         return next;
       });
-    }, 15000);
+    }, 60000);
     return () => clearInterval(id);
   }, []);
 
@@ -193,7 +193,7 @@ function RotatingQuote() {
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -5 }}
         transition={{ duration: 0.5 }}
-        className="text-muted-foreground/60 text-[10px] sm:text-xs font-light tracking-wide text-center max-w-lg mx-auto leading-relaxed"
+        className="text-muted-foreground/60 text-xs sm:text-sm font-light tracking-wide text-center max-w-lg mx-auto leading-relaxed"
       >
         "{q.quote}" <span className="text-muted-foreground/40">— {q.character}</span>
       </motion.p>
