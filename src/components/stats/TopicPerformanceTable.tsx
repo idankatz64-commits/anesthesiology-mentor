@@ -108,20 +108,15 @@ function positionLabel(myAcc: number, groupAvg: number | null, totalUsers: numbe
 
 function Sparkline({ points, muted }: { points: number[]; muted: string }) {
   if (points.length < 2) return <span style={{ color: muted, fontSize: 9 }}>—</span>;
-  const w = 44, h = 16, pad = 1;
-  const min = Math.min(...points), max = Math.max(...points);
-  const range = max - min || 1;
-  const coords = points.map((v, i) => {
-    const x = pad + (i / (points.length - 1)) * (w - pad * 2);
-    const y = h - pad - ((v - min) / range) * (h - pad * 2);
-    return `${x},${y}`;
-  });
   const trending = points[points.length - 1] - points[0];
   const color = trending > 3 ? '#00e676' : trending < -3 ? '#ff1744' : muted;
+  const rotation = trending > 3 ? -45 : trending < -3 ? 45 : 0;
   return (
-    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
-      <polyline points={coords.join(' ')} fill="none" stroke={color} strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
+    <span style={{ color, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+      <svg width={16} height={16} viewBox="0 0 16 16" style={{ transform: `rotate(${rotation}deg)` }}>
+        <path d="M3 8h10M9 4l4 4-4 4" fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    </span>
   );
 }
 
