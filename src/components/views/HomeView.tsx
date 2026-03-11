@@ -441,30 +441,30 @@ export default function HomeView() {
 
       {/* ═══ UNIFIED ANALYTICS BLOCK — no gaps ═══ */}
       <div className="flex flex-col gap-0 rounded-2xl overflow-hidden">
-        {/* Analytics Row */}
+        {/* Stats Row — full width */}
+        <HomeStatsSummary />
+
+        {/* Second Row — Topic Heatmap + Session Panel side by side */}
         <div className="grid grid-cols-1 lg:grid-cols-12">
           <div className="lg:col-span-7">
-            <HomeStatsSummary />
-          </div>
-          <div className="lg:col-span-5">
             <HomeTopicHeatmap />
           </div>
+          <div className="lg:col-span-5">
+            <SessionPanel
+              savedSessionInfo={savedSessionInfo}
+              loadingSavedSession={loadingSavedSession}
+              resuming={resuming}
+              onResume={async () => {
+                setResuming(true);
+                await resumeSessionFromDb();
+                setResuming(false);
+              }}
+              onClear={clearSavedSession}
+              progress={progress}
+              data={data}
+            />
+          </div>
         </div>
-
-        {/* Session Panel — always visible */}
-        <SessionPanel
-          savedSessionInfo={savedSessionInfo}
-          loadingSavedSession={loadingSavedSession}
-          resuming={resuming}
-          onResume={async () => {
-            setResuming(true);
-            await resumeSessionFromDb();
-            setResuming(false);
-          }}
-          onClear={clearSavedSession}
-          progress={progress}
-          data={data}
-        />
 
         {/* DB Status */}
         <div className="grid grid-cols-3">
