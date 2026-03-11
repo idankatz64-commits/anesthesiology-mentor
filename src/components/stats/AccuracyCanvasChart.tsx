@@ -416,7 +416,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
           <span className="text-muted-foreground">EMA 14: <span className="font-bold" style={{ color: DATA_COLORS.ema14 }}>{statsBar.lastEma14 !== null && statsBar.lastEma14 !== undefined ? `${statsBar.lastEma14}%` : '—'}</span></span>
           <span className="text-muted-foreground">ממוצע כללי: <span className="font-bold" style={{ color: DATA_COLORS.globalAvg }}>{globalAvg}%</span></span>
           <span className="text-muted-foreground">שאלות היום: <span className="font-bold text-foreground">{statsBar.todayVol}</span></span>
-          <span className="text-muted-foreground">שינוי מאתמול: <span className="font-bold" style={{ color: statsBar.change !== null ? (statsBar.change >= 0 ? DATA_COLORS.green : DATA_COLORS.red) : undefined }}>{statsBar.change !== null ? `${statsBar.change > 0 ? '+' : ''}${statsBar.change}%` : '—'}</span></span>
+          <span className="text-muted-foreground">שינוי מאתמול: <span className="font-bold" style={{ color: statsBar.change !== null ? (statsBar.change >= 0 ? DATA_COLORS.bullish : DATA_COLORS.bearish) : undefined }}>{statsBar.change !== null ? `${statsBar.change > 0 ? '+' : ''}${statsBar.change}%` : '—'}</span></span>
         </div>
       )}
     </div>
