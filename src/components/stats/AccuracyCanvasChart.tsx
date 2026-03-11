@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
+import { Filter, X } from 'lucide-react';
 import AnimatedStatsTile from './AnimatedStatsTile';
 
 interface DayData {
@@ -82,6 +83,7 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const mainCanvasRef = useRef<HTMLCanvasElement>(null);
   const volCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const [rawRows, setRawRows] = useState<{ answered_at: string; is_correct: boolean; topic: string | null }[]>([]);
   const [data, setData] = useState<DayData[]>([]);
   const [loading, setLoading] = useState(true);
   const [hoverIndex, setHoverIndex] = useState<number | null>(null);
@@ -90,11 +92,14 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   const [showEma14, setShowEma14] = useState(true);
   const [showGlobalAvg, setShowGlobalAvg] = useState(true);
   const [logScale, setLogScale] = useState(false);
+  const [selectedTopic, setSelectedTopic] = useState<string>('');
+  const [topicSearchOpen, setTopicSearchOpen] = useState(false);
 
   const PANEL1_H = expanded ? 450 : 340;
   const PANEL2_H = expanded ? 110 : 90;
   const MARGIN = { top: 10, right: 10, bottom: 20, left: 40 };
 
+  // Fetch raw rows once
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -107,40 +112,55 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
 
       const { data: rows, error } = await supabase
         .from('answer_history')
-        .select('answered_at, is_correct')
+        .select('answered_at, is_correct, topic')
         .eq('user_id', user.id)
         .gte('answered_at', sinceStr)
         .order('answered_at', { ascending: true });
 
       if (cancelled || error || !rows) { setLoading(false); return; }
-
-      const byDate: Record<string, { total: number; correct: number }> = {};
-      for (const r of rows) {
-        const d = r.answered_at.slice(0, 10);
-        if (!byDate[d]) byDate[d] = { total: 0, correct: 0 };
-        byDate[d].total++;
-        if (r.is_correct) byDate[d].correct++;
-      }
-
-      const sorted = Object.entries(byDate)
-        .sort(([a], [b]) => a.localeCompare(b))
-        .map(([date, v]) => ({
-          date,
-          total: v.total,
-          correct: v.correct,
-          accuracy: Math.round((v.correct / v.total) * 100 * 10) / 10,
-          ema7: null as number | null,
-          ema14: null as number | null,
-        }));
-
-      const ema7 = computeEMA(sorted, 7);
-      const ema14 = computeEMA(sorted, 14);
-      sorted.forEach((d, i) => { d.ema7 = ema7[i]; d.ema14 = ema14[i]; });
-
-      if (!cancelled) { setData(sorted); setLoading(false); }
+      if (!cancelled) { setRawRows(rows); setLoading(false); }
     })();
     return () => { cancelled = true; };
   }, []);
+
+  // Available topics
+  const availableTopics = useMemo(() => {
+    const topics = new Set<string>();
+    rawRows.forEach(r => { if (r.topic) topics.add(r.topic); });
+    return Array.from(topics).sort();
+  }, [rawRows]);
+
+  // Process rows into chart data (filtered by topic)
+  useEffect(() => {
+    const filtered = selectedTopic
+      ? rawRows.filter(r => r.topic === selectedTopic)
+      : rawRows;
+
+    const byDate: Record<string, { total: number; correct: number }> = {};
+    for (const r of filtered) {
+      const d = r.answered_at.slice(0, 10);
+      if (!byDate[d]) byDate[d] = { total: 0, correct: 0 };
+      byDate[d].total++;
+      if (r.is_correct) byDate[d].correct++;
+    }
+
+    const sorted = Object.entries(byDate)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({
+        date,
+        total: v.total,
+        correct: v.correct,
+        accuracy: Math.round((v.correct / v.total) * 100 * 10) / 10,
+        ema7: null as number | null,
+        ema14: null as number | null,
+      }));
+
+    const ema7 = computeEMA(sorted, 7);
+    const ema14 = computeEMA(sorted, 14);
+    sorted.forEach((d, i) => { d.ema7 = ema7[i]; d.ema14 = ema14[i]; });
+
+    setData(sorted);
+  }, [rawRows, selectedTopic]);
 
   const globalAvg = useMemo(() => {
     if (!data.length) return 0;
@@ -424,8 +444,54 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden" dir="rtl">
       <div className="flex items-center justify-between p-4 pb-2 flex-wrap gap-2">
-        <h3 className="text-sm font-bold text-foreground">מגמת דיוק — 90 ימים</h3>
-        <div className="flex gap-1.5 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-bold text-foreground">
+            מגמת דיוק — 90 ימים
+            {selectedTopic && <span className="text-xs font-normal text-muted-foreground mr-1">({selectedTopic})</span>}
+          </h3>
+        </div>
+        <div className="flex gap-1.5 flex-wrap items-center">
+          {/* Topic filter */}
+          <div className="relative">
+            <button
+              onClick={(e) => { e.stopPropagation(); setTopicSearchOpen(v => !v); }}
+              className={`px-3 py-1 rounded-md text-xs font-bold transition-all border flex items-center gap-1 ${
+                selectedTopic
+                  ? 'bg-primary/15 border-primary/30 text-primary'
+                  : 'bg-transparent border-foreground/10 text-muted-foreground'
+              }`}
+            >
+              <Filter className="w-3 h-3" />
+              {selectedTopic ? 'מסנן' : 'נושא'}
+            </button>
+            {selectedTopic && (
+              <button
+                onClick={(e) => { e.stopPropagation(); setSelectedTopic(''); }}
+                className="absolute -top-1.5 -left-1.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+              >
+                <X className="w-2.5 h-2.5" />
+              </button>
+            )}
+            {topicSearchOpen && (
+              <div className="absolute top-full mt-1 left-0 z-50 bg-card border border-border rounded-lg shadow-xl w-64 max-h-60 overflow-y-auto" onClick={e => e.stopPropagation()}>
+                <button
+                  onClick={() => { setSelectedTopic(''); setTopicSearchOpen(false); }}
+                  className={`w-full text-right px-3 py-2 text-xs hover:bg-muted/50 transition ${!selectedTopic ? 'font-bold text-primary' : 'text-foreground'}`}
+                >
+                  כל הנושאים
+                </button>
+                {availableTopics.map(t => (
+                  <button
+                    key={t}
+                    onClick={() => { setSelectedTopic(t); setTopicSearchOpen(false); }}
+                    className={`w-full text-right px-3 py-2 text-xs hover:bg-muted/50 transition truncate ${selectedTopic === t ? 'font-bold text-primary bg-primary/5' : 'text-foreground'}`}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <ToggleBtn active={showEma7} label="EMA 7" onClick={() => setShowEma7(v => !v)} />
           <ToggleBtn active={showEma14} label="EMA 14" onClick={() => setShowEma14(v => !v)} />
           <ToggleBtn active={showGlobalAvg} label="ממוצע כללי" onClick={() => setShowGlobalAvg(v => !v)} />
