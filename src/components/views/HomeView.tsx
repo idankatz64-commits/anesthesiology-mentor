@@ -6,6 +6,7 @@ import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getExamProximityPhase, EXAM_DATE, type ExamPhase } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
+import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 import DailyReportModal from '@/components/DailyReportModal';
@@ -141,6 +142,11 @@ export default function HomeView() {
       {/* Matrix Countdown — full width at top */}
       <MatrixCountdown />
 
+      {/* Metrics Summary Bar */}
+      <div className="mt-6">
+        <HomeStatsSummary />
+      </div>
+
       <header className="mt-8 mb-12 flex flex-col md:flex-row md:justify-between md:items-end gap-6">
         <div className="flex items-center gap-3">
           <img src={jigsawImg} alt="Jigsaw" className="w-12 h-12 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)] animate-pulse" />
@@ -238,34 +244,31 @@ export default function HomeView() {
         animate="visible"
       >
         {/* Smart Practice */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSmartPractice} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSmartPractice} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
               <Brain className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">Smart Practice</h3>
+            <h3 className="font-bold text-lg mb-1 text-foreground">Smart Practice</h3>
             <p className="text-sm text-muted-foreground font-light">אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה.</p>
           </div>
         </motion.div>
 
         {/* Simulation Exam */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSimulation} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSimulation} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
               <FileCheck className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">מבחן סימולציה</h3>
+            <h3 className="font-bold text-lg mb-1 text-foreground">מבחן סימולציה</h3>
             <p className="text-sm text-muted-foreground font-light">120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי.</p>
           </div>
         </motion.div>
 
         {/* Spaced Repetition */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSpacedRepetition} className={`deep-tile p-5 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`} style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={handleSpacedRepetition} className={`glass-tile p-5 cursor-pointer group ${loadingDue ? 'opacity-60 pointer-events-none' : ''}`} style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <CalendarClock className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה מרווחת</h3>
@@ -274,20 +277,19 @@ export default function HomeView() {
         </motion.div>
 
         {/* Flashcards */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('flashcards')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/8 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('flashcards')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ boxShadow: 'var(--glow-primary)' }}>
               <Layers className="w-6 h-6" />
             </div>
-            <h3 className="font-bold text-lg mb-1 text-foreground matrix-title">תרגול כרטיסיות</h3>
+            <h3 className="font-bold text-lg mb-1 text-foreground">תרגול כרטיסיות</h3>
             <p className="text-sm text-muted-foreground font-light">כרטיסיות Anki – צפה בשאלה, חשוב, והצג תשובה.</p>
           </div>
         </motion.div>
 
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-muted text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-muted text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Dumbbell className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">תרגול מותאם</h3>
@@ -296,53 +298,49 @@ export default function HomeView() {
         </motion.div>
 
         {/* Mistakes */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-destructive/6 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <RotateCcw className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה על טעויות</h3>
             <p className="text-sm text-muted-foreground font-light">
-              יש לך <span className="matrix-text font-medium">{mistakes}</span> טעויות פתוחות
+              יש לך <span className="text-primary font-medium">{mistakes}</span> טעויות פתוחות
             </p>
           </div>
         </motion.div>
 
         {/* Favorites */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <Star className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">מועדפים</h3>
             <p className="text-sm text-muted-foreground font-light">
-              <span className="matrix-text font-medium">{favsCount}</span> שאלות שסימנת
+              <span className="text-primary font-medium">{favsCount}</span> שאלות שסימנת
             </p>
           </div>
         </motion.div>
 
         {/* Notebook */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('notebook')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('notebook')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <StickyNote className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">המחברת שלי</h3>
             <p className="text-sm text-muted-foreground font-light">
-              צפייה ב-<span className="matrix-text font-medium">{notesCount}</span> הערות
+              צפייה ב-<span className="text-primary font-medium">{notesCount}</span> הערות
             </p>
           </div>
         </motion.div>
 
         {/* Algorithm Explainer — in grid, same size as other cards */}
         <TooltipProvider delayDuration={200}>
-          <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => setAlgoOpen(o => !o)} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/6 to-transparent rounded-2xl pointer-events-none" />
+          <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => setAlgoOpen(o => !o)} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
             <div className="relative">
-              <div className="w-12 h-12 bg-primary/15 text-primary rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+              <div className="w-12 h-12 bg-primary/15 text-primary rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
                 <Info className="w-6 h-6" />
               </div>
               <div className="flex items-center justify-between">
