@@ -519,10 +519,13 @@ function ChartContent({ expanded = false }: { expanded?: boolean }) {
               </div>
             )}
           </div>
-          <ToggleBtn active={showEma7} label="EMA 7" onClick={() => setShowEma7(v => !v)} />
-          <ToggleBtn active={showEma14} label="EMA 14" onClick={() => setShowEma14(v => !v)} />
+          <ToggleBtn active={!logScale} label="LINEAR" onClick={() => setLogScale(false)} />
+          <ToggleBtn active={logScale} label="LOGARITHMIC" onClick={() => setLogScale(true)} />
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: DATA_COLORS.ema7 }} />
+            SMA-20
+          </span>
           <ToggleBtn active={showGlobalAvg} label="ממוצע כללי" onClick={() => setShowGlobalAvg(v => !v)} />
-          <ToggleBtn active={logScale} label="לוגריתמי" onClick={() => setLogScale(v => !v)} />
         </div>
       </div>
 
