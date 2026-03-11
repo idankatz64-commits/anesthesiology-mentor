@@ -102,7 +102,7 @@ function hexToRgba(hex: string, alpha: number) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-function ChartContent({ expanded = false }: { expanded?: boolean }) {
+function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean; refreshKey?: number }) {
   const mainCanvasRef = useRef<HTMLCanvasElement>(null);
   const volCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
