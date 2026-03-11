@@ -84,11 +84,11 @@ export default function ERITile({ value, accuracy, coverage, criticalAvg, consis
         whileHover={{ scale: 1.01 }}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className="deep-tile rounded-xl cursor-pointer h-full">
+        className="deep-tile rounded-xl cursor-pointer h-full p-0">
 
-        <div className="flex flex-col items-center py-6 px-4">
-          <ERIRing value={value} size={240} />
-          <p className="mt-2 font-mono font-bold text-xl text-primary">מדד מוכנות למבחן</p>
+        <div className="flex flex-col items-center py-4 px-3">
+          <ERIRing value={value} size={140} />
+          <p className="mt-1 font-mono font-bold text-sm text-primary">מדד מוכנות למבחן</p>
 
           {/* Satellite pills */}
           <div className="flex items-center gap-4 mt-4">
