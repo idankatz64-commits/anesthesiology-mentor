@@ -727,7 +727,7 @@ export default function SessionView() {
                           toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
                         } else {
                           qData[KEYS.EXPLANATION] = explanationDraft;
-                          sessionStorage.removeItem('questions_cache');
+                          invalidateQuestions();
                           setEditingExplanation(false);
                           toast({ title: 'ההסבר עודכן ✅' });
                         }
