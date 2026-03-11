@@ -292,15 +292,14 @@ export default function HomeView() {
         </motion.div>
 
         {/* Mistakes */}
-        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="deep-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
-          <div className="absolute inset-0 bg-gradient-to-br from-destructive/6 to-transparent rounded-2xl pointer-events-none" />
+        <motion.div variants={cardVariant} whileTap={{ scale: 0.97 }} onClick={() => navigate('setup-practice')} className="glass-tile p-5 cursor-pointer group" style={{ willChange: 'transform' }}>
           <div className="relative">
-            <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+            <div className="w-12 h-12 bg-destructive/15 text-destructive rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
               <RotateCcw className="w-6 h-6" />
             </div>
             <h3 className="font-semibold text-lg mb-1 text-foreground">חזרה על טעויות</h3>
             <p className="text-sm text-muted-foreground font-light">
-              יש לך <span className="matrix-text font-medium">{mistakes}</span> טעויות פתוחות
+              יש לך <span className="text-primary font-medium">{mistakes}</span> טעויות פתוחות
             </p>
           </div>
         </motion.div>
