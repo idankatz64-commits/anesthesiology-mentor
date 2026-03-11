@@ -246,9 +246,9 @@ export default function MatrixCountdown() {
   const totalDays = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
   const urgency = totalDays <= 30 ? 'imminent' : totalDays <= 90 ? 'approaching' : 'normal';
 
-  const accentColor = isDark ? '#00ff41' : '#2563eb';
+  const accentColor = isDark ? '#f59f0a' : '#2563eb';
   const glowLine = isDark
-    ? 'linear-gradient(90deg, transparent, rgba(0,255,65,0.4), transparent)'
+    ? 'linear-gradient(90deg, transparent, rgba(245,159,10,0.4), transparent)'
     : 'linear-gradient(90deg, transparent, rgba(37,99,235,0.4), transparent)';
 
   const ledColor = urgency === 'imminent'
