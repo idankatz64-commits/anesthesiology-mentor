@@ -83,14 +83,14 @@ function ExplanationRenderer({ text }: { text: string }) {
   );
 }
 
-/** Color palette for split sections by index */
+/** Transformers-inspired color palette for split sections */
 const SECTION_COLORS = [
-  { border: "border-orange-500/30", header: "bg-gradient-to-r from-orange-500/15 to-orange-500/5 text-orange-400", glow: "shadow-orange-500/10" },
-  { border: "border-yellow-500/30", header: "bg-gradient-to-r from-yellow-500/15 to-yellow-500/5 text-yellow-400", glow: "shadow-yellow-500/10" },
-  { border: "border-blue-500/30", header: "bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-400", glow: "shadow-blue-500/10" },
-  { border: "border-purple-500/30", header: "bg-gradient-to-r from-purple-500/15 to-purple-500/5 text-purple-400", glow: "shadow-purple-500/10" },
-  { border: "border-emerald-500/30", header: "bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 text-emerald-400", glow: "shadow-emerald-500/10" },
-  { border: "border-primary/25", header: "bg-gradient-to-r from-primary/15 to-primary/5 text-primary", glow: "shadow-primary/10" },
+  { border: "border-red-600/35", header: "bg-gradient-to-r from-red-600/20 via-red-500/10 to-transparent text-red-400", glow: "shadow-red-600/15", accent: "from-red-600/50 to-red-400/20" },
+  { border: "border-sky-500/35", header: "bg-gradient-to-r from-sky-500/20 via-sky-400/10 to-transparent text-sky-400", glow: "shadow-sky-500/15", accent: "from-sky-500/50 to-sky-300/20" },
+  { border: "border-violet-500/35", header: "bg-gradient-to-r from-violet-600/20 via-violet-400/10 to-transparent text-violet-400", glow: "shadow-violet-500/15", accent: "from-violet-500/50 to-violet-300/20" },
+  { border: "border-amber-500/35", header: "bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-transparent text-amber-400", glow: "shadow-amber-500/15", accent: "from-amber-500/50 to-amber-300/20" },
+  { border: "border-cyan-500/35", header: "bg-gradient-to-r from-cyan-500/20 via-cyan-400/10 to-transparent text-cyan-400", glow: "shadow-cyan-500/15", accent: "from-cyan-500/50 to-cyan-300/20" },
+  { border: "border-rose-500/35", header: "bg-gradient-to-r from-rose-600/20 via-rose-400/10 to-transparent text-rose-400", glow: "shadow-rose-500/15", accent: "from-rose-500/50 to-rose-300/20" },
 ];
 
 /** Parse META_TITLES prefix from explanation field */
@@ -970,20 +970,13 @@ export default function SessionView() {
             ) : (
               <>
                 {explanationSections.length === 1 ? (
-                  /* ── Single section: 3D modern style ── */
-                  <motion.div
-                    initial={{ opacity: 0, y: 20, rotateX: 8 }}
-                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 28, delay: 0.1 }}
-                    className="relative rounded-2xl overflow-hidden border border-primary/20"
-                    style={{ perspective: 800, transformStyle: "preserve-3d" }}
-                  >
-                    {/* 3D Header */}
-                    <div className="relative bg-gradient-to-r from-primary/15 via-primary/8 to-transparent px-5 py-4 border-b border-primary/15">
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-60" />
+                  /* ── Single section ── */
+                  <div className="relative rounded-2xl overflow-hidden border border-red-600/25 bg-card/60 backdrop-blur-sm">
+                    {/* Transformers-style Header */}
+                    <div className="relative bg-gradient-to-r from-red-600/20 via-red-500/8 to-transparent px-5 py-4">
                       <div className="relative flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/10">
-                          <Lightbulb className="w-5 h-5 text-primary" />
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600/30 to-red-500/10 border border-red-500/30 flex items-center justify-center">
+                          <Lightbulb className="w-5 h-5 text-red-400" />
                         </div>
                         <strong className="text-lg font-extrabold text-foreground" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
                         {isAdmin && (
@@ -997,24 +990,14 @@ export default function SessionView() {
                         )}
                       </div>
                     </div>
-                    <div className="p-6 bg-card/60 backdrop-blur-sm">
+                    <div className="p-6">
                       <SmartContent text={explanationSections[0].content} />
                     </div>
-                    {/* Bottom accent line */}
-                    <div className="h-[2px] bg-gradient-to-r from-primary/40 via-primary/20 to-transparent" />
-                  </motion.div>
+                  </div>
                 ) : (
-                  /* ── Multiple sections: 3D animated grid ── */
+                  /* ── Multiple sections: Transformers grid ── */
                   <>
-                    <motion.div
-                      className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                      initial="hidden"
-                      animate="visible"
-                      variants={{
-                        hidden: {},
-                        visible: { transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
-                      }}
-                    >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {explanationSections.map((section, i) => {
                         const isLast = i === explanationSections.length - 1;
                         const nonLastCount = explanationSections.length - 1;
@@ -1023,38 +1006,27 @@ export default function SessionView() {
                         const color = SECTION_COLORS[i % SECTION_COLORS.length];
 
                         return (
-                          <motion.div
+                          <div
                             key={i}
-                            variants={{
-                              hidden: { opacity: 0, y: 24, rotateX: 6, scale: 0.96 },
-                              visible: { opacity: 1, y: 0, rotateX: 0, scale: 1 },
-                            }}
-                            transition={{ type: "spring", stiffness: 320, damping: 26 }}
-                            whileHover={{ y: -3, boxShadow: "0 12px 40px -8px rgba(0,0,0,0.3)" }}
-                            className={`relative rounded-2xl overflow-hidden border ${color.border} shadow-lg ${color.glow} ${
+                            className={`relative rounded-2xl overflow-hidden border ${color.border} shadow-lg ${color.glow} bg-card/60 backdrop-blur-sm ${
                               isFullWidth ? "md:col-span-2" : ""
-                            } ${isLast ? "ring-1 ring-primary/25" : ""}`}
-                            style={{ perspective: 600, transformStyle: "preserve-3d" }}
+                            }`}
                           >
                             {section.title && (
-                              <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header} border-b border-inherit`}>
-                                <div className="w-7 h-7 rounded-lg bg-current/10 flex items-center justify-center text-xs font-black opacity-70">
+                              <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`}>
+                                <div className="w-7 h-7 rounded-lg bg-current/15 flex items-center justify-center text-xs font-black">
                                   {i + 1}
                                 </div>
                                 <h4 className="font-bold text-base tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
                               </div>
                             )}
-                            <div className={`p-5 bg-card/50 backdrop-blur-sm ${isLast ? "bg-primary/5" : ""}`}>
+                            <div className={`p-5 ${isLast ? "bg-primary/5" : ""}`}>
                               <SmartContent text={section.content} />
                             </div>
-                            {/* Bottom accent */}
-                            <div className={`h-[2px] bg-gradient-to-r ${
-                              isLast ? "from-primary/40 via-primary/20 to-transparent" : "from-current/20 to-transparent"
-                            }`} />
-                          </motion.div>
+                          </div>
                         );
                       })}
-                    </motion.div>
+                    </div>
                     {isAdmin && (
                       <button
                         onClick={enterExplanationEdit}
