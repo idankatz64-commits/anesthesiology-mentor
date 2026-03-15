@@ -38,18 +38,19 @@ function isHtmlContent(text: string): boolean {
 }
 
 /** Smart renderer: HTML content via dangerouslySetInnerHTML, plain text via ExplanationRenderer */
-function SmartContent({ text }: { text: string }) {
+function SmartContent({ text, inheritSize = false }: { text: string; inheritSize?: boolean }) {
+  const sizeClass = inheritSize ? '' : 'text-base prose prose-sm';
   if (isHtmlContent(text)) {
     return (
       <div
-        className="rich-content markdown-content bidi-text text-base prose prose-sm max-w-none text-foreground"
-        style={{ lineHeight: "1.8" }}
+        className={`rich-content markdown-content bidi-text ${sizeClass} max-w-none text-foreground`}
+        style={{ lineHeight: inheritSize ? undefined : 1.8 }}
         dangerouslySetInnerHTML={{ __html: text }}
       />
     );
   }
   return (
-    <div className="markdown-content bidi-text text-base" style={{ lineHeight: "1.8" }}>
+    <div className={`markdown-content bidi-text ${inheritSize ? '' : 'text-base'}`} style={{ lineHeight: inheritSize ? undefined : 1.8 }}>
       <ExplanationRenderer text={text} />
     </div>
   );
