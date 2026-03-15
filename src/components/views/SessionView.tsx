@@ -1,21 +1,41 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { springGentle } from '@/lib/animations';
-import { useApp } from '@/contexts/AppContext';
-import { KEYS, type ConfidenceLevel } from '@/lib/types';
-import ReactMarkdown from 'react-markdown';
+import { useState, useEffect, useRef, type ReactNode } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { springGentle } from "@/lib/animations";
+import { useApp } from "@/contexts/AppContext";
+import { KEYS, type ConfidenceLevel } from "@/lib/types";
+import ReactMarkdown from "react-markdown";
 import {
-  X, Flag, Star, ChevronRight, ChevronLeft, SkipForward, BookOpen,
-  StickyNote, Tag, Plus, ExternalLink, Copy, Send, Calculator, Pencil, Check,
-  FileText, AlertTriangle, Brain, Lightbulb, Target, Zap, Image as ImageIcon,
-} from 'lucide-react';
-import FormulaCalculatorPanel from '@/components/FormulaCalculatorPanel';
-import RichTextEditor from '@/components/RichTextEditor';
-import { useToast } from '@/hooks/use-toast';
-import { useIsAdmin } from '@/hooks/useIsAdmin';
-import { supabase } from '@/integrations/supabase/client';
-import { GlobalQuestionStats, CommunityNotes } from './SessionCommunity';
-import { getChapterDisplay, resolveChapterName, MILLER_CHAPTERS } from '@/data/millerChapters';
+  X,
+  Flag,
+  Star,
+  ChevronRight,
+  ChevronLeft,
+  SkipForward,
+  BookOpen,
+  StickyNote,
+  Tag,
+  Plus,
+  ExternalLink,
+  Copy,
+  Send,
+  Calculator,
+  Pencil,
+  Check,
+  FileText,
+  AlertTriangle,
+  Brain,
+  Lightbulb,
+  Target,
+  Zap,
+  Image as ImageIcon,
+} from "lucide-react";
+import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
+import RichTextEditor from "@/components/RichTextEditor";
+import { useToast } from "@/hooks/use-toast";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
+import { supabase } from "@/integrations/supabase/client";
+import { GlobalQuestionStats, CommunityNotes } from "./SessionCommunity";
+import { getChapterDisplay, resolveChapterName, MILLER_CHAPTERS } from "@/data/millerChapters";
 
 /** Detect if content contains HTML tags */
 function isHtmlContent(text: string): boolean {
@@ -28,13 +48,13 @@ function SmartContent({ text }: { text: string }) {
     return (
       <div
         className="rich-content markdown-content bidi-text text-base prose prose-sm max-w-none text-foreground"
-        style={{ lineHeight: '1.8' }}
+        style={{ lineHeight: "1.8" }}
         dangerouslySetInnerHTML={{ __html: text }}
       />
     );
   }
   return (
-    <div className="markdown-content bidi-text text-base" style={{ lineHeight: '1.8' }}>
+    <div className="markdown-content bidi-text text-base" style={{ lineHeight: "1.8" }}>
       <ExplanationRenderer text={text} />
     </div>
   );
@@ -42,21 +62,19 @@ function SmartContent({ text }: { text: string }) {
 
 /** Parse URLs and <a> tags inside explanation text into clickable links */
 function ExplanationRenderer({ text }: { text: string }) {
-  let processed = text.replace(
-    /<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi,
-    '[$2]($1)'
-  );
-  processed = processed.replace(
-    /(?<!\]\()(?<!\()(https?:\/\/[^\s\)]+)/g,
-    '[$1]($1)'
-  );
+  let processed = text.replace(/<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi, "[$2]($1)");
+  processed = processed.replace(/(?<!\]\()(?<!\()(https?:\/\/[^\s\)]+)/g, "[$1]($1)");
 
   return (
     <ReactMarkdown
       components={{
         a: ({ href, children }) => (
-          <a href={href} target="_blank" rel="noopener noreferrer"
-            className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1 break-all">
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary underline hover:text-primary/80 transition inline-flex items-center gap-1 break-all"
+          >
             {children}
             <ExternalLink className="w-3 h-3 inline-block flex-shrink-0" />
           </a>
@@ -71,46 +89,122 @@ function ExplanationRenderer({ text }: { text: string }) {
 
 /** Split explanation text by --- or <hr> into sections with optional titles */
 function splitExplanation(text: string): { title: string | null; content: string }[] {
-  if (!text) return [{ title: null, content: 'אין הסבר' }];
-  
+  if (!text) return [{ title: null, content: "אין הסבר" }];
+
   // Split by <hr>, <hr/>, <hr />, or --- on its own line
-  const parts = text.split(/(?:<hr\s*\/?>|\n---\n|\n---$|^---\n)/i).map(p => p.trim()).filter(Boolean);
-  
+  const parts = text
+    .split(/(?:<hr\s*\/?>|\n---\n|\n---$|^---\n)/i)
+    .map((p) => p.trim())
+    .filter(Boolean);
+
   if (parts.length <= 1) return [{ title: null, content: text }];
-  
-  return parts.map(part => {
+
+  return parts.map((part) => {
     // Check if first line looks like a title (short, possibly bold/uppercase)
-    const lines = part.split('\n');
-    const firstLine = lines[0].replace(/<\/?(?:strong|b|em|h[1-6])>/gi, '').trim();
-    
+    const lines = part.split("\n");
+    const firstLine = lines[0].replace(/<\/?(?:strong|b|em|h[1-6])>/gi, "").trim();
+
     // If first line is short and rest has content, treat as title
     if (firstLine.length < 80 && lines.length > 1) {
       return {
         title: firstLine,
-        content: lines.slice(1).join('\n').trim(),
+        content: lines.slice(1).join("\n").trim(),
       };
     }
     return { title: null, content: part };
   });
 }
 
-/** Get icon for section title based on keywords */
-function getSectionIcon(title: string | null) {
-  if (!title) return <Lightbulb className="w-4 h-4" />;
+/** Get full style config for a section based on its title */
+function getSectionConfig(title: string | null): {
+  icon: ReactNode;
+  headerClass: string;
+  borderClass: string;
+} {
+  if (!title)
+    return {
+      icon: <Lightbulb className="w-4 h-4" />,
+      headerClass: "bg-primary/10 text-primary",
+      borderClass: "border-primary/20",
+    };
   const t = title.toUpperCase();
-  if (t.includes('EXECUTIVE') || t.includes('SUMMARY') || t.includes('סיכום')) return <FileText className="w-4 h-4" />;
-  if (t.includes('TRAP') || t.includes('מלכודת') || t.includes('טעות')) return <AlertTriangle className="w-4 h-4" />;
-  if (t.includes('MILLER') || t.includes('DEEP DIVE') || t.includes('העמקה')) return <Brain className="w-4 h-4" />;
-  if (t.includes('TIP') || t.includes('טיפ') || t.includes('CHEAT')) return <Zap className="w-4 h-4" />;
-  if (t.includes('KEY') || t.includes('מפתח') || t.includes('POINT')) return <Target className="w-4 h-4" />;
-  return <Lightbulb className="w-4 h-4" />;
+  if (
+    t.includes("EXECUTIVE") ||
+    t.includes("SUMMARY") ||
+    t.includes("סיכום") ||
+    t.includes("תקציר") ||
+    t.includes("מנהלים")
+  )
+    return {
+      icon: <FileText className="w-4 h-4" />,
+      headerClass: "bg-orange-500/10 text-orange-400",
+      borderClass: "border-orange-500/25",
+    };
+  if (t.includes("TRAP") || t.includes("מלכודת") || t.includes("טעות") || t.includes("שים לב") || t.includes("WATCH"))
+    return {
+      icon: <AlertTriangle className="w-4 h-4" />,
+      headerClass: "bg-yellow-500/10 text-yellow-400",
+      borderClass: "border-yellow-500/25",
+    };
+  if (
+    t.includes("MILLER") ||
+    t.includes("DEEP DIVE") ||
+    t.includes("העמקה") ||
+    t.includes("ניתוח") ||
+    t.includes("ANALYSIS")
+  )
+    return {
+      icon: <Brain className="w-4 h-4" />,
+      headerClass: "bg-blue-500/10 text-blue-400",
+      borderClass: "border-blue-500/25",
+    };
+  if (
+    t.includes("KEY") ||
+    t.includes("מפתח") ||
+    t.includes("POINT") ||
+    t.includes("REFERENCE") ||
+    t.includes("CRITICAL") ||
+    t.includes("QUOTE") ||
+    t.includes("ציטוט")
+  )
+    return {
+      icon: <Target className="w-4 h-4" />,
+      headerClass: "bg-purple-500/10 text-purple-400",
+      borderClass: "border-purple-500/25",
+    };
+  if (t.includes("TIP") || t.includes("טיפ") || t.includes("CHEAT") || t.includes("VISUAL") || t.includes("תמונ"))
+    return {
+      icon: <Zap className="w-4 h-4" />,
+      headerClass: "bg-emerald-500/10 text-emerald-400",
+      borderClass: "border-emerald-500/25",
+    };
+  return {
+    icon: <Lightbulb className="w-4 h-4" />,
+    headerClass: "bg-primary/10 text-primary",
+    borderClass: "border-primary/20",
+  };
 }
 
 export default function SessionView() {
   const {
-    session, progress, navigate, setAnswer, setConfidence, setSessionIndex,
-    toggleFlag, skipQuestion, updateHistory, updateSpacedRepetition, syncAnswerToDb, toggleFavorite,
-    saveNote, setRating, addTag, removeTag, saveSessionToDb, clearSavedSession,
+    session,
+    progress,
+    navigate,
+    setAnswer,
+    setConfidence,
+    setSessionIndex,
+    toggleFlag,
+    skipQuestion,
+    updateHistory,
+    updateSpacedRepetition,
+    syncAnswerToDb,
+    toggleFavorite,
+    saveNote,
+    setRating,
+    addTag,
+    removeTag,
+    saveSessionToDb,
+    clearSavedSession,
     invalidateQuestions,
   } = useApp();
   const { toast } = useToast();
@@ -118,43 +212,43 @@ export default function SessionView() {
 
   const { quiz, index, mode, answers, confidence, flagged, skipped } = session;
   const [showNote, setShowNote] = useState(false);
-  const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState("");
   const [timerSeconds, setTimerSeconds] = useState(0);
   const [simTimerSeconds, setSimTimerSeconds] = useState(3 * 60 * 60);
   const [calcOpen, setCalcOpen] = useState(false);
   const [editingExplanation, setEditingExplanation] = useState(false);
-  const [explanationDraft, setExplanationDraft] = useState('');
+  const [explanationDraft, setExplanationDraft] = useState("");
   const [savingExplanation, setSavingExplanation] = useState(false);
   const [editingCorrectAnswer, setEditingCorrectAnswer] = useState(false);
-  const [correctAnswerDraft, setCorrectAnswerDraft] = useState('');
+  const [correctAnswerDraft, setCorrectAnswerDraft] = useState("");
   const [savingCorrectAnswer, setSavingCorrectAnswer] = useState(false);
   const [showConfirmSave, setShowConfirmSave] = useState(false);
   const [showExitDialog, setShowExitDialog] = useState(false);
-  const [chapterDraft, setChapterDraft] = useState('');
-  const [savingChapter, setSavingChapter] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const [chapterDraft, setChapterDraft] = useState("");
+  const [savingChapter, setSavingChapter] = useState<"idle" | "saving" | "saved">("idle");
   const [editingQuestion, setEditingQuestion] = useState(false);
-  const [questionDraft, setQuestionDraft] = useState('');
-  const [answersDraft, setAnswersDraft] = useState({ A: '', B: '', C: '', D: '' });
+  const [questionDraft, setQuestionDraft] = useState("");
+  const [answersDraft, setAnswersDraft] = useState({ A: "", B: "", C: "", D: "" });
   const [savingQuestion, setSavingQuestion] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   // Reset drafts when question changes
   useEffect(() => {
-    setChapterDraft('');
-    setSavingChapter('idle');
+    setChapterDraft("");
+    setSavingChapter("idle");
     setEditingQuestion(false);
-    setQuestionDraft('');
-    setAnswersDraft({ A: '', B: '', C: '', D: '' });
+    setQuestionDraft("");
+    setAnswersDraft({ A: "", B: "", C: "", D: "" });
   }, [index]);
 
-  const isSimulation = mode === 'simulation';
-  const isExam = mode === 'exam';
+  const isSimulation = mode === "simulation";
+  const isExam = mode === "exam";
 
   // Timer for exam mode (count up)
   useEffect(() => {
-    if (mode !== 'exam') return;
+    if (mode !== "exam") return;
     setTimerSeconds(0);
-    const interval = setInterval(() => setTimerSeconds(p => p + 1), 1000);
+    const interval = setInterval(() => setTimerSeconds((p) => p + 1), 1000);
     return () => clearInterval(interval);
   }, [mode]);
 
@@ -162,10 +256,14 @@ export default function SessionView() {
   useEffect(() => {
     if (!isSimulation) return;
     setSimTimerSeconds(3 * 60 * 60);
-    const interval = setInterval(() => setSimTimerSeconds(p => {
-      if (p <= 0) return 0;
-      return p - 1;
-    }), 1000);
+    const interval = setInterval(
+      () =>
+        setSimTimerSeconds((p) => {
+          if (p <= 0) return 0;
+          return p - 1;
+        }),
+      1000,
+    );
     return () => clearInterval(interval);
   }, [isSimulation]);
 
@@ -177,18 +275,18 @@ export default function SessionView() {
   const savedAns = answers[index];
   const savedConfidence = confidence[index];
   const correctAns = qData[KEYS.CORRECT];
-  const isPracticeRevealed = mode === 'practice' && savedAns !== null && savedConfidence !== null;
-  const isReviewMode = mode === 'review';
+  const isPracticeRevealed = mode === "practice" && savedAns !== null && savedConfidence !== null;
+  const isReviewMode = mode === "review";
   // In simulation: never show feedback during session
   const showFeedback = !isSimulation && (isPracticeRevealed || isReviewMode);
 
   const isFav = progress.favorites.includes(serialNumber);
-  const noteText = progress.notes[serialNumber] || '';
+  const noteText = progress.notes[serialNumber] || "";
   const rating = progress.ratings[serialNumber];
   const tags = progress.tags[serialNumber] || [];
 
   // Whether the user needs to pick confidence before proceeding (practice mode)
-  const needsConfidence = mode === 'practice' && savedAns !== null && savedConfidence === null;
+  const needsConfidence = mode === "practice" && savedAns !== null && savedConfidence === null;
 
   const handleAnswer = (opt: string) => {
     if (isPracticeRevealed || isReviewMode) return;
@@ -198,7 +296,7 @@ export default function SessionView() {
   };
 
   const handleConfidenceSelect = (level: ConfidenceLevel) => {
-    if (mode !== 'practice' || savedAns === null) return;
+    if (mode !== "practice" || savedAns === null) return;
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
     updateHistory(serialNumber, isCorrect, qData[KEYS.TOPIC]);
@@ -211,9 +309,9 @@ export default function SessionView() {
       mainRef.current?.scrollTo(0, 0);
     } else {
       clearSavedSession();
-      if (isReviewMode) navigate('results');
-      else if (isSimulation) navigate('results');
-      else navigate('review');
+      if (isReviewMode) navigate("results");
+      else if (isSimulation) navigate("results");
+      else navigate("review");
     }
   };
 
@@ -230,27 +328,30 @@ export default function SessionView() {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
     } else {
-      if (isSimulation) navigate('results');
-      else navigate('review');
+      if (isSimulation) navigate("results");
+      else navigate("review");
     }
   };
 
   const handleExit = () => {
-    if (isReviewMode) { navigate('results'); return; }
+    if (isReviewMode) {
+      navigate("results");
+      return;
+    }
     setShowExitDialog(true);
   };
 
   const handleSaveAndExit = async () => {
     await saveSessionToDb(timerSeconds, simTimerSeconds);
-    toast({ title: 'הסשן נשמר ✅', description: 'תוכל להמשיך מאוחר יותר מדף הבית.' });
+    toast({ title: "הסשן נשמר ✅", description: "תוכל להמשיך מאוחר יותר מדף הבית." });
     setShowExitDialog(false);
-    navigate('home');
+    navigate("home");
   };
 
   const handleExitWithoutSaving = () => {
     clearSavedSession();
     setShowExitDialog(false);
-    navigate('home');
+    navigate("home");
   };
 
   const handleSubmitSimulation = () => {
@@ -262,73 +363,88 @@ export default function SessionView() {
       }
     });
     clearSavedSession();
-    navigate('results');
+    navigate("results");
   };
 
   const handleAddTag = () => {
     if (!tagInput.trim()) return;
     addTag(serialNumber, tagInput.trim());
-    setTagInput('');
+    setTagInput("");
   };
 
   const formatTime = (s: number) =>
-    `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`;
+    `${Math.floor(s / 60)
+      .toString()
+      .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
 
   const formatCountdown = (s: number) => {
     const h = Math.floor(s / 3600);
     const m = Math.floor((s % 3600) / 60);
     const sec = s % 60;
-    return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
   };
 
   const getOptionClasses = (opt: string) => {
-    let base = 'w-full text-right p-5 rounded-xl border transition relative flex items-center group backdrop-blur-sm ';
+    let base = "w-full text-right p-5 rounded-xl border transition relative flex items-center group backdrop-blur-sm ";
 
     if (isSimulation) {
-      if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]';
-      return base + 'bg-white/[0.03] border-border hover:border-primary/30 hover:bg-white/[0.06]';
+      if (savedAns === opt)
+        return base + "bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]";
+      return base + "bg-white/[0.03] border-border hover:border-primary/30 hover:bg-white/[0.06]";
     }
 
     if (isReviewMode) {
-      if (opt === correctAns) return base + 'bg-success/10 border-success/30 text-success shadow-[0_0_15px_hsl(160_84%_39%/0.1)]';
-      if (opt === savedAns && savedAns !== correctAns) return base + 'bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_15px_hsl(0_72%_51%/0.1)]';
-      return base + 'opacity-60 bg-muted border-border';
+      if (opt === correctAns)
+        return base + "bg-success/10 border-success/30 text-success shadow-[0_0_15px_hsl(160_84%_39%/0.1)]";
+      if (opt === savedAns && savedAns !== correctAns)
+        return base + "bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_15px_hsl(0_72%_51%/0.1)]";
+      return base + "opacity-60 bg-muted border-border";
     }
 
     if (isPracticeRevealed) {
-      if (opt === correctAns) return base + 'bg-success/10 border-success/30 text-success shadow-[0_0_15px_hsl(160_84%_39%/0.1)]';
-      if (opt === savedAns) return base + 'bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_15px_hsl(0_72%_51%/0.1)]';
-      return base + 'opacity-50 border-border';
+      if (opt === correctAns)
+        return base + "bg-success/10 border-success/30 text-success shadow-[0_0_15px_hsl(160_84%_39%/0.1)]";
+      if (opt === savedAns)
+        return base + "bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_15px_hsl(0_72%_51%/0.1)]";
+      return base + "opacity-50 border-border";
     }
 
-    if (savedAns === opt) return base + 'bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]';
-    return base + 'bg-white/[0.03] border-border hover:border-primary/30 hover:bg-white/[0.06]';
+    if (savedAns === opt)
+      return base + "bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]";
+    return base + "bg-white/[0.03] border-border hover:border-primary/30 hover:bg-white/[0.06]";
   };
 
   const progressPercent = ((index + 1) / quiz.length) * 100;
 
   // Split explanation sections
-  const explanationSections = splitExplanation(qData[KEYS.EXPLANATION] || '');
+  const explanationSections = splitExplanation(qData[KEYS.EXPLANATION] || "");
 
   return (
-    <div className="w-full pb-24" ref={mainRef} style={{ minHeight: '60vh' }}>
+    <div className="w-full pb-24" ref={mainRef} style={{ minHeight: "60vh" }}>
       {/* ── Unified Top Bar: Progress + Counter + Timer ── */}
       <div className="glass-card rounded-xl p-4 mb-6">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <span className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
-              isSimulation ? 'bg-primary/10 text-primary border-primary/20' :
-              mode === 'practice' ? 'bg-primary/10 text-primary border-primary/20' :
-              isExam ? 'bg-primary/10 text-primary border-primary/20' :
-              'bg-warning/10 text-warning border-warning/20'
-            }`}>
-              {isSimulation ? 'סימולציה' : mode === 'practice' ? 'תרגול' : isExam ? 'בחינה' : 'תחקור'}
+            <span
+              className={`text-xs font-bold px-3 py-1.5 rounded-lg border ${
+                isSimulation
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : mode === "practice"
+                    ? "bg-primary/10 text-primary border-primary/20"
+                    : isExam
+                      ? "bg-primary/10 text-primary border-primary/20"
+                      : "bg-warning/10 text-warning border-warning/20"
+              }`}
+            >
+              {isSimulation ? "סימולציה" : mode === "practice" ? "תרגול" : isExam ? "בחינה" : "תחקור"}
             </span>
             {(isExam || isSimulation) && (
               <button
                 onClick={() => toggleFlag(index)}
                 className={`w-8 h-8 rounded-full flex items-center justify-center transition border ${
-                  flagged.has(index) ? 'bg-warning/10 text-warning border-warning/30' : 'bg-card text-muted-foreground border-border hover:text-warning'
+                  flagged.has(index)
+                    ? "bg-warning/10 text-warning border-warning/30"
+                    : "bg-card text-muted-foreground border-border hover:text-warning"
                 }`}
               >
                 <Flag className="w-3 h-3" />
@@ -342,9 +458,13 @@ export default function SessionView() {
 
           <div className="flex items-center gap-3">
             {isSimulation && (
-              <span className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg border ${
-                simTimerSeconds < 600 ? 'bg-destructive/10 text-destructive border-destructive/20 animate-pulse' : 'bg-card text-success border-border'
-              }`}>
+              <span
+                className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg border ${
+                  simTimerSeconds < 600
+                    ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse"
+                    : "bg-card text-success border-border"
+                }`}
+              >
                 ⏱ {formatCountdown(simTimerSeconds)}
               </span>
             )}
@@ -353,7 +473,10 @@ export default function SessionView() {
                 {formatTime(timerSeconds)}
               </span>
             )}
-            <button onClick={handleExit} className="text-muted-foreground hover:text-destructive text-sm font-medium px-2 py-1 rounded-lg hover:bg-destructive/10 transition">
+            <button
+              onClick={handleExit}
+              className="text-muted-foreground hover:text-destructive text-sm font-medium px-2 py-1 rounded-lg hover:bg-destructive/10 transition"
+            >
               <X className="w-4 h-4" />
             </button>
           </div>
@@ -365,7 +488,7 @@ export default function SessionView() {
             className="bg-primary h-full rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]"
             layout
             style={{ width: `${progressPercent}%` }}
-            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
           />
         </div>
       </div>
@@ -376,15 +499,15 @@ export default function SessionView() {
         <div className="px-8 pt-6 pb-2 flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <span className="bg-primary/15 text-primary text-xs font-bold px-4 py-1.5 rounded-full border border-primary/20 uppercase tracking-wide">
-              {qData[KEYS.CHAPTER] ? getChapterDisplay(qData[KEYS.CHAPTER]) : (qData[KEYS.TOPIC] || 'General')}
+              {qData[KEYS.CHAPTER] ? getChapterDisplay(qData[KEYS.CHAPTER]) : qData[KEYS.TOPIC] || "General"}
             </span>
             <span className="text-muted-foreground text-xs font-medium bidi-text">
               שאלה {questionId} (#{serialNumber})
             </span>
-            {qData[KEYS.YEAR] && qData[KEYS.YEAR] !== 'N/A' && (
+            {qData[KEYS.YEAR] && qData[KEYS.YEAR] !== "N/A" && (
               <span className="text-muted-foreground text-xs">📅 {qData[KEYS.YEAR]}</span>
             )}
-            {qData[KEYS.SOURCE] && qData[KEYS.SOURCE] !== 'N/A' && (
+            {qData[KEYS.SOURCE] && qData[KEYS.SOURCE] !== "N/A" && (
               <span className="text-muted-foreground text-xs">🏛 {qData[KEYS.SOURCE]}</span>
             )}
           </div>
@@ -397,7 +520,9 @@ export default function SessionView() {
               <Calculator className="w-3.5 h-3.5" /> Σ
             </button>
             <button onClick={() => toggleFavorite(serialNumber)} className="transition">
-              <Star className={`w-5 h-5 ${isFav ? 'fill-warning text-warning' : 'text-muted-foreground hover:text-warning'}`} />
+              <Star
+                className={`w-5 h-5 ${isFav ? "fill-warning text-warning" : "text-muted-foreground hover:text-warning"}`}
+              />
             </button>
           </div>
         </div>
@@ -414,13 +539,15 @@ export default function SessionView() {
                   minHeight="80px"
                 />
                 <div className="space-y-3">
-                  {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                  {(["A", "B", "C", "D"] as const).map((opt) => (
                     <div key={opt} className="flex items-center gap-3">
-                      <span className="w-8 h-8 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center text-sm shrink-0">{opt}</span>
+                      <span className="w-8 h-8 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center text-sm shrink-0">
+                        {opt}
+                      </span>
                       <input
                         type="text"
                         value={answersDraft[opt]}
-                        onChange={e => setAnswersDraft(prev => ({ ...prev, [opt]: e.target.value }))}
+                        onChange={(e) => setAnswersDraft((prev) => ({ ...prev, [opt]: e.target.value }))}
                         dir="rtl"
                         className="flex-grow bg-muted border border-border rounded-xl px-4 py-3 text-foreground text-base outline-none focus:border-primary"
                         placeholder={`תשובה ${opt}...`}
@@ -440,7 +567,7 @@ export default function SessionView() {
                     onClick={async () => {
                       setSavingQuestion(true);
                       const { error } = await supabase
-                        .from('questions')
+                        .from("questions")
                         .update({
                           question: questionDraft,
                           a: answersDraft.A,
@@ -449,10 +576,10 @@ export default function SessionView() {
                           d: answersDraft.D,
                           manually_edited: true,
                         })
-                        .eq('id', serialNumber);
+                        .eq("id", serialNumber);
                       setSavingQuestion(false);
                       if (error) {
-                        toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
+                        toast({ title: "שגיאה בשמירה", description: error.message, variant: "destructive" });
                       } else {
                         (qData as any)[KEYS.QUESTION] = questionDraft;
                         (qData as any)[KEYS.A] = answersDraft.A;
@@ -461,12 +588,12 @@ export default function SessionView() {
                         (qData as any)[KEYS.D] = answersDraft.D;
                         invalidateQuestions();
                         setEditingQuestion(false);
-                        toast({ title: 'השאלה עודכנה ✅' });
+                        toast({ title: "השאלה עודכנה ✅" });
                       }
                     }}
                     className="px-4 py-2 text-xs font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition disabled:opacity-50"
                   >
-                    {savingQuestion ? '...' : 'שמור'}
+                    {savingQuestion ? "..." : "שמור"}
                   </button>
                 </div>
               </div>
@@ -480,10 +607,10 @@ export default function SessionView() {
                     onClick={() => {
                       setQuestionDraft(qData[KEYS.QUESTION]);
                       setAnswersDraft({
-                        A: qData[KEYS.A] || '',
-                        B: qData[KEYS.B] || '',
-                        C: qData[KEYS.C] || '',
-                        D: qData[KEYS.D] || '',
+                        A: qData[KEYS.A] || "",
+                        B: qData[KEYS.B] || "",
+                        C: qData[KEYS.C] || "",
+                        D: qData[KEYS.D] || "",
                       });
                       setEditingQuestion(true);
                     }}
@@ -498,12 +625,17 @@ export default function SessionView() {
           </div>
 
           {/* Media */}
-          {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== 'nan' && (
+          {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" && (
             <div className="mb-6">
               {qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png)$/i) ? (
                 <img src={qData[KEYS.MEDIA_LINK]} className="max-h-80 object-contain rounded-lg" alt="Question media" />
               ) : (
-                <a href={qData[KEYS.MEDIA_LINK]} target="_blank" rel="noopener noreferrer" className="text-primary underline font-medium">
+                <a
+                  href={qData[KEYS.MEDIA_LINK]}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary underline font-medium"
+                >
                   פתח קובץ מצורף
                 </a>
               )}
@@ -536,27 +668,32 @@ export default function SessionView() {
 
           {/* Options */}
           {!editingQuestion && (
-          <div className="space-y-4">
-            {(['A', 'B', 'C', 'D'] as const).map(opt => {
-              const text = qData[KEYS[opt]];
-              if (!text) return null;
-              return (
-                <button
-                  key={opt}
-                  onClick={() => handleAnswer(opt)}
-                  disabled={isPracticeRevealed || isReviewMode || (isSimulation && savedAns !== null)}
-                  className={getOptionClasses(opt)}
-                >
-                  <span className="w-9 h-9 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center ml-4 text-sm group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
-                    {opt}
-                  </span>
-                  <span className="flex-grow text-foreground text-lg font-light leading-snug bidi-text">{text}</span>
-                  {!isSimulation && (isPracticeRevealed || isReviewMode) && opt === correctAns && <span className="absolute left-5 text-success text-xl">✓</span>}
-                  {!isSimulation && (isPracticeRevealed || isReviewMode) && opt === savedAns && opt !== correctAns && <span className="absolute left-5 text-destructive text-xl">✗</span>}
-                </button>
-              );
-            })}
-          </div>
+            <div className="space-y-4">
+              {(["A", "B", "C", "D"] as const).map((opt) => {
+                const text = qData[KEYS[opt]];
+                if (!text) return null;
+                return (
+                  <button
+                    key={opt}
+                    onClick={() => handleAnswer(opt)}
+                    disabled={isPracticeRevealed || isReviewMode || (isSimulation && savedAns !== null)}
+                    className={getOptionClasses(opt)}
+                  >
+                    <span className="w-9 h-9 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center ml-4 text-sm group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
+                      {opt}
+                    </span>
+                    <span className="flex-grow text-foreground text-lg font-light leading-snug bidi-text">{text}</span>
+                    {!isSimulation && (isPracticeRevealed || isReviewMode) && opt === correctAns && (
+                      <span className="absolute left-5 text-success text-xl">✓</span>
+                    )}
+                    {!isSimulation &&
+                      (isPracticeRevealed || isReviewMode) &&
+                      opt === savedAns &&
+                      opt !== correctAns && <span className="absolute left-5 text-destructive text-xl">✗</span>}
+                  </button>
+                );
+              })}
+            </div>
           )}
 
           {/* Confidence Tracker - Segmented Control */}
@@ -564,16 +701,30 @@ export default function SessionView() {
             <div className="mt-8">
               <p className="text-sm font-bold text-muted-foreground mb-3 text-center">עד כמה אתה בטוח בתשובה?</p>
               <div className="flex rounded-xl overflow-hidden border border-border bg-muted/50">
-                {([
-                  { level: 'confident' as ConfidenceLevel, label: 'בטוח', color: 'bg-success/20 text-success border-success/30' },
-                  { level: 'hesitant' as ConfidenceLevel, label: 'מתלבט', color: 'bg-warning/20 text-warning border-warning/30' },
-                  { level: 'guessed' as ConfidenceLevel, label: 'ניחוש', color: 'bg-destructive/20 text-destructive border-destructive/30' },
-                ] as const).map(({ level, label, color }, i) => (
+                {(
+                  [
+                    {
+                      level: "confident" as ConfidenceLevel,
+                      label: "בטוח",
+                      color: "bg-success/20 text-success border-success/30",
+                    },
+                    {
+                      level: "hesitant" as ConfidenceLevel,
+                      label: "מתלבט",
+                      color: "bg-warning/20 text-warning border-warning/30",
+                    },
+                    {
+                      level: "guessed" as ConfidenceLevel,
+                      label: "ניחוש",
+                      color: "bg-destructive/20 text-destructive border-destructive/30",
+                    },
+                  ] as const
+                ).map(({ level, label, color }, i) => (
                   <button
                     key={level}
                     onClick={() => handleConfidenceSelect(level)}
                     className={`flex-1 py-3.5 text-sm font-bold transition-all ${
-                      i < 2 ? 'border-l border-border' : ''
+                      i < 2 ? "border-l border-border" : ""
                     } hover:${color} text-muted-foreground hover:text-foreground`}
                   >
                     {label}
@@ -589,36 +740,46 @@ export default function SessionView() {
               {/* Rating */}
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-muted-foreground ml-2">דרגת קושי:</span>
-                {(['easy', 'medium', 'hard'] as const).map(level => (
+                {(["easy", "medium", "hard"] as const).map((level) => (
                   <button
                     key={level}
                     onClick={() => setRating(serialNumber, level)}
                     className={`rating-btn px-4 py-2 rounded-xl text-xs font-bold ${
-                      level === 'easy' ? 'bg-success/10 text-success' :
-                      level === 'medium' ? 'bg-warning/10 text-warning' :
-                      'bg-destructive/10 text-destructive'
-                    } ${rating === level ? 'active' : ''}`}
+                      level === "easy"
+                        ? "bg-success/10 text-success"
+                        : level === "medium"
+                          ? "bg-warning/10 text-warning"
+                          : "bg-destructive/10 text-destructive"
+                    } ${rating === level ? "active" : ""}`}
                   >
-                    {level === 'easy' ? 'קל 🟢' : level === 'medium' ? 'בינוני 🟡' : 'קשה 🔴'}
+                    {level === "easy" ? "קל 🟢" : level === "medium" ? "בינוני 🟡" : "קשה 🔴"}
                   </button>
                 ))}
               </div>
 
               {/* Tags */}
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-bold text-muted-foreground"><Tag className="w-3 h-3 inline" /> תגיות:</span>
-                {tags.map(tag => (
-                  <div key={tag} className="tag-chip bg-muted text-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-border">
+                <span className="text-xs font-bold text-muted-foreground">
+                  <Tag className="w-3 h-3 inline" /> תגיות:
+                </span>
+                {tags.map((tag) => (
+                  <div
+                    key={tag}
+                    className="tag-chip bg-muted text-foreground px-3 py-1 rounded-full text-xs font-bold flex items-center gap-2 border border-border"
+                  >
                     {tag}
-                    <X className="w-3 h-3 cursor-pointer hover:text-destructive" onClick={() => removeTag(serialNumber, tag)} />
+                    <X
+                      className="w-3 h-3 cursor-pointer hover:text-destructive"
+                      onClick={() => removeTag(serialNumber, tag)}
+                    />
                   </div>
                 ))}
                 <div className="flex items-center gap-1">
                   <input
                     type="text"
                     value={tagInput}
-                    onChange={e => setTagInput(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleAddTag()}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleAddTag()}
                     placeholder="תגית חדשה..."
                     className="px-3 py-1 bg-muted border border-border rounded-full text-xs outline-none focus:border-primary w-28 text-foreground"
                   />
@@ -635,9 +796,9 @@ export default function SessionView() {
                   className="text-xs font-bold text-primary flex items-center gap-2 hover:underline"
                 >
                   <StickyNote className="w-3 h-3" />
-                  {noteText ? 'ערוך הערה אישית (קיים)' : 'הוסף הערה אישית'}
+                  {noteText ? "ערוך הערה אישית (קיים)" : "הוסף הערה אישית"}
                 </button>
-              {showNote && (
+                {showNote && (
                   <div className="mt-2">
                     <RichTextEditor
                       content={noteText}
@@ -664,7 +825,10 @@ export default function SessionView() {
               )}
               {isAdmin && !editingCorrectAnswer && (
                 <button
-                  onClick={() => { setCorrectAnswerDraft(correctAns); setEditingCorrectAnswer(true); }}
+                  onClick={() => {
+                    setCorrectAnswerDraft(correctAns);
+                    setEditingCorrectAnswer(true);
+                  }}
                   className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
                   title="ערוך תשובה נכונה"
                 >
@@ -678,14 +842,14 @@ export default function SessionView() {
               <div className="p-4 bg-muted/50 rounded-xl border border-border space-y-3">
                 <p className="text-sm font-bold text-foreground">שנה תשובה נכונה:</p>
                 <div className="flex gap-2">
-                  {(['A', 'B', 'C', 'D'] as const).map(opt => (
+                  {(["A", "B", "C", "D"] as const).map((opt) => (
                     <button
                       key={opt}
                       onClick={() => setCorrectAnswerDraft(opt)}
                       className={`w-10 h-10 rounded-lg font-bold text-sm border transition ${
                         correctAnswerDraft === opt
-                          ? 'bg-primary text-primary-foreground border-primary'
-                          : 'bg-card text-muted-foreground border-border hover:border-primary/30'
+                          ? "bg-primary text-primary-foreground border-primary"
+                          : "bg-card text-muted-foreground border-border hover:border-primary/30"
                       }`}
                     >
                       {opt}
@@ -694,10 +858,15 @@ export default function SessionView() {
                 </div>
                 {showConfirmSave ? (
                   <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-lg space-y-2">
-                    <p className="text-xs font-bold text-destructive">⚠️ שינוי התשובה הנכונה ישפיע על כל המשתמשים. להמשיך?</p>
+                    <p className="text-xs font-bold text-destructive">
+                      ⚠️ שינוי התשובה הנכונה ישפיע על כל המשתמשים. להמשיך?
+                    </p>
                     <div className="flex gap-2 justify-end">
                       <button
-                        onClick={() => { setShowConfirmSave(false); setEditingCorrectAnswer(false); }}
+                        onClick={() => {
+                          setShowConfirmSave(false);
+                          setEditingCorrectAnswer(false);
+                        }}
                         className="px-3 py-1.5 text-xs font-bold text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/80 transition"
                       >
                         ביטול
@@ -707,23 +876,23 @@ export default function SessionView() {
                         onClick={async () => {
                           setSavingCorrectAnswer(true);
                           const { error } = await supabase
-                            .from('questions')
+                            .from("questions")
                             .update({ correct: correctAnswerDraft, manually_edited: true })
-                            .eq('id', serialNumber);
+                            .eq("id", serialNumber);
                           setSavingCorrectAnswer(false);
                           if (error) {
-                            toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
+                            toast({ title: "שגיאה בשמירה", description: error.message, variant: "destructive" });
                           } else {
                             qData[KEYS.CORRECT] = correctAnswerDraft;
                             invalidateQuestions();
                             setEditingCorrectAnswer(false);
                             setShowConfirmSave(false);
-                            toast({ title: 'התשובה הנכונה עודכנה ✅' });
+                            toast({ title: "התשובה הנכונה עודכנה ✅" });
                           }
                         }}
                         className="px-3 py-1.5 text-xs font-bold text-destructive-foreground bg-destructive rounded-lg hover:opacity-90 transition disabled:opacity-50"
                       >
-                        {savingCorrectAnswer ? '...' : 'אישור שמירה'}
+                        {savingCorrectAnswer ? "..." : "אישור שמירה"}
                       </button>
                     </div>
                   </div>
@@ -763,9 +932,12 @@ export default function SessionView() {
                   </strong>
                   <button
                     onClick={() => {
-                      if (!explanationDraft.includes('<hr>') && !explanationDraft.includes('---')) {
-                        setExplanationDraft(prev => prev + '\n<hr>\n');
-                        toast({ title: 'הוסף separator', description: 'נוסף מפריד — טקסט מעליו ומתחתיו יוצגו בכרטיסים נפרדים' });
+                      if (!explanationDraft.includes("<hr>") && !explanationDraft.includes("---")) {
+                        setExplanationDraft((prev) => prev + "\n<hr>\n");
+                        toast({
+                          title: "הוסף separator",
+                          description: "נוסף מפריד — טקסט מעליו ומתחתיו יוצגו בכרטיסים נפרדים",
+                        });
                       }
                     }}
                     className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition border border-primary/20"
@@ -773,11 +945,7 @@ export default function SessionView() {
                     ✂️ פצל לחלונות
                   </button>
                 </div>
-                <RichTextEditor
-                  content={explanationDraft}
-                  onChange={setExplanationDraft}
-                  minHeight="120px"
-                />
+                <RichTextEditor content={explanationDraft} onChange={setExplanationDraft} minHeight="120px" />
                 <div className="flex gap-2 justify-end">
                   <button
                     onClick={() => setEditingExplanation(false)}
@@ -790,56 +958,74 @@ export default function SessionView() {
                     onClick={async () => {
                       setSavingExplanation(true);
                       const { error } = await supabase
-                        .from('questions')
+                        .from("questions")
                         .update({ explanation: explanationDraft, manually_edited: true })
-                        .eq('id', serialNumber);
+                        .eq("id", serialNumber);
                       setSavingExplanation(false);
                       if (error) {
-                        toast({ title: 'שגיאה בשמירה', description: error.message, variant: 'destructive' });
+                        toast({ title: "שגיאה בשמירה", description: error.message, variant: "destructive" });
                       } else {
                         qData[KEYS.EXPLANATION] = explanationDraft;
                         invalidateQuestions();
                         setEditingExplanation(false);
-                        toast({ title: 'ההסבר עודכן ✅' });
+                        toast({ title: "ההסבר עודכן ✅" });
                       }
                     }}
                     className="px-4 py-2 text-xs font-bold text-primary-foreground bg-primary rounded-lg hover:opacity-90 transition disabled:opacity-50"
                   >
-                    {savingExplanation ? '...' : 'שמור'}
+                    {savingExplanation ? "..." : "שמור"}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="space-y-4">
-                {explanationSections.map((section, i) => (
-                  <div key={i} className="glass-card rounded-xl p-6 border border-border">
-                    {section.title ? (
-                      <div className="flex items-center gap-2 mb-3 text-primary">
-                        {getSectionIcon(section.title)}
-                        <h4 className="font-bold text-sm uppercase tracking-wide">{section.title}</h4>
+                {explanationSections.map((section, i) => {
+                  const isMultiple = explanationSections.length > 1;
+                  const config = getSectionConfig(section.title);
+                  if (!isMultiple) {
+                    return (
+                      <div key={i} className="glass-card rounded-xl p-6 border border-border">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Lightbulb className="w-4 h-4 text-primary" />
+                          <strong className="text-sm font-medium text-foreground">הסבר:</strong>
+                          {isAdmin && (
+                            <button
+                              onClick={() => {
+                                setExplanationDraft(qData[KEYS.EXPLANATION] || "");
+                                setEditingExplanation(true);
+                              }}
+                              className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
+                              title="ערוך הסבר"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                        <SmartContent text={section.content} />
                       </div>
-                    ) : explanationSections.length === 1 ? (
-                      <div className="flex items-center gap-2 mb-3">
-                        <Lightbulb className="w-4 h-4 text-primary" />
-                        <strong className="text-sm font-medium text-foreground">הסבר:</strong>
-                        {isAdmin && (
-                          <button
-                            onClick={() => { setExplanationDraft(qData[KEYS.EXPLANATION] || ''); setEditingExplanation(true); }}
-                            className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
-                            title="ערוך הסבר"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                    );
+                  }
+                  return (
+                    <div key={i} className={`glass-card rounded-xl border overflow-hidden ${config.borderClass}`}>
+                      {section.title && (
+                        <div className={`flex items-center gap-2 px-4 py-2.5 ${config.headerClass}`}>
+                          {config.icon}
+                          <h4 className="font-bold text-xs uppercase tracking-widest">{section.title}</h4>
+                        </div>
+                      )}
+                      <div className="p-5">
+                        <SmartContent text={section.content} />
                       </div>
-                    ) : null}
-                    <SmartContent text={section.content} />
-                  </div>
-                ))}
+                    </div>
+                  );
+                })}
                 {/* Admin edit button when multiple sections */}
                 {explanationSections.length > 1 && isAdmin && (
                   <button
-                    onClick={() => { setExplanationDraft(qData[KEYS.EXPLANATION] || ''); setEditingExplanation(true); }}
+                    onClick={() => {
+                      setExplanationDraft(qData[KEYS.EXPLANATION] || "");
+                      setEditingExplanation(true);
+                    }}
                     className="text-xs font-bold text-primary flex items-center gap-1.5 hover:underline"
                   >
                     <Pencil className="w-3 h-3" /> ערוך הסבר
@@ -867,48 +1053,59 @@ export default function SessionView() {
                   <span className="text-xs text-muted-foreground font-medium">פרק:</span>
                   <input
                     type="text"
-                    value={chapterDraft || String(qData[KEYS.CHAPTER] || '')}
-                    onChange={e => { setChapterDraft(e.target.value); setSavingChapter('idle'); }}
-                    onFocus={() => { if (!chapterDraft) setChapterDraft(String(qData[KEYS.CHAPTER] || '')); }}
+                    value={chapterDraft || String(qData[KEYS.CHAPTER] || "")}
+                    onChange={(e) => {
+                      setChapterDraft(e.target.value);
+                      setSavingChapter("idle");
+                    }}
+                    onFocus={() => {
+                      if (!chapterDraft) setChapterDraft(String(qData[KEYS.CHAPTER] || ""));
+                    }}
                     onBlur={async () => {
-                      if (!chapterDraft || chapterDraft === String(qData[KEYS.CHAPTER] || '')) return;
+                      if (!chapterDraft || chapterDraft === String(qData[KEYS.CHAPTER] || "")) return;
                       const { valid } = resolveChapterName(chapterDraft);
                       if (!valid) return;
-                      setSavingChapter('saving');
-                      const chapterVal = chapterDraft.trim().toUpperCase() === 'ACLS' ? 0 : parseInt(chapterDraft, 10);
-                      const chapterName = MILLER_CHAPTERS[chapterVal] || '';
-                      const { error } = await supabase.from('questions').update({
-                        chapter: chapterVal,
-                        miller: String(chapterVal),
-                        topic: chapterName,
-                        manually_edited: true,
-                      }).eq('id', serialNumber);
+                      setSavingChapter("saving");
+                      const chapterVal = chapterDraft.trim().toUpperCase() === "ACLS" ? 0 : parseInt(chapterDraft, 10);
+                      const chapterName = MILLER_CHAPTERS[chapterVal] || "";
+                      const { error } = await supabase
+                        .from("questions")
+                        .update({
+                          chapter: chapterVal,
+                          miller: String(chapterVal),
+                          topic: chapterName,
+                          manually_edited: true,
+                        })
+                        .eq("id", serialNumber);
                       if (!error) {
                         invalidateQuestions();
                         (qData as any)[KEYS.CHAPTER] = chapterVal;
                         (qData as any)[KEYS.MILLER] = String(chapterVal);
                         (qData as any)[KEYS.TOPIC] = chapterName;
-                        setSavingChapter('saved');
-                        setChapterDraft('');
-                        setTimeout(() => setSavingChapter('idle'), 2000);
+                        setSavingChapter("saved");
+                        setChapterDraft("");
+                        setTimeout(() => setSavingChapter("idle"), 2000);
                       } else {
-                        setSavingChapter('idle');
-                        toast({ title: 'שגיאה בשמירת פרק', description: error.message, variant: 'destructive' });
+                        setSavingChapter("idle");
+                        toast({ title: "שגיאה בשמירת פרק", description: error.message, variant: "destructive" });
                       }
                     }}
-                    onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") (e.target as HTMLInputElement).blur();
+                    }}
                     className="w-16 px-2 py-1 text-xs bg-muted border border-border rounded-lg text-foreground outline-none focus:border-primary text-center"
                     placeholder="#"
                   />
-                  {chapterDraft && (() => {
-                    const { valid, display } = resolveChapterName(chapterDraft);
-                    return (
-                      <span className={`text-xs ${valid ? 'text-muted-foreground' : 'text-destructive'}`}>
-                        {display}
-                      </span>
-                    );
-                  })()}
-                  {savingChapter === 'saved' && <Check className="w-3.5 h-3.5 text-success" />}
+                  {chapterDraft &&
+                    (() => {
+                      const { valid, display } = resolveChapterName(chapterDraft);
+                      return (
+                        <span className={`text-xs ${valid ? "text-muted-foreground" : "text-destructive"}`}>
+                          {display}
+                        </span>
+                      );
+                    })()}
+                  {savingChapter === "saved" && <Check className="w-3.5 h-3.5 text-success" />}
                 </div>
               )}
 
@@ -934,22 +1131,27 @@ export default function SessionView() {
         <div className="border-t border-border p-5 flex justify-between items-center sticky bottom-0 z-10 bg-card/80 backdrop-blur-md rounded-b-xl">
           <button
             onClick={handlePrev}
-            className={`text-muted-foreground hover:text-foreground px-4 py-2.5 font-medium transition flex items-center gap-2 rounded-xl hover:bg-muted ${index === 0 ? 'invisible' : ''}`}
+            className={`text-muted-foreground hover:text-foreground px-4 py-2.5 font-medium transition flex items-center gap-2 rounded-xl hover:bg-muted ${index === 0 ? "invisible" : ""}`}
           >
             <ChevronRight className="w-4 h-4" /> הקודם
           </button>
 
           <div className="flex items-center gap-3">
             {!isReviewMode && !isSimulation && (
-              <button onClick={handleSkip} className="text-muted-foreground hover:text-foreground text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-muted transition tracking-wider uppercase">
+              <button
+                onClick={handleSkip}
+                className="text-muted-foreground hover:text-foreground text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-muted transition tracking-wider uppercase"
+              >
                 דלג <SkipForward className="w-3 h-3 inline mr-1" />
               </button>
             )}
-            {mode === 'practice' && !isReviewMode && (
+            {mode === "practice" && !isReviewMode && (
               <button
                 onClick={() => toggleFlag(index)}
                 className={`px-3 py-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition border ${
-                  flagged.has(index) ? 'bg-warning/10 text-warning border-warning/30' : 'text-muted-foreground border-border hover:text-warning hover:bg-warning/10'
+                  flagged.has(index)
+                    ? "bg-warning/10 text-warning border-warning/30"
+                    : "text-muted-foreground border-border hover:text-warning hover:bg-warning/10"
                 }`}
               >
                 <Flag className="w-3 h-3" /> סמן
@@ -969,12 +1171,10 @@ export default function SessionView() {
             onClick={handleNext}
             disabled={needsConfidence}
             className={`bg-primary text-primary-foreground px-8 py-3 rounded-xl hover:opacity-90 font-bold shadow-lg transition flex items-center gap-2 text-base ${
-              needsConfidence ? 'opacity-50 cursor-not-allowed' : ''
+              needsConfidence ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {index === quiz.length - 1
-              ? (isReviewMode ? 'סיים תחקור' : isSimulation ? 'הבא' : 'סיום וסיכום')
-              : 'הבא'}
+            {index === quiz.length - 1 ? (isReviewMode ? "סיים תחקור" : isSimulation ? "הבא" : "סיום וסיכום") : "הבא"}
             <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
@@ -987,7 +1187,9 @@ export default function SessionView() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="liquid-glass max-w-md w-full p-6 space-y-4">
             <h3 className="text-lg font-bold text-foreground text-center">לצאת מהסשן?</h3>
-            <p className="text-sm text-muted-foreground text-center">תוכל לשמור את ההתקדמות ולהמשיך מאוחר יותר, או לצאת בלי לשמור.</p>
+            <p className="text-sm text-muted-foreground text-center">
+              תוכל לשמור את ההתקדמות ולהמשיך מאוחר יותר, או לצאת בלי לשמור.
+            </p>
             <div className="flex flex-col gap-2">
               <button
                 onClick={handleSaveAndExit}
