@@ -979,13 +979,13 @@ export default function SessionView() {
                     style={{ perspective: 800, transformStyle: "preserve-3d" }}
                   >
                     {/* 3D Header */}
-                    <div className="relative bg-gradient-to-r from-primary/15 via-primary/8 to-transparent px-5 py-3.5 border-b border-primary/15">
+                    <div className="relative bg-gradient-to-r from-primary/15 via-primary/8 to-transparent px-5 py-4 border-b border-primary/15">
                       <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-60" />
-                      <div className="relative flex items-center gap-2.5">
-                        <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/10">
-                          <Lightbulb className="w-4 h-4 text-primary" />
+                      <div className="relative flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/10">
+                          <Lightbulb className="w-5 h-5 text-primary" />
                         </div>
-                        <strong className="text-sm font-bold text-foreground tracking-wide">הסבר</strong>
+                        <strong className="text-lg font-extrabold text-foreground" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
                         {isAdmin && (
                           <button
                             onClick={enterExplanationEdit}
