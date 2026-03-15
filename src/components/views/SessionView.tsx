@@ -1037,12 +1037,12 @@ export default function SessionView() {
                             {section.title && (() => {
                               const IconComp = ANESTHESIA_ICONS[i % ANESTHESIA_ICONS.length];
                               return (
-                                <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`}>
+                                <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`} dir={isHebrew(section.title) ? "rtl" : "ltr"}>
                                   <div className={`w-8 h-8 rounded-lg ${color.iconBg} border shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center`}>
                                     <IconComp className="w-4 h-4 drop-shadow-sm" />
                                   </div>
                                   <div>
-                                    <h4 className="font-black text-lg tracking-wide" dir={isHebrew(section.title) ? "rtl" : "ltr"} style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
+                                    <h4 className="font-black text-lg tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
                                     <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
                                   </div>
                                 </div>
