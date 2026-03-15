@@ -970,54 +970,91 @@ export default function SessionView() {
             ) : (
               <>
                 {explanationSections.length === 1 ? (
-                  /* ── Single section: original style ── */
-                  <div className="glass-card rounded-xl p-6 border border-border">
-                    <div className="flex items-center gap-2 mb-3">
-                      <Lightbulb className="w-4 h-4 text-primary" />
-                      <strong className="text-sm font-medium text-foreground">הסבר:</strong>
-                      {isAdmin && (
-                        <button
-                          onClick={enterExplanationEdit}
-                          className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
-                          title="ערוך הסבר"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-                      )}
+                  /* ── Single section: 3D modern style ── */
+                  <motion.div
+                    initial={{ opacity: 0, y: 20, rotateX: 8 }}
+                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 28, delay: 0.1 }}
+                    className="relative rounded-2xl overflow-hidden border border-primary/20"
+                    style={{ perspective: 800, transformStyle: "preserve-3d" }}
+                  >
+                    {/* 3D Header */}
+                    <div className="relative bg-gradient-to-r from-primary/15 via-primary/8 to-transparent px-5 py-3.5 border-b border-primary/15">
+                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-60" />
+                      <div className="relative flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-lg bg-primary/20 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/10">
+                          <Lightbulb className="w-4 h-4 text-primary" />
+                        </div>
+                        <strong className="text-sm font-bold text-foreground tracking-wide">הסבר</strong>
+                        {isAdmin && (
+                          <button
+                            onClick={enterExplanationEdit}
+                            className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10 mr-auto"
+                            title="ערוך הסבר"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <SmartContent text={explanationSections[0].content} />
-                  </div>
+                    <div className="p-6 bg-card/60 backdrop-blur-sm">
+                      <SmartContent text={explanationSections[0].content} />
+                    </div>
+                    {/* Bottom accent line */}
+                    <div className="h-[2px] bg-gradient-to-r from-primary/40 via-primary/20 to-transparent" />
+                  </motion.div>
                 ) : (
-                  /* ── Multiple sections: smart grid layout ── */
+                  /* ── Multiple sections: 3D animated grid ── */
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <motion.div
+                      className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                      initial="hidden"
+                      animate="visible"
+                      variants={{
+                        hidden: {},
+                        visible: { transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
+                      }}
+                    >
                       {explanationSections.map((section, i) => {
                         const isLast = i === explanationSections.length - 1;
                         const nonLastCount = explanationSections.length - 1;
-                        // If odd number of non-last sections, first one gets full width
                         const isAloneInRow = !isLast && nonLastCount % 2 === 1 && i === 0;
                         const isFullWidth = isLast || isAloneInRow;
                         const color = SECTION_COLORS[i % SECTION_COLORS.length];
 
                         return (
-                          <div
+                          <motion.div
                             key={i}
-                            className={`glass-card rounded-xl border overflow-hidden ${color.border} ${
+                            variants={{
+                              hidden: { opacity: 0, y: 24, rotateX: 6, scale: 0.96 },
+                              visible: { opacity: 1, y: 0, rotateX: 0, scale: 1 },
+                            }}
+                            transition={{ type: "spring", stiffness: 320, damping: 26 }}
+                            whileHover={{ y: -3, boxShadow: "0 12px 40px -8px rgba(0,0,0,0.3)" }}
+                            className={`relative rounded-2xl overflow-hidden border ${color.border} shadow-lg ${color.glow} ${
                               isFullWidth ? "md:col-span-2" : ""
-                            } ${isLast ? "ring-1 ring-primary/20" : ""}`}
+                            } ${isLast ? "ring-1 ring-primary/25" : ""}`}
+                            style={{ perspective: 600, transformStyle: "preserve-3d" }}
                           >
                             {section.title && (
-                              <div className={`flex items-center gap-2 px-4 py-2.5 ${color.header}`}>
+                              <div className={`relative flex items-center gap-2.5 px-4 py-3 ${color.header} border-b border-inherit`}>
+                                <div className="w-6 h-6 rounded-md bg-current/10 flex items-center justify-center text-[10px] font-black opacity-60">
+                                  {i + 1}
+                                </div>
                                 <h4 className="font-bold text-xs uppercase tracking-widest">{section.title}</h4>
                               </div>
                             )}
-                            <div className={`p-5 ${isLast ? "bg-primary/5" : ""}`}>
+                            <div className={`p-5 bg-card/50 backdrop-blur-sm ${isLast ? "bg-primary/5" : ""}`}>
                               <SmartContent text={section.content} />
                             </div>
-                          </div>
+                            {/* Bottom accent */}
+                            <div className={`h-[2px] bg-gradient-to-r ${
+                              isLast ? "from-primary/40 via-primary/20 to-transparent" : "from-current/20 to-transparent"
+                            }`} />
+                          </motion.div>
                         );
                       })}
-                    </div>
+                    </motion.div>
                     {isAdmin && (
                       <button
                         onClick={enterExplanationEdit}
