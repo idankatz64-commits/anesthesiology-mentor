@@ -1042,7 +1042,7 @@ export default function SessionView() {
                                     <IconComp className="w-4 h-4 drop-shadow-sm" />
                                   </div>
                                   <div>
-                                    <h4 className="font-extrabold text-lg tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
+                                    <h4 className="font-black text-lg tracking-wide" dir={isHebrew(section.title) ? "rtl" : "ltr"} style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
                                     <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
                                   </div>
                                 </div>
