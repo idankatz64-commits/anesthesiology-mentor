@@ -986,7 +986,7 @@ export default function SessionView() {
               <>
                 {explanationSections.length === 1 ? (
                   /* ── Single section ── */
-                  <div className="relative rounded-2xl overflow-hidden border border-red-600/30 border-t-red-400/40 bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                  <div className="relative rounded-2xl overflow-hidden border border-black/20 bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)]">
                      {/* Metallic Header */}
                      <div className="relative bg-gradient-to-b from-red-600/25 via-red-500/10 to-transparent px-5 py-4">
                        <div className="relative flex items-center gap-3">
