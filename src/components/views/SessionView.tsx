@@ -85,12 +85,12 @@ function ExplanationRenderer({ text }: { text: string }) {
 
 /** Color palette for split sections by index */
 const SECTION_COLORS = [
-  { border: "border-orange-500/25", header: "bg-orange-500/10 text-orange-400" },
-  { border: "border-yellow-500/25", header: "bg-yellow-500/10 text-yellow-400" },
-  { border: "border-blue-500/25", header: "bg-blue-500/10 text-blue-400" },
-  { border: "border-purple-500/25", header: "bg-purple-500/10 text-purple-400" },
-  { border: "border-emerald-500/25", header: "bg-emerald-500/10 text-emerald-400" },
-  { border: "border-primary/20", header: "bg-primary/10 text-primary" },
+  { border: "border-orange-500/30", header: "bg-gradient-to-r from-orange-500/15 to-orange-500/5 text-orange-400", glow: "shadow-orange-500/10" },
+  { border: "border-yellow-500/30", header: "bg-gradient-to-r from-yellow-500/15 to-yellow-500/5 text-yellow-400", glow: "shadow-yellow-500/10" },
+  { border: "border-blue-500/30", header: "bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-400", glow: "shadow-blue-500/10" },
+  { border: "border-purple-500/30", header: "bg-gradient-to-r from-purple-500/15 to-purple-500/5 text-purple-400", glow: "shadow-purple-500/10" },
+  { border: "border-emerald-500/30", header: "bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 text-emerald-400", glow: "shadow-emerald-500/10" },
+  { border: "border-primary/25", header: "bg-gradient-to-r from-primary/15 to-primary/5 text-primary", glow: "shadow-primary/10" },
 ];
 
 /** Parse META_TITLES prefix from explanation field */
