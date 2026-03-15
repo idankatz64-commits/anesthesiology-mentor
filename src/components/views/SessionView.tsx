@@ -1037,11 +1037,11 @@ export default function SessionView() {
                             style={{ perspective: 600, transformStyle: "preserve-3d" }}
                           >
                             {section.title && (
-                              <div className={`relative flex items-center gap-2.5 px-4 py-3 ${color.header} border-b border-inherit`}>
-                                <div className="w-6 h-6 rounded-md bg-current/10 flex items-center justify-center text-[10px] font-black opacity-60">
+                              <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header} border-b border-inherit`}>
+                                <div className="w-7 h-7 rounded-lg bg-current/10 flex items-center justify-center text-xs font-black opacity-70">
                                   {i + 1}
                                 </div>
-                                <h4 className="font-bold text-xs uppercase tracking-widest">{section.title}</h4>
+                                <h4 className="font-bold text-base tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
                               </div>
                             )}
                             <div className={`p-5 bg-card/50 backdrop-blur-sm ${isLast ? "bg-primary/5" : ""}`}>
