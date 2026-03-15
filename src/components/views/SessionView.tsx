@@ -549,7 +549,7 @@ export default function SessionView() {
               </div>
             ) : (
               <>
-              <div className="text-foreground text-3xl md:text-4xl leading-snug font-extrabold flex-grow">
+              <div className="text-foreground text-xl md:text-2xl leading-snug font-bold flex-grow">
                   <SmartContent text={qData[KEYS.QUESTION]} inheritSize />
                 </div>
                 {isAdmin && (
