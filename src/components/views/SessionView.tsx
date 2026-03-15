@@ -23,6 +23,11 @@ import {
   Check,
   Lightbulb,
   Image as ImageIcon,
+  Syringe,
+  Pill,
+  Activity,
+  Droplets,
+  Stethoscope,
 } from "lucide-react";
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
 import RichTextEditor from "@/components/RichTextEditor";
@@ -83,14 +88,24 @@ function ExplanationRenderer({ text }: { text: string }) {
   );
 }
 
-/** Transformers-inspired color palette for split sections */
+/** Anesthesia instrument icons per section */
+const ANESTHESIA_ICONS = [
+  Stethoscope,   // Laryngoscope (closest match)
+  Syringe,       // Propofol
+  Pill,          // Ketamine
+  Activity,      // Monitor
+  Droplets,      // Blood bags
+  Lightbulb,     // Endotracheal tube (fallback)
+];
+
+/** Transformers-inspired metallic color palette for split sections */
 const SECTION_COLORS = [
-  { border: "border-red-600/35", header: "bg-gradient-to-r from-red-600/20 via-red-500/10 to-transparent text-red-400", glow: "shadow-red-600/15", accent: "from-red-600/50 to-red-400/20" },
-  { border: "border-sky-500/35", header: "bg-gradient-to-r from-sky-500/20 via-sky-400/10 to-transparent text-sky-400", glow: "shadow-sky-500/15", accent: "from-sky-500/50 to-sky-300/20" },
-  { border: "border-violet-500/35", header: "bg-gradient-to-r from-violet-600/20 via-violet-400/10 to-transparent text-violet-400", glow: "shadow-violet-500/15", accent: "from-violet-500/50 to-violet-300/20" },
-  { border: "border-amber-500/35", header: "bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-transparent text-amber-400", glow: "shadow-amber-500/15", accent: "from-amber-500/50 to-amber-300/20" },
-  { border: "border-cyan-500/35", header: "bg-gradient-to-r from-cyan-500/20 via-cyan-400/10 to-transparent text-cyan-400", glow: "shadow-cyan-500/15", accent: "from-cyan-500/50 to-cyan-300/20" },
-  { border: "border-rose-500/35", header: "bg-gradient-to-r from-rose-600/20 via-rose-400/10 to-transparent text-rose-400", glow: "shadow-rose-500/15", accent: "from-rose-500/50 to-rose-300/20" },
+  { border: "border-red-600/30 border-t-red-400/40", header: "bg-gradient-to-b from-red-600/25 via-red-500/10 to-transparent text-red-400", glow: "shadow-lg shadow-red-600/10", accent: "from-red-600/50 to-red-400/20", iconBg: "bg-gradient-to-br from-red-500/25 via-red-600/15 to-red-800/20 border-red-400/30" },
+  { border: "border-sky-500/30 border-t-sky-400/40", header: "bg-gradient-to-b from-sky-500/25 via-sky-400/10 to-transparent text-sky-400", glow: "shadow-lg shadow-sky-500/10", accent: "from-sky-500/50 to-sky-300/20", iconBg: "bg-gradient-to-br from-sky-400/25 via-sky-500/15 to-sky-700/20 border-sky-400/30" },
+  { border: "border-violet-500/30 border-t-violet-400/40", header: "bg-gradient-to-b from-violet-600/25 via-violet-400/10 to-transparent text-violet-400", glow: "shadow-lg shadow-violet-500/10", accent: "from-violet-500/50 to-violet-300/20", iconBg: "bg-gradient-to-br from-violet-500/25 via-violet-500/15 to-violet-800/20 border-violet-400/30" },
+  { border: "border-amber-500/30 border-t-amber-400/40", header: "bg-gradient-to-b from-amber-500/25 via-amber-400/10 to-transparent text-amber-400", glow: "shadow-lg shadow-amber-500/10", accent: "from-amber-500/50 to-amber-300/20", iconBg: "bg-gradient-to-br from-amber-400/25 via-amber-500/15 to-amber-700/20 border-amber-400/30" },
+  { border: "border-cyan-500/30 border-t-cyan-400/40", header: "bg-gradient-to-b from-cyan-500/25 via-cyan-400/10 to-transparent text-cyan-400", glow: "shadow-lg shadow-cyan-500/10", accent: "from-cyan-500/50 to-cyan-300/20", iconBg: "bg-gradient-to-br from-cyan-400/25 via-cyan-500/15 to-cyan-700/20 border-cyan-400/30" },
+  { border: "border-rose-500/30 border-t-rose-400/40", header: "bg-gradient-to-b from-rose-600/25 via-rose-400/10 to-transparent text-rose-400", glow: "shadow-lg shadow-rose-500/10", accent: "from-rose-500/50 to-rose-300/20", iconBg: "bg-gradient-to-br from-rose-500/25 via-rose-500/15 to-rose-800/20 border-rose-400/30" },
 ];
 
 /** Parse META_TITLES prefix from explanation field */
@@ -971,14 +986,17 @@ export default function SessionView() {
               <>
                 {explanationSections.length === 1 ? (
                   /* ── Single section ── */
-                  <div className="relative rounded-2xl overflow-hidden border border-red-600/25 bg-card/60 backdrop-blur-sm">
-                    {/* Transformers-style Header */}
-                    <div className="relative bg-gradient-to-r from-red-600/20 via-red-500/8 to-transparent px-5 py-4">
-                      <div className="relative flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600/30 to-red-500/10 border border-red-500/30 flex items-center justify-center">
-                          <Lightbulb className="w-5 h-5 text-red-400" />
-                        </div>
-                        <strong className="text-lg font-extrabold text-foreground" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
+                  <div className="relative rounded-2xl overflow-hidden border border-red-600/30 border-t-red-400/40 bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                     {/* Metallic Header */}
+                     <div className="relative bg-gradient-to-b from-red-600/25 via-red-500/10 to-transparent px-5 py-4">
+                       <div className="relative flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/25 via-red-600/15 to-red-800/20 border border-red-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center">
+                           <Stethoscope className="w-5 h-5 text-red-400 drop-shadow-sm" />
+                         </div>
+                         <div>
+                           <strong className="text-xl font-black text-foreground tracking-wide drop-shadow-sm" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
+                           <div className="h-px mt-1 w-16 bg-gradient-to-r from-red-400/40 via-red-500/15 to-transparent" />
+                         </div>
                         {isAdmin && (
                           <button
                             onClick={enterExplanationEdit}
@@ -1008,18 +1026,24 @@ export default function SessionView() {
                         return (
                           <div
                             key={i}
-                            className={`relative rounded-2xl overflow-hidden border ${color.border} shadow-lg ${color.glow} bg-card/60 backdrop-blur-sm ${
+                            className={`relative rounded-2xl overflow-hidden border ${color.border} ${color.glow} bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ${
                               isFullWidth ? "md:col-span-2" : ""
                             }`}
                           >
-                            {section.title && (
-                              <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`}>
-                                <div className="w-7 h-7 rounded-lg bg-current/15 flex items-center justify-center text-xs font-black">
-                                  {i + 1}
+                            {section.title && (() => {
+                              const IconComp = ANESTHESIA_ICONS[i % ANESTHESIA_ICONS.length];
+                              return (
+                                <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`}>
+                                  <div className={`w-8 h-8 rounded-lg ${color.iconBg} border shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center`}>
+                                    <IconComp className="w-4 h-4 drop-shadow-sm" />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-extrabold text-lg tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
+                                    <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
+                                  </div>
                                 </div>
-                                <h4 className="font-bold text-base tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
-                              </div>
-                            )}
+                              );
+                            })()}
                             <div className={`p-5 ${isLast ? "bg-primary/5" : ""}`}>
                               <SmartContent text={section.content} />
                             </div>
