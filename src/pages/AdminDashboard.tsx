@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { AppProvider } from '@/contexts/AppContext';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 import { Link } from 'react-router-dom';
 import { Loader2, FileEdit, Users, Upload, ArrowRight, ShieldAlert, FlaskConical, BarChart3 } from 'lucide-react';
