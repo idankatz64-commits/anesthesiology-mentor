@@ -1,62 +1,47 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## Plan: Step 1 — SquircleIcon Component + Sidebar & MobileBottomNav
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+### New File: `src/components/SquircleIcon.tsx`
 
-## Part A -- Daily Volume Bars
+Reusable component accepting:
+- `icon`: Lucide icon component (e.g. `Heart`)
+- `gradient`: preset name from a map
+- `size`: `'sm' | 'md' | 'lg'` (default `'md'`)
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+**Gradient presets:**
+| Name | Colors | Usage |
+|------|--------|-------|
+| `gold` | amber-400 → orange-500 | Home/Heart |
+| `teal` | teal-400 → emerald-600 | Practice/BookOpen |
+| `orange` | orange-400 → red-500 | Exam/Timer |
+| `blue` | blue-500 → indigo-600 | Stats/BarChart3 |
+| `cyan` | cyan-400 → blue-500 | Notebook/StickyNote |
+| `violet` | violet-400 → purple-600 | Formula/FlaskConical |
+| `rose` | rose-400 → pink-600 | Feedback/MessageSquareWarning |
+| `slate` | slate-400 → slate-600 | Admin/ShieldAlert, Theme toggle |
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+**Size map:** `sm` = 28px / icon 14px, `md` = 36px / icon 18px, `lg` = 44px / icon 22px
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
+**Styling per squircle:**
+- `rounded-[22%]` for squircle shape
+- CSS inline `background: linear-gradient(135deg, colorA, colorB)`
+- Inner highlight: `box-shadow: inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.3)`
+- Icon rendered in white with `drop-shadow(0 1px 1px rgba(0,0,0,0.2))`
 
-`volumeMA14` = average of `count` over the previous 14 active days.
+### Modified: `src/components/Sidebar.tsx`
 
-## Part B -- Daily Performance Report
+- Import `SquircleIcon` and pass Lucide icon components instead of pre-rendered JSX
+- `navItems` array: change `icon` field to use `<SquircleIcon icon={Heart} gradient="gold" size="md" />` etc.
+- Header Heart icon: replace the existing `bg-primary/10` container with `<SquircleIcon icon={Heart} gradient="gold" size="lg" />`
+- Footer icons (expanded): `MessageSquareWarning` → `<SquircleIcon gradient="rose" size="sm" />`, `ShieldAlert` → `<SquircleIcon gradient="slate" size="sm" />`, `Sun/Moon` → `<SquircleIcon gradient="slate" size="sm" />`
+- Footer icons (collapsed): same squircle treatment
 
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
+### Modified: `src/components/MobileBottomNav.tsx`
 
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
+- Import `SquircleIcon`
+- `bottomNav` array: each icon becomes `<SquircleIcon icon={Heart} gradient="gold" size="sm" />` etc.
+- Active state glow remains via the existing `motion.div` indicator — no change to that logic
 
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
+### No other files touched in this step.
 
