@@ -1026,18 +1026,24 @@ export default function SessionView() {
                         return (
                           <div
                             key={i}
-                            className={`relative rounded-2xl overflow-hidden border ${color.border} shadow-lg ${color.glow} bg-card/60 backdrop-blur-sm ${
+                            className={`relative rounded-2xl overflow-hidden border ${color.border} ${color.glow} bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ${
                               isFullWidth ? "md:col-span-2" : ""
                             }`}
                           >
-                            {section.title && (
-                              <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`}>
-                                <div className="w-7 h-7 rounded-lg bg-current/15 flex items-center justify-center text-xs font-black">
-                                  {i + 1}
+                            {section.title && (() => {
+                              const IconComp = ANESTHESIA_ICONS[i % ANESTHESIA_ICONS.length];
+                              return (
+                                <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`}>
+                                  <div className={`w-8 h-8 rounded-lg ${color.iconBg} border shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center`}>
+                                    <IconComp className="w-4 h-4 drop-shadow-sm" />
+                                  </div>
+                                  <div>
+                                    <h4 className="font-extrabold text-lg tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
+                                    <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
+                                  </div>
                                 </div>
-                                <h4 className="font-bold text-base tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
-                              </div>
-                            )}
+                              );
+                            })()}
                             <div className={`p-5 ${isLast ? "bg-primary/5" : ""}`}>
                               <SmartContent text={section.content} />
                             </div>
