@@ -986,14 +986,17 @@ export default function SessionView() {
               <>
                 {explanationSections.length === 1 ? (
                   /* ── Single section ── */
-                  <div className="relative rounded-2xl overflow-hidden border border-red-600/25 bg-card/60 backdrop-blur-sm">
-                    {/* Transformers-style Header */}
-                    <div className="relative bg-gradient-to-r from-red-600/20 via-red-500/8 to-transparent px-5 py-4">
-                      <div className="relative flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600/30 to-red-500/10 border border-red-500/30 flex items-center justify-center">
-                          <Lightbulb className="w-5 h-5 text-red-400" />
-                        </div>
-                        <strong className="text-lg font-extrabold text-foreground" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
+                  <div className="relative rounded-2xl overflow-hidden border border-red-600/30 border-t-red-400/40 bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]">
+                     {/* Metallic Header */}
+                     <div className="relative bg-gradient-to-b from-red-600/25 via-red-500/10 to-transparent px-5 py-4">
+                       <div className="relative flex items-center gap-3">
+                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/25 via-red-600/15 to-red-800/20 border border-red-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center">
+                           <Stethoscope className="w-5 h-5 text-red-400 drop-shadow-sm" />
+                         </div>
+                         <div>
+                           <strong className="text-xl font-black text-foreground tracking-wide drop-shadow-sm" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
+                           <div className="h-px mt-1 w-16 bg-gradient-to-r from-red-400/40 via-red-500/15 to-transparent" />
+                         </div>
                         {isAdmin && (
                           <button
                             onClick={enterExplanationEdit}
