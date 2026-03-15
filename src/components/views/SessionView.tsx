@@ -36,6 +36,10 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalQuestionStats, CommunityNotes } from "./SessionCommunity";
 import { getChapterDisplay, resolveChapterName, MILLER_CHAPTERS } from "@/data/millerChapters";
+/** Detect if text starts with Hebrew characters */
+function isHebrew(text: string): boolean {
+  return /^[\s\u200F]*[\u0590-\u05FF]/.test(text);
+}
 
 /** Detect if content contains HTML tags */
 function isHtmlContent(text: string): boolean {
@@ -1038,7 +1042,7 @@ export default function SessionView() {
                                     <IconComp className="w-4 h-4 drop-shadow-sm" />
                                   </div>
                                   <div>
-                                    <h4 className="font-extrabold text-lg tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
+                                    <h4 className="font-black text-lg tracking-wide" dir={isHebrew(section.title) ? "rtl" : "ltr"} style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
                                     <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
                                   </div>
                                 </div>
