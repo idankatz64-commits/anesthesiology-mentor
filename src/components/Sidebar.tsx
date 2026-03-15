@@ -7,14 +7,15 @@ import FeedbackModal from './FeedbackModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import SquircleIcon from './SquircleIcon';
 
 const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
-  { id: 'home', label: 'ראשי', icon: <Heart className="w-5 h-5" /> },
-  { id: 'setup-practice', label: 'תרגול (Practice)', icon: <BookOpen className="w-5 h-5" /> },
-  { id: 'setup-exam', label: 'בחינה (Exam)', icon: <Timer className="w-5 h-5" /> },
-  { id: 'stats', label: 'סטטיסטיקה', icon: <BarChart3 className="w-5 h-5" /> },
-  { id: 'notebook', label: 'המחברת שלי', icon: <StickyNote className="w-5 h-5" /> },
-  { id: 'formula-sheet', label: 'Formula Sheet', icon: <FlaskConical className="w-5 h-5" /> },
+  { id: 'home', label: 'ראשי', icon: <SquircleIcon icon={Heart} gradient="gold" /> },
+  { id: 'setup-practice', label: 'תרגול (Practice)', icon: <SquircleIcon icon={BookOpen} gradient="teal" /> },
+  { id: 'setup-exam', label: 'בחינה (Exam)', icon: <SquircleIcon icon={Timer} gradient="orange" /> },
+  { id: 'stats', label: 'סטטיסטיקה', icon: <SquircleIcon icon={BarChart3} gradient="blue" /> },
+  { id: 'notebook', label: 'המחברת שלי', icon: <SquircleIcon icon={StickyNote} gradient="cyan" /> },
+  { id: 'formula-sheet', label: 'Formula Sheet', icon: <SquircleIcon icon={FlaskConical} gradient="violet" /> },
 ];
 
 export default function Sidebar() {
@@ -60,9 +61,7 @@ export default function Sidebar() {
 
       {/* Header */}
       <div className={`border-b border-border/50 flex items-center gap-4 ${isCollapsed ? 'p-4 justify-center' : 'p-8'}`}>
-        <div className="bg-primary/10 text-primary p-3 rounded-2xl shadow-[0_0_15px_hsl(var(--primary)/0.15)] border border-primary/20 shrink-0 transition-colors">
-          <Heart className="w-5 h-5" />
-        </div>
+        <SquircleIcon icon={Heart} gradient="gold" size="lg" />
         {!isCollapsed && (
           <div>
             <h1 className="text-lg leading-tight font-bold text-foreground">סימולטור</h1>
@@ -122,7 +121,7 @@ export default function Sidebar() {
               className={glassButton}
             >
               <span>דווח על טעות / פידבק</span>
-              <MessageSquareWarning className="w-4 h-4 text-primary" />
+              <SquircleIcon icon={MessageSquareWarning} gradient="rose" size="sm" />
             </button>
             {isAdmin && (
               <Link
@@ -130,7 +129,7 @@ export default function Sidebar() {
                 className={glassButton}
               >
                 <span>Admin</span>
-                <ShieldAlert className="w-4 h-4" />
+                <SquircleIcon icon={ShieldAlert} gradient="slate" size="sm" />
               </Link>
             )}
             <button
@@ -138,7 +137,7 @@ export default function Sidebar() {
               className={glassButton}
             >
               <span>מצב תצוגה</span>
-              {isDark ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
+              <SquircleIcon icon={isDark ? Sun : Moon} gradient="slate" size="sm" />
             </button>
 
             <div className="bg-card/40 p-4 rounded-2xl border border-border/50 transition-colors">
@@ -163,7 +162,7 @@ export default function Sidebar() {
               title="דווח על טעות / פידבק"
               className={glassButtonCollapsed}
             >
-              <MessageSquareWarning className="w-4 h-4 text-primary" />
+              <SquircleIcon icon={MessageSquareWarning} gradient="rose" size="sm" />
             </button>
             {isAdmin && (
               <Link
@@ -171,7 +170,7 @@ export default function Sidebar() {
                 title="Admin"
                 className={glassButtonCollapsed}
               >
-                <ShieldAlert className="w-4 h-4" />
+                <SquircleIcon icon={ShieldAlert} gradient="slate" size="sm" />
               </Link>
             )}
             <button
@@ -179,7 +178,7 @@ export default function Sidebar() {
               title="מצב תצוגה"
               className={glassButtonCollapsed}
             >
-              {isDark ? <Sun className="w-4 h-4 text-primary" /> : <Moon className="w-4 h-4" />}
+              <SquircleIcon icon={isDark ? Sun : Moon} gradient="slate" size="sm" />
             </button>
           </>
         )}
