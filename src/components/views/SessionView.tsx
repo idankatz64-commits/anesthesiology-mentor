@@ -83,14 +83,14 @@ function ExplanationRenderer({ text }: { text: string }) {
   );
 }
 
-/** Color palette for split sections by index */
+/** Transformers-inspired color palette for split sections */
 const SECTION_COLORS = [
-  { border: "border-orange-500/30", header: "bg-gradient-to-r from-orange-500/15 to-orange-500/5 text-orange-400", glow: "shadow-orange-500/10" },
-  { border: "border-yellow-500/30", header: "bg-gradient-to-r from-yellow-500/15 to-yellow-500/5 text-yellow-400", glow: "shadow-yellow-500/10" },
-  { border: "border-blue-500/30", header: "bg-gradient-to-r from-blue-500/15 to-blue-500/5 text-blue-400", glow: "shadow-blue-500/10" },
-  { border: "border-purple-500/30", header: "bg-gradient-to-r from-purple-500/15 to-purple-500/5 text-purple-400", glow: "shadow-purple-500/10" },
-  { border: "border-emerald-500/30", header: "bg-gradient-to-r from-emerald-500/15 to-emerald-500/5 text-emerald-400", glow: "shadow-emerald-500/10" },
-  { border: "border-primary/25", header: "bg-gradient-to-r from-primary/15 to-primary/5 text-primary", glow: "shadow-primary/10" },
+  { border: "border-red-600/35", header: "bg-gradient-to-r from-red-600/20 via-red-500/10 to-transparent text-red-400", glow: "shadow-red-600/15", accent: "from-red-600/50 to-red-400/20" },
+  { border: "border-sky-500/35", header: "bg-gradient-to-r from-sky-500/20 via-sky-400/10 to-transparent text-sky-400", glow: "shadow-sky-500/15", accent: "from-sky-500/50 to-sky-300/20" },
+  { border: "border-violet-500/35", header: "bg-gradient-to-r from-violet-600/20 via-violet-400/10 to-transparent text-violet-400", glow: "shadow-violet-500/15", accent: "from-violet-500/50 to-violet-300/20" },
+  { border: "border-amber-500/35", header: "bg-gradient-to-r from-amber-500/20 via-amber-400/10 to-transparent text-amber-400", glow: "shadow-amber-500/15", accent: "from-amber-500/50 to-amber-300/20" },
+  { border: "border-cyan-500/35", header: "bg-gradient-to-r from-cyan-500/20 via-cyan-400/10 to-transparent text-cyan-400", glow: "shadow-cyan-500/15", accent: "from-cyan-500/50 to-cyan-300/20" },
+  { border: "border-rose-500/35", header: "bg-gradient-to-r from-rose-600/20 via-rose-400/10 to-transparent text-rose-400", glow: "shadow-rose-500/15", accent: "from-rose-500/50 to-rose-300/20" },
 ];
 
 /** Parse META_TITLES prefix from explanation field */
