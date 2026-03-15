@@ -970,20 +970,13 @@ export default function SessionView() {
             ) : (
               <>
                 {explanationSections.length === 1 ? (
-                  /* ── Single section: 3D modern style ── */
-                  <motion.div
-                    initial={{ opacity: 0, y: 20, rotateX: 8 }}
-                    animate={{ opacity: 1, y: 0, rotateX: 0 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 28, delay: 0.1 }}
-                    className="relative rounded-2xl overflow-hidden border border-primary/20"
-                    style={{ perspective: 800, transformStyle: "preserve-3d" }}
-                  >
-                    {/* 3D Header */}
-                    <div className="relative bg-gradient-to-r from-primary/15 via-primary/8 to-transparent px-5 py-4 border-b border-primary/15">
-                      <div className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent opacity-60" />
+                  /* ── Single section ── */
+                  <div className="relative rounded-2xl overflow-hidden border border-red-600/25 bg-card/60 backdrop-blur-sm">
+                    {/* Transformers-style Header */}
+                    <div className="relative bg-gradient-to-r from-red-600/20 via-red-500/8 to-transparent px-5 py-4">
                       <div className="relative flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center shadow-lg shadow-primary/10">
-                          <Lightbulb className="w-5 h-5 text-primary" />
+                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-600/30 to-red-500/10 border border-red-500/30 flex items-center justify-center">
+                          <Lightbulb className="w-5 h-5 text-red-400" />
                         </div>
                         <strong className="text-lg font-extrabold text-foreground" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
                         {isAdmin && (
@@ -997,12 +990,10 @@ export default function SessionView() {
                         )}
                       </div>
                     </div>
-                    <div className="p-6 bg-card/60 backdrop-blur-sm">
+                    <div className="p-6">
                       <SmartContent text={explanationSections[0].content} />
                     </div>
-                    {/* Bottom accent line */}
-                    <div className="h-[2px] bg-gradient-to-r from-primary/40 via-primary/20 to-transparent" />
-                  </motion.div>
+                  </div>
                 ) : (
                   /* ── Multiple sections: 3D animated grid ── */
                   <>
