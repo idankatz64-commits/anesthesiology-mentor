@@ -768,9 +768,9 @@ export default function SessionView() {
             {/* (1) Correct/Wrong indicator */}
             <div className="font-bold text-lg flex items-center gap-2 flex-wrap">
               {savedAns === correctAns ? (
-                <span className="text-success flex items-center gap-2">✅ יפה מאוד!</span>
+                <span className="text-success flex items-center gap-2">✅ יפה מאוד! — <span className="font-extrabold">{qData[KEYS[correctAns as keyof typeof KEYS]] || correctAns}</span></span>
               ) : (
-                <span className="text-destructive flex items-center gap-2">❌ התשובה הנכונה היא {correctAns}</span>
+                <span className="text-destructive flex items-center gap-2">❌ התשובה הנכונה היא: <span className="font-extrabold">{qData[KEYS[correctAns as keyof typeof KEYS]] || correctAns}</span></span>
               )}
               {isAdmin && !editingCorrectAnswer && (
                 <button
