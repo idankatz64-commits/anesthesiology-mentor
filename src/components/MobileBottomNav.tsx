@@ -2,12 +2,13 @@ import { useApp } from '@/contexts/AppContext';
 import { Heart, BookOpen, Timer, BarChart3 } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { motion } from 'framer-motion';
+import SquircleIcon from './SquircleIcon';
 
 const bottomNav: { id: ViewId; label: string; icon: React.ReactNode }[] = [
-  { id: 'home', label: 'ראשי', icon: <Heart className="w-5 h-5" /> },
-  { id: 'setup-practice', label: 'תרגול', icon: <BookOpen className="w-5 h-5" /> },
-  { id: 'setup-exam', label: 'בחינה', icon: <Timer className="w-5 h-5" /> },
-  { id: 'stats', label: 'סטטיסטיקה', icon: <BarChart3 className="w-5 h-5" /> },
+  { id: 'home', label: 'ראשי', icon: <SquircleIcon icon={Heart} gradient="gold" size="sm" /> },
+  { id: 'setup-practice', label: 'תרגול', icon: <SquircleIcon icon={BookOpen} gradient="teal" size="sm" /> },
+  { id: 'setup-exam', label: 'בחינה', icon: <SquircleIcon icon={Timer} gradient="orange" size="sm" /> },
+  { id: 'stats', label: 'סטטיסטיקה', icon: <SquircleIcon icon={BarChart3} gradient="blue" size="sm" /> },
 ];
 
 export default function MobileBottomNav() {
@@ -34,7 +35,7 @@ export default function MobileBottomNav() {
                   style={{ willChange: 'transform' }}
                 />
               )}
-              <div className={`p-1 rounded-lg transition-all relative z-10 ${isActive ? 'shadow-[0_0_8px_hsl(var(--primary)/0.3)]' : ''}`}>
+              <div className="relative z-10">
                 {item.icon}
               </div>
               <span className="text-[10px] font-medium truncate w-full text-center relative z-10">{item.label}</span>
