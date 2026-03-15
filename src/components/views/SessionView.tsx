@@ -23,6 +23,11 @@ import {
   Check,
   Lightbulb,
   Image as ImageIcon,
+  Syringe,
+  Pill,
+  Activity,
+  Droplets,
+  Stethoscope,
 } from "lucide-react";
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
 import RichTextEditor from "@/components/RichTextEditor";
