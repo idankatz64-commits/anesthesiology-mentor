@@ -36,6 +36,10 @@ import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
 import { GlobalQuestionStats, CommunityNotes } from "./SessionCommunity";
 import { getChapterDisplay, resolveChapterName, MILLER_CHAPTERS } from "@/data/millerChapters";
+/** Detect if text starts with Hebrew characters */
+function isHebrew(text: string): boolean {
+  return /^[\s\u200F]*[\u0590-\u05FF]/.test(text);
+}
 
 /** Detect if content contains HTML tags */
 function isHtmlContent(text: string): boolean {
