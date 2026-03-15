@@ -1026,7 +1026,7 @@ export default function SessionView() {
                           </div>
                         );
                       })}
-                    </motion.div>
+                    </div>
                     {isAdmin && (
                       <button
                         onClick={enterExplanationEdit}
