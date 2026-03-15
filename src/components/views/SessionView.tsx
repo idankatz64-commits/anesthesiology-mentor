@@ -995,17 +995,9 @@ export default function SessionView() {
                     </div>
                   </div>
                 ) : (
-                  /* ── Multiple sections: 3D animated grid ── */
+                  /* ── Multiple sections: Transformers grid ── */
                   <>
-                    <motion.div
-                      className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                      initial="hidden"
-                      animate="visible"
-                      variants={{
-                        hidden: {},
-                        visible: { transition: { staggerChildren: 0.12, delayChildren: 0.08 } },
-                      }}
-                    >
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {explanationSections.map((section, i) => {
                         const isLast = i === explanationSections.length - 1;
                         const nonLastCount = explanationSections.length - 1;
@@ -1014,35 +1006,24 @@ export default function SessionView() {
                         const color = SECTION_COLORS[i % SECTION_COLORS.length];
 
                         return (
-                          <motion.div
+                          <div
                             key={i}
-                            variants={{
-                              hidden: { opacity: 0, y: 24, rotateX: 6, scale: 0.96 },
-                              visible: { opacity: 1, y: 0, rotateX: 0, scale: 1 },
-                            }}
-                            transition={{ type: "spring", stiffness: 320, damping: 26 }}
-                            whileHover={{ y: -3, boxShadow: "0 12px 40px -8px rgba(0,0,0,0.3)" }}
-                            className={`relative rounded-2xl overflow-hidden border ${color.border} shadow-lg ${color.glow} ${
+                            className={`relative rounded-2xl overflow-hidden border ${color.border} shadow-lg ${color.glow} bg-card/60 backdrop-blur-sm ${
                               isFullWidth ? "md:col-span-2" : ""
-                            } ${isLast ? "ring-1 ring-primary/25" : ""}`}
-                            style={{ perspective: 600, transformStyle: "preserve-3d" }}
+                            }`}
                           >
                             {section.title && (
-                              <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header} border-b border-inherit`}>
-                                <div className="w-7 h-7 rounded-lg bg-current/10 flex items-center justify-center text-xs font-black opacity-70">
+                              <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`}>
+                                <div className="w-7 h-7 rounded-lg bg-current/15 flex items-center justify-center text-xs font-black">
                                   {i + 1}
                                 </div>
                                 <h4 className="font-bold text-base tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
                               </div>
                             )}
-                            <div className={`p-5 bg-card/50 backdrop-blur-sm ${isLast ? "bg-primary/5" : ""}`}>
+                            <div className={`p-5 ${isLast ? "bg-primary/5" : ""}`}>
                               <SmartContent text={section.content} />
                             </div>
-                            {/* Bottom accent */}
-                            <div className={`h-[2px] bg-gradient-to-r ${
-                              isLast ? "from-primary/40 via-primary/20 to-transparent" : "from-current/20 to-transparent"
-                            }`} />
-                          </motion.div>
+                          </div>
                         );
                       })}
                     </motion.div>
