@@ -1026,7 +1026,7 @@ export default function SessionView() {
                         return (
                           <div
                             key={i}
-                            className={`relative rounded-2xl overflow-hidden border ${color.border} ${color.glow} bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] ${
+                            className={`relative rounded-2xl overflow-hidden border border-black/20 bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)] ${
                               isFullWidth ? "md:col-span-2" : ""
                             }`}
                           >
