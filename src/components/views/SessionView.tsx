@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { springGentle } from "@/lib/animations";
 import { useApp } from "@/contexts/AppContext";
@@ -21,12 +21,7 @@ import {
   Calculator,
   Pencil,
   Check,
-  FileText,
-  AlertTriangle,
-  Brain,
   Lightbulb,
-  Target,
-  Zap,
   Image as ImageIcon,
 } from "lucide-react";
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
@@ -87,102 +82,41 @@ function ExplanationRenderer({ text }: { text: string }) {
   );
 }
 
-/** Split explanation text by --- or <hr> into sections with optional titles */
-function splitExplanation(text: string): { title: string | null; content: string }[] {
-  if (!text) return [{ title: null, content: "אין הסבר" }];
+/** Color palette for split sections by index */
+const SECTION_COLORS = [
+  { border: "border-orange-500/25", header: "bg-orange-500/10 text-orange-400" },
+  { border: "border-yellow-500/25", header: "bg-yellow-500/10 text-yellow-400" },
+  { border: "border-blue-500/25", header: "bg-blue-500/10 text-blue-400" },
+  { border: "border-purple-500/25", header: "bg-purple-500/10 text-purple-400" },
+  { border: "border-emerald-500/25", header: "bg-emerald-500/10 text-emerald-400" },
+  { border: "border-primary/20", header: "bg-primary/10 text-primary" },
+];
 
-  // Split by <hr>, <hr/>, <hr />, or --- on its own line
-  const parts = text
+/** Parse META_TITLES prefix from explanation field */
+function parseExplanation(text: string): { titles: string[]; html: string } {
+  const match = text.match(/^META_TITLES:(.*)\n([\s\S]*)$/);
+  if (match) {
+    try {
+      const titles = JSON.parse(match[1]);
+      return { titles: Array.isArray(titles) ? titles.map(String) : [], html: match[2] };
+    } catch {}
+  }
+  return { titles: [], html: text };
+}
+
+/** Serialize explanation with META_TITLES prefix */
+function serializeExplanation(html: string, titles: string[]): string {
+  if (titles.every((t) => !t.trim())) return html;
+  return `META_TITLES:${JSON.stringify(titles)}\n${html}`;
+}
+
+/** Split HTML content into sections by <hr> or --- */
+function splitSections(html: string): string[] {
+  if (!html) return [];
+  return html
     .split(/(?:<hr\s*\/?>|\n---\n|\n---$|^---\n)/i)
     .map((p) => p.trim())
     .filter(Boolean);
-
-  if (parts.length <= 1) return [{ title: null, content: text }];
-
-  return parts.map((part) => {
-    // Check if first line looks like a title (short, possibly bold/uppercase)
-    const lines = part.split("\n");
-    const firstLine = lines[0].replace(/<\/?(?:strong|b|em|h[1-6])>/gi, "").trim();
-
-    // If first line is short and rest has content, treat as title
-    if (firstLine.length < 80 && lines.length > 1) {
-      return {
-        title: firstLine,
-        content: lines.slice(1).join("\n").trim(),
-      };
-    }
-    return { title: null, content: part };
-  });
-}
-
-/** Get full style config for a section based on its title */
-function getSectionConfig(title: string | null): {
-  icon: ReactNode;
-  headerClass: string;
-  borderClass: string;
-} {
-  if (!title)
-    return {
-      icon: <Lightbulb className="w-4 h-4" />,
-      headerClass: "bg-primary/10 text-primary",
-      borderClass: "border-primary/20",
-    };
-  const t = title.toUpperCase();
-  if (
-    t.includes("EXECUTIVE") ||
-    t.includes("SUMMARY") ||
-    t.includes("סיכום") ||
-    t.includes("תקציר") ||
-    t.includes("מנהלים")
-  )
-    return {
-      icon: <FileText className="w-4 h-4" />,
-      headerClass: "bg-orange-500/10 text-orange-400",
-      borderClass: "border-orange-500/25",
-    };
-  if (t.includes("TRAP") || t.includes("מלכודת") || t.includes("טעות") || t.includes("שים לב") || t.includes("WATCH"))
-    return {
-      icon: <AlertTriangle className="w-4 h-4" />,
-      headerClass: "bg-yellow-500/10 text-yellow-400",
-      borderClass: "border-yellow-500/25",
-    };
-  if (
-    t.includes("MILLER") ||
-    t.includes("DEEP DIVE") ||
-    t.includes("העמקה") ||
-    t.includes("ניתוח") ||
-    t.includes("ANALYSIS")
-  )
-    return {
-      icon: <Brain className="w-4 h-4" />,
-      headerClass: "bg-blue-500/10 text-blue-400",
-      borderClass: "border-blue-500/25",
-    };
-  if (
-    t.includes("KEY") ||
-    t.includes("מפתח") ||
-    t.includes("POINT") ||
-    t.includes("REFERENCE") ||
-    t.includes("CRITICAL") ||
-    t.includes("QUOTE") ||
-    t.includes("ציטוט")
-  )
-    return {
-      icon: <Target className="w-4 h-4" />,
-      headerClass: "bg-purple-500/10 text-purple-400",
-      borderClass: "border-purple-500/25",
-    };
-  if (t.includes("TIP") || t.includes("טיפ") || t.includes("CHEAT") || t.includes("VISUAL") || t.includes("תמונ"))
-    return {
-      icon: <Zap className="w-4 h-4" />,
-      headerClass: "bg-emerald-500/10 text-emerald-400",
-      borderClass: "border-emerald-500/25",
-    };
-  return {
-    icon: <Lightbulb className="w-4 h-4" />,
-    headerClass: "bg-primary/10 text-primary",
-    borderClass: "border-primary/20",
-  };
 }
 
 export default function SessionView() {
@@ -218,6 +152,7 @@ export default function SessionView() {
   const [calcOpen, setCalcOpen] = useState(false);
   const [editingExplanation, setEditingExplanation] = useState(false);
   const [explanationDraft, setExplanationDraft] = useState("");
+  const [sectionTitleDrafts, setSectionTitleDrafts] = useState<string[]>([]);
   const [savingExplanation, setSavingExplanation] = useState(false);
   const [editingCorrectAnswer, setEditingCorrectAnswer] = useState(false);
   const [correctAnswerDraft, setCorrectAnswerDraft] = useState("");
@@ -239,6 +174,7 @@ export default function SessionView() {
     setEditingQuestion(false);
     setQuestionDraft("");
     setAnswersDraft({ A: "", B: "", C: "", D: "" });
+    setEditingExplanation(false);
   }, [index]);
 
   const isSimulation = mode === "simulation";
@@ -270,14 +206,13 @@ export default function SessionView() {
   if (!quiz.length) return null;
 
   const qData = quiz[index];
-  const serialNumber = qData[KEYS.ID]; // Serial_Question_Number# from CSV
-  const questionId = qData[KEYS.REF_ID]; // QuestionID from CSV
+  const serialNumber = qData[KEYS.ID];
+  const questionId = qData[KEYS.REF_ID];
   const savedAns = answers[index];
   const savedConfidence = confidence[index];
   const correctAns = qData[KEYS.CORRECT];
   const isPracticeRevealed = mode === "practice" && savedAns !== null && savedConfidence !== null;
   const isReviewMode = mode === "review";
-  // In simulation: never show feedback during session
   const showFeedback = !isSimulation && (isPracticeRevealed || isReviewMode);
 
   const isFav = progress.favorites.includes(serialNumber);
@@ -285,8 +220,25 @@ export default function SessionView() {
   const rating = progress.ratings[serialNumber];
   const tags = progress.tags[serialNumber] || [];
 
-  // Whether the user needs to pick confidence before proceeding (practice mode)
   const needsConfidence = mode === "practice" && savedAns !== null && savedConfidence === null;
+
+  // ── Explanation parsing ──
+  const rawExp = qData[KEYS.EXPLANATION] || "";
+  const { titles: expTitles, html: expHtml } = parseExplanation(rawExp);
+  const expParts = splitSections(expHtml);
+  const explanationSections =
+    expParts.length > 0
+      ? expParts.map((content, i) => ({ content, title: expTitles[i] || null }))
+      : [{ content: rawExp || "אין הסבר", title: null }];
+
+  /** Enter explanation edit mode — parses existing data */
+  const enterExplanationEdit = () => {
+    const raw = qData[KEYS.EXPLANATION] || "";
+    const { titles, html } = parseExplanation(raw);
+    setExplanationDraft(html);
+    setSectionTitleDrafts(splitSections(html).map((_, i) => titles[i] || ""));
+    setEditingExplanation(true);
+  };
 
   const handleAnswer = (opt: string) => {
     if (isPracticeRevealed || isReviewMode) return;
@@ -415,9 +367,6 @@ export default function SessionView() {
   };
 
   const progressPercent = ((index + 1) / quiz.length) * 100;
-
-  // Split explanation sections
-  const explanationSections = splitExplanation(qData[KEYS.EXPLANATION] || "");
 
   return (
     <div className="w-full pb-24" ref={mainRef} style={{ minHeight: "60vh" }}>
@@ -813,10 +762,10 @@ export default function SessionView() {
           )}
         </div>
 
-        {/* ── Feedback Section — Split Explanation Cards ── */}
+        {/* ── Feedback Section ── */}
         {showFeedback && (
           <div className="border-t border-border p-5 md:p-10 space-y-6 bg-muted/20">
-            {/* (1) Correct/Wrong indicator + admin edit correct answer */}
+            {/* (1) Correct/Wrong indicator */}
             <div className="font-bold text-lg flex items-center gap-2 flex-wrap">
               {savedAns === correctAns ? (
                 <span className="text-success flex items-center gap-2">✅ יפה מאוד!</span>
@@ -923,7 +872,7 @@ export default function SessionView() {
 
             <div className="border-t border-border" />
 
-            {/* (2) Explanation — split into cards */}
+            {/* (2) Explanation */}
             {editingExplanation ? (
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
@@ -932,20 +881,57 @@ export default function SessionView() {
                   </strong>
                   <button
                     onClick={() => {
-                      if (!explanationDraft.includes("<hr>") && !explanationDraft.includes("---")) {
-                        setExplanationDraft((prev) => prev + "\n<hr>\n");
-                        toast({
-                          title: "הוסף separator",
-                          description: "נוסף מפריד — טקסט מעליו ומתחתיו יוצגו בכרטיסים נפרדים",
-                        });
-                      }
+                      const newHtml = explanationDraft + "\n<hr>\n";
+                      setExplanationDraft(newHtml);
+                      const newSections = splitSections(newHtml);
+                      setSectionTitleDrafts(newSections.map((_, i) => sectionTitleDrafts[i] || ""));
+                      toast({ title: "נוסף מפריד ✂️", description: "הוסף כותרת לחלק החדש למטה" });
                     }}
                     className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-lg hover:bg-primary/20 transition border border-primary/20"
                   >
                     ✂️ פצל לחלונות
                   </button>
                 </div>
+
                 <RichTextEditor content={explanationDraft} onChange={setExplanationDraft} minHeight="120px" />
+
+                {/* Section title inputs — shown only when there are multiple sections */}
+                {splitSections(explanationDraft).length > 1 && (
+                  <div className="p-3 bg-muted/30 rounded-xl border border-border space-y-2">
+                    <p className="text-xs font-bold text-muted-foreground">כותרות חלקים (אופציונלי):</p>
+                    {splitSections(explanationDraft).map((_, i) => {
+                      const isLastSection = i === splitSections(explanationDraft).length - 1;
+                      return (
+                        <div key={i} className="flex items-center gap-2">
+                          <span
+                            className="text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center shrink-0"
+                            style={{
+                              background: ["#f97316", "#eab308", "#3b82f6", "#a855f7", "#10b981"][i % 5] + "22",
+                              color: ["#f97316", "#eab308", "#3b82f6", "#a855f7", "#10b981"][i % 5],
+                            }}
+                          >
+                            {i + 1}
+                          </span>
+                          <input
+                            type="text"
+                            value={sectionTitleDrafts[i] || ""}
+                            onChange={(e) =>
+                              setSectionTitleDrafts((prev) => {
+                                const next = [...prev];
+                                next[i] = e.target.value;
+                                return next;
+                              })
+                            }
+                            placeholder={isLastSection ? "סיכום — מוצג רוחב מלא..." : `כותרת חלק ${i + 1}...`}
+                            className="flex-grow px-3 py-1.5 text-xs bg-muted border border-border rounded-lg text-foreground outline-none focus:border-primary"
+                            dir="auto"
+                          />
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
                 <div className="flex gap-2 justify-end">
                   <button
                     onClick={() => setEditingExplanation(false)}
@@ -957,15 +943,18 @@ export default function SessionView() {
                     disabled={savingExplanation}
                     onClick={async () => {
                       setSavingExplanation(true);
+                      const currentSections = splitSections(explanationDraft);
+                      const titlesToSave = currentSections.map((_, i) => sectionTitleDrafts[i] || "");
+                      const toSave = serializeExplanation(explanationDraft, titlesToSave);
                       const { error } = await supabase
                         .from("questions")
-                        .update({ explanation: explanationDraft, manually_edited: true })
+                        .update({ explanation: toSave, manually_edited: true })
                         .eq("id", serialNumber);
                       setSavingExplanation(false);
                       if (error) {
                         toast({ title: "שגיאה בשמירה", description: error.message, variant: "destructive" });
                       } else {
-                        qData[KEYS.EXPLANATION] = explanationDraft;
+                        qData[KEYS.EXPLANATION] = toSave;
                         invalidateQuestions();
                         setEditingExplanation(false);
                         toast({ title: "ההסבר עודכן ✅" });
@@ -978,60 +967,67 @@ export default function SessionView() {
                 </div>
               </div>
             ) : (
-              <div className="space-y-4">
-                {explanationSections.map((section, i) => {
-                  const isMultiple = explanationSections.length > 1;
-                  const config = getSectionConfig(section.title);
-                  if (!isMultiple) {
-                    return (
-                      <div key={i} className="glass-card rounded-xl p-6 border border-border">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Lightbulb className="w-4 h-4 text-primary" />
-                          <strong className="text-sm font-medium text-foreground">הסבר:</strong>
-                          {isAdmin && (
-                            <button
-                              onClick={() => {
-                                setExplanationDraft(qData[KEYS.EXPLANATION] || "");
-                                setEditingExplanation(true);
-                              }}
-                              className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
-                              title="ערוך הסבר"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                        <SmartContent text={section.content} />
-                      </div>
-                    );
-                  }
-                  return (
-                    <div key={i} className={`glass-card rounded-xl border overflow-hidden ${config.borderClass}`}>
-                      {section.title && (
-                        <div className={`flex items-center gap-2 px-4 py-2.5 ${config.headerClass}`}>
-                          {config.icon}
-                          <h4 className="font-bold text-xs uppercase tracking-widest">{section.title}</h4>
-                        </div>
+              <>
+                {explanationSections.length === 1 ? (
+                  /* ── Single section: original style ── */
+                  <div className="glass-card rounded-xl p-6 border border-border">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Lightbulb className="w-4 h-4 text-primary" />
+                      <strong className="text-sm font-medium text-foreground">הסבר:</strong>
+                      {isAdmin && (
+                        <button
+                          onClick={enterExplanationEdit}
+                          className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10"
+                          title="ערוך הסבר"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
                       )}
-                      <div className="p-5">
-                        <SmartContent text={section.content} />
-                      </div>
                     </div>
-                  );
-                })}
-                {/* Admin edit button when multiple sections */}
-                {explanationSections.length > 1 && isAdmin && (
-                  <button
-                    onClick={() => {
-                      setExplanationDraft(qData[KEYS.EXPLANATION] || "");
-                      setEditingExplanation(true);
-                    }}
-                    className="text-xs font-bold text-primary flex items-center gap-1.5 hover:underline"
-                  >
-                    <Pencil className="w-3 h-3" /> ערוך הסבר
-                  </button>
+                    <SmartContent text={explanationSections[0].content} />
+                  </div>
+                ) : (
+                  /* ── Multiple sections: smart grid layout ── */
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {explanationSections.map((section, i) => {
+                        const isLast = i === explanationSections.length - 1;
+                        const nonLastCount = explanationSections.length - 1;
+                        // If odd number of non-last sections, first one gets full width
+                        const isAloneInRow = !isLast && nonLastCount % 2 === 1 && i === 0;
+                        const isFullWidth = isLast || isAloneInRow;
+                        const color = SECTION_COLORS[i % SECTION_COLORS.length];
+
+                        return (
+                          <div
+                            key={i}
+                            className={`glass-card rounded-xl border overflow-hidden ${color.border} ${
+                              isFullWidth ? "md:col-span-2" : ""
+                            } ${isLast ? "ring-1 ring-primary/20" : ""}`}
+                          >
+                            {section.title && (
+                              <div className={`flex items-center gap-2 px-4 py-2.5 ${color.header}`}>
+                                <h4 className="font-bold text-xs uppercase tracking-widest">{section.title}</h4>
+                              </div>
+                            )}
+                            <div className={`p-5 ${isLast ? "bg-primary/5" : ""}`}>
+                              <SmartContent text={section.content} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {isAdmin && (
+                      <button
+                        onClick={enterExplanationEdit}
+                        className="text-xs font-bold text-primary flex items-center gap-1.5 hover:underline mt-2"
+                      >
+                        <Pencil className="w-3 h-3" /> ערוך הסבר
+                      </button>
+                    )}
+                  </>
                 )}
-              </div>
+              </>
             )}
 
             <div className="border-t border-border" />
