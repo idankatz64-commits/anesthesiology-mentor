@@ -1,4 +1,22 @@
+import { useEffect, useState } from 'react';
 import { type LucideIcon } from 'lucide-react';
+
+function useIsDark() {
+  const [isDark, setIsDark] = useState(
+    () => !document.documentElement.classList.contains('light')
+  );
+  useEffect(() => {
+    const observer = new MutationObserver(() => {
+      setIsDark(!document.documentElement.classList.contains('light'));
+    });
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+    return () => observer.disconnect();
+  }, []);
+  return isDark;
+}
 
 const gradients: Record<string, [string, string]> = {
   gold:   ['#fbbf24', '#f97316'],
@@ -33,6 +51,7 @@ export default function SquircleIcon({
 }: SquircleIconProps) {
   const [from, to] = gradients[gradient] ?? gradients.blue;
   const { box, icon: iconSize } = sizes[size];
+  const isDark = useIsDark();
 
   return (
     <div
@@ -42,8 +61,10 @@ export default function SquircleIcon({
         height: box,
         borderRadius: '22%',
         background: `linear-gradient(135deg, ${from}, ${to})`,
-        boxShadow:
-          'inset 0 1px 0 rgba(255,255,255,0.25), 0 2px 6px rgba(0,0,0,0.3)',
+        boxShadow: isDark
+          ? 'inset 0 1px 0 rgba(255,255,255,0.3), 0 3px 10px rgba(0,0,0,0.5)'
+          : 'inset 0 1px 0 rgba(255,255,255,0.4), 0 2px 6px rgba(0,0,0,0.15)',
+        filter: isDark ? 'brightness(1.08)' : 'brightness(1)',
       }}
     >
       <Icon

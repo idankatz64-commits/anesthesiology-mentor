@@ -30,6 +30,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
+import SquircleIcon from "@/components/SquircleIcon";
 import RichTextEditor from "@/components/RichTextEditor";
 import { useToast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -101,6 +102,8 @@ const ANESTHESIA_ICONS = [
   Droplets,      // Blood bags
   Lightbulb,     // Endotracheal tube (fallback)
 ];
+
+const SECTION_GRADIENTS = ['orange', 'blue', 'violet', 'gold', 'cyan', 'rose'] as const;
 
 /** Transformers-inspired metallic color palette for split sections */
 const SECTION_COLORS = [
@@ -1038,9 +1041,7 @@ export default function SessionView() {
                               const IconComp = ANESTHESIA_ICONS[i % ANESTHESIA_ICONS.length];
                               return (
                                 <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`} dir={isHebrew(section.title) ? "rtl" : "ltr"}>
-                                  <div className={`w-8 h-8 rounded-lg ${color.iconBg} border shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center`}>
-                                    <IconComp className="w-4 h-4 drop-shadow-sm" />
-                                  </div>
+                                  <SquircleIcon icon={IconComp} gradient={SECTION_GRADIENTS[i % SECTION_GRADIENTS.length]} size="sm" />
                                   <div>
                                     <h4 className="font-black text-lg tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
                                     <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
