@@ -94,7 +94,7 @@ Deno.serve(async (req) => {
     }
 
     // Normalize headers to lowercase
-    const rows: Record<string, string>[] = rawRows.map((row: Record<string, string>) => {
+    const rows: Record<string, string>[] = rawRows.map((row: Record<string, string | undefined>) => {
       const normalized: Record<string, string> = {};
       for (const [key, value] of Object.entries(row)) {
         normalized[key.trim().toLowerCase()] = (value || "").trim();
