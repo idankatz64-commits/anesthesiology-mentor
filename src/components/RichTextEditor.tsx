@@ -2,7 +2,6 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
-// @ts-ignore - tiptap image extension types
 import Image from '@tiptap/extension-image';
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { Bold, Underline as UnderlineIcon, List, ListOrdered, ArrowLeftRight, Link2, ImagePlus } from 'lucide-react';
@@ -120,7 +119,7 @@ export default function RichTextEditor({
       const { error } = await supabase.storage.from('question-images').upload(path, file);
       if (error) throw error;
       const { data } = supabase.storage.from('question-images').getPublicUrl(path);
-      (editor.chain().focus() as any).setImage({ src: data.publicUrl }).run();
+      editor.chain().focus().setImage({ src: data.publicUrl }).run();
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : JSON.stringify(e);
       console.error('Upload error:', msg);
