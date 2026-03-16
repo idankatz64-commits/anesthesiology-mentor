@@ -196,9 +196,9 @@ function ExportByDateSection() {
     try {
       const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
       const { data: logData, error: logError } = await supabase
-        .from('question_edit_log')
+        .from('question_audit_log')
         .select('question_id')
-        .gte('edited_at', since);
+        .gte('changed_at', since);
       if (logError) throw logError;
 
       const ids = [...new Set((logData ?? []).map(r => r.question_id).filter(Boolean) as string[])];
