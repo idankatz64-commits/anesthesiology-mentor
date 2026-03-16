@@ -2,8 +2,10 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
-import { useEffect, useCallback, useState } from 'react';
-import { Bold, Underline as UnderlineIcon, List, ListOrdered, ArrowLeftRight, Link2 } from 'lucide-react';
+import Image from '@tiptap/extension-image';
+import { useEffect, useCallback, useState, useRef } from 'react';
+import { Bold, Underline as UnderlineIcon, List, ListOrdered, ArrowLeftRight, Link2, ImagePlus } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RichTextEditorProps {
   content: string;
@@ -21,9 +23,12 @@ export default function RichTextEditor({
   editable = true,
 }: RichTextEditorProps) {
   const [isRtl, setIsRtl] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const editor = useEditor({
     extensions: [
+      Image.configure({ inline: false, allowBase64: false }),
       StarterKit.configure({
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
@@ -105,6 +110,23 @@ export default function RichTextEditor({
     setIsRtl(prev => !prev);
   }, []);
 
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!editor || !file) return;
+    setUploading(true);
+    try {
+      const ext = file.name.split('.').pop();
+      const path = `${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('question-images').upload(path, file);
+      if (error) throw error;
+      const { data } = supabase.storage.from('question-images').getPublicUrl(path);
+      editor.chain().focus().setImage({ src: data.publicUrl }).run();
+    } catch (e) {
+      alert('שגיאה בהעלאת התמונה');
+    } finally {
+      setUploading(false);
+    }
+  }, [editor]);
+
   const handleLink = useCallback(() => {
     if (!editor) return;
     if (editor.isActive('link')) {
@@ -184,6 +206,24 @@ export default function RichTextEditor({
           >
             <Link2 className="w-3.5 h-3.5" />
           </ToolbarButton>
+          <div className="w-px h-4 bg-border mx-1" />
+          <ToolbarButton
+            onClick={() => fileInputRef.current?.click()}
+            isActive={false}
+            title="העלה תמונה"
+          >
+            {uploading
+              ? <span className="text-[10px]">...</span>
+              : <ImagePlus className="w-3.5 h-3.5" />
+            }
+          </ToolbarButton>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) handleImageUpload(f); e.target.value = ''; }}
+          />
           <div className="w-px h-4 bg-border mx-1" />
           <ToolbarButton
             onClick={toggleDirection}
