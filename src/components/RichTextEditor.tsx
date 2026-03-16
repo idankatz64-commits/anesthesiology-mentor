@@ -120,8 +120,10 @@ export default function RichTextEditor({
       if (error) throw error;
       const { data } = supabase.storage.from('question-images').getPublicUrl(path);
       editor.chain().focus().setImage({ src: data.publicUrl }).run();
-    } catch (e) {
-      alert('שגיאה בהעלאת התמונה');
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : JSON.stringify(e);
+      console.error('Upload error:', msg);
+      alert(`שגיאה בהעלאת התמונה:\n${msg}`);
     } finally {
       setUploading(false);
     }
