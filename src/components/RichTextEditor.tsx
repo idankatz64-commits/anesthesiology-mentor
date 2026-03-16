@@ -2,6 +2,7 @@ import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import Link from '@tiptap/extension-link';
+// @ts-ignore - tiptap image extension types
 import Image from '@tiptap/extension-image';
 import { useEffect, useCallback, useState, useRef } from 'react';
 import { Bold, Underline as UnderlineIcon, List, ListOrdered, ArrowLeftRight, Link2, ImagePlus } from 'lucide-react';
