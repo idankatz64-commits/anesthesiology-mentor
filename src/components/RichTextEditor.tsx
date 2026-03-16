@@ -127,6 +127,26 @@ export default function RichTextEditor({
     }
   }, [editor]);
 
+  // Clipboard paste support
+  useEffect(() => {
+    if (!editor) return;
+    const el = editor.view.dom;
+    const handler = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      for (const item of Array.from(items)) {
+        if (item.type.startsWith('image/')) {
+          e.preventDefault();
+          const file = item.getAsFile();
+          if (file) handleImageUpload(file);
+          return;
+        }
+      }
+    };
+    el.addEventListener('paste', handler);
+    return () => el.removeEventListener('paste', handler);
+  }, [editor, handleImageUpload]);
+
   const handleLink = useCallback(() => {
     if (!editor) return;
     if (editor.isActive('link')) {
