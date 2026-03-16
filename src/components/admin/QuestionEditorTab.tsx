@@ -8,10 +8,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
-import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X, Download, ChevronDown, Check } from 'lucide-react';
+import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X, Download, ChevronDown, Check, Mail, CalendarIcon, Clock } from 'lucide-react';
 import Papa from 'papaparse';
 import { getChapterDisplay, resolveChapterName } from '@/data/millerChapters';
+import { format } from 'date-fns';
+import { he } from 'date-fns/locale';
+import { cn } from '@/lib/utils';
 
 interface QuestionRow {
   id: string;
@@ -171,6 +176,227 @@ function BatchChapterUpdate() {
             </div>
           </div>
         )}
+      </CollapsibleContent>
+    </Collapsible>
+  );
+}
+
+function ExportByDateSection() {
+  const [open, setOpen] = useState(false);
+  const [quickExporting, setQuickExporting] = useState<string | null>(null);
+  const [dateFrom, setDateFrom] = useState<Date | undefined>();
+  const [dateTo, setDateTo] = useState<Date | undefined>();
+  const [customExporting, setCustomExporting] = useState(false);
+  const [email, setEmail] = useState('');
+  const [emailHours, setEmailHours] = useState('24');
+  const [sending, setSending] = useState(false);
+
+  const exportEditedQuestions = async (hoursBack: number, label: string) => {
+    setQuickExporting(label);
+    try {
+      const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
+      const { data: logData, error: logError } = await supabase
+        .from('question_edit_log')
+        .select('question_id')
+        .gte('edited_at', since);
+      if (logError) throw logError;
+
+      const ids = [...new Set((logData ?? []).map(r => r.question_id).filter(Boolean) as string[])];
+      if (ids.length === 0) {
+        toast.info(`לא נערכו שאלות ב-${label}`);
+        return;
+      }
+
+      const { data: questions, error: qError } = await supabase
+        .from('questions')
+        .select('id, ref_id, question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type, media_link')
+        .in('id', ids);
+      if (qError) throw qError;
+
+      const csv = Papa.unparse(questions ?? []);
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `questions_edited_${label}_${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`יוצאו ${ids.length} שאלות ערוכות (${label})`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error('שגיאה: ' + msg);
+    } finally {
+      setQuickExporting(null);
+    }
+  };
+
+  const exportByDateRange = async () => {
+    if (!dateFrom || !dateTo) { toast.error('יש לבחור תאריך התחלה וסיום'); return; }
+    setCustomExporting(true);
+    try {
+      const fromISO = dateFrom.toISOString();
+      const toISO = new Date(dateTo.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
+
+      const { data: logData, error: logError } = await supabase
+        .from('question_edit_log')
+        .select('question_id')
+        .gte('edited_at', fromISO)
+        .lte('edited_at', toISO);
+      if (logError) throw logError;
+
+      const ids = [...new Set((logData ?? []).map(r => r.question_id).filter(Boolean) as string[])];
+      if (ids.length === 0) {
+        toast.info('לא נמצאו שאלות ערוכות בטווח שנבחר');
+        return;
+      }
+
+      const { data: questions, error: qError } = await supabase
+        .from('questions')
+        .select('id, ref_id, question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type, media_link')
+        .in('id', ids);
+      if (qError) throw qError;
+
+      const csv = Papa.unparse(questions ?? []);
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `questions_edited_${format(dateFrom, 'yyyy-MM-dd')}_to_${format(dateTo, 'yyyy-MM-dd')}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(`יוצאו ${ids.length} שאלות ערוכות`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error('שגיאה: ' + msg);
+    } finally {
+      setCustomExporting(false);
+    }
+  };
+
+  const sendEmailReport = async () => {
+    if (!email.trim()) { toast.error('יש להזין כתובת מייל'); return; }
+    setSending(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('daily-csv-export', {
+        body: { email: email.trim(), hours: Number(emailHours) },
+      });
+      if (error) throw error;
+      toast.success(data?.message || 'הדו"ח נשלח בהצלחה');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      toast.error('שגיאה בשליחה: ' + msg);
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Collapsible open={open} onOpenChange={setOpen}>
+      <CollapsibleTrigger className="flex items-center gap-2 text-sm font-bold text-primary hover:underline w-full">
+        <ChevronDown className={`w-4 h-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+        ייצוא שאלות ערוכות לפי תאריך
+      </CollapsibleTrigger>
+      <CollapsibleContent className="mt-4 space-y-5">
+        {/* Quick Export Buttons */}
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-foreground">ייצוא מהיר (הורדת CSV)</p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { label: '24 שעות', hours: 24 },
+              { label: '7 ימים', hours: 168 },
+              { label: '30 ימים', hours: 720 },
+            ].map(({ label, hours }) => (
+              <Button
+                key={label}
+                variant="outline"
+                size="sm"
+                disabled={quickExporting !== null}
+                onClick={() => exportEditedQuestions(hours, label)}
+              >
+                {quickExporting === label ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Download className="w-4 h-4 ml-1" />}
+                {label}
+              </Button>
+            ))}
+          </div>
+        </div>
+
+        {/* Date Range Export */}
+        <div className="space-y-2">
+          <p className="text-sm font-semibold text-foreground">ייצוא לפי טווח תאריכים</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">מתאריך</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("w-[140px] justify-start text-right font-normal", !dateFrom && "text-muted-foreground")}>
+                    <CalendarIcon className="w-4 h-4 ml-1" />
+                    {dateFrom ? format(dateFrom, 'dd/MM/yyyy') : 'בחר'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">עד תאריך</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className={cn("w-[140px] justify-start text-right font-normal", !dateTo && "text-muted-foreground")}>
+                    <CalendarIcon className="w-4 h-4 ml-1" />
+                    {dateTo ? format(dateTo, 'dd/MM/yyyy') : 'בחר'}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className="p-3 pointer-events-auto" />
+                </PopoverContent>
+              </Popover>
+            </div>
+            <Button size="sm" onClick={exportByDateRange} disabled={customExporting || !dateFrom || !dateTo}>
+              {customExporting ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Download className="w-4 h-4 ml-1" />}
+              ייצוא
+            </Button>
+          </div>
+        </div>
+
+        {/* Email Report */}
+        <div className="space-y-2 border-t border-border pt-4">
+          <p className="text-sm font-semibold text-foreground">שליחת דו"ח למייל</p>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[200px]">
+              <label className="text-xs text-muted-foreground mb-1 block">כתובת מייל</label>
+              <Input
+                type="email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                placeholder="example@email.com"
+                className="text-sm"
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">טווח שעות</label>
+              <Select value={emailHours} onValueChange={setEmailHours}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="24">24 שעות</SelectItem>
+                  <SelectItem value="48">48 שעות</SelectItem>
+                  <SelectItem value="168">7 ימים</SelectItem>
+                  <SelectItem value="720">30 ימים</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button size="sm" onClick={sendEmailReport} disabled={sending || !email.trim()}>
+              {sending ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Mail className="w-4 h-4 ml-1" />}
+              שלח עכשיו
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+            <Clock className="w-3 h-3" />
+            לאוטומציה יומית יש להגדיר Cron Job בהגדרות הבקנד (pg_cron) שיקרא ל-Edge Function daily-csv-export כל יום.
+          </p>
+        </div>
       </CollapsibleContent>
     </Collapsible>
   );
@@ -378,6 +604,9 @@ export default function QuestionEditorTab() {
 
       {/* Batch Chapter Update */}
       <BatchChapterUpdate />
+
+      {/* Export by Date */}
+      <ExportByDateSection />
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
