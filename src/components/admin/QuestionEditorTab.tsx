@@ -238,10 +238,10 @@ function ExportByDateSection() {
       const toISO = new Date(dateTo.getTime() + 24 * 60 * 60 * 1000 - 1).toISOString();
 
       const { data: logData, error: logError } = await supabase
-        .from('question_edit_log')
+        .from('question_audit_log')
         .select('question_id')
-        .gte('edited_at', fromISO)
-        .lte('edited_at', toISO);
+        .gte('changed_at', fromISO)
+        .lte('changed_at', toISO);
       if (logError) throw logError;
 
       const ids = [...new Set((logData ?? []).map(r => r.question_id).filter(Boolean) as string[])];

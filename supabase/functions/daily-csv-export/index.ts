@@ -31,7 +31,7 @@ serve(async (req) => {
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();
 
-    const { data: logData, error: logError } = await supabase.from("question_edit_log").select("question_id").gte("edited_at", since);
+    const { data: logData, error: logError } = await supabase.from("question_audit_log").select("question_id").gte("changed_at", since);
     if (logError) throw logError;
 
     const ids = [...new Set((logData ?? []).map((r: Record<string, unknown>) => r.question_id as string))];
