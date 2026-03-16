@@ -605,6 +605,9 @@ export default function QuestionEditorTab() {
       {/* Batch Chapter Update */}
       <BatchChapterUpdate />
 
+      {/* Export by Date */}
+      <ExportByDateSection />
+
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
