@@ -53,13 +53,8 @@ export default function SquircleIcon({
   const { box, icon: iconSize } = sizes[size];
   const isDark = useIsDark();
 
-  const darkBase = '#1a1a2e';
-  const darkEnd = '#0d0d1a';
-  const lightBase = '#2a2a3e';
-  const lightEnd = '#1a1a2e';
-
-  const base = isDark ? darkBase : lightBase;
-  const end = isDark ? darkEnd : lightEnd;
+  const base = isDark ? '#1a1a2e' : '#f0f0f5';
+  const end = isDark ? '#0d0d1a' : '#e2e2ea';
 
   return (
     <div
@@ -69,12 +64,10 @@ export default function SquircleIcon({
         height: box,
         borderRadius: '22%',
         background: `linear-gradient(145deg, ${base}, ${end})`,
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: `
-          inset 0 1px 0 rgba(255,255,255,0.12),
-          inset 0 -1px 2px rgba(0,0,0,0.3),
-          0 2px 8px rgba(0,0,0,0.4)
-        `,
+        border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
+        boxShadow: isDark
+          ? `inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 2px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.4)`
+          : `inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -1px 2px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.1)`,
       }}
     >
       {/* Colored radial glow */}
@@ -82,7 +75,9 @@ export default function SquircleIcon({
         className="absolute inset-0"
         style={{
           borderRadius: '22%',
-          background: `radial-gradient(circle at 50% 60%, ${accent}22, ${glow}08, transparent 70%)`,
+          background: isDark
+            ? `radial-gradient(circle at 50% 60%, ${accent}22, ${glow}08, transparent 70%)`
+            : `radial-gradient(circle at 50% 60%, ${accent}30, ${glow}15, transparent 70%)`,
         }}
       />
       {/* Top glass highlight */}
@@ -90,7 +85,9 @@ export default function SquircleIcon({
         className="absolute top-0 left-[15%] right-[15%] h-[40%]"
         style={{
           borderRadius: '22% 22% 50% 50%',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 100%)',
+          background: isDark
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)',
         }}
       />
       <Icon
@@ -98,8 +95,10 @@ export default function SquircleIcon({
         strokeWidth={2.2}
         className="relative z-10"
         style={{
-          color: accent,
-          filter: `drop-shadow(0 0 4px ${accent}40) drop-shadow(0 1px 1px rgba(0,0,0,0.3))`,
+          color: isDark ? accent : glow,
+          filter: isDark
+            ? `drop-shadow(0 0 4px ${accent}40) drop-shadow(0 1px 1px rgba(0,0,0,0.3))`
+            : `drop-shadow(0 0 3px ${accent}30)`,
         }}
       />
     </div>
