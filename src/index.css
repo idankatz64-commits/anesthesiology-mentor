@@ -406,6 +406,8 @@
 .rich-content li > p { display: inline; margin: 0; }
 .rich-content ul ul { list-style-type: circle; }
 .rich-content ul ul ul { list-style-type: square; }
+.rich-content img { cursor: zoom-in; border-radius: 0.5rem; max-width: 100%; transition: opacity 0.15s; }
+.rich-content img:hover { opacity: 0.88; }
 
 /* Pulsing border for forgetting risk */
 .animate-pulse-border {

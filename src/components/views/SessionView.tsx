@@ -34,6 +34,7 @@ import {
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
 import SquircleIcon from "@/components/SquircleIcon";
 import RichTextEditor from "@/components/RichTextEditor";
+import ImageLightbox, { useImageLightbox } from "@/components/ImageLightbox";
 import { useToast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -192,8 +193,10 @@ export default function SessionView() {
   const [mediaLinkDraft, setMediaLinkDraft] = useState("");
   const [uploadingQuestionImage, setUploadingQuestionImage] = useState(false);
   const [savingQuestion, setSavingQuestion] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const questionImageInputRef = useRef<HTMLInputElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
+  useImageLightbox(mainRef, setLightboxSrc);
 
   // Reset drafts when question changes
   useEffect(() => {
@@ -509,7 +512,7 @@ export default function SessionView() {
         <div className="p-8 md:p-10">
           <div className="flex items-start gap-2 mb-8">
             {editingQuestion ? (
-              <div className="w-full space-y-4">
+              <div className="w-full space-y-4" data-no-lightbox="true">
                 <RichTextEditor
                   content={questionDraft}
                   onChange={setQuestionDraft}
@@ -664,8 +667,13 @@ export default function SessionView() {
           {/* Media */}
           {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" && (
             <div className="mb-6">
-              {qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png)$/i) ? (
-                <img src={qData[KEYS.MEDIA_LINK]} className="max-h-80 object-contain rounded-lg" alt="Question media" />
+              {qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png|webp)$/i) || qData[KEYS.MEDIA_LINK].startsWith("data:image") ? (
+                <img
+                  src={qData[KEYS.MEDIA_LINK]}
+                  className="max-h-80 object-contain rounded-lg cursor-zoom-in hover:opacity-90 transition"
+                  alt="Question media"
+                  title="לחץ להגדלה"
+                />
               ) : (
                 <a
                   href={qData[KEYS.MEDIA_LINK]}
@@ -1312,6 +1320,10 @@ export default function SessionView() {
             </div>
           </div>
         </div>
+      )}
+
+      {lightboxSrc && (
+        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
       )}
     </div>
   );
