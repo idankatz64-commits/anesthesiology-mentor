@@ -73,9 +73,10 @@ export default function ImageLightbox({ src, onClose }: Props) {
   );
 }
 
-/** Hook — attach click-to-lightbox on all <img> elements inside a container */
+/** Hook — attach click-to-lightbox on all <img> elements inside a container,
+ *  excluding images inside elements with data-no-lightbox attribute */
 export function useImageLightbox(
-  containerRef: React.RefObject<HTMLElement>,
+  containerRef: React.RefObject<HTMLDivElement>,
   setLightboxSrc: (src: string) => void
 ) {
   useEffect(() => {
@@ -83,10 +84,11 @@ export function useImageLightbox(
     if (!el) return;
     const handler = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      if (target.tagName === "IMG") {
-        const src = (target as HTMLImageElement).src;
-        if (src) setLightboxSrc(src);
-      }
+      if (target.tagName !== "IMG") return;
+      // skip images inside edit mode
+      if (target.closest("[data-no-lightbox]")) return;
+      const src = (target as HTMLImageElement).src;
+      if (src) setLightboxSrc(src);
     };
     el.addEventListener("click", handler);
     return () => el.removeEventListener("click", handler);

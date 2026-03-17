@@ -195,9 +195,8 @@ export default function SessionView() {
   const [savingQuestion, setSavingQuestion] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const questionImageInputRef = useRef<HTMLInputElement>(null);
-  const explanationRef = useRef<HTMLDivElement>(null);
-  useImageLightbox(explanationRef, setLightboxSrc);
   const mainRef = useRef<HTMLDivElement>(null);
+  useImageLightbox(mainRef, setLightboxSrc);
 
   // Reset drafts when question changes
   useEffect(() => {
@@ -513,7 +512,7 @@ export default function SessionView() {
         <div className="p-8 md:p-10">
           <div className="flex items-start gap-2 mb-8">
             {editingQuestion ? (
-              <div className="w-full space-y-4">
+              <div className="w-full space-y-4" data-no-lightbox>
                 <RichTextEditor
                   content={questionDraft}
                   onChange={setQuestionDraft}
@@ -1090,13 +1089,13 @@ export default function SessionView() {
                         )}
                       </div>
                     </div>
-                    <div className="p-6" ref={explanationRef}>
+                    <div className="p-6">
                       <SmartContent text={explanationSections[0].content} />
                     </div>
                   </div>
                 ) : (
                   /* ── Multiple sections: Transformers grid ── */
-                  <div ref={explanationRef}>
+                  <div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {explanationSections.map((section, i) => {
                         const isLast = i === explanationSections.length - 1;
