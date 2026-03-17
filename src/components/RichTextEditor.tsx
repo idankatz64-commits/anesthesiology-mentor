@@ -28,7 +28,7 @@ export default function RichTextEditor({
 
   const editor = useEditor({
     extensions: [
-      Image.configure({ inline: false, allowBase64: false }),
+      Image.configure({ inline: false, allowBase64: true }),
       StarterKit.configure({
         bulletList: { keepMarks: true },
         orderedList: { keepMarks: true },
@@ -110,24 +110,45 @@ export default function RichTextEditor({
     setIsRtl(prev => !prev);
   }, []);
 
+  const insertBase64 = useCallback((file: File) => {
+    return new Promise<void>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const src = e.target?.result as string;
+        if (src && editor) {
+          editor.chain().focus().setImage({ src }).run();
+        }
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
+  }, [editor]);
+
   const handleImageUpload = useCallback(async (file: File) => {
     if (!editor || !file) return;
     setUploading(true);
     try {
-      const ext = file.name.split('.').pop();
+      // derive extension from MIME type if file name lacks one
+      const extFromName = file.name.includes('.') ? file.name.split('.').pop() : undefined;
+      const extFromMime = file.type.split('/')[1]?.replace('jpeg', 'jpg');
+      const ext = extFromName || extFromMime || 'png';
       const path = `${Date.now()}.${ext}`;
+
       const { error } = await supabase.storage.from('question-images').upload(path, file);
-      if (error) throw error;
+      if (error) {
+        console.warn('Storage upload failed, falling back to base64:', error.message);
+        await insertBase64(file);
+        return;
+      }
       const { data } = supabase.storage.from('question-images').getPublicUrl(path);
       editor.chain().focus().setImage({ src: data.publicUrl }).run();
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : JSON.stringify(e);
-      console.error('Upload error:', msg);
-      alert(`שגיאה בהעלאת התמונה:\n${msg}`);
+      console.warn('Upload error, falling back to base64:', e);
+      await insertBase64(file);
     } finally {
       setUploading(false);
     }
-  }, [editor]);
+  }, [editor, insertBase64]);
 
   // Clipboard paste support
   useEffect(() => {
