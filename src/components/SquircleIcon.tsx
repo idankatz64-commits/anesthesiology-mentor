@@ -53,13 +53,8 @@ export default function SquircleIcon({
   const { box, icon: iconSize } = sizes[size];
   const isDark = useIsDark();
 
-  const darkBase = '#1a1a2e';
-  const darkEnd = '#0d0d1a';
-  const lightBase = '#2a2a3e';
-  const lightEnd = '#1a1a2e';
-
-  const base = isDark ? darkBase : lightBase;
-  const end = isDark ? darkEnd : lightEnd;
+  const base = isDark ? '#1a1a2e' : '#f0f0f5';
+  const end = isDark ? '#0d0d1a' : '#e2e2ea';
 
   return (
     <div
