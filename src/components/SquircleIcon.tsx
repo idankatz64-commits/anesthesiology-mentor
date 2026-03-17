@@ -64,12 +64,10 @@ export default function SquircleIcon({
         height: box,
         borderRadius: '22%',
         background: `linear-gradient(145deg, ${base}, ${end})`,
-        border: '1px solid rgba(255,255,255,0.08)',
-        boxShadow: `
-          inset 0 1px 0 rgba(255,255,255,0.12),
-          inset 0 -1px 2px rgba(0,0,0,0.3),
-          0 2px 8px rgba(0,0,0,0.4)
-        `,
+        border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(0,0,0,0.08)',
+        boxShadow: isDark
+          ? `inset 0 1px 0 rgba(255,255,255,0.12), inset 0 -1px 2px rgba(0,0,0,0.3), 0 2px 8px rgba(0,0,0,0.4)`
+          : `inset 0 1px 0 rgba(255,255,255,0.7), inset 0 -1px 2px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.1)`,
       }}
     >
       {/* Colored radial glow */}
