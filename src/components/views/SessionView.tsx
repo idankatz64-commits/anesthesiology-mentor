@@ -1043,7 +1043,7 @@ export default function SessionView() {
                                 <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`} dir={isHebrew(section.title) ? "rtl" : "ltr"}>
                                   <SquircleIcon icon={IconComp} gradient={SECTION_GRADIENTS[i % SECTION_GRADIENTS.length]} size="sm" />
                                   <div>
-                                    <h4 className="font-black text-lg tracking-wide" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
+                                    <h4 className="font-black text-lg tracking-wide text-white [.light_&]:text-black" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
                                     <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
                                   </div>
                                 </div>
