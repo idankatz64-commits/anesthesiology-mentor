@@ -1232,6 +1232,45 @@ export default function SessionView() {
 
             {/* (4) Community comments */}
             <CommunityNotes questionId={serialNumber} />
+
+            {/* (5) Similar questions from same Miller chapter */}
+            {(() => {
+              const currentChapter = qData[KEYS.CHAPTER];
+              if (!currentChapter) return null;
+              const similar = quiz
+                .map((q, i) => ({ q, i }))
+                .filter(({ q, i }) => i !== index && q[KEYS.CHAPTER] === currentChapter);
+              if (!similar.length) return null;
+              return (
+                <div className="mt-6 pt-4 border-t border-border/50">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider mb-3">
+                    שאלות נוספות מפרק {getChapterDisplay(currentChapter)} בסשן זה
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {similar.slice(0, 6).map(({ q, i: qi }) => {
+                      const isAnswered = answers[qi] !== null;
+                      const wasCorrect = isAnswered && answers[qi] === q[KEYS.CORRECT];
+                      return (
+                        <button
+                          key={q[KEYS.ID]}
+                          onClick={() => setSessionIndex(qi)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition flex items-center gap-1.5 ${
+                            isAnswered
+                              ? wasCorrect
+                                ? "bg-success/10 text-success border-success/30 hover:bg-success/20"
+                                : "bg-destructive/10 text-destructive border-destructive/30 hover:bg-destructive/20"
+                              : "bg-muted text-muted-foreground border-border hover:bg-muted/80 hover:text-foreground"
+                          }`}
+                        >
+                          #{q[KEYS.ID]}
+                          {isAnswered && (wasCorrect ? " ✓" : " ✗")}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         )}
 
