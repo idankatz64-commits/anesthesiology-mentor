@@ -95,8 +95,12 @@ export default function SquircleIcon({
         strokeWidth={2.2}
         className="relative z-10"
         style={{
-          color: accent,
-          filter: `drop-shadow(0 0 4px ${accent}40) drop-shadow(0 1px 1px rgba(0,0,0,0.3))`,
+          color: isDark ? accent : glow,
+          filter: isDark
+            ? `drop-shadow(0 0 4px ${accent}40) drop-shadow(0 1px 1px rgba(0,0,0,0.3))`
+            : `drop-shadow(0 0 3px ${accent}30)`,
+        }}
+      />
         }}
       />
     </div>
