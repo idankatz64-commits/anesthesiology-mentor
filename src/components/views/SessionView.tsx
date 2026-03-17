@@ -34,6 +34,7 @@ import {
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
 import SquircleIcon from "@/components/SquircleIcon";
 import RichTextEditor from "@/components/RichTextEditor";
+import ImageLightbox, { useImageLightbox } from "@/components/ImageLightbox";
 import { useToast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -192,7 +193,10 @@ export default function SessionView() {
   const [mediaLinkDraft, setMediaLinkDraft] = useState("");
   const [uploadingQuestionImage, setUploadingQuestionImage] = useState(false);
   const [savingQuestion, setSavingQuestion] = useState(false);
+  const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const questionImageInputRef = useRef<HTMLInputElement>(null);
+  const explanationRef = useRef<HTMLDivElement>(null);
+  useImageLightbox(explanationRef, setLightboxSrc);
   const mainRef = useRef<HTMLDivElement>(null);
 
   // Reset drafts when question changes
@@ -664,8 +668,14 @@ export default function SessionView() {
           {/* Media */}
           {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" && (
             <div className="mb-6">
-              {qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png)$/i) ? (
-                <img src={qData[KEYS.MEDIA_LINK]} className="max-h-80 object-contain rounded-lg" alt="Question media" />
+              {qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png|webp|bmp)$/i) || qData[KEYS.MEDIA_LINK].startsWith('data:image') ? (
+                <img
+                  src={qData[KEYS.MEDIA_LINK]}
+                  className="max-h-80 object-contain rounded-lg cursor-zoom-in hover:opacity-90 transition"
+                  alt="Question media"
+                  onClick={() => setLightboxSrc(qData[KEYS.MEDIA_LINK])}
+                  title="לחץ להגדלה"
+                />
               ) : (
                 <a
                   href={qData[KEYS.MEDIA_LINK]}
@@ -1080,13 +1090,13 @@ export default function SessionView() {
                         )}
                       </div>
                     </div>
-                    <div className="p-6">
+                    <div className="p-6" ref={explanationRef}>
                       <SmartContent text={explanationSections[0].content} />
                     </div>
                   </div>
                 ) : (
                   /* ── Multiple sections: Transformers grid ── */
-                  <>
+                  <div ref={explanationRef}>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {explanationSections.map((section, i) => {
                         const isLast = i === explanationSections.length - 1;
@@ -1131,7 +1141,7 @@ export default function SessionView() {
                     )}
                   </>
                 )}
-              </>
+              </div>
             )}
 
             <div className="border-t border-border" />
@@ -1312,6 +1322,11 @@ export default function SessionView() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Image Lightbox */}
+      {lightboxSrc && (
+        <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
       )}
     </div>
   );
