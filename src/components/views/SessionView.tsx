@@ -23,6 +23,8 @@ import {
   Check,
   Lightbulb,
   Image as ImageIcon,
+  ImagePlus,
+  Trash2,
   Syringe,
   Pill,
   Activity,
@@ -187,7 +189,10 @@ export default function SessionView() {
   const [editingQuestion, setEditingQuestion] = useState(false);
   const [questionDraft, setQuestionDraft] = useState("");
   const [answersDraft, setAnswersDraft] = useState({ A: "", B: "", C: "", D: "" });
+  const [mediaLinkDraft, setMediaLinkDraft] = useState("");
+  const [uploadingQuestionImage, setUploadingQuestionImage] = useState(false);
   const [savingQuestion, setSavingQuestion] = useState(false);
+  const questionImageInputRef = useRef<HTMLInputElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
 
   // Reset drafts when question changes
@@ -197,6 +202,7 @@ export default function SessionView() {
     setEditingQuestion(false);
     setQuestionDraft("");
     setAnswersDraft({ A: "", B: "", C: "", D: "" });
+    setMediaLinkDraft("");
     setEditingExplanation(false);
   }, [index]);
 
@@ -510,6 +516,62 @@ export default function SessionView() {
                   placeholder="טקסט השאלה..."
                   minHeight="80px"
                 />
+
+                {/* Question image upload */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => questionImageInputRef.current?.click()}
+                      disabled={uploadingQuestionImage}
+                      className="flex items-center gap-2 px-3 py-2 text-xs font-bold text-muted-foreground bg-muted border border-border rounded-lg hover:bg-muted/80 transition disabled:opacity-50"
+                    >
+                      <ImagePlus className="w-3.5 h-3.5" />
+                      {uploadingQuestionImage ? "מעלה..." : "הוסף תמונה לשאלה"}
+                    </button>
+                    {mediaLinkDraft && (
+                      <button
+                        type="button"
+                        onClick={() => setMediaLinkDraft("")}
+                        className="flex items-center gap-1 px-2 py-2 text-xs text-destructive hover:bg-destructive/10 rounded-lg transition"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> הסר תמונה
+                      </button>
+                    )}
+                  </div>
+                  <input
+                    ref={questionImageInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      setUploadingQuestionImage(true);
+                      try {
+                        const extFromName = file.name.includes('.') ? file.name.split('.').pop() : undefined;
+                        const extFromMime = file.type.split('/')[1]?.replace('jpeg', 'jpg');
+                        const ext = extFromName || extFromMime || 'png';
+                        const path = `q_${Date.now()}.${ext}`;
+                        const { error } = await supabase.storage.from('question-images').upload(path, file);
+                        if (error) throw error;
+                        const { data } = supabase.storage.from('question-images').getPublicUrl(path);
+                        setMediaLinkDraft(data.publicUrl);
+                      } catch {
+                        // fallback: base64
+                        const reader = new FileReader();
+                        reader.onload = (ev) => { if (ev.target?.result) setMediaLinkDraft(ev.target.result as string); };
+                        reader.readAsDataURL(file);
+                      } finally {
+                        setUploadingQuestionImage(false);
+                        e.target.value = '';
+                      }
+                    }}
+                  />
+                  {mediaLinkDraft && (
+                    <img src={mediaLinkDraft} alt="תצוגה מקדימה" className="max-h-48 object-contain rounded-lg border border-border" />
+                  )}
+                </div>
                 <div className="space-y-3">
                   {(["A", "B", "C", "D"] as const).map((opt) => (
                     <div key={opt} className="flex items-center gap-3">
@@ -546,6 +608,7 @@ export default function SessionView() {
                           b: answersDraft.B,
                           c: answersDraft.C,
                           d: answersDraft.D,
+                          media_link: mediaLinkDraft || null,
                           manually_edited: true,
                         })
                         .eq("id", serialNumber);
@@ -558,6 +621,7 @@ export default function SessionView() {
                         (qData as any)[KEYS.B] = answersDraft.B;
                         (qData as any)[KEYS.C] = answersDraft.C;
                         (qData as any)[KEYS.D] = answersDraft.D;
+                        (qData as any)[KEYS.MEDIA_LINK] = mediaLinkDraft || "";
                         invalidateQuestions();
                         setEditingQuestion(false);
                         toast({ title: "השאלה עודכנה ✅" });
@@ -584,6 +648,7 @@ export default function SessionView() {
                         C: qData[KEYS.C] || "",
                         D: qData[KEYS.D] || "",
                       });
+                      setMediaLinkDraft(qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" ? qData[KEYS.MEDIA_LINK] : "");
                       setEditingQuestion(true);
                     }}
                     className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10 shrink-0 mt-1"
