@@ -1,62 +1,32 @@
 
 
-# Plan: Accuracy Trend Chart Upgrade -- Volume Bars + Daily Report
+## Plan: Update Explanation Section Header Colors
 
-## Overview
-Enhance the `LearningVelocityTile` component with two additions: a synchronized volume bar chart below the accuracy line chart, and a daily performance summary section.
+### Changes in `src/components/views/SessionView.tsx`
 
-## Part A -- Daily Volume Bars
+**1. SECTION_COLORS palette update:**
+- **First item (index 0)**: Change from red to amber/orange — border, header bg, glow, accent, iconBg all shift to amber/orange tones
+- **Last item (index 5, rose)**: Change to red — keep as-is or adjust to match the existing red style (it's already rose/red, but we'll make it clearly red to match the "last section = red" request)
+- Swap: Move the current amber entry (index 3) to index 0, and put red at index 5 (last position)
 
-### Approach
-Modify `LearningVelocityTile.tsx` to add a `BarChart` below the existing `LineChart`, sharing the same data and X-axis alignment.
+**2. Header text color — theme-aware:**
+- Currently headers use colored text like `text-red-400`, `text-sky-400` etc.
+- Change header text to: `text-black font-bold dark:text-white` (or detect via the existing theme approach)
+- Since the app doesn't use Tailwind `dark:` prefix (it uses a `.light` class), we'll apply conditional classes. The `header` field in SECTION_COLORS will keep the background gradient but remove the colored text class. Instead, in the JSX where the `<h4>` is rendered (line 1046), we'll add `text-black dark:text-white` or use the existing `useIsDark` pattern to set text color.
 
-### Implementation in `VelocityChart` component
-1. The existing `computeMovingAverages` function already returns `count` per day -- extend it to also compute a 14-day moving average of `count` (call it `volumeMA14`)
-2. Replace the single `LineChart` with a vertical stack:
-   - Top: existing accuracy `LineChart` (keep current height minus ~100px to make room)
-   - Bottom: new `BarChart` (~100px height) with:
-     - `Bar` dataKey="count" with a custom `Cell` renderer: green (`#22C55E`) if `count >= volumeMA14`, red (`#EF4444`) if below
-     - `ReferenceLine` at the `volumeMA14` value, dashed horizontal line
-     - Same `XAxis` with `dataKey="date"` and `tickFormatter={formatDate}`, but hide tick labels on the top chart's X-axis (set `tick={false}` on top chart) so only the bottom chart shows date labels
-     - `YAxis` showing question count
-3. Wrap both charts in a flex column container so they align vertically
+**3. Specific JSX change (line 1046):**
+- The `<h4>` already has `font-black`. We'll add a theme-aware text color class. Since the project uses a `light` class on `<html>`, we can do: remove text color from `color.header` and set the h4 to use `text-white` by default (dark mode) and `.light &` → `text-black`. Simplest approach: use inline or a utility class that respects the theme.
 
-### Data shape (extended)
-Each point in `chartData` will gain:
-```text
-{ date, count, rate, ma7, ma14, volumeMA14 }
-```
+### Summary of reordered SECTION_COLORS:
+| Index | Color | Usage |
+|-------|-------|-------|
+| 0 | Amber/Orange (was index 3) | First section |
+| 1 | Sky | — |
+| 2 | Violet | — |
+| 3 | Cyan (was index 4) | — |
+| 4 | Rose (was index 5) | — |
+| 5 | Red (was index 0) | Last section |
 
-`volumeMA14` = average of `count` over the previous 14 active days.
-
-## Part B -- Daily Performance Report
-
-### Approach
-Add a "דוח יומי" section below the charts inside the same `LearningVelocityTile` component (both collapsed and expanded views).
-
-### Implementation
-1. From the `chartData` array, extract:
-   - `todayRate`: accuracy of the last data point (today or most recent day)
-   - `todayCount`: question count of today
-   - `avg7Rate`: average accuracy of last 7 active days
-   - `avg14Rate`: average accuracy of last 14 active days
-   - `avg14Volume`: average count of last 14 active days
-2. Render a styled section:
-   - Three inline stats: "היום: X% | ממוצע 7 ימים: Y% | ממוצע 14 ימים: Z%"
-   - Volume comparison: "שאלות היום: N | ממוצע 14 יום: M"
-   - Auto-generated summary text with conditional logic:
-     - `todayRate > avg14Rate` -> green text: "ביצועים מעל הממוצע היום"
-     - `todayRate < avg14Rate` -> orange text: "ביצועים מתחת לממוצע -- המשך לתרגל"
-     - `todayCount === 0` -> muted text: "עדיין לא תרגלת היום"
-3. Show a condensed version in collapsed view, full version in expanded view
-
-## Files to Modify
-
-| File | Changes |
-|------|---------|
-| `src/components/stats/LearningVelocityTile.tsx` | Extend `computeMovingAverages` to include `volumeMA14`; split chart into stacked accuracy line + volume bars; add daily report section below; import `BarChart, Bar, Cell` from recharts |
-
-No changes needed to `useStatsData.ts` -- all required data (`count`, `rate`) is already present in the `DayPoint` interface passed to the component.
-
-No database changes required.
+### Files to edit:
+- `src/components/views/SessionView.tsx` — reorder SECTION_COLORS array + update h4 text color logic
 
