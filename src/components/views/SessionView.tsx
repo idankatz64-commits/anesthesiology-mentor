@@ -30,8 +30,10 @@ import {
   Activity,
   Droplets,
   Stethoscope,
+  Sparkles,
 } from "lucide-react";
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
+import AIExplainDrawer from "@/components/AIExplainDrawer";
 import SquircleIcon from "@/components/SquircleIcon";
 import RichTextEditor from "@/components/RichTextEditor";
 import ImageLightbox, { useImageLightbox } from "@/components/ImageLightbox";
@@ -194,6 +196,7 @@ export default function SessionView() {
   const [uploadingQuestionImage, setUploadingQuestionImage] = useState(false);
   const [savingQuestion, setSavingQuestion] = useState(false);
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
+  const [aiDrawerOpen, setAiDrawerOpen] = useState(false);
   const questionImageInputRef = useRef<HTMLInputElement>(null);
   const mainRef = useRef<HTMLDivElement>(null);
   useImageLightbox(mainRef, setLightboxSrc);
@@ -1271,6 +1274,17 @@ export default function SessionView() {
                 </div>
               );
             })()}
+
+            {/* (6) AI Explain button */}
+            <div className="border-t border-border/50 pt-5 mt-2">
+              <button
+                onClick={() => setAiDrawerOpen(true)}
+                className="w-full flex items-center justify-center gap-2.5 py-3 rounded-2xl bg-gradient-to-r from-violet-500/10 via-purple-500/10 to-violet-500/10 border border-violet-500/25 text-violet-400 hover:from-violet-500/20 hover:via-purple-500/20 hover:to-violet-500/20 hover:border-violet-500/40 transition font-bold text-sm"
+              >
+                <Sparkles className="w-4 h-4" />
+                הסבר עמוק עם AI
+              </button>
+            </div>
           </div>
         )}
 
@@ -1364,6 +1378,19 @@ export default function SessionView() {
       {lightboxSrc && (
         <ImageLightbox src={lightboxSrc} onClose={() => setLightboxSrc(null)} />
       )}
+
+      <AIExplainDrawer
+        open={aiDrawerOpen}
+        onClose={() => setAiDrawerOpen(false)}
+        question={qData[KEYS.QUESTION]}
+        optionA={qData[KEYS.A]}
+        optionB={qData[KEYS.B]}
+        optionC={qData[KEYS.C]}
+        optionD={qData[KEYS.D]}
+        correctAnswer={qData[KEYS.CORRECT]}
+        userAnswer={savedAns}
+        existingExplanation={qData[KEYS.EXPLANATION]}
+      />
     </div>
   );
 }
