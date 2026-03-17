@@ -1,5 +1,5 @@
-import { useEffect, useCallback } from "react";
-import { X, Download, ZoomIn } from "lucide-react";
+import { useEffect, useCallback, RefObject } from "react";
+import { X, Download } from "lucide-react";
 
 interface Props {
   src: string;
@@ -76,7 +76,7 @@ export default function ImageLightbox({ src, onClose }: Props) {
 /** Hook — attach click-to-lightbox on all <img> elements inside a container,
  *  excluding images inside elements with data-no-lightbox attribute */
 export function useImageLightbox(
-  containerRef: React.RefObject<HTMLDivElement>,
+  containerRef: RefObject<HTMLDivElement>,
   setLightboxSrc: (src: string) => void
 ) {
   useEffect(() => {
