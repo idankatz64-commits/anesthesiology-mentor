@@ -36,7 +36,7 @@ serve(async (req) => {
       }
     }
 
-    const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
+    const ANTHROPIC_API_KEY = Deno.env.get("supabase-anesthesia") || Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
       return new Response("ANTHROPIC_API_KEY not configured", { status: 500, headers: corsHeaders });
     }
@@ -54,7 +54,7 @@ serve(async (req) => {
 הדגש נקודות קליניות חשובות, מנמוניקות שימושיות, ו-pearls מעשיים.
 שמור על סגנון ישיר וממוקד — כמו מנחה ב-teaching session.`;
 
-    // Call Claude API with streaming
+    // Call Claude API (non-streaming, returns JSON)
     const claudeResponse = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -65,7 +65,6 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "claude-opus-4-6",
         max_tokens: 2048,
-        stream: true,
         system,
         messages,
       }),
@@ -79,14 +78,11 @@ serve(async (req) => {
       });
     }
 
-    // Stream Claude's SSE response directly to the client
-    return new Response(claudeResponse.body, {
-      headers: {
-        ...corsHeaders,
-        "Content-Type": "text/event-stream",
-        "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
-      },
+    const claudeData = await claudeResponse.json();
+    const content = claudeData?.content?.[0]?.text ?? "";
+
+    return new Response(JSON.stringify({ content }), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
   } catch (e) {
