@@ -75,7 +75,9 @@ export default function SquircleIcon({
         className="absolute inset-0"
         style={{
           borderRadius: '22%',
-          background: `radial-gradient(circle at 50% 60%, ${accent}22, ${glow}08, transparent 70%)`,
+          background: isDark
+            ? `radial-gradient(circle at 50% 60%, ${accent}22, ${glow}08, transparent 70%)`
+            : `radial-gradient(circle at 50% 60%, ${accent}30, ${glow}15, transparent 70%)`,
         }}
       />
       {/* Top glass highlight */}
@@ -83,7 +85,9 @@ export default function SquircleIcon({
         className="absolute top-0 left-[15%] right-[15%] h-[40%]"
         style={{
           borderRadius: '22% 22% 50% 50%',
-          background: 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 100%)',
+          background: isDark
+            ? 'linear-gradient(180deg, rgba(255,255,255,0.10) 0%, transparent 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, transparent 100%)',
         }}
       />
       <Icon
