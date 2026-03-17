@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.sync-questions]
 verify_jwt = false
+
+[functions.daily-csv-export]
+verify_jwt = false
