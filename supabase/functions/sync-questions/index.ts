@@ -22,6 +22,15 @@ function normalizeAnswer(raw: string): string {
   return map[trimmed] || trimmed.toUpperCase();
 }
 
+/** Strip Google Sheets error markers so they don't leak into DB */
+function clean(val: string | undefined): string {
+  if (!val) return "";
+  const t = val.trim();
+  // Google Sheets errors: #N/A, #REF!, #VALUE!, #DIV/0!, #NAME?, #NULL!, #NUM!
+  if (/^#[A-Z/!?0]+[!?]?$/i.test(t)) return "";
+  return t;
+}
+
 function hashId(str: string): string {
   let h = 0;
   for (let i = 0; i < str.length; i++) {
@@ -136,27 +145,27 @@ Deno.serve(async (req) => {
       }
       seenIds.add(id);
 
-      const refId = row["questionid"] || row["question_id"] || row["ref_id"] || "N/A";
-      const institution = row["institution"] || row["source"] || "N/A";
+      const refId = clean(row["questionid"] || row["question_id"] || row["ref_id"]);
+      const institution = clean(row["institution"] || row["source"]) || "N/A";
 
       questions.push({
         id,
-        ref_id: String(refId).trim(),
+        ref_id: refId || "N/A",
         question: qText,
-        a: row["optiona"] || row["a"] || row["option a"] || "",
-        b: row["optionb"] || row["b"] || row["option b"] || "",
-        c: row["optionc"] || row["c"] || row["option c"] || "",
-        d: row["optiond"] || row["d"] || row["option d"] || "",
+        a: clean(row["optiona"] || row["a"] || row["option a"]),
+        b: clean(row["optionb"] || row["b"] || row["option b"]),
+        c: clean(row["optionc"] || row["c"] || row["option c"]),
+        d: clean(row["optiond"] || row["d"] || row["option d"]),
         correct: finalCorrect || "",
-        explanation: row["explanation"] || row["explanation_correct"] || "",
-        topic: row["topic_main"] || row["topic"] || row["main topic"] || "",
-        year: row["year"] || "",
+        explanation: clean(row["explanation"] || row["explanation_correct"]),
+        topic: clean(row["topic_main"] || row["topic"] || row["main topic"]),
+        year: clean(row["year"]),
         source: institution,
-        kind: row["kind"] || row["type"] || "",
-        miller: row["miller"] || row["miller page"] || "N/A",
-        chapter: parseInt(row["chapter"] || row["topic num"] || "0") || 0,
-        media_type: (row["mediakind"] || row["media type"] || "").toLowerCase(),
-        media_link: row["medialink"] || row["media link"] || "",
+        kind: clean(row["kind"] || row["type"]),
+        miller: clean(row["miller"] || row["miller page"]) || "N/A",
+        chapter: parseInt(clean(row["chapter"] || row["topic num"]) || "0") || 0,
+        media_type: clean(row["mediakind"] || row["media type"]).toLowerCase(),
+        media_link: clean(row["medialink"] || row["media link"]),
         synced_at: now,
       });
     }
