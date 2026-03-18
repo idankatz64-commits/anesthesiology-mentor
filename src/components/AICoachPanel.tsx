@@ -1,8 +1,11 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Bot, Loader2, ChevronDown, Send, Dumbbell, TrendingUp } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { Question, UserProgress } from "@/lib/types";
 import { computeUserStats, formatStatsForClaude } from "@/lib/stats";
+
+const ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYmJscW53Y21meWxweHlneXJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NTkyNTQsImV4cCI6MjA4NzUzNTI1NH0.w2AMTcy6pEtk7xbVcbOAPdAmx_9asTciAy4kVsVmXjU";
+const EDGE_URL = "https://ksbblqnwcmfylpxygyrj.supabase.co/functions/v1/claude-ai";
 
 const COACH_SYSTEM_PROMPT = `אתה מאמן לימוד אישי לשלב א' בהרדמה וטיפול נמרץ.
 קיבלת נתוני ביצועים אמיתיים של מתמחה שמתכונן לבחינה.
@@ -17,7 +20,11 @@ const COACH_SYSTEM_PROMPT = `אתה מאמן לימוד אישי לשלב א' ב
 סגנון: ישיר, כמו מנחה ב-teaching session. לא מחמאות — ישר לעניין.
 ענה בעברית. מבנה ברור עם כותרות. לא יותר מ-400 מילה.`;
 
-interface Message { role: "user" | "assistant"; content: string; animating?: boolean; }
+interface Message {
+  role: "user" | "assistant";
+  content: string;
+  animating?: boolean;
+}
 
 interface AICoachPanelProps {
   open: boolean;
@@ -42,7 +49,8 @@ export default function AICoachPanel({ open, onClose, questions, progress }: AIC
       i += Math.ceil(fullText.length / 100);
       setMessages((prev) => {
         const next = [...prev];
-        if (next[msgIndex]) next[msgIndex] = { ...next[msgIndex], content: fullText.slice(0, i), animating: i < fullText.length };
+        if (next[msgIndex])
+          next[msgIndex] = { ...next[msgIndex], content: fullText.slice(0, i), animating: i < fullText.length };
         return next;
       });
       if (i < fullText.length) animFrameRef.current = requestAnimationFrame(step);
@@ -50,30 +58,39 @@ export default function AICoachPanel({ open, onClose, questions, progress }: AIC
     animFrameRef.current = requestAnimationFrame(step);
   }, []);
 
-  const sendMessage = useCallback(async (msgs: Message[], sysPrompt?: string) => {
-    setLoading(true);
-    setError(null);
-    const placeholderIndex = msgs.length;
-    setMessages((prev) => [...prev, { role: "assistant", content: "", animating: false }]);
-    try {
-      const { data, error: fnError } = await supabase.functions.invoke("claude-ai", {
-        body: { messages: msgs.map((m) => ({ role: m.role, content: m.content })), systemPrompt: sysPrompt ?? COACH_SYSTEM_PROMPT },
-      });
-      if (fnError) throw new Error(fnError.message || "שגיאה בקריאה לשרת");
-      if (!data?.content) throw new Error("תגובה ריקה מהשרת");
-      animateText(data.content, placeholderIndex);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e));
-      setMessages((prev) => prev.slice(0, -1));
-    } finally {
-      setLoading(false);
-    }
-  }, [animateText]);
+  const sendMessage = useCallback(
+    async (msgs: Message[], sysPrompt?: string) => {
+      setLoading(true);
+      setError(null);
+      const placeholderIndex = msgs.length;
+      setMessages((prev) => [...prev, { role: "assistant", content: "", animating: false }]);
+      try {
+        const res = await fetch(EDGE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: ANON_KEY },
+          body: JSON.stringify({
+            messages: msgs.map((m) => ({ role: m.role, content: m.content })),
+            systemPrompt: sysPrompt ?? COACH_SYSTEM_PROMPT,
+          }),
+        });
+        if (!res.ok) throw new Error(`שגיאה ${res.status}`);
+        const data = await res.json();
+        if (!data?.content) throw new Error("תגובה ריקה מהשרת");
+        animateText(data.content, placeholderIndex);
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : String(e));
+        setMessages((prev) => prev.slice(0, -1));
+      } finally {
+        setLoading(false);
+      }
+    },
+    [animateText],
+  );
 
   useEffect(() => {
     if (!open || !questions.length) return;
     const stats = computeUserStats(progress, questions);
-    setWeakTopics(stats.weakTopics.map(t => t.topic));
+    setWeakTopics(stats.weakTopics.map((t) => t.topic));
     const statsText = formatStatsForClaude(stats);
     const userMsg: Message = { role: "user", content: statsText };
     setMessages([userMsg]);
@@ -85,11 +102,15 @@ export default function AICoachPanel({ open, onClose, questions, progress }: AIC
   useEffect(() => {
     if (!open) {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      setMessages([]); setInput(""); setError(null);
+      setMessages([]);
+      setInput("");
+      setError(null);
     }
   }, [open]);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSend = () => {
     const text = input.trim();
@@ -102,7 +123,7 @@ export default function AICoachPanel({ open, onClose, questions, progress }: AIC
   };
 
   if (!open) return null;
-  const showSpinner = loading && messages.filter(m => m.role === "assistant").length === 0;
+  const showSpinner = loading && messages.filter((m) => m.role === "assistant").length === 0;
 
   return (
     <>
@@ -116,7 +137,10 @@ export default function AICoachPanel({ open, onClose, questions, progress }: AIC
             <p className="font-bold text-sm text-foreground">המאמן האישי שלי</p>
             <p className="text-xs text-muted-foreground">ניתוח חולשות + תוכנית לימוד</p>
           </div>
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-muted transition text-muted-foreground hover:text-foreground">
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg hover:bg-muted transition text-muted-foreground hover:text-foreground"
+          >
             <ChevronDown className="w-5 h-5" />
           </button>
         </div>
@@ -142,32 +166,51 @@ export default function AICoachPanel({ open, onClose, questions, progress }: AIC
                   className={`max-w-[88%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${msg.role === "user" ? "bg-primary text-primary-foreground rounded-br-md" : "bg-muted text-foreground rounded-bl-md"}`}
                   dir="auto"
                 >
-                  {msg.content || (loading && i === messages.length - 1 ? (
-                    <span className="flex items-center gap-1.5 text-muted-foreground text-xs"><Loader2 className="w-3 h-3 animate-spin" /> מנתח...</span>
-                  ) : null)}
+                  {msg.content ||
+                    (loading && i === messages.length - 1 ? (
+                      <span className="flex items-center gap-1.5 text-muted-foreground text-xs">
+                        <Loader2 className="w-3 h-3 animate-spin" /> מנתח...
+                      </span>
+                    ) : null)}
                   {msg.animating && <span className="inline-block w-0.5 h-4 bg-emerald-400 ml-0.5 animate-pulse" />}
                 </div>
               </div>
             );
           })}
-          {!loading && weakTopics.length > 0 && messages.some(m => m.role === "assistant" && m.content.length > 50) && (
-            <div className="flex justify-center mt-2">
-              <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs">
-                <Dumbbell className="w-3.5 h-3.5" />
-                {weakTopics.length} נושאים חלשים זוהו — סנן את תרגול לפי הנושאים האלה
+          {!loading &&
+            weakTopics.length > 0 &&
+            messages.some((m) => m.role === "assistant" && m.content.length > 50) && (
+              <div className="flex justify-center mt-2">
+                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs">
+                  <Dumbbell className="w-3.5 h-3.5" />
+                  {weakTopics.length} נושאים חלשים זוהו — סנן את תרגול לפי הנושאים האלה
+                </div>
               </div>
+            )}
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-xl p-3 text-center">
+              שגיאה: {error}
             </div>
           )}
-          {error && <div className="bg-destructive/10 border border-destructive/30 text-destructive text-sm rounded-xl p-3 text-center">שגיאה: {error}</div>}
           <div ref={bottomRef} />
         </div>
         <div className="flex items-center gap-2 px-4 py-3 border-t border-border flex-shrink-0 bg-card/80 backdrop-blur-sm">
-          <input ref={inputRef} type="text" value={input} onChange={(e) => setInput(e.target.value)}
+          <input
+            ref={inputRef}
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && handleSend()}
-            placeholder="שאל שאלת המשך..." disabled={loading} dir="auto"
-            className="flex-1 bg-muted border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 transition" />
-          <button onClick={handleSend} disabled={!input.trim() || loading}
-            className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition disabled:opacity-40 flex-shrink-0">
+            placeholder="שאל שאלת המשך..."
+            disabled={loading}
+            dir="auto"
+            className="flex-1 bg-muted border border-border rounded-xl px-4 py-2.5 text-sm outline-none focus:border-primary text-foreground placeholder:text-muted-foreground disabled:opacity-50 transition"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || loading}
+            className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center hover:opacity-90 transition disabled:opacity-40 flex-shrink-0"
+          >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
