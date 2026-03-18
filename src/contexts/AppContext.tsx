@@ -338,7 +338,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let cancelled = false;
     const init = async () => {
       try {
-        const questions = await fetchQuestions(3, true);
+        const questions = await fetchQuestions(3, true); // always bypass stale cache on mount
         if (!cancelled) setData(questions);
       } catch (e) {
         console.warn("Initial DB fetch failed, will retry after sync:", e);
@@ -372,7 +372,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         if (!cancelled) {
           setSyncStatus("done");
           setLastSyncTime(result.synced_at);
-          const questions = await fetchQuestions(3, true);
+          const questions = await fetchQuestions(3, true); // skip cache after sync
           if (!cancelled) setData(questions);
         }
       } catch (e) {
