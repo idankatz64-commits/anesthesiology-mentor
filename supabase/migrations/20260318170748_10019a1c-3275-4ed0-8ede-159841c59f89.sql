@@ -1,0 +1,1 @@
+UPDATE questions SET topic = '' WHERE (topic = '#N/A' OR topic = '#n/a') AND manually_edited = true;
