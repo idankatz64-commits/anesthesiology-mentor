@@ -3,7 +3,18 @@
 
 ---
 
-## פרומפט 1 — תיקון AIExplainDrawer (חובה ראשון!)
+## ⚠️ חשוב מאוד — איפה לבדוק
+
+**ה-Preview של Lovable (Editor) לא יעבוד לפיצ'רים האלה.**
+ה-Preview רץ בסביבה מבודדת שחוסמת קריאות רשת לשרתים חיצוניים.
+תמיד תקבל שם שגיאה "Failed to send a request" — זה לא באג בקוד.
+
+**תבדוק תמיד מהאתר הפרוס: https://anesthesiology-mentor.lovable.app**
+זו הסביבה האמיתית. שם זה יעבוד.
+
+---
+
+## פרומפט 1 — תיקון AIExplainDrawer ✅ כבר בוצע!
 
 Replace the entire file `src/components/AIExplainDrawer.tsx` with this exact code:
 
