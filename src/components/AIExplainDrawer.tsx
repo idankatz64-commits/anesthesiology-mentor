@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Send, Bot, Loader2, ChevronDown } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+
+const ANON_KEY =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtzYmJscW53Y21meWxweHlneXJqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE5NTkyNTQsImV4cCI6MjA4NzUzNTI1NH0.w2AMTcy6pEtk7xbVcbOAPdAmx_9asTciAy4kVsVmXjU";
+const EDGE_URL = "https://ksbblqnwcmfylpxygyrj.supabase.co/functions/v1/claude-ai";
 
 interface Message {
   role: "user" | "assistant";
@@ -53,11 +56,9 @@ export default function AIExplainDrawer({
     const correctLabel = labels[correctAnswer] || correctAnswer;
     const userLabel = userAnswer ? labels[userAnswer] || userAnswer : null;
     let msg = `שאלה:\n${question}\n\nאפשרויות:\nא. ${optionA}\nב. ${optionB}\nג. ${optionC}\nד. ${optionD}\n\nתשובה נכונה: ${correctAnswer}. ${correctLabel}`;
-    if (userAnswer && userAnswer !== correctAnswer && userLabel) {
+    if (userAnswer && userAnswer !== correctAnswer && userLabel)
       msg += `\nהמשתמש ענה: ${userAnswer}. ${userLabel} (שגוי)`;
-    } else if (userAnswer === correctAnswer) {
-      msg += `\nהמשתמש ענה נכון.`;
-    }
+    else if (userAnswer === correctAnswer) msg += `\nהמשתמש ענה נכון.`;
     if (existingExplanation) {
       const plain = stripHtml(existingExplanation);
       if (plain.length > 10) msg += `\n\nהסבר קיים:\n${plain.slice(0, 600)}`;
@@ -88,10 +89,13 @@ export default function AIExplainDrawer({
       const placeholderIndex = msgs.length;
       setMessages((prev) => [...prev, { role: "assistant", content: "", animating: false }]);
       try {
-        const { data, error: fnError } = await supabase.functions.invoke("claude-ai", {
-          body: { messages: msgs.map((m) => ({ role: m.role, content: m.content })) },
+        const res = await fetch(EDGE_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", apikey: ANON_KEY },
+          body: JSON.stringify({ messages: msgs.map((m) => ({ role: m.role, content: m.content })) }),
         });
-        if (fnError) throw new Error(fnError.message || "שגיאה בקריאה לשרת");
+        if (!res.ok) throw new Error(`שגיאה ${res.status}`);
+        const data = await res.json();
         if (!data?.content) throw new Error("תגובה ריקה מהשרת");
         animateText(data.content, placeholderIndex);
       } catch (e: unknown) {
