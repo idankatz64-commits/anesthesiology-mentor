@@ -22,6 +22,15 @@ function normalizeAnswer(raw: string): string {
   return map[trimmed] || trimmed.toUpperCase();
 }
 
+/** Strip Google Sheets error markers so they don't leak into DB */
+function clean(val: string | undefined): string {
+  if (!val) return "";
+  const t = val.trim();
+  // Google Sheets errors: #N/A, #REF!, #VALUE!, #DIV/0!, #NAME?, #NULL!, #NUM!
+  if (/^#[A-Z/!?0]+[!?]?$/i.test(t)) return "";
+  return t;
+}
+
 function hashId(str: string): string {
   let h = 0;
   for (let i = 0; i < str.length; i++) {
