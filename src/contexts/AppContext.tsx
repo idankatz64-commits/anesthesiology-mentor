@@ -303,17 +303,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       if (!cancelled) setLoading(false);
 
-      // Check for saved session
+      // Check for saved session + whether background sync is allowed
+      let canRunBackgroundSync = false;
       try {
         const { data: { session: authSession } } = await supabase.auth.getSession();
-        if (authSession?.user) {
-          const { data: saved } = await supabase
-            .from('saved_sessions')
-            .select('session_data')
-            .eq('user_id', authSession.user.id)
-            .maybeSingle();
+        const userId = authSession?.user?.id ?? null;
+
+        if (userId) {
+          const [{ data: saved }, { data: roleEntry, error: roleError }] = await Promise.all([
+            supabase
+              .from('saved_sessions')
+              .select('session_data')
+              .eq('user_id', userId)
+              .maybeSingle(),
+            supabase
+              .from('admin_users')
+              .select('role')
+              .eq('id', userId)
+              .maybeSingle(),
+          ]);
+
           if (saved?.session_data && !cancelled) {
             setSavedSessionInfo(saved.session_data as unknown as SavedSessionData);
+          }
+
+          if (!roleError && roleEntry?.role === 'admin') {
+            canRunBackgroundSync = true;
           }
         }
       } catch (e) {
@@ -321,7 +336,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       if (!cancelled) setLoadingSavedSession(false);
 
-      // Then sync in background
+      // sync-questions is protected: only authenticated admins should invoke it
+      if (!canRunBackgroundSync) {
+        if (!cancelled) setSyncStatus('idle');
+        return;
+      }
+
       if (!cancelled) setSyncStatus('syncing');
       try {
         const result = await syncQuestionsFromSheet();
