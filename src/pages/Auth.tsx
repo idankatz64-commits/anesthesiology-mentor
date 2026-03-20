@@ -38,6 +38,12 @@ const resetStaleAuthSession = async () => {
   await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
 };
 
+const getOAuthRedirectUri = () => {
+  const host = window.location.hostname;
+  const isPreviewHost = host.includes('preview');
+  return isPreviewHost ? undefined : window.location.origin;
+};
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -79,6 +85,19 @@ export default function Auth() {
 
   const handleOAuthError = async (err: unknown) => {
     const message = err instanceof Error ? err.message : String(err);
+    const isRedirectUriIssue =
+      message.includes('redirect_uri is not allowed') ||
+      message.includes('invalid_request');
+
+    if (isRedirectUriIssue) {
+      toast({
+        title: 'שגיאת הרשאה ב-Google',
+        description: 'נמצא redirect לא תקין. נסה שוב מהגרסה שפורסמה או אחרי רענון.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     const isLockOrTokenIssue =
       message.includes('LockManager') ||
       message.includes('auth-token') ||
@@ -102,11 +121,13 @@ export default function Auth() {
     setGoogleLoading(true);
     try {
       await resetStaleAuthSession();
+      const redirectUri = getOAuthRedirectUri();
 
       const result = await withTimeout(
-        lovable.auth.signInWithOAuth('google', {
-          redirect_uri: window.location.origin,
-        }),
+        lovable.auth.signInWithOAuth(
+          'google',
+          redirectUri ? { redirect_uri: redirectUri } : undefined,
+        ),
         OAUTH_TIMEOUT_MS,
       );
 
@@ -136,11 +157,13 @@ export default function Auth() {
     setAppleLoading(true);
     try {
       await resetStaleAuthSession();
+      const redirectUri = getOAuthRedirectUri();
 
       const result = await withTimeout(
-        lovable.auth.signInWithOAuth('apple', {
-          redirect_uri: window.location.origin,
-        }),
+        lovable.auth.signInWithOAuth(
+          'apple',
+          redirectUri ? { redirect_uri: redirectUri } : undefined,
+        ),
         OAUTH_TIMEOUT_MS,
       );
 
