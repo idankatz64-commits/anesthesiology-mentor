@@ -10,21 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animations';
 
-const OAUTH_TIMEOUT_MS = 12000;
-
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number) =>
-  new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('OAuth timeout')), timeoutMs);
-    promise
-      .then((value) => {
-        clearTimeout(timer);
-        resolve(value);
-      })
-      .catch((error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-  });
 
 const clearStaleAuthToken = () => {
   const authTokenKeys = Object.keys(localStorage).filter(
