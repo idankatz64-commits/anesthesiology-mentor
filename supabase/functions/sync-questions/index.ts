@@ -1846,7 +1846,9 @@ Deno.serve(async (req) => {
         c: optC,
         d: optD,
         correct: finalCorrect || "",
-        explanation: clean(row["explanation"] || row["explanation_correct"]),
+        ...(clean(row["explanation"] || row["explanation_correct"])
+          ? { explanation: clean(row["explanation"] || row["explanation_correct"]) }
+          : {}),
         topic: finalTopic,
         year: clean(row["year"]),
         source: institution,
