@@ -10,6 +10,29 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animations';
 
+const OAUTH_TIMEOUT_MS = 12000;
+
+const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number) =>
+  new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('OAuth timeout')), timeoutMs);
+    promise
+      .then((value) => {
+        clearTimeout(timer);
+        resolve(value);
+      })
+      .catch((error) => {
+        clearTimeout(timer);
+        reject(error);
+      });
+  });
+
+const clearStaleAuthToken = () => {
+  const authTokenKeys = Object.keys(localStorage).filter(
+    (key) => key.startsWith('sb-') && key.endsWith('-auth-token'),
+  );
+  authTokenKeys.forEach((key) => localStorage.removeItem(key));
+};
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -49,15 +72,48 @@ export default function Auth() {
     }
   };
 
+  const handleOAuthError = (err: unknown) => {
+    const message = err instanceof Error ? err.message : String(err);
+    const isLockOrTokenIssue =
+      message.includes('LockManager') || message.includes('auth-token') || message.includes('OAuth timeout');
+
+    if (isLockOrTokenIssue) {
+      clearStaleAuthToken();
+      toast({
+        title: 'נוקתה התחברות תקועה',
+        description: 'נקהתי טוקן תקוע. נסה להתחבר שוב עם Google.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    toast({ title: 'שגיאה', description: message, variant: 'destructive' });
+  };
+
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth('google', {
-        redirect_uri: window.location.origin,
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      toast({ title: 'שגיאה', description: err.message, variant: 'destructive' });
+      const result = await withTimeout(
+        lovable.auth.signInWithOAuth('google', {
+          redirect_uri: window.location.origin,
+        }),
+        OAUTH_TIMEOUT_MS,
+      );
+
+      if ((result as { error?: Error | null }).error) {
+        throw (result as { error?: Error | null }).error;
+      }
+
+      if (!(result as { redirected?: boolean }).redirected) {
+        setGoogleLoading(false);
+        toast({
+          title: 'לא הושלמה הפניה ל-Google',
+          description: 'בדוק שחוסם פופ-אפים כבוי ונסה שוב.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      handleOAuthError(err);
       setGoogleLoading(false);
     }
   };
@@ -65,12 +121,27 @@ export default function Auth() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
-      const { error } = await lovable.auth.signInWithOAuth('apple', {
-        redirect_uri: window.location.origin,
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      toast({ title: 'שגיאה', description: err.message, variant: 'destructive' });
+      const result = await withTimeout(
+        lovable.auth.signInWithOAuth('apple', {
+          redirect_uri: window.location.origin,
+        }),
+        OAUTH_TIMEOUT_MS,
+      );
+
+      if ((result as { error?: Error | null }).error) {
+        throw (result as { error?: Error | null }).error;
+      }
+
+      if (!(result as { redirected?: boolean }).redirected) {
+        setAppleLoading(false);
+        toast({
+          title: 'לא הושלמה הפניה ל-Apple',
+          description: 'בדוק שחוסם פופ-אפים כבוי ונסה שוב.',
+          variant: 'destructive',
+        });
+      }
+    } catch (err) {
+      handleOAuthError(err);
       setAppleLoading(false);
     }
   };
