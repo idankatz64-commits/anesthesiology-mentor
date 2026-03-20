@@ -1846,7 +1846,9 @@ Deno.serve(async (req) => {
         c: optC,
         d: optD,
         correct: finalCorrect || "",
-        explanation: clean(row["explanation"] || row["explanation_correct"]),
+        ...(clean(row["explanation"] || row["explanation_correct"])
+          ? { explanation: clean(row["explanation"] || row["explanation_correct"]) }
+          : {}),
         topic: finalTopic,
         year: clean(row["year"]),
         source: institution,
@@ -1928,7 +1930,7 @@ Deno.serve(async (req) => {
           for (const { id, topic } of sub) {
             const { error: upErr } = await supabase
               .from("questions")
-              .update({ topic, manually_edited: true })
+              .update({ topic })
               .eq("id", id);
             if (upErr) console.error(`Update error for ${id}:`, upErr);
             else classified++;
@@ -1936,15 +1938,6 @@ Deno.serve(async (req) => {
         }
       }
 
-      // For any that still have empty topic after classification (no keyword match),
-      // mark them manually_edited=true with empty topic to prevent repeated processing
-      const unresolved = unclassified.filter((q: any) => !updates.find((u) => u.id === q.id));
-      if (unresolved.length > 0) {
-        for (const q of unresolved) {
-          await supabase.from("questions").update({ manually_edited: true }).eq("id", q.id);
-        }
-        console.log(`Marked ${unresolved.length} questions as manually_edited (no topic match)`);
-      }
 
       if (unclassified.length < PAGE) break;
       from += PAGE;
