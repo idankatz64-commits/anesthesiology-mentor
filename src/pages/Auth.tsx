@@ -10,25 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animations';
 
-
-const clearStaleAuthToken = () => {
-  const authTokenKeys = Object.keys(localStorage).filter(
-    (key) => key.startsWith('sb-') && key.endsWith('-auth-token'),
-  );
-  authTokenKeys.forEach((key) => localStorage.removeItem(key));
-};
-
-const resetStaleAuthSession = async () => {
-  clearStaleAuthToken();
-  await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
-};
-
-const getOAuthRedirectUri = () => {
-  const host = window.location.hostname;
-  const isPreviewHost = host.includes('preview');
-  return isPreviewHost ? undefined : window.location.origin;
-};
-
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -68,55 +49,15 @@ export default function Auth() {
     }
   };
 
-  const handleOAuthError = async (err: unknown) => {
-    const message = err instanceof Error ? err.message : String(err);
-    const isRedirectUriIssue =
-      message.includes('redirect_uri is not allowed') ||
-      message.includes('invalid_request');
-
-    if (isRedirectUriIssue) {
-      toast({
-        title: 'שגיאת הרשאה ב-Google',
-        description: 'נמצא redirect לא תקין. נסה שוב מהגרסה שפורסמה או אחרי רענון.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const isLockOrTokenIssue =
-      message.includes('LockManager') ||
-      message.includes('auth-token') ||
-      message.includes('OAuth timeout') ||
-      message.includes('Failed to fetch');
-
-    if (isLockOrTokenIssue) {
-      await resetStaleAuthSession();
-      toast({
-        title: 'נוקתה התחברות תקועה',
-        description: 'נוקתה סשן תקוע. נסה להתחבר שוב עם Google.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    toast({ title: 'שגיאה', description: message, variant: 'destructive' });
-  };
-
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const redirectUri = getOAuthRedirectUri();
-      const result = await lovable.auth.signInWithOAuth(
-        'google',
-        redirectUri ? { redirect_uri: redirectUri } : undefined,
-      );
-
-      if ((result as { error?: Error | null }).error) {
-        throw (result as { error?: Error | null }).error;
-      }
-    } catch (err) {
-      await handleOAuthError(err);
-    } finally {
+      const { error } = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      toast({ title: 'שגיאה', description: err.message, variant: 'destructive' });
       setGoogleLoading(false);
     }
   };
@@ -124,18 +65,12 @@ export default function Auth() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
-      const redirectUri = getOAuthRedirectUri();
-      const result = await lovable.auth.signInWithOAuth(
-        'apple',
-        redirectUri ? { redirect_uri: redirectUri } : undefined,
-      );
-
-      if ((result as { error?: Error | null }).error) {
-        throw (result as { error?: Error | null }).error;
-      }
-    } catch (err) {
-      await handleOAuthError(err);
-    } finally {
+      const { error } = await lovable.auth.signInWithOAuth('apple', {
+        redirect_uri: window.location.origin,
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      toast({ title: 'שגיאה', description: err.message, variant: 'destructive' });
       setAppleLoading(false);
     }
   };
