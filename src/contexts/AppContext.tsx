@@ -365,20 +365,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       }
       if (!cancelled) setLoadingSavedSession(false);
 
-      // Then sync in background
-      if (!cancelled) setSyncStatus("syncing");
-      try {
-        // const result = await syncQuestionsFromSheet();
-        if (!cancelled) {
-          setSyncStatus("done");
-          setLastSyncTime(result.synced_at);
-          const questions = await fetchQuestions(3, true); // skip cache after sync
-          if (!cancelled) setData(questions);
-        }
-      } catch (e) {
-        console.warn("Auto-sync failed:", e);
-        if (!cancelled) setSyncStatus("error");
-      }
+      // Auto-sync disabled temporarily
+      if (!cancelled) setSyncStatus("done");
     };
     init();
     return () => {
