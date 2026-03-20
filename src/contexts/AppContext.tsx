@@ -368,7 +368,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Then sync in background
       if (!cancelled) setSyncStatus("syncing");
       try {
-        const result = await syncQuestionsFromSheet();
+        // const result = await syncQuestionsFromSheet();
         if (!cancelled) {
           setSyncStatus("done");
           setLastSyncTime(result.synced_at);
