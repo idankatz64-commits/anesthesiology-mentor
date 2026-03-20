@@ -680,37 +680,32 @@ Deno.serve(async (req) => {
       }
 
       if (updates.length > 0) {
-        // Update in sub-batches of 100
-        for (let i = 0; i < updates.length; i += 100) {
-          const sub = updates.slice(i, i + 100);
-          const ids = sub.map(u => u.id);
-
-          // Build CASE WHEN for bulk topic update
-          // Supabase JS doesn't support bulk conditional updates natively,
-          // so update each individually (still fast in batches)
-          for (const { id, topic } of sub) {
-            const { error: upErr } = await supabase
-              .from("questions")
-              .update({ topic, manually_edited: true })
-              .eq("id", id);
-            if (upErr) console.error(`Update error for ${id}:`, upErr);
-            else classified++;
-          }
+        // Group by topic → ~50 API calls instead of one per question
+        const byTopic = new Map<string, string[]>();
+        for (const { id, topic } of updates) {
+          if (!byTopic.has(topic)) byTopic.set(topic, []);
+          byTopic.get(topic)!.push(id);
+        }
+        for (const [topic, ids] of byTopic) {
+          const { error: upErr } = await supabase
+            .from("questions")
+            .update({ topic, manually_edited: true })
+            .in("id", ids);
+          if (upErr) console.error(`Bulk update error for topic "${topic}":`, upErr);
+          else classified += ids.length;
         }
       }
 
       // For any that still have empty topic after classification (no keyword match),
       // mark them manually_edited=true with empty topic to prevent repeated processing
-      const unresolved = unclassified.filter(
-        (q: any) => !updates.find(u => u.id === q.id)
-      );
+      const updatedIds = new Set(updates.map(u => u.id));
+      const unresolved = unclassified.filter((q: any) => !updatedIds.has(q.id));
       if (unresolved.length > 0) {
-        for (const q of unresolved) {
-          await supabase
-            .from("questions")
-            .update({ manually_edited: true })
-            .eq("id", q.id);
-        }
+        const unresolvedIds = unresolved.map((q: any) => q.id);
+        await supabase
+          .from("questions")
+          .update({ manually_edited: true })
+          .in("id", unresolvedIds);
         console.log(`Marked ${unresolved.length} questions as manually_edited (no topic match)`);
       }
 
