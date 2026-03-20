@@ -10,21 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animations';
 
-const OAUTH_TIMEOUT_MS = 12000;
-
-const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number) =>
-  new Promise<T>((resolve, reject) => {
-    const timer = setTimeout(() => reject(new Error('OAuth timeout')), timeoutMs);
-    promise
-      .then((value) => {
-        clearTimeout(timer);
-        resolve(value);
-      })
-      .catch((error) => {
-        clearTimeout(timer);
-        reject(error);
-      });
-  });
 
 const clearStaleAuthToken = () => {
   const authTokenKeys = Object.keys(localStorage).filter(
@@ -120,34 +105,17 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      await resetStaleAuthSession();
       const redirectUri = getOAuthRedirectUri();
-
-      const result = await withTimeout(
-        lovable.auth.signInWithOAuth(
-          'google',
-          redirectUri ? { redirect_uri: redirectUri } : undefined,
-        ),
-        OAUTH_TIMEOUT_MS,
+      const result = await lovable.auth.signInWithOAuth(
+        'google',
+        redirectUri ? { redirect_uri: redirectUri } : undefined,
       );
 
       if ((result as { error?: Error | null }).error) {
         throw (result as { error?: Error | null }).error;
       }
-
-      if (!(result as { redirected?: boolean }).redirected) {
-        throw new Error('Google redirect not completed');
-      }
     } catch (err) {
-      if (err instanceof Error && err.message === 'Google redirect not completed') {
-        toast({
-          title: 'לא הושלמה הפניה ל-Google',
-          description: 'בדוק שחוסם פופ-אפים כבוי ונסה שוב.',
-          variant: 'destructive',
-        });
-      } else {
-        await handleOAuthError(err);
-      }
+      await handleOAuthError(err);
     } finally {
       setGoogleLoading(false);
     }
@@ -156,34 +124,17 @@ export default function Auth() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
-      await resetStaleAuthSession();
       const redirectUri = getOAuthRedirectUri();
-
-      const result = await withTimeout(
-        lovable.auth.signInWithOAuth(
-          'apple',
-          redirectUri ? { redirect_uri: redirectUri } : undefined,
-        ),
-        OAUTH_TIMEOUT_MS,
+      const result = await lovable.auth.signInWithOAuth(
+        'apple',
+        redirectUri ? { redirect_uri: redirectUri } : undefined,
       );
 
       if ((result as { error?: Error | null }).error) {
         throw (result as { error?: Error | null }).error;
       }
-
-      if (!(result as { redirected?: boolean }).redirected) {
-        throw new Error('Apple redirect not completed');
-      }
     } catch (err) {
-      if (err instanceof Error && err.message === 'Apple redirect not completed') {
-        toast({
-          title: 'לא הושלמה הפניה ל-Apple',
-          description: 'בדוק שחוסם פופ-אפים כבוי ונסה שוב.',
-          variant: 'destructive',
-        });
-      } else {
-        await handleOAuthError(err);
-      }
+      await handleOAuthError(err);
     } finally {
       setAppleLoading(false);
     }
