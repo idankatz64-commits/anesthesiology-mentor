@@ -33,6 +33,11 @@ const clearStaleAuthToken = () => {
   authTokenKeys.forEach((key) => localStorage.removeItem(key));
 };
 
+const resetStaleAuthSession = async () => {
+  clearStaleAuthToken();
+  await supabase.auth.signOut({ scope: 'local' }).catch(() => undefined);
+};
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
@@ -72,16 +77,19 @@ export default function Auth() {
     }
   };
 
-  const handleOAuthError = (err: unknown) => {
+  const handleOAuthError = async (err: unknown) => {
     const message = err instanceof Error ? err.message : String(err);
     const isLockOrTokenIssue =
-      message.includes('LockManager') || message.includes('auth-token') || message.includes('OAuth timeout');
+      message.includes('LockManager') ||
+      message.includes('auth-token') ||
+      message.includes('OAuth timeout') ||
+      message.includes('Failed to fetch');
 
     if (isLockOrTokenIssue) {
-      clearStaleAuthToken();
+      await resetStaleAuthSession();
       toast({
         title: 'נוקתה התחברות תקועה',
-        description: 'נקהתי טוקן תקוע. נסה להתחבר שוב עם Google.',
+        description: 'נוקתה סשן תקוע. נסה להתחבר שוב עם Google.',
         variant: 'destructive',
       });
       return;
@@ -93,6 +101,8 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
+      await resetStaleAuthSession();
+
       const result = await withTimeout(
         lovable.auth.signInWithOAuth('google', {
           redirect_uri: window.location.origin,
@@ -105,15 +115,19 @@ export default function Auth() {
       }
 
       if (!(result as { redirected?: boolean }).redirected) {
-        setGoogleLoading(false);
+        throw new Error('Google redirect not completed');
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message === 'Google redirect not completed') {
         toast({
           title: 'לא הושלמה הפניה ל-Google',
           description: 'בדוק שחוסם פופ-אפים כבוי ונסה שוב.',
           variant: 'destructive',
         });
+      } else {
+        await handleOAuthError(err);
       }
-    } catch (err) {
-      handleOAuthError(err);
+    } finally {
       setGoogleLoading(false);
     }
   };
@@ -121,6 +135,8 @@ export default function Auth() {
   const handleAppleSignIn = async () => {
     setAppleLoading(true);
     try {
+      await resetStaleAuthSession();
+
       const result = await withTimeout(
         lovable.auth.signInWithOAuth('apple', {
           redirect_uri: window.location.origin,
@@ -133,15 +149,19 @@ export default function Auth() {
       }
 
       if (!(result as { redirected?: boolean }).redirected) {
-        setAppleLoading(false);
+        throw new Error('Apple redirect not completed');
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message === 'Apple redirect not completed') {
         toast({
           title: 'לא הושלמה הפניה ל-Apple',
           description: 'בדוק שחוסם פופ-אפים כבוי ונסה שוב.',
           variant: 'destructive',
         });
+      } else {
+        await handleOAuthError(err);
       }
-    } catch (err) {
-      handleOAuthError(err);
+    } finally {
       setAppleLoading(false);
     }
   };
