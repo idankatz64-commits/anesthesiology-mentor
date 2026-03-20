@@ -1930,7 +1930,7 @@ Deno.serve(async (req) => {
           for (const { id, topic } of sub) {
             const { error: upErr } = await supabase
               .from("questions")
-              .update({ topic, manually_edited: true })
+              .update({ topic })
               .eq("id", id);
             if (upErr) console.error(`Update error for ${id}:`, upErr);
             else classified++;
