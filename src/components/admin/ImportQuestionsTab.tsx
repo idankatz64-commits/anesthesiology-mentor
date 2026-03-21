@@ -233,6 +233,7 @@ function BulkCsvImport() {
       explanation: lowerRow['explanation'] || lowerRow['explanation_correct'] || '',
       topic: lowerRow['topic'] || lowerRow['topic_main'] || '',
       year: lowerRow['year'] || '',
+      ref_id: lowerRow['ref_id'] || lowerRow['questionid'] || lowerRow['question_id'] || '',
       source: lowerRow['source'] || lowerRow['institution'] || '',
       kind: lowerRow['kind'] || lowerRow['type'] || '',
       miller: lowerRow['miller'] || lowerRow['miller_page'] || '',
