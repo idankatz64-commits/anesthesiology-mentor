@@ -212,7 +212,8 @@ export function useStatsData() {
     const accuracy = totalUnique > 0 ? Math.round((correctUnique / totalUnique) * 100) : 0;
     const coverage = data.length > 0 ? Math.round((totalUnique / data.length) * 100) : 0;
 
-    const topicData: TopicStat[] = Object.entries(topicMap).map(([topic, s]) => {
+    const topicData: TopicStat[] = Object.keys(topicDbCount).map(topic => {
+      const s = topicMap[topic] || { totalAnswered: 0, correct: 0, wrong: 0, answered: 0 };
       const acc = s.totalAnswered > 0 ? Math.round((s.correct / s.totalAnswered) * 100) : 0;
       return {
         topic,
