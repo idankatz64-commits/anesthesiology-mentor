@@ -1,7 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Origin": "https://anesthesiology-mentor.vercel.app",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type",
 };
@@ -34,10 +34,23 @@ Deno.serve(async (req) => {
     const { data: isAdmin } = await supabaseAdmin.rpc("is_admin", { _user_id: user.id });
     if (!isAdmin) throw new Error("Forbidden: not an admin");
 
+    // Fetch caller's role to enforce role elevation restrictions
+    const { data: callerRow } = await supabaseAdmin
+      .from("admin_users")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+    const callerRole: string = callerRow?.role ?? "editor";
+
     const { action, email, role } = await req.json();
 
     if (action === "add") {
       if (!email) throw new Error("Email is required");
+
+      // Only full admins can grant admin role; editors cannot elevate to admin
+      if (role === "admin" && callerRole !== "admin") {
+        throw new Error("Forbidden: only an admin can assign the admin role");
+      }
 
       // Find auth user by email using admin API with pagination
       let targetUser = null;
