@@ -13,6 +13,7 @@ import TopicPerformanceTable from '@/components/stats/TopicPerformanceTable';
 import TopicTreemap from '@/components/stats/TopicTreemap';
 import PersonalStatsDrilldown, { type DrilldownMetric } from '@/components/stats/PersonalStatsDrilldown';
 import DailyReportTile from '@/components/stats/DailyReportTile';
+import AISummaryButton from '@/components/stats/AISummaryButton';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -313,6 +314,11 @@ export default function StatsView() {
         {/* ROW 8 — Daily Summary + Import/Export */}
         <motion.div variants={itemVariants}>
           <DailyReportTile />
+        </motion.div>
+
+        <motion.div variants={itemVariants} className="glass-tile rounded-xl p-4" dir="rtl">
+          <h3 className="font-bold mb-3 text-xs flex items-center gap-2 text-primary">✨ סיכום לימודי AI</h3>
+          <AISummaryButton />
         </motion.div>
 
         <motion.div variants={itemVariants} className="glass-tile rounded-xl p-4" dir="rtl">
