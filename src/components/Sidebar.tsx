@@ -50,7 +50,7 @@ export default function Sidebar() {
   const glassButtonCollapsed = "w-full flex items-center justify-center p-3 rounded-xl bg-card/40 border border-border/50 text-muted-foreground hover:border-primary/30 hover:text-foreground transition-all duration-200";
 
   return (
-    <aside className={`${isCollapsed ? 'w-16' : 'w-72'} bg-background/60 backdrop-blur-xl border-l border-border/50 flex-col shadow-lg z-20 hidden md:flex transition-all duration-300 relative`}>
+    <aside className={`${isCollapsed ? 'w-16' : 'w-72'} bg-sidebar border-l border-sidebar-border flex-col shadow-lg z-20 hidden md:flex transition-all duration-300 relative`}>
       {/* Collapse toggle button */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
@@ -60,7 +60,7 @@ export default function Sidebar() {
       </button>
 
       {/* Header */}
-      <div className={`border-b border-border/50 flex items-center gap-4 ${isCollapsed ? 'p-4 justify-center' : 'p-8'}`}>
+      <div className={`border-b border-sidebar-border flex items-center gap-4 ${isCollapsed ? 'p-4 justify-center' : 'p-8'}`}>
         <SquircleIcon icon={Heart} gradient="gold" size="lg" />
         {!isCollapsed && (
           <div>

@@ -14,6 +14,13 @@ export default {
   	},
   	extend: {
   		fontFamily: {
+  			display: [
+  				'Inter',
+  				'Heebo',
+  				'ui-sans-serif',
+  				'system-ui',
+  				'sans-serif'
+  			],
   			sans: [
   				'Open Sans',
   				'ui-sans-serif',

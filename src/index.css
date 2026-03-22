@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Crimson+Text&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
@@ -11,77 +12,77 @@
 
 @layer base {
   :root {
-    --background: 220 15% 7%;
-    --foreground: 220 20% 90%;
+    /* ── Pure dark — aligned with design reference (#121212 / #1c1c1c) ── */
+    --background: 0 0% 7%;           /* #121212 */
+    --foreground: 220 15% 88%;       /* off-white with warm tint */
 
-    --card: 220 10% 12%;
-    --card-foreground: 220 20% 90%;
+    --card: 0 0% 11%;                /* #1c1c1c */
+    --card-foreground: 220 15% 88%;
 
-    --popover: 220 10% 12%;
-    --popover-foreground: 220 20% 90%;
+    --popover: 0 0% 11%;
+    --popover-foreground: 220 15% 88%;
 
-    --primary: 36 96% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 38 94% 50%;           /* #f59f0a amber — matches design exactly */
+    --primary-foreground: 0 0% 8%;   /* dark text on amber buttons (design pattern) */
 
-    --secondary: 220 10% 15%;
-    --secondary-foreground: 220 20% 90%;
+    --secondary: 0 0% 14%;           /* #242424 */
+    --secondary-foreground: 0 0% 75%;
 
-    --muted: 220 10% 15%;
-    --muted-foreground: 220 10% 55%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 42%;
 
-    --accent: 36 96% 50%;
-    --accent-foreground: 0 0% 100%;
+    --accent: 38 94% 50%;
+    --accent-foreground: 0 0% 8%;
 
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 220 10% 17%;
-    --input: 220 10% 15%;
-    --ring: 36 96% 50%;
+    --border: 0 0% 18%;              /* #2d2d2d */
+    --input: 0 0% 14%;
+    --ring: 38 94% 50%;
 
-    --radius: 1rem;
+    --radius: 0.75rem;
 
-    /* Data blue — for all statistics and neutral numbers */
-    --matrix: 36 96% 50%;
-    --matrix-foreground: 0 0% 100%;
-    --matrix-muted: 36 40% 12%;
+    --matrix: 38 94% 50%;
+    --matrix-foreground: 0 0% 8%;
+    --matrix-muted: 38 40% 12%;
 
-    /* Custom semantic tokens */
-    --brand: 36 96% 50%;
-    --brand-foreground: 0 0% 100%;
-    --brand-muted: 36 95% 10%;
+    --brand: 38 94% 50%;
+    --brand-foreground: 0 0% 8%;
+    --brand-muted: 38 95% 10%;
 
     --success: 142 71% 45%;
     --success-foreground: 0 0% 100%;
     --success-muted: 142 40% 10%;
 
     --warning: 45 93% 47%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 0 0% 8%;
     --warning-muted: 45 60% 10%;
 
     --info: 217 92% 76%;
     --info-foreground: 0 0% 100%;
 
-    /* Feature — same as primary */
-    --feature: 36 96% 50%;
-    --feature-foreground: 0 0% 100%;
+    --feature: 38 94% 50%;
+    --feature-foreground: 0 0% 8%;
 
     /* Glow effects */
-    --glow-primary: 0 0 20px hsl(36 96% 50% / 0.3);
+    --glow-primary: 0 0 20px hsl(38 94% 50% / 0.3);
     --glow-success: 0 0 20px hsl(142 71% 45% / 0.3);
     --glow-destructive: 0 0 20px hsl(0 72% 51% / 0.3);
-    --glow-matrix: 0 0 20px hsl(36 96% 50% / 0.25);
-    --glow-feature: 0 0 20px hsl(36 96% 50% / 0.3);
+    --glow-matrix: 0 0 20px hsl(38 94% 50% / 0.25);
+    --glow-feature: 0 0 20px hsl(38 94% 50% / 0.3);
 
-    --sidebar-background: 220 12% 8%;
-    --sidebar-foreground: 220 10% 50%;
-    --sidebar-border: 220 10% 14%;
-    --sidebar-primary: 36 96% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 10% 14%;
-    --sidebar-accent-foreground: 36 96% 60%;
-    --sidebar-ring: 36 96% 50%;
-    --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+    --sidebar-background: 0 0% 11%;  /* #1c1c1c — surface-dark, same as card */
+    --sidebar-foreground: 0 0% 45%;
+    --sidebar-border: 0 0% 16%;
+    --sidebar-primary: 38 94% 50%;
+    --sidebar-primary-foreground: 0 0% 8%;
+    --sidebar-accent: 0 0% 14%;
+    --sidebar-accent-foreground: 38 94% 60%;
+    --sidebar-ring: 38 94% 50%;
+
+    --font-sans: "Heebo", "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-display: "Inter", "Heebo", ui-sans-serif, system-ui, sans-serif;
     --font-serif: "Crimson Text", ui-serif, Georgia, serif;
     --font-mono: "JetBrains Mono", "Space Mono", ui-monospace, monospace;
     --font-matrix: "Share Tech Mono", "JetBrains Mono", monospace;
