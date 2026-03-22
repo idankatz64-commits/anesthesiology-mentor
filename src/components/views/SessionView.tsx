@@ -193,6 +193,24 @@ export default function SessionView() {
   const [savingQuestion, setSavingQuestion] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
+  // Refs that always hold the latest timer values — needed for the unmount cleanup below
+  const timerRef = useRef(timerSeconds);
+  timerRef.current = timerSeconds;
+  const simTimerRef = useRef(simTimerSeconds);
+  simTimerRef.current = simTimerSeconds;
+
+  // Auto-save on navigate-away — disabled when session is intentionally ended/discarded
+  const quizLengthRef = useRef(quiz.length);
+  quizLengthRef.current = quiz.length;
+  const shouldAutoSaveRef = useRef(true);
+  useEffect(() => {
+    return () => {
+      if (shouldAutoSaveRef.current && quizLengthRef.current > 0) {
+        saveSessionToDb(timerRef.current, simTimerRef.current);
+      }
+    };
+  }, [saveSessionToDb]);
+
   // Memoize to avoid calling splitSections(explanationDraft) 3x per render
   const explanationDraftSections = useMemo(() => splitSections(explanationDraft), [explanationDraft]);
 
@@ -289,6 +307,7 @@ export default function SessionView() {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
     } else {
+      shouldAutoSaveRef.current = false;
       clearSavedSession();
       if (isReviewMode) navigate("results");
       else if (isSimulation) navigate("results");
@@ -309,6 +328,7 @@ export default function SessionView() {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
     } else {
+      shouldAutoSaveRef.current = false;
       if (isSimulation) navigate("results");
       else navigate("review");
     }
@@ -316,6 +336,7 @@ export default function SessionView() {
 
   const handleExit = () => {
     if (isReviewMode) {
+      shouldAutoSaveRef.current = false;
       navigate("results");
       return;
     }
@@ -323,6 +344,7 @@ export default function SessionView() {
   };
 
   const handleSaveAndExit = async () => {
+    shouldAutoSaveRef.current = false; // already saving manually below
     await saveSessionToDb(timerSeconds, simTimerSeconds);
     toast({ title: "הסשן נשמר ✅", description: "תוכל להמשיך מאוחר יותר מדף הבית." });
     setShowExitDialog(false);
@@ -330,6 +352,7 @@ export default function SessionView() {
   };
 
   const handleExitWithoutSaving = () => {
+    shouldAutoSaveRef.current = false;
     clearSavedSession();
     setShowExitDialog(false);
     navigate("home");
@@ -343,6 +366,7 @@ export default function SessionView() {
         updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
       }
     });
+    shouldAutoSaveRef.current = false;
     clearSavedSession();
     navigate("results");
   };
