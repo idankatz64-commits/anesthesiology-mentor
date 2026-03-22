@@ -1,11 +1,12 @@
 import { useState, useEffect, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, LogOut, User, ChevronDown, BookOpen, RefreshCw, Activity } from 'lucide-react';
+import { LogIn, LogOut, User, ChevronDown, BookOpen, RefreshCw, Activity, Heart } from 'lucide-react';
 import type { User as SupaUser } from '@supabase/supabase-js';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import SquircleIcon from './SquircleIcon';
 
 const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>(function TopNav(_props, ref) {
   const [user, setUser] = useState<SupaUser | null>(null);
@@ -34,6 +35,12 @@ const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>
     <div ref={ref} className="fixed top-0 left-0 right-0 h-14 bg-background/60 backdrop-blur-xl border-b border-border/50 z-50 flex items-center justify-between px-4 md:px-8" dir="rtl">
       {/* Gradient accent line at bottom */}
       <div className="absolute bottom-0 left-0 right-0 h-[1px] bg-gradient-to-l from-transparent via-primary/40 to-transparent" />
+
+      {/* Right: Logo badge + app name */}
+      <div className="flex items-center gap-2.5">
+        <SquircleIcon icon={Heart} gradient="gold" size="md" />
+        <span className="hidden sm:block text-sm font-bold tracking-tight text-foreground">YouShellNotPass</span>
+      </div>
 
       {/* Center title */}
       <div className="flex flex-col items-center absolute left-1/2 -translate-x-1/2">

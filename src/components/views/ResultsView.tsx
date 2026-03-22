@@ -3,6 +3,16 @@ import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { RotateCcw, ChevronDown, ChevronUp, BookOpen, ExternalLink, ArrowRight, TrendingUp, Trophy, Timer } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { motion } from 'framer-motion';
+import AnimatedNumber from '@/components/AnimatedNumber';
+
+const heroVariant = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
+    opacity: 1, y: 0,
+    transition: { type: 'spring' as const, stiffness: 260, damping: 24, delay: i * 0.1 },
+  }),
+};
 
 /* ── Explanation renderers (unchanged logic) ── */
 function isHtmlContent(text: string): boolean {
@@ -220,12 +230,12 @@ export default function ResultsView() {
   const errorCount = results.details.filter(d => d.userAns && !d.isCorrect).length;
 
   return (
-    <div className="fade-in max-w-5xl mx-auto p-4 lg:p-8 space-y-8">
+    <div className="max-w-5xl mx-auto p-4 lg:p-8 space-y-8">
 
       {/* ── Hero: Status + Countdown ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Premium Status Card */}
-        <div className="lg:col-span-2 flex flex-col justify-start rounded-xl shadow-xl bg-gradient-to-br from-card to-secondary border border-border p-6 relative overflow-hidden">
+        <motion.div custom={0} variants={heroVariant} initial="hidden" animate="visible" className="lg:col-span-2 flex flex-col justify-start rounded-xl shadow-xl bg-gradient-to-br from-card to-secondary border border-border p-6 relative overflow-hidden">
           <div className="absolute -right-4 -top-4 opacity-10 text-primary">
             <Trophy className="w-[120px] h-[120px]" />
           </div>
@@ -244,28 +254,28 @@ export default function ResultsView() {
               </p>
             </div>
             <div className="flex flex-col items-center justify-center bg-card/80 p-4 rounded-xl border border-border min-w-[120px]">
-              <span className="text-3xl font-black text-primary">{results.score}/{quiz.length}</span>
+              <span className="text-3xl font-black text-primary"><AnimatedNumber value={results.score} />/{quiz.length}</span>
               <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">תשובות נכונות</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Countdown / Score Card */}
-        <div className="rounded-xl shadow-xl bg-card border border-border p-6 flex flex-col justify-between">
+        <motion.div custom={1} variants={heroVariant} initial="hidden" animate="visible" className="rounded-xl shadow-xl bg-card border border-border p-6 flex flex-col justify-between">
           <div className="flex items-center justify-between mb-4">
             <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">ציון סופי</span>
             <Timer className="w-5 h-5 text-muted-foreground" />
           </div>
           <div className="flex justify-center items-center py-4">
             <div className="text-center">
-              <p className="text-6xl font-black text-primary">{results.pct}%</p>
+              <p className="text-6xl font-black text-primary"><AnimatedNumber value={results.pct} suffix="%" /></p>
               <p className="text-xs text-muted-foreground mt-2 uppercase font-bold">{isSimulation ? 'ציון סימולציה' : 'ציון סשן'}</p>
             </div>
           </div>
           <div className="mt-4 pt-4 border-t border-border">
             <p className="text-xs text-muted-foreground">{quiz.length} שאלות • {errorCount} שגיאות</p>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* ── Metric Rings + Heatmap ── */}

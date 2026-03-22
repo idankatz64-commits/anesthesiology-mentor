@@ -3,6 +3,16 @@ import { useApp } from '@/contexts/AppContext';
 import { KEYS, type SessionMode } from '@/lib/types';
 import { ChevronDown, Search, EyeOff, BookOpen, Calendar, Building2, Tag, Brain, Zap, ArrowRight, Clock, Hash, SlidersHorizontal, AlertTriangle } from 'lucide-react';
 import { selectSmartQuestions, SESSION_SIZE_CONFIG, type SessionSize } from '@/lib/smartSelection';
+import { motion } from 'framer-motion';
+
+const sectionVariant = {
+  hidden: { opacity: 0, y: 18 },
+  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 260, damping: 24, mass: 0.7 } },
+};
+const containerVariant = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.05 } },
+};
 
 function MultiSelectDropdown({
   label,
@@ -133,9 +143,14 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   const estMinutes = Math.round(count * 1.4);
 
   return (
-    <div className="fade-in w-full p-4 lg:p-8 space-y-8">
+    <motion.div
+      className="w-full p-4 lg:p-8 space-y-8"
+      variants={containerVariant}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <section>
+      <motion.section variants={sectionVariant}>
         <div className="flex items-center gap-3 mb-2">
           <div className="p-1.5 rounded-lg bg-primary text-primary-foreground">
             <BookOpen className="w-5 h-5" />
@@ -143,10 +158,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
           <h1 className="text-3xl font-bold text-foreground tracking-tight">{title}</h1>
         </div>
         <p className="text-muted-foreground">התאם את חוויית התרגול לצרכים שלך.</p>
-      </section>
+      </motion.section>
 
       {/* Session Intensity */}
-      <section className="space-y-4">
+      <motion.section variants={sectionVariant} className="space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">עוצמת מפגש</h3>
         <div className="flex flex-wrap p-1 bg-primary/5 rounded-xl border border-primary/10">
           {SESSION_SIZES.map(size => {
@@ -198,10 +213,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
             </div>
           </div>
         )}
-      </section>
+      </motion.section>
 
       {/* Source Filter Pills */}
-      <section className="space-y-4">
+      <motion.section variants={sectionVariant} className="space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">מקור שאלות</h3>
         <div className="flex flex-wrap gap-2">
           {(['all', 'mistakes', 'fixed', 'favorites'] as const).map(src => (
@@ -229,10 +244,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
             חדשות בלבד
           </button>
         </div>
-      </section>
+      </motion.section>
 
       {/* Free text search */}
-      <section className="space-y-4">
+      <motion.section variants={sectionVariant} className="space-y-4">
         <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">חיפוש</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="relative">
@@ -256,10 +271,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
             <Hash className="absolute left-3 top-4 w-4 h-4 text-muted-foreground" />
           </div>
         </div>
-      </section>
+      </motion.section>
 
       {/* Filters Grid */}
-      <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <motion.section variants={sectionVariant} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <MultiSelectDropdown
           label="נושא (Topic)"
           type="topic"
@@ -297,10 +312,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
           labelMap={confidenceLabelMap}
           icon={<Brain className="w-5 h-5" />}
         />
-      </section>
+      </motion.section>
 
       {/* Bottom Action Bar */}
-      <div className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6">
+      <motion.div variants={sectionVariant} className="pt-8 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-6">
           <div className="flex flex-col">
             <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">זמן משוער</span>
@@ -325,7 +340,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
           {starting ? 'מכין שאלות...' : `התחל ${isPractice ? 'תרגול' : 'בחינה'}`}
           <ArrowRight className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
