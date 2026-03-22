@@ -2,19 +2,21 @@ import { useState } from 'react';
 import { AppProvider } from '@/contexts/AppContext';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 import { Link } from 'react-router-dom';
-import { Loader2, Users, Upload, ArrowRight, ShieldAlert, FlaskConical, BarChart3 } from 'lucide-react';
+import { Loader2, Users, Upload, ArrowRight, ShieldAlert, FlaskConical, BarChart3, FileEdit } from 'lucide-react';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import ImportQuestionsTab from '@/components/admin/ImportQuestionsTab';
 import FormulaManagementTab from '@/components/admin/FormulaManagementTab';
 import EditorActivityTab from '@/components/admin/EditorActivityTab';
+import QuestionEditorTab from '@/components/admin/QuestionEditorTab';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animations';
 
-type AdminTab = 'user-management' | 'import-questions' | 'formula-management' | 'editor-activity';
+type AdminTab = 'user-management' | 'import-questions' | 'formula-management' | 'editor-activity' | 'question-editor';
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'user-management', label: 'User Management', icon: <Users className="w-5 h-5" /> },
   { id: 'import-questions', label: 'Import Questions', icon: <Upload className="w-5 h-5" /> },
+  { id: 'question-editor', label: 'ייצוא שאלות', icon: <FileEdit className="w-5 h-5" /> },
   { id: 'formula-management', label: 'Formula Management', icon: <FlaskConical className="w-5 h-5" /> },
   { id: 'editor-activity', label: 'דוח עורכים', icon: <BarChart3 className="w-5 h-5" /> },
 ];
@@ -87,6 +89,7 @@ export default function AdminDashboard() {
             {activeTab === 'user-management' && <UserManagementTab />}
             {activeTab === 'import-questions' && <ImportQuestionsTab />}
             {activeTab === 'formula-management' && <FormulaManagementTab />}
+            {activeTab === 'question-editor' && <QuestionEditorTab />}
             {activeTab === 'editor-activity' && <EditorActivityTab isActive={activeTab === 'editor-activity'} />}
           </div>
         </main>
