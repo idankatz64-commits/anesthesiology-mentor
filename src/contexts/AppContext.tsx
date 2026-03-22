@@ -48,7 +48,6 @@ interface AppContextType {
   skipQuestion: (index: number) => void;
   updateHistory: (id: string, isCorrect: boolean, topic?: string) => void;
   updateSpacedRepetition: (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel, topic?: string) => void;
-  syncAnswerToDb: (questionId: string, isCorrect: boolean, topic: string) => void;
   
   // Progress actions
   toggleFavorite: (id: string) => void;
@@ -206,6 +205,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   dataRef.current = data;
   const sessionRef = useRef(session);
   sessionRef.current = session;
+  const multiSelectRef = useRef(multiSelect);
+  multiSelectRef.current = multiSelect;
+  const confidenceMapRef = useRef(confidenceMap);
+  confidenceMapRef.current = confidenceMap;
+
   const userIdRef = useRef<string | null>(null);
 
   // Apply theme class
@@ -523,35 +527,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // answer_history insert is now handled by updateHistory — no duplicate here
   }, []);
 
-  // syncAnswerToDb is now handled by updateHistory, but kept for backward compat
-  const syncAnswerToDb = useCallback(async (questionId: string, isCorrect: boolean, topic: string) => {
-    const userId = userIdRef.current;
-    if (!userId) return;
-
-    const { data: existing } = await supabase
-      .from('user_answers')
-      .select('answered_count, correct_count, ever_wrong')
-      .eq('user_id', userId)
-      .eq('question_id', questionId)
-      .maybeSingle();
-
-    const answeredCount = (existing?.answered_count || 0) + 1;
-    const correctCount = (existing?.correct_count || 0) + (isCorrect ? 1 : 0);
-    const everWrong = (existing?.ever_wrong || false) || !isCorrect;
-
-    await supabase.from('user_answers').upsert({
-      user_id: userId,
-      question_id: questionId,
-      topic: topic || null,
-      is_correct: isCorrect,
-      answered_count: answeredCount,
-      correct_count: correctCount,
-      ever_wrong: everWrong,
-      updated_at: new Date().toISOString(),
-    } as any, { onConflict: 'user_id,question_id' });
-
-    // answer_history insert removed — user_answers upsert above is sufficient
-  }, []);
 
   const toggleFavorite = useCallback((id: string) => {
     setProgress(prev => {
@@ -745,8 +720,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const getFilteredQuestions = useCallback((serial?: string, textSearch?: string): Question[] => {
     const d = dataRef.current;
     const p = progressRef.current;
-    const s = session;
-    const ms = multiSelect;
+    const s = sessionRef.current;
+    const ms = multiSelectRef.current;
+    const cm = confidenceMapRef.current;
 
     let pool = [...d];
 
@@ -761,7 +737,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!ms.kind.has('all')) pool = pool.filter(q => ms.kind.has(q[KEYS.KIND]));
     if (!ms.institution.has('all')) pool = pool.filter(q => ms.institution.has(q[KEYS.SOURCE]));
     if (!ms.confidence.has('all')) pool = pool.filter(q => {
-      const c = confidenceMap[q[KEYS.ID]];
+      const c = cm[q[KEYS.ID]];
       return c ? ms.confidence.has(c) : false;
     });
     if (!ms.usertags.has('all')) pool = pool.filter(q => {
@@ -779,7 +755,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     return pool;
-  }, [session.sourceFilter, session.unseenOnly, multiSelect, data, confidenceMap]);
+  }, []); // stable — always reads latest state via refs
 
   const getDueQuestions = useCallback(async (): Promise<Question[]> => {
     const userId = userIdRef.current;
@@ -921,7 +897,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     syncStatus, lastSyncTime, triggerSync, invalidateQuestions,
     navigate, toggleTheme, closeWelcome,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
-    updateHistory, updateSpacedRepetition, syncAnswerToDb,
+    updateHistory, updateSpacedRepetition,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
     updateQuizQuestion,

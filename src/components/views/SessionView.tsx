@@ -155,7 +155,7 @@ export default function SessionView() {
     skipQuestion,
     updateHistory,
     updateSpacedRepetition,
-    syncAnswerToDb,
+
     toggleFavorite,
     saveNote,
     setRating,
@@ -191,6 +191,7 @@ export default function SessionView() {
   const [questionDraft, setQuestionDraft] = useState("");
   const [answersDraft, setAnswersDraft] = useState({ A: "", B: "", C: "", D: "" });
   const [savingQuestion, setSavingQuestion] = useState(false);
+  const [autoSaved, setAutoSaved] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   // Refs that always hold the latest timer values — needed for the unmount cleanup below
@@ -203,6 +204,13 @@ export default function SessionView() {
   const quizLengthRef = useRef(quiz.length);
   quizLengthRef.current = quiz.length;
   const shouldAutoSaveRef = useRef(true);
+
+  const triggerAutoSave = useCallback(async () => {
+    await saveSessionToDb(timerRef.current, simTimerRef.current);
+    setAutoSaved(true);
+    setTimeout(() => setAutoSaved(false), 2500);
+  }, [saveSessionToDb]);
+
   useEffect(() => {
     return () => {
       if (shouldAutoSaveRef.current && quizLengthRef.current > 0) {
@@ -234,6 +242,14 @@ export default function SessionView() {
     const interval = setInterval(() => setTimerSeconds((p) => p + 1), 1000);
     return () => clearInterval(interval);
   }, [mode]);
+
+  // Periodic auto-save every 60 seconds (shows a brief indicator)
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (quizLengthRef.current > 0) triggerAutoSave();
+    }, 60_000);
+    return () => clearInterval(id);
+  }, [triggerAutoSave]);
 
   // Timer for simulation mode (countdown from 3 hours)
   useEffect(() => {
@@ -377,6 +393,67 @@ export default function SessionView() {
     setTagInput("");
   };
 
+  // Keyboard shortcuts — single stable listener via ref to avoid re-attaching every render
+  const kbStateRef = useRef({
+    needsConfidence, isPracticeRevealed, isReviewMode, isExam, isSimulation,
+    editingExplanation, editingQuestion, editingCorrectAnswer, serialNumber,
+    handleConfidenceSelect, handleAnswer, handleNext, handlePrev, toggleFavorite,
+  });
+  kbStateRef.current = {
+    needsConfidence, isPracticeRevealed, isReviewMode, isExam, isSimulation,
+    editingExplanation, editingQuestion, editingCorrectAnswer, serialNumber,
+    handleConfidenceSelect, handleAnswer, handleNext, handlePrev, toggleFavorite,
+  };
+
+  useEffect(() => {
+    const ANSWER_KEYS: Record<string, string> = { "1": "A", "2": "B", "3": "C", "4": "D" };
+    const CONFIDENCE_KEYS: Record<string, ConfidenceLevel> = {
+      "1": "confident", "2": "hesitant", "3": "guessed",
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      const s = kbStateRef.current;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+      if (s.editingExplanation || s.editingQuestion || s.editingCorrectAnswer) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const key = e.key;
+
+      if (s.needsConfidence && key in CONFIDENCE_KEYS) {
+        e.preventDefault();
+        s.handleConfidenceSelect(CONFIDENCE_KEYS[key]);
+        return;
+      }
+
+      if (key in ANSWER_KEYS && !s.isPracticeRevealed && !s.isReviewMode) {
+        e.preventDefault();
+        s.handleAnswer(ANSWER_KEYS[key]);
+        return;
+      }
+
+      const canGoNext = s.isReviewMode || s.isPracticeRevealed || s.isExam || s.isSimulation;
+      if ((key === "ArrowRight" || key === " " || key === "Enter") && canGoNext) {
+        e.preventDefault();
+        s.handleNext();
+        return;
+      }
+      if (key === "ArrowLeft") {
+        e.preventDefault();
+        s.handlePrev();
+        return;
+      }
+
+      if (key === "f" || key === "F") {
+        e.preventDefault();
+        s.toggleFavorite(s.serialNumber);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []); // mounted once — always reads latest state via kbStateRef
+
   const formatTime = (s: number) =>
     `${Math.floor(s / 60)
       .toString()
@@ -459,6 +536,19 @@ export default function SessionView() {
           </span>
 
           <div className="flex items-center gap-3">
+            {/* Auto-save indicator */}
+            <AnimatePresence>
+              {autoSaved && (
+                <motion.span
+                  initial={{ opacity: 0, scale: 0.85 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.85 }}
+                  className="text-xs text-success font-medium flex items-center gap-1"
+                >
+                  <Check className="w-3 h-3" /> נשמר
+                </motion.span>
+              )}
+            </AnimatePresence>
             {isSimulation && (
               <span
                 className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg border ${
