@@ -75,6 +75,9 @@ export type SessionState = {
   sourceFilter: 'all' | 'mistakes' | 'fixed' | 'favorites';
   countFilter: number;
   unseenOnly: boolean;
+  /** Timer values restored when resuming a saved session */
+  resumedTimerSeconds?: number;
+  resumedSimTimerSeconds?: number;
 };
 
 export type MultiSelectState = {

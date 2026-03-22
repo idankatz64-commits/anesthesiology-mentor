@@ -66,6 +66,9 @@ interface AppContextType {
   setSourceFilter: (source: SessionState['sourceFilter']) => void;
   toggleUnseenOnly: () => void;
   
+  // Quiz mutations (immutable)
+  updateQuizQuestion: (index: number, fields: Partial<Question>) => void;
+
   // Sync & cache
   syncStatus: 'idle' | 'syncing' | 'done' | 'error';
   lastSyncTime: string | null;
@@ -201,6 +204,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   progressRef.current = progress;
   const dataRef = useRef(data);
   dataRef.current = data;
+  const sessionRef = useRef(session);
+  sessionRef.current = session;
   const userIdRef = useRef<string | null>(null);
 
   // Apply theme class
@@ -428,34 +433,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { ...prev, history };
     });
 
-    // Fire-and-forget DB write
+    // Fire-and-forget DB write — atomic increment via RPC (prevents race conditions)
     const userId = userIdRef.current;
     if (userId) {
       (async () => {
-        const { data: existing } = await supabase
-          .from('user_answers')
-          .select('answered_count, correct_count, ever_wrong')
-          .eq('user_id', userId)
-          .eq('question_id', id)
-          .maybeSingle();
-
-        const answeredCount = (existing?.answered_count || 0) + 1;
-        const correctCount = (existing?.correct_count || 0) + (isCorrect ? 1 : 0);
-        const everWrong = (existing?.ever_wrong || false) || !isCorrect;
-
-        const { error } = await supabase.from('user_answers').upsert({
-          user_id: userId,
-          question_id: id,
-          is_correct: isCorrect,
-          answered_count: answeredCount,
-          correct_count: correctCount,
-          ever_wrong: everWrong,
-          updated_at: new Date().toISOString(),
-          ...(topic ? { topic } : {}),
-        } as any, { onConflict: 'user_id,question_id' });
+        const { error } = await supabase.rpc('increment_user_answer', {
+          p_user_id: userId,
+          p_question_id: id,
+          p_is_correct: isCorrect,
+          p_topic: topic ?? null,
+        });
 
         if (error) {
-          console.error('user_answers upsert error:', error);
+          console.error('user_answers increment error:', error);
           toast.error('שגיאה בשמירת התקדמות');
         }
       })();
@@ -646,7 +636,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const resetAllData = useCallback(async () => {
-    if (!confirm('האם אתה בטוח? כל ההיסטוריה, ההערות והמועדפים יימחקו.')) return;
     setProgress({ ...defaultProgress });
 
     const userId = userIdRef.current;
@@ -851,7 +840,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const userId = userIdRef.current;
     if (!userId) return;
 
-    const currentSession = session;
+    const currentSession = sessionRef.current;
     if (!currentSession.quiz.length) return;
 
     const sessionData: SavedSessionData = {
@@ -874,7 +863,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }, { onConflict: 'user_id' });
 
     setSavedSessionInfo(sessionData);
-  }, [session]);
+  }, []);
 
   const resumeSessionFromDb = useCallback(async (): Promise<boolean> => {
     if (!savedSessionInfo || !dataRef.current.length) return false;
@@ -898,6 +887,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sourceFilter: 'all',
       countFilter: quiz.length,
       unseenOnly: false,
+      resumedTimerSeconds: savedSessionInfo.timerSeconds,
+      resumedSimTimerSeconds: savedSessionInfo.simTimerSeconds,
     });
     setCurrentView('session');
 
@@ -917,6 +908,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setSavedSessionInfo(null);
   }, []);
 
+  const updateQuizQuestion = useCallback((index: number, fields: Partial<Question>) => {
+    setSession(prev => ({
+      ...prev,
+      quiz: prev.quiz.map((q, i) => i === index ? { ...q, ...fields } : q),
+    }));
+  }, []);
+
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
     isAdmin, isEditor,
@@ -926,6 +924,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateHistory, updateSpacedRepetition, syncAnswerToDb,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
+    updateQuizQuestion,
     getFilteredQuestions, getDueQuestions, fetchSrsData,
     saveSessionToDb, resumeSessionFromDb, clearSavedSession, savedSessionInfo, loadingSavedSession,
   };

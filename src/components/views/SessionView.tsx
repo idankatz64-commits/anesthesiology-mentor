@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import DOMPurify from "dompurify";
 import { motion, AnimatePresence } from "framer-motion";
 import { springGentle } from "@/lib/animations";
 import { useApp } from "@/contexts/AppContext";
@@ -55,7 +56,7 @@ function SmartContent({ text, inheritSize = false }: { text: string; inheritSize
       <div
         className={`rich-content markdown-content bidi-text ${sizeClass} max-w-none text-foreground`}
         style={{ lineHeight: inheritSize ? undefined : 1.8 }}
-        dangerouslySetInnerHTML={{ __html: text }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }}
       />
     );
   }
@@ -163,16 +164,17 @@ export default function SessionView() {
     saveSessionToDb,
     clearSavedSession,
     invalidateQuestions,
+    updateQuizQuestion,
     isEditor,
   } = useApp();
   const { toast } = useToast();
   const isAdmin = useIsAdmin();
 
-  const { quiz, index, mode, answers, confidence, flagged, skipped } = session;
+  const { quiz, index, mode, answers, confidence, flagged, skipped, resumedTimerSeconds, resumedSimTimerSeconds } = session;
   const [showNote, setShowNote] = useState(false);
   const [tagInput, setTagInput] = useState("");
-  const [timerSeconds, setTimerSeconds] = useState(0);
-  const [simTimerSeconds, setSimTimerSeconds] = useState(3 * 60 * 60);
+  const [timerSeconds, setTimerSeconds] = useState(resumedTimerSeconds ?? 0);
+  const [simTimerSeconds, setSimTimerSeconds] = useState(resumedSimTimerSeconds ?? 3 * 60 * 60);
   const [calcOpen, setCalcOpen] = useState(false);
   const [editingExplanation, setEditingExplanation] = useState(false);
   const [explanationDraft, setExplanationDraft] = useState("");
@@ -190,6 +192,9 @@ export default function SessionView() {
   const [answersDraft, setAnswersDraft] = useState({ A: "", B: "", C: "", D: "" });
   const [savingQuestion, setSavingQuestion] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
+
+  // Memoize to avoid calling splitSections(explanationDraft) 3x per render
+  const explanationDraftSections = useMemo(() => splitSections(explanationDraft), [explanationDraft]);
 
   // Reset drafts when question changes
   useEffect(() => {
@@ -554,11 +559,13 @@ export default function SessionView() {
                       if (error) {
                         toast({ title: "שגיאה בשמירה", description: error.message, variant: "destructive" });
                       } else {
-                        (qData as any)[KEYS.QUESTION] = questionDraft;
-                        (qData as any)[KEYS.A] = answersDraft.A;
-                        (qData as any)[KEYS.B] = answersDraft.B;
-                        (qData as any)[KEYS.C] = answersDraft.C;
-                        (qData as any)[KEYS.D] = answersDraft.D;
+                        updateQuizQuestion(index, {
+                          [KEYS.QUESTION]: questionDraft,
+                          [KEYS.A]: answersDraft.A,
+                          [KEYS.B]: answersDraft.B,
+                          [KEYS.C]: answersDraft.C,
+                          [KEYS.D]: answersDraft.D,
+                        });
                         invalidateQuestions();
                         setEditingQuestion(false);
                         toast({ title: "השאלה עודכנה ✅" });
@@ -856,7 +863,7 @@ export default function SessionView() {
                           if (error) {
                             toast({ title: "שגיאה בשמירה", description: error.message, variant: "destructive" });
                           } else {
-                            qData[KEYS.CORRECT] = correctAnswerDraft;
+                            updateQuizQuestion(index, { [KEYS.CORRECT]: correctAnswerDraft });
                             invalidateQuestions();
                             setEditingCorrectAnswer(false);
                             setShowConfirmSave(false);
@@ -920,11 +927,11 @@ export default function SessionView() {
                 <RichTextEditor content={explanationDraft} onChange={setExplanationDraft} minHeight="120px" />
 
                 {/* Section title inputs — shown only when there are multiple sections */}
-                {splitSections(explanationDraft).length > 1 && (
+                {explanationDraftSections.length > 1 && (
                   <div className="p-3 bg-muted/30 rounded-xl border border-border space-y-2">
                     <p className="text-xs font-bold text-muted-foreground">כותרות חלקים (אופציונלי):</p>
-                    {splitSections(explanationDraft).map((_, i) => {
-                      const isLastSection = i === splitSections(explanationDraft).length - 1;
+                    {explanationDraftSections.map((_, i) => {
+                      const isLastSection = i === explanationDraftSections.length - 1;
                       return (
                         <div key={i} className="flex items-center gap-2">
                           <span
@@ -978,7 +985,7 @@ export default function SessionView() {
                       if (error) {
                         toast({ title: "שגיאה בשמירה", description: error.message, variant: "destructive" });
                       } else {
-                        qData[KEYS.EXPLANATION] = toSave;
+                        updateQuizQuestion(index, { [KEYS.EXPLANATION]: toSave });
                         invalidateQuestions();
                         setEditingExplanation(false);
                         toast({ title: "ההסבר עודכן ✅" });
@@ -1115,9 +1122,11 @@ export default function SessionView() {
                         .eq("id", serialNumber);
                       if (!error) {
                         invalidateQuestions();
-                        (qData as any)[KEYS.CHAPTER] = chapterVal;
-                        (qData as any)[KEYS.MILLER] = String(chapterVal);
-                        (qData as any)[KEYS.TOPIC] = chapterName;
+                        updateQuizQuestion(index, {
+                          [KEYS.CHAPTER]: chapterVal,
+                          [KEYS.MILLER]: String(chapterVal),
+                          [KEYS.TOPIC]: chapterName,
+                        });
                         setSavingChapter("saved");
                         setChapterDraft("");
                         setTimeout(() => setSavingChapter("idle"), 2000);
