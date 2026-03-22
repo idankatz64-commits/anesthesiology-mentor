@@ -163,6 +163,7 @@ export default function SessionView() {
     saveSessionToDb,
     clearSavedSession,
     invalidateQuestions,
+    isEditor,
   } = useApp();
   const { toast } = useToast();
   const isAdmin = useIsAdmin();
@@ -574,7 +575,7 @@ export default function SessionView() {
               <div className="text-foreground text-xl md:text-2xl leading-snug font-bold flex-grow">
                   <SmartContent text={`${serialNumber} - ${qData[KEYS.QUESTION]}`} inheritSize />
                 </div>
-                {isAdmin && (
+                {isEditor && (
                   <button
                     onClick={() => {
                       setQuestionDraft(qData[KEYS.QUESTION]);
@@ -795,7 +796,7 @@ export default function SessionView() {
               ) : (
                 <span className="text-destructive flex items-center gap-2">❌ התשובה הנכונה היא: <span className="font-extrabold">{qData[KEYS[correctAns as keyof typeof KEYS]] || correctAns}</span></span>
               )}
-              {isAdmin && !editingCorrectAnswer && (
+              {isEditor && !editingCorrectAnswer && (
                 <button
                   onClick={() => {
                     setCorrectAnswerDraft(correctAns);
@@ -1004,7 +1005,7 @@ export default function SessionView() {
                            <strong className="text-xl font-black text-foreground tracking-wide drop-shadow-sm" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
                            <div className="h-px mt-1 w-16 bg-gradient-to-r from-red-400/40 via-red-500/15 to-transparent" />
                          </div>
-                        {isAdmin && (
+                        {isEditor && (
                           <button
                             onClick={enterExplanationEdit}
                             className="text-muted-foreground hover:text-primary transition p-1 rounded-md hover:bg-primary/10 mr-auto"
@@ -1056,7 +1057,7 @@ export default function SessionView() {
                         );
                       })}
                     </div>
-                    {isAdmin && (
+                    {isEditor && (
                       <button
                         onClick={enterExplanationEdit}
                         className="text-xs font-bold text-primary flex items-center gap-1.5 hover:underline mt-2"
@@ -1082,8 +1083,8 @@ export default function SessionView() {
                 <BookOpen className="w-3 h-3" /> Miller Page: {qData[KEYS.MILLER]}
               </a>
 
-              {/* Admin inline chapter editor */}
-              {isAdmin && (
+              {/* Editor inline chapter editor */}
+              {isEditor && (
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-muted-foreground font-medium">פרק:</span>
                   <input
@@ -1144,8 +1145,8 @@ export default function SessionView() {
                 </div>
               )}
 
-              {/* Non-admin chapter display */}
-              {!isAdmin && qData[KEYS.CHAPTER] ? (
+              {/* Non-editor chapter display */}
+              {!isEditor && qData[KEYS.CHAPTER] ? (
                 <span className="text-xs text-muted-foreground bg-muted px-4 py-2 rounded-full font-medium border border-border">
                   📖 {getChapterDisplay(qData[KEYS.CHAPTER])}
                 </span>
