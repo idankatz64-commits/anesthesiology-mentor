@@ -16,7 +16,7 @@ function toImageSrc(url: string): string | null {
   if (url.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i)) return url;
   // Google Drive file link → direct viewer URL
   const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (driveMatch) return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+  if (driveMatch) return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
   return null;
 }
 
