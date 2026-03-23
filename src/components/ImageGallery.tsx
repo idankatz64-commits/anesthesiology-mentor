@@ -14,9 +14,9 @@ function toImageSrc(url: string): string | null {
   if (!url || url === 'nan') return null;
   // Already a direct image URL
   if (url.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i)) return url;
-  // Google Drive file link → direct viewer URL
+  // Google Drive file link → thumbnail URL (works for public files)
   const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
-  if (driveMatch) return `https://drive.google.com/uc?export=view&id=${driveMatch[1]}`;
+  if (driveMatch) return `https://drive.google.com/thumbnail?id=${driveMatch[1]}&sz=w1200`;
   return null;
 }
 
