@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS, Question, UserProgress } from '@/lib/types';
 import { TrendingUp } from 'lucide-react';
@@ -6,6 +6,7 @@ import {
   Sparkles, Timer, RefreshCcw, Heart, BookOpen, Cpu,
   Layers, SlidersHorizontal, AlertCircle,
   Play, X, AlertTriangle, ClipboardList, Info, ChevronDown,
+  FolderOpen, FileText, Link as LinkIcon, ExternalLink,
 } from 'lucide-react';
 import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,6 +16,7 @@ import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
 import HomeTopicHeatmap from '@/components/stats/HomeTopicHeatmap';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DailyReportModal from '@/components/DailyReportModal';
+import { supabase } from '@/integrations/supabase/client';
 
 const containerVariant = {
   hidden: {},
@@ -170,6 +172,62 @@ function FocusCard({
         <p className="text-sm text-muted-foreground font-light leading-relaxed">{description}</p>
       </div>
     </motion.div>
+  );
+}
+
+/* ── Resource Links Section ── */
+interface ResourceLink {
+  id: string; title: string; description: string | null;
+  url: string; category: string;
+}
+
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  drive: <FolderOpen className="w-4 h-4" />,
+  exam: <FileText className="w-4 h-4" />,
+  reference: <BookOpen className="w-4 h-4" />,
+  other: <LinkIcon className="w-4 h-4" />,
+};
+
+function ResourceLinksSection() {
+  const [links, setLinks] = useState<ResourceLink[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from('resource_links')
+      .select('id, title, description, url, category')
+      .eq('is_active', true)
+      .order('sort_order', { ascending: true })
+      .then(({ data }) => { if (data?.length) setLinks(data); });
+  }, []);
+
+  if (links.length === 0) return null;
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">קישורים ומשאבים</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {links.map(link => (
+          <a
+            key={link.id}
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="glass-tile p-3 flex items-center gap-3 hover:border-primary/30 transition-all group"
+          >
+            <div className="w-8 h-8 bg-primary/15 text-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+              {CATEGORY_ICONS[link.category] ?? <LinkIcon className="w-4 h-4" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="font-semibold text-sm text-foreground truncate">{link.title}</p>
+              {link.description && (
+                <p className="text-xs text-muted-foreground truncate">{link.description}</p>
+              )}
+            </div>
+            <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -626,6 +684,9 @@ export default function HomeView() {
           )}
         </AnimatePresence>
       </TooltipProvider>
+
+      {/* ═══ RESOURCE LINKS ═══ */}
+      <ResourceLinksSection />
 
       {/* ═══ DAILY REPORT ═══ */}
       <button

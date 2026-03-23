@@ -1,10 +1,11 @@
 import { useMemo, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
-import { RotateCcw, ChevronDown, ChevronUp, BookOpen, ExternalLink, ArrowRight, TrendingUp, Trophy, Timer } from 'lucide-react';
+import { RotateCcw, ChevronDown, ChevronUp, BookOpen, ExternalLink, ArrowRight, TrendingUp, Trophy, Timer, Download } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { motion } from 'framer-motion';
 import AnimatedNumber from '@/components/AnimatedNumber';
+import { exportSessionToPdf } from '@/lib/exportPdf';
 
 const heroVariant = {
   hidden: { opacity: 0, y: 20 },
@@ -430,6 +431,13 @@ export default function ResultsView() {
             תרגול חוזר ({errorCount} שגיאות)
           </button>
         )}
+        <button
+          onClick={() => exportSessionToPdf({ score: results.score, pct: results.pct, mode, details: results.details })}
+          className="w-full sm:w-auto h-14 px-6 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-muted transition-all flex items-center justify-center gap-2"
+        >
+          <Download className="w-5 h-5" />
+          ייצוא PDF
+        </button>
         <button
           onClick={() => navigate('home')}
           className="w-full sm:flex-1 h-14 bg-secondary text-foreground font-bold text-lg rounded-xl hover:bg-muted transition-all flex items-center justify-center gap-2"

@@ -15,6 +15,7 @@ import NotebookView from '@/components/views/NotebookView';
 import FlashcardView from '@/components/views/FlashcardView';
 import AdminView from '@/components/views/AdminView';
 import FormulaSheetView from '@/components/views/FormulaSheetView';
+import SummariesView from '@/components/views/SummariesView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { slideFromRight } from '@/lib/animations';
 
@@ -34,6 +35,7 @@ function AppContent() {
       case 'flashcards': return <FlashcardView />;
       case 'admin': return <AdminView />;
       case 'formula-sheet': return <FormulaSheetView />;
+      case 'summaries': return <SummariesView />;
       default: return <HomeView />;
     }
   };

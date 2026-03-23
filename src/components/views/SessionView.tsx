@@ -33,6 +33,8 @@ import {
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
 import SquircleIcon from "@/components/SquircleIcon";
 import RichTextEditor from "@/components/RichTextEditor";
+import ShareQuestionButton from "@/components/ShareQuestionButton";
+import ImageGallery from "@/components/ImageGallery";
 import { useToast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -565,6 +567,12 @@ export default function SessionView() {
                 {formatTime(timerSeconds)}
               </span>
             )}
+            <ShareQuestionButton
+              questionText={qData[KEYS.QUESTION] ?? ''}
+              answers={{ A: qData[KEYS.A] ?? '', B: qData[KEYS.B] ?? '', C: qData[KEYS.C] ?? '', D: qData[KEYS.D] ?? '' }}
+              topic={qData[KEYS.TOPIC]}
+              serialNumber={serialNumber}
+            />
             <button
               onClick={handleExit}
               className="text-muted-foreground hover:text-destructive text-sm font-medium px-2 py-1 rounded-lg hover:bg-destructive/10 transition"
@@ -718,11 +726,12 @@ export default function SessionView() {
             )}
           </div>
 
-          {/* Media */}
+          {/* Media — ImageGallery with lightbox (supports pipe-separated URLs) */}
           {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" && (
             <div className="mb-6">
-              {qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png)$/i) ? (
-                <img src={qData[KEYS.MEDIA_LINK]} className="max-h-80 object-contain rounded-lg" alt="Question media" />
+              {qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) ||
+               qData[KEYS.MEDIA_LINK].includes('|||') ? (
+                <ImageGallery mediaLink={qData[KEYS.MEDIA_LINK]} />
               ) : (
                 <a
                   href={qData[KEYS.MEDIA_LINK]}
@@ -733,30 +742,6 @@ export default function SessionView() {
                   פתח קובץ מצורף
                 </a>
               )}
-            </div>
-          )}
-
-          {/* Hidden Image Infrastructure — ready for future backend */}
-          {false && (
-            <div className="mb-6 glass-card rounded-xl p-4 border border-border">
-              <div className="flex items-center gap-2 mb-3">
-                <ImageIcon className="w-4 h-4 text-primary" />
-                <span className="text-sm font-bold text-foreground">CRITICAL VISUALS</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="bg-muted rounded-lg aspect-video flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 text-center">Image caption 1</p>
-                </div>
-                <div>
-                  <div className="bg-muted rounded-lg aspect-video flex items-center justify-center">
-                    <ImageIcon className="w-8 h-8 text-muted-foreground" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 text-center">Image caption 2</p>
-                </div>
-              </div>
             </div>
           )}
 

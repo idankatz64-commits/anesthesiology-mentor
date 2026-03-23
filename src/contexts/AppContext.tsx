@@ -126,6 +126,15 @@ async function fetchAllRows<T>(
   return allData;
 }
 
+/** Deterministic hash → 0-3 for N/A answer assignment per user */
+function hashQidUid(qid: string, uid: string): number {
+  const s = qid + '|' + uid;
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (Math.imul(31, h) + s.charCodeAt(i)) | 0;
+  return Math.abs(h) % 4;
+}
+const NA_OPTS = ['A', 'B', 'C', 'D'] as const;
+
 async function fetchProgressFromSupabase(userId: string): Promise<UserProgress> {
   const [answersData, favData, notesData, ratingsData, tagsData] = await Promise.all([
     fetchAllRows<any>(() => supabase.from('user_answers').select('question_id, answered_count, correct_count, is_correct, ever_wrong, updated_at').eq('user_id', userId)),
@@ -381,7 +390,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const startSession = useCallback((pool: Question[], count: number, mode: SessionState['mode']) => {
     const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const quiz = shuffled.slice(0, Math.min(pool.length, count));
+    const uid = userIdRef.current ?? 'anon';
+    const quiz = shuffled.slice(0, Math.min(pool.length, count)).map(q => {
+      const c = q[KEYS.CORRECT];
+      if (!c || c === 'N/A' || c.trim() === '') {
+        return { ...q, [KEYS.CORRECT]: NA_OPTS[hashQidUid(q[KEYS.ID], uid)] };
+      }
+      return q;
+    });
     setSession({
       quiz, index: 0, score: 0, mode,
       answers: new Array(quiz.length).fill(null),
