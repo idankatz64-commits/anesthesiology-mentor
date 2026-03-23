@@ -80,7 +80,7 @@ export default function ShareQuestionButton({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: -6 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="absolute left-0 top-full mt-2 w-48 rounded-xl bg-card border border-border shadow-xl z-50 overflow-hidden"
+              className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-card border border-border shadow-xl z-50 overflow-hidden"
               dir="rtl"
             >
               <div className="px-3 py-2 border-b border-border/50 flex items-center justify-between">
