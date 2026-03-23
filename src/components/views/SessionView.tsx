@@ -768,22 +768,19 @@ export default function SessionView() {
             )}
           </div>
 
-          {/* Media — ImageGallery with lightbox (supports pipe-separated URLs) */}
-          {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" && (
+          {/* Non-image media link (PDFs etc.) — shown inline above options */}
+          {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" &&
+           !qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) &&
+           !qData[KEYS.MEDIA_LINK].includes('|||') && (
             <div className="mb-6">
-              {qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) ||
-               qData[KEYS.MEDIA_LINK].includes('|||') ? (
-                <ImageGallery mediaLink={qData[KEYS.MEDIA_LINK]} />
-              ) : (
-                <a
-                  href={qData[KEYS.MEDIA_LINK]}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary underline font-medium"
-                >
-                  פתח קובץ מצורף
-                </a>
-              )}
+              <a
+                href={qData[KEYS.MEDIA_LINK]}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary underline font-medium"
+              >
+                פתח קובץ מצורף
+              </a>
             </div>
           )}
 
@@ -1306,9 +1303,16 @@ export default function SessionView() {
               <GlobalQuestionStats questionId={serialNumber} />
             </div>
 
+            {/* (4) Critical Visuals — image gallery at bottom of explanation */}
+            {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" &&
+             (qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) ||
+              qData[KEYS.MEDIA_LINK].includes('|||')) && (
+              <ImageGallery mediaLink={qData[KEYS.MEDIA_LINK]} />
+            )}
+
             <div className="border-t border-border" />
 
-            {/* (4) Community comments */}
+            {/* (5) Community comments */}
             <CommunityNotes questionId={serialNumber} />
           </div>
         )}
