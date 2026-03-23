@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Share2, MessageCircle, Copy, Check, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -17,6 +17,18 @@ export default function ShareQuestionButton({
 }: ShareQuestionButtonProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [popupPos, setPopupPos] = useState({ top: 0, right: 0 });
+  const btnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (open && btnRef.current) {
+      const rect = btnRef.current.getBoundingClientRect();
+      setPopupPos({
+        top: rect.bottom + 8,
+        right: window.innerWidth - rect.right,
+      });
+    }
+  }, [open]);
 
   const buildText = () => {
     const header = '📋 שאלה מסימולטור הרדמה (YouShellNotPass)';
@@ -49,7 +61,6 @@ export default function ShareQuestionButton({
       setCopied(true);
       setTimeout(() => { setCopied(false); setOpen(false); }, 1500);
     } catch {
-      // fallback
       const el = document.createElement('textarea');
       el.value = buildText();
       document.body.appendChild(el);
@@ -62,8 +73,9 @@ export default function ShareQuestionButton({
   };
 
   return (
-    <div className="relative">
+    <>
       <button
+        ref={btnRef}
         onClick={() => setOpen(o => !o)}
         title="שתף שאלה"
         className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition-all duration-200"
@@ -80,7 +92,8 @@ export default function ShareQuestionButton({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.92, y: -6 }}
               transition={{ duration: 0.15, ease: 'easeOut' }}
-              className="absolute right-0 top-full mt-2 w-48 rounded-xl bg-card border border-border shadow-xl z-50 overflow-hidden"
+              style={{ position: 'fixed', top: popupPos.top, right: popupPos.right, zIndex: 9999 }}
+              className="w-48 rounded-xl bg-card border border-border shadow-xl overflow-hidden"
               dir="rtl"
             >
               <div className="px-3 py-2 border-b border-border/50 flex items-center justify-between">
@@ -109,6 +122,6 @@ export default function ShareQuestionButton({
           </>
         )}
       </AnimatePresence>
-    </div>
+    </>
   );
 }
