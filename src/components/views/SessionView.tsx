@@ -768,10 +768,9 @@ export default function SessionView() {
             )}
           </div>
 
-          {/* Non-image media link (PDFs etc.) — shown inline above options */}
+          {/* Non-URL media reference (text like "טבלה 17.3") — shown above options */}
           {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" &&
-           !qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) &&
-           !qData[KEYS.MEDIA_LINK].includes('|||') && (
+           !qData[KEYS.MEDIA_LINK].startsWith('http') && (
             <div className="mb-6">
               <a
                 href={qData[KEYS.MEDIA_LINK]}
@@ -1305,8 +1304,7 @@ export default function SessionView() {
 
             {/* (4) Critical Visuals — image gallery at bottom of explanation */}
             {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" &&
-             (qData[KEYS.MEDIA_LINK].match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i) ||
-              qData[KEYS.MEDIA_LINK].includes('|||')) && (
+             qData[KEYS.MEDIA_LINK].startsWith('http') && (
               <ImageGallery mediaLink={qData[KEYS.MEDIA_LINK]} />
             )}
 

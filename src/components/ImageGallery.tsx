@@ -9,17 +9,35 @@ interface ImageGalleryProps {
   className?: string;
 }
 
-/** Parse pipe-separated URLs into an array */
-function parseUrls(mediaLink: string): string[] {
+/** Convert any supported URL to a direct image src */
+function toImageSrc(url: string): string | null {
+  if (!url || url === 'nan') return null;
+  // Already a direct image URL
+  if (url.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i)) return url;
+  // Google Drive file link → direct viewer URL
+  const driveMatch = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+  if (driveMatch) return `https://lh3.googleusercontent.com/d/${driveMatch[1]}`;
+  return null;
+}
+
+/** Parse pipe-separated URLs into displayable image entries */
+function parseUrls(mediaLink: string): { src: string; originalUrl: string }[] {
   return mediaLink
     .split('|||')
     .map(u => u.trim())
-    .filter(u => u && u !== 'nan' && u.match(/\.(jpeg|jpg|gif|png|webp|svg)(\?.*)?$/i));
+    .filter(u => u && u !== 'nan')
+    .map(u => {
+      const src = toImageSrc(u);
+      return src ? { src, originalUrl: u } : null;
+    })
+    .filter((x): x is { src: string; originalUrl: string } => x !== null);
 }
 
-/** Derive a human-readable label from a URL filename */
+/** Derive a human-readable label from a URL */
 function labelFromUrl(url: string): string {
   try {
+    // For Drive links, no meaningful filename — return empty
+    if (url.includes('drive.google.com')) return '';
     const filename = url.split('/').pop()?.split('?')[0] ?? '';
     const name = filename.replace(/\.[^.]+$/, '');
     return name
@@ -39,7 +57,7 @@ export default function ImageGallery({ mediaLink, className = '' }: ImageGallery
   const urls = parseUrls(mediaLink);
   if (urls.length === 0) return null;
 
-  const slides = urls.map(src => ({ src }));
+  const slides = urls.map(({ src }) => ({ src }));
 
   return (
     <>
@@ -78,16 +96,16 @@ export default function ImageGallery({ mediaLink, className = '' }: ImageGallery
         {/* Grid */}
         {!collapsed && (
           <div className={`p-4 grid gap-3 ${urls.length === 1 ? 'grid-cols-1' : 'grid-cols-1 sm:grid-cols-2'}`}>
-            {urls.map((url, i) => {
-              const label = labelFromUrl(url);
+            {urls.map(({ src, originalUrl }, i) => {
+              const label = labelFromUrl(originalUrl);
               return (
-                <div key={url} className="flex flex-col gap-1.5">
+                <div key={src} className="flex flex-col gap-1.5">
                   <button
                     onClick={() => setLightboxIndex(i)}
                     className="group relative rounded-xl overflow-hidden bg-black/40 aspect-video flex items-center justify-center border border-white/5 hover:border-violet-400/30 transition-all duration-200"
                   >
                     <img
-                      src={url}
+                      src={src}
                       alt={label || `תמונה ${i + 1}`}
                       className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-[1.02]"
                       loading="lazy"
