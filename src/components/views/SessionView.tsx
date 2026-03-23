@@ -35,9 +35,6 @@ import SquircleIcon from "@/components/SquircleIcon";
 import RichTextEditor from "@/components/RichTextEditor";
 import ShareQuestionButton from "@/components/ShareQuestionButton";
 import ImageGallery from "@/components/ImageGallery";
-import Lightbox from 'yet-another-react-lightbox';
-import Zoom from 'yet-another-react-lightbox/plugins/zoom';
-import 'yet-another-react-lightbox/styles.css';
 import { useToast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,55 +50,31 @@ function isHtmlContent(text: string): boolean {
   return /<[a-z][\s\S]*>/i.test(text);
 }
 
+/** Extract img srcs from HTML and return clean HTML without <img> tags */
+function extractImages(html: string): { cleanHtml: string; srcs: string[] } {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+  const imgs = Array.from(doc.querySelectorAll('img'));
+  const srcs = imgs.map(img => img.getAttribute('src') ?? '').filter(Boolean);
+  imgs.forEach(img => img.remove());
+  return { cleanHtml: doc.body.innerHTML, srcs };
+}
+
 /** Smart renderer: HTML content via dangerouslySetInnerHTML, plain text via ExplanationRenderer */
 function SmartContent({ text, inheritSize = false }: { text: string; inheritSize?: boolean }) {
   const sizeClass = inheritSize ? '' : 'text-base prose prose-sm';
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [lightboxSrcs, setLightboxSrcs] = useState<string[]>([]);
-  const [lightboxIdx, setLightboxIdx] = useState(-1);
-
-  useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
-    const imgs = Array.from(el.querySelectorAll('img'));
-    imgs.forEach(img => {
-      img.style.cursor = 'zoom-in';
-      img.style.borderRadius = '8px';
-      img.style.maxWidth = '100%';
-    });
-    const handler = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (target.tagName === 'IMG') {
-        const src = (target as HTMLImageElement).src;
-        const srcs = imgs.map(i => i.src);
-        const idx = srcs.indexOf(src);
-        setLightboxSrcs(srcs);
-        setLightboxIdx(idx >= 0 ? idx : 0);
-      }
-    };
-    el.addEventListener('click', handler);
-    return () => el.removeEventListener('click', handler);
-  }, [text]);
 
   if (isHtmlContent(text)) {
+    const { cleanHtml, srcs } = extractImages(DOMPurify.sanitize(text));
     return (
-      <>
+      <div className="space-y-4">
         <div
-          ref={containerRef}
           className={`rich-content markdown-content bidi-text ${sizeClass} max-w-none text-foreground`}
           style={{ lineHeight: inheritSize ? undefined : 1.8 }}
-          dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }}
+          dangerouslySetInnerHTML={{ __html: cleanHtml }}
         />
-        <Lightbox
-          open={lightboxIdx >= 0}
-          close={() => setLightboxIdx(-1)}
-          index={lightboxIdx}
-          slides={lightboxSrcs.map(src => ({ src }))}
-          plugins={[Zoom]}
-          zoom={{ maxZoomPixelRatio: 4, zoomInMultiplier: 1.5 }}
-          styles={{ container: { backgroundColor: 'rgba(0,0,0,0.92)' } }}
-        />
-      </>
+        {srcs.length > 0 && <ImageGallery srcs={srcs} />}
+      </div>
     );
   }
   return (
@@ -1301,12 +1274,6 @@ export default function SessionView() {
               {/* Global question success rate */}
               <GlobalQuestionStats questionId={serialNumber} />
             </div>
-
-            {/* (4) Critical Visuals — image gallery at bottom of explanation */}
-            {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" &&
-             qData[KEYS.MEDIA_LINK].startsWith('http') && (
-              <ImageGallery mediaLink={qData[KEYS.MEDIA_LINK]} />
-            )}
 
             <div className="border-t border-border" />
 
