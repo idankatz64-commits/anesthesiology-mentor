@@ -25,6 +25,8 @@ export default function RichTextEditor({
   const [isRtl, setIsRtl] = useState(true);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [captionModal, setCaptionModal] = useState<{ src: string } | null>(null);
+  const [captionText, setCaptionText] = useState('');
 
   const editor = useEditor({
     extensions: [
@@ -110,19 +112,25 @@ export default function RichTextEditor({
     setIsRtl(prev => !prev);
   }, []);
 
+  const insertImageWithCaption = useCallback((src: string, caption?: string) => {
+    if (!editor) return;
+    editor.chain().focus().setImage({ src, alt: caption || '', title: caption || '' }).run();
+  }, [editor]);
+
   const insertBase64 = useCallback((file: File) => {
     return new Promise<void>((resolve) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const src = e.target?.result as string;
-        if (src && editor) {
-          editor.chain().focus().setImage({ src }).run();
+        if (src) {
+          setCaptionModal({ src });
+          setCaptionText('');
         }
         resolve();
       };
       reader.readAsDataURL(file);
     });
-  }, [editor]);
+  }, []);
 
   const handleImageUpload = useCallback(async (file: File) => {
     if (!editor || !file) return;
@@ -141,7 +149,8 @@ export default function RichTextEditor({
         return;
       }
       const { data } = supabase.storage.from('question-images').getPublicUrl(path);
-      editor.chain().focus().setImage({ src: data.publicUrl }).run();
+      setCaptionModal({ src: data.publicUrl });
+      setCaptionText('');
     } catch (e: unknown) {
       console.warn('Upload error, falling back to base64:', e);
       await insertBase64(file);
@@ -279,6 +288,55 @@ export default function RichTextEditor({
         </div>
       )}
       <EditorContent editor={editor} />
+
+      {/* Caption modal */}
+      {captionModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
+          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl mx-4">
+            <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
+              <span className="text-red-400">📸</span>
+              הוסף כיתוב לתמונה (אופציונלי)
+            </h3>
+            <img
+              src={captionModal.src}
+              alt="preview"
+              className="w-full max-h-40 object-contain rounded-lg bg-black/30 mb-3 border border-border"
+            />
+            <input
+              type="text"
+              value={captionText}
+              onChange={e => setCaptionText(e.target.value)}
+              onKeyDown={e => {
+                if (e.key === 'Enter') {
+                  insertImageWithCaption(captionModal.src, captionText.trim() || undefined);
+                  setCaptionModal(null);
+                }
+                if (e.key === 'Escape') {
+                  insertImageWithCaption(captionModal.src);
+                  setCaptionModal(null);
+                }
+              }}
+              placeholder="למשל: תרשים ויגרס — מחזור הלב"
+              className="w-full text-sm rounded-lg border border-border bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red-500/40 mb-4"
+              autoFocus
+            />
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => { insertImageWithCaption(captionModal.src); setCaptionModal(null); }}
+                className="text-xs text-muted-foreground hover:text-foreground px-3 py-1.5 rounded-lg hover:bg-muted transition"
+              >
+                ללא כיתוב
+              </button>
+              <button
+                onClick={() => { insertImageWithCaption(captionModal.src, captionText.trim() || undefined); setCaptionModal(null); }}
+                className="text-xs font-bold bg-red-500 hover:bg-red-600 text-white px-4 py-1.5 rounded-lg transition"
+              >
+                הוסף תמונה
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

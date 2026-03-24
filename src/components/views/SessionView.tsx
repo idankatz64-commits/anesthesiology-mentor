@@ -50,12 +50,17 @@ function isHtmlContent(text: string): boolean {
   return /<[a-z][\s\S]*>/i.test(text);
 }
 
-/** Extract img srcs from HTML and return clean HTML without <img> tags */
-function extractImages(html: string): { cleanHtml: string; srcs: string[] } {
+/** Extract img srcs + captions from HTML and return clean HTML without <img> tags */
+function extractImages(html: string): { cleanHtml: string; srcs: { src: string; caption?: string }[] } {
   const parser = new DOMParser();
   const doc = parser.parseFromString(html, 'text/html');
   const imgs = Array.from(doc.querySelectorAll('img'));
-  const srcs = imgs.map(img => img.getAttribute('src') ?? '').filter(Boolean);
+  const srcs = imgs
+    .map(img => ({
+      src: img.getAttribute('src') ?? '',
+      caption: img.getAttribute('alt') || img.getAttribute('title') || undefined,
+    }))
+    .filter(item => Boolean(item.src));
   imgs.forEach(img => img.remove());
   return { cleanHtml: doc.body.innerHTML, srcs };
 }
