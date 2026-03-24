@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.12 — Respiratory Physiology and Pathophysiology</title>
+<style>
+  :root {
+    --pink: #E31C64;
+    --pink-light: #ff4d8d;
+    --dark: #0d0d0d;
+    --card-bg: #161616;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --teal: #1de9b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    direction: rtl;
+    line-height: 1.75;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1a0011 60%, #0d0d0d 100%);
+    border-bottom: 2px solid var(--pink);
+    padding: 32px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-shapes { display: flex; gap: 8px; }
+  .sq { width:14px; height:14px; background:var(--pink); }
+  .ci { width:14px; height:14px; border-radius:50%; background:var(--pink); opacity:.6; }
+  .tr { width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:14px solid var(--pink); opacity:.8; }
+  .page-header h1 {
+    font-size: 1.5em;
+    font-weight: 900;
+    color: #fff;
+  }
+  .page-header h1 span { color: var(--pink); }
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+  h1 {
+    font-size: 1.8em;
+    font-weight: 900;
+    color: #fff;
+    border-bottom: 2px solid var(--pink);
+    padding-bottom: 10px;
+    margin: 0 0 24px;
+  }
+  h2 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--pink-light);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0 6px;
+    margin: 32px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2::before { content: '▸'; color: var(--pink); font-size: 0.9em; }
+  h3 {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--teal);
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 12px; color: #ddd; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 0.9em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--pink);
+    color: white;
+    padding: 10px 14px;
+    text-align: right;
+    font-weight: 700;
+  }
+  td { border: 1px solid var(--border); padding: 8px 14px; color: #ddd; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+  tr:hover td { background: rgba(227,28,100,0.05); }
+  code {
+    background: rgba(227,28,100,0.1);
+    color: var(--pink-light);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.88em;
+  }
+  blockquote {
+    border-right: 3px solid var(--pink);
+    background: rgba(227,28,100,0.06);
+    margin: 14px 0;
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    color: #ccc;
+    font-size: 0.95em;
+  }
+  ul, ol { padding-right: 20px; padding-left: 0; margin-bottom: 12px; }
+  li { margin-bottom: 5px; color: #ddd; }
+  strong { color: #fff; }
+  em { color: var(--teal); font-style: normal; font-weight: 600; }
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+  .page-footer {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.82em;
+    margin-top: 40px;
+  }
+  .page-footer strong { color: var(--pink); }
+  @media print {
+    body { background: white; color: black; }
+    .page-header { background: white; border-bottom: 2px solid #E31C64; }
+    h1 { color: black; border-color: #E31C64; }
+    h2 { color: #E31C64; border-color: #ccc; }
+    td, p, li { color: black; }
+    th { background: #E31C64; }
+    blockquote { background: #fff0f5; border-color: #E31C64; }
+    code { background: #f5f5f5; color: #c00; }
+  }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div class="header-shapes">
+    <div class="ci"></div><div class="tr"></div><div class="sq"></div>
+  </div>
+  <h1>You<span>Shell</span>NotPass &nbsp;·&nbsp; Ch.12 — Respiratory Physiology and Pathophysiology</h1>
+</div>
+<div class="content">
+<h1>12. Respiratory Physiology and Pathophysiology — סיכום לשלב א׳</h1>
+<hr />
+<h2>עקרונות מפתח</h2>
+<ul>
+<li>
+<p><strong>הסרת CO₂</strong> נקבעת על ידי <strong>Alveolar Ventilation</strong> בלבד — לא על ידי Minute Ventilation הכוללת. Dead space ventilation ב-COPD ו-PE יכולה לעלות על 80% מה-Minute Ventilation.</p>
+</li>
+<li>
+<p><strong>הרדמה כללית</strong> מפחיתה טונוס שרירי השלד → ירידה ב-FRC לרמות הקרובות ל-Residual Volume → Atelectasis ב-~90% מהמטופלים. מנגנונים: <strong>Compression</strong> (סרעפת), <strong>Absorption</strong> (FiO₂ גבוה), <strong>Loss of surfactant</strong>.</p>
+</li>
+<li>
+<p><strong>גורמי היפוקסמיה</strong> (4 מנגנונים מרכזיים):</p>
+</li>
+<li>Alveolar Hypoventilation</li>
+<li>Diffusion Impairment</li>
+<li>V̇/Q̇ Mismatch — מגיב לעלייה ב-FiO₂</li>
+<li>
+<p>Right-to-Left Shunt — <strong>אינו</strong> מגיב לעלייה ב-FiO₂</p>
+</li>
+<li>
+<p><strong>Hypoxic Pulmonary Vasoconstriction (HPV)</strong> מעוכב על ידי רוב חומרי ההרדמה → החמרת V̇/Q̇ mismatch.</p>
+</li>
+<li>
+<p><strong>עקומת CO₂ Response</strong>: שיפוע נורמלי = <strong>2–3 L/min/mmHg</strong>. הרדמה ואופיואידים מפחיתים את השיפוע ומורידים את Apneic Threshold. ה-"Wakefulness Drive" מונע Apnea בזמן ערות אך נעלם תחת הרדמה.</p>
+</li>
+<li>
+<p><strong>Flow-Volume Loop</strong>: כלי אבחוני קריטי להבחנה בין סוגי חסימות דרכי אוויר עליונות — Fixed vs. Variable Extrathoracic vs. Variable Intrathoracic.</p>
+</li>
+<li>
+<p><strong>Recruitment Maneuver</strong>: הדרך היעילה ביותר לפתיחת Atelectasis בהרדמה היא העלאת Airway Pressure ל-<strong>40 cmH₂O למשך 7–10 שניות</strong> (Vital Capacity Maneuver).</p>
+</li>
+</ul>
+<hr />
+<h2>נוסחאות ונקודות חישוב</h2>
+<h3>נוסחאות יסוד — Oxygen Delivery</h3>
+<table>
+<thead>
+<tr>
+<th>נוסחה</th>
+<th>פירוט</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>CaO₂</strong> = (1.34 × Hb × SaO₂) + (0.0031 × PaO₂)</td>
+<td>תכולת O₂ עורקית (mL O₂/dL)</td>
+</tr>
+<tr>
+<td><strong>DO₂</strong> = CO × CaO₂ × 10</td>
+<td>אספקת O₂ (mL/min) — ×10 להמרת dL→L</td>
+</tr>
+<tr>
+<td><strong>VO₂</strong> = CO × (CaO₂ − CvO₂) × 10</td>
+<td>צריכת O₂ (Fick Principle)</td>
+</tr>
+<tr>
+<td><strong>O₂ER</strong> = VO₂ / DO₂</td>
+<td>יחס חילוץ חמצן, נורמה ~25%</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>מלכוד בחינה</strong>: תמיד להכפיל ב-<strong>10</strong> כשה-CO ב-L/min וה-CaO₂ ב-mL/dL!</p>
+</blockquote>
+<p><strong>דוגמת חישוב DO₂</strong>: Hb=10, SaO₂=96%, PaO₂=80 mmHg, CO=4.6 L/min<br />
+- CaO₂ = (1.34×10×0.96) + (0.0031×80) = 12.86 + 0.25 = <strong>13.1 mL/dL</strong><br />
+- DO₂ = 4.6 × 13.1 × 10 = <strong>~603 mL O₂/min</strong> ≈ 600</p>
+<hr />
+<h3>Alveolar Gas Equation</h3>
+<p>$$PAO_2 = FiO_2 \times (P_B - P_{H_2O}) - \frac{PaCO_2}{RQ}$$</p>
+<table>
+<thead>
+<tr>
+<th>משתנה</th>
+<th>ערך נורמלי / הסבר</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P_B (ים המלח)</td>
+<td>~794 mmHg (גבוה מהנורמה!)</td>
+</tr>
+<tr>
+<td>P_B (גובה)</td>
+<td>&lt; 760 mmHg</td>
+</tr>
+<tr>
+<td>P_{H₂O}</td>
+<td>47 mmHg (בגוף חם)</td>
+</tr>
+<tr>
+<td>RQ</td>
+<td>0.8 (תזונה מעורבת)</td>
+</tr>
+<tr>
+<td>A-a Gradient נורמלי</td>
+<td>&lt; 10–15 mmHg (בגיל צעיר), עולה עם גיל</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>נפחי ריאה — ערכי נורמה</h3>
+<table>
+<thead>
+<tr>
+<th>פרמטר</th>
+<th>ערך נורמלי</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Tidal Volume (VT)</td>
+<td>~500 mL</td>
+</tr>
+<tr>
+<td>FRC</td>
+<td>~2,500 mL (יורד בהרדמה/שכיבה ~20%)</td>
+</tr>
+<tr>
+<td>Vital Capacity (VC)</td>
+<td>~4,800 mL (גבר), ~3,200 mL (אשה)</td>
+</tr>
+<tr>
+<td>Residual Volume (RV)</td>
+<td>~1,200 mL</td>
+</tr>
+<tr>
+<td>Anatomical Dead Space</td>
+<td>~150 mL (~2 mL/kg)</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p><strong>FRC בהרדמה</strong>: יורד ~450–500 mL בשכיבה, עוד ירידה עם אינדוקציה. גיל מבוגר ו-Obesity מחמירים זאת.</p>
+</blockquote>
+<hr />
+<h3>Physiological Dead Space (Bohr Equation)</h3>
+<p>$$V_D/V_T = \frac{PaCO_2 - P\bar{E}CO_2}{PaCO_2}$$</p>
+<ul>
+<li>נורמה: <strong>V_D/V_T &lt; 0.35</strong> (≈ 30%)</li>
+<li>ב-COPD/PE: עלול לעלות מעל <strong>0.6–0.8</strong></li>
+</ul>
+<hr />
+<h3>Time Constant (נשימה מכנית)</h3>
+<p>$$\tau = R \times C$$</p>
+<ul>
+<li>ב-Bronchospasm: R עולה → τ מתארך → Air trapping, Auto-PEEP</li>
+<li>לאחר טיפול: R יורד → τ מתקצר → <strong>Expiratory Flow מהיר יותר</strong></li>
+<li>ב-VCV: Peak Pressure = P_plat + (Flow × Resistance)</li>
+</ul>
+<hr />
+<h3>CO₂ Ventilatory Response</h3>
+<table>
+<thead>
+<tr>
+<th>מצב</th>
+<th>שיפוע (L/min/mmHg)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>בריא ער</td>
+<td><strong>2–3</strong> (טווח 0.6–8)</td>
+</tr>
+<tr>
+<td>תחת אופיואידים</td>
+<td>מופחת משמעותית</td>
+</tr>
+<tr>
+<td>תחת הרדמה כללית</td>
+<td>מופחת + Apneic threshold עולה</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>נקודות בעלות תשואה גבוהה</h2>
+<h3>🔴 Atelectasis בהרדמה</h3>
+<ul>
+<li>שכיחות: <strong>~90%</strong> מהמטופלים בהרדמה כללית</li>
+<li>TIVA (Propofol) <strong>אינה</strong> מונעת Atelectasis — כל חומרי ההרדמה גורמים לכך באותה מידה</li>
+<li>רק <strong>Ketamine</strong> (שומר טונוס שרירים) + ללא משתקי שרירים = פחות Atelectasis</li>
+<li>FiO₂ גבוה לפני אינדוקציה → <strong>Absorption Atelectasis</strong> → להשתמש ב-FiO₂ 80% בניצ'ניזציה</li>
+<li>Recruitment: <strong>40 cmH₂O × 7–10 שניות</strong> = הדרך הטובה ביותר</li>
+</ul>
+<h3>🔴 Flow-Volume Loop — הבחנה בין חסימות</h3>
+<table>
+<thead>
+<tr>
+<th>סוג חסימה</th>
+<th>מנגנון</th>
+<th>גרף</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Fixed Obstruction</strong> (Goiter, Tracheal Stenosis)</td>
+<td>לא מושפע מלחצים</td>
+<td>השטחה <strong>שאיפה + נשיפה</strong> ("Box Shape")</td>
+</tr>
+<tr>
+<td><strong>Variable Extrathoracic</strong> (Vocal Cord Paralysis)</td>
+<td>שאיפה: לחץ שלילי קורס →</td>
+<td>השטחה <strong>שאיפה בלבד</strong></td>
+</tr>
+<tr>
+<td><strong>Variable Intrathoracic</strong> (Distal Tracheal Tumor)</td>
+<td>נשיפה: לחץ פלאורלי חיובי לוחץ →</td>
+<td>השטחה <strong>נשיפה בלבד</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>🔴 Shunt vs. V̇/Q̇ Mismatch</h3>
+<ul>
+<li><strong>Shunt</strong>: A-a gradient גדול, <strong>לא מגיב</strong> לעלייה ב-FiO₂ (100% O₂)</li>
+<li><strong>V̇/Q̇ Mismatch</strong>: מגיב לעלייה ב-FiO₂</li>
+<li>בגרף: Shunt → עקומת דיסוציאציה "שמאלה" לגמרי</li>
+</ul>
+<h3>🔴 Bohr Effect vs. Haldane Effect</h3>
+<ul>
+<li><strong>Bohr Effect</strong>: CO₂ עולה / pH יורד → עקומת Hb-O₂ <strong>זזה ימינה</strong> (P50 עולה) → שחרור O₂ לרקמות</li>
+<li><strong>Haldane Effect</strong>: O₂ יורד → Hb נקשר יותר ל-CO₂ → מסייע להוביל CO₂ מהרקמות לריאות</li>
+</ul>
+<h3>🔴 ים המלח — אפקט ייחודי</h3>
+<ul>
+<li>לחץ ברומטרי <strong>~794 mmHg</strong> (גבוה מ-760!)</li>
+<li>PAO₂ <strong>גבוה יותר</strong> מאשר פני הים → "hyperoxic environment"</li>
+<li>FiO₂ אפקטיבי גבוה מ-21% בגובה ים המלח</li>
+</ul>
+<h3>🔴 פיזיולוגיה ב-VCV vs. PCV</h3>
+<ul>
+<li><strong>VCV</strong>: VT קבוע, Pressure משתנה — טיפול בברונכוספזם: P_peak יורד, Expiratory flow מהיר יותר</li>
+<li><strong>PCV</strong>: Pressure קבוע, VT משתנה — ב-Bronchospasm: VT יורד</li>
+</ul>
+<h3>🔴 גיל מבוגר ופיזיולוגיה נשימתית</h3>
+<ul>
+<li>FRC ← נשאר יחסית קבוע (השפעות מנוגדות מאזנות)</li>
+<li>Closing Capacity (CC) <strong>עולה</strong> עם גיל → CC &gt; FRC בשכיבה בגיל &gt;44 שנה, ב-Upright בגיל &gt;66</li>
+<li>Compliance של בית החזה עולה, של הריאה יורד</li>
+<li>A-a Gradient עולה עם גיל: <strong>~(Age/4) + 4</strong> mmHg</li>
+</ul>
+<h3>🔴 ילדים — הבדלים קריטיים</h3>
+<ul>
+<li>Chest Wall Compliance <strong>גבוהה</strong> מאוד בתינוקות → נוטה לקריסה</li>
+<li>FRC קטנה יחסית ל-VO₂ → עתודת חמצן מועטה → דסטורציה מהירה</li>
+<li>Closing Volume &gt; FRC גם בערות → תמט פיזיולוגי</li>
+</ul>
+<hr />
+<h2>שאלות נפוצות בנושא</h2>
+<p><strong>שאלה 1</strong>: מטופל בהרדמה כללית, SpO₂ 92% ב-FiO₂ 100%. מה המנגנון הסביר ביותר?</p>
+<blockquote>
+<p><strong>תשובה</strong>: <strong>Intrapulmonary Shunt</strong> (Atelectasis). שכיחות ~90% בהרדמה. אינו מגיב לעלייה ב-FiO₂ — קריטריון מבחין מ-V̇/Q̇ Mismatch. טיפול: Recruitment Maneuver (40 cmH₂O × 7–10 שניות) + PEEP.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 2</strong>: מטופל, Hb=10 g/dL, SaO₂=96%, PaO₂=80 mmHg, CO=4.6 L/min. מהי DO₂?</p>
+<blockquote>
+<p><strong>תשובה</strong>: CaO₂ = (1.34×10×0.96) + (0.0031×80) = 13.1 mL/dL. DO₂ = 4.6 × 13.1 × 10 = <strong>~600 mL/min</strong>.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 3</strong>: Flow-Volume Loop מראה השטחה בנשיפה בלבד. מה האבחנה?</p>
+<blockquote>
+<p><strong>תשובה</strong>: <strong>Variable Intrathoracic Obstruction</strong> — גידול בקנה הנשימה החזי-תחתי. בנשיפה, הלחץ הפלאורלי החיובי לוחץ על הקנה וגורם לחסימה. בשאיפה, הלחץ השלילי בחזה "פותח" את הקנה.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 4</strong>: מה השיפוע הנורמלי של עקומת ה-CO₂ Response באדם ער ובריא?</p>
+<blockquote>
+<p><strong>תשובה</strong>: <strong>2–3 L/min/mmHg</strong>. כלומר, עלייה של 1 mmHg ב-PaCO₂ גורמת לעלייה של 2–3 L/min ב-Minute Ventilation. אופיואידים והרדמה מפחיתים שיפוע זה משמעותית.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 5</strong>: מדוע שימוש ב-FiO₂ 100% לפני אינדוקציה מגביר Atelectasis?</p>
+<blockquote>
+<p><strong>תשובה</strong>: <strong>Absorption Atelectasis</strong> — חמצן נספג לדם מהר יותר מכפי שנכנס אוויר לאלוואולים חסומים (גבוהה מקדם ספיגה מ-N₂). ב-N₂ כ-79% מהגז נשאר "סמוך" ולא נספג → מונע קריסה. המלצה: להשתמש ב-<strong>FiO₂ ~80%</strong> (לא 100%) בניצ'ניזציה כדי לאזן בין מינימיזציית Atelectasis לבין ריאות מלאות ב-N₂₂ למנוע Denitrogenation).</p>
+</blockquote>
+<hr />
+<h2>קבצים בתיקייה</h2>
+<ul>
+<li>טיפול בתמט ריאתי בהרדמה לפי Miller's Anesthesia.docx</li>
+<li>Analyzing Expiratory Flow Dynamics in Bronchospasm Management.docx</li>
+<li>חישוב אספקת חמצן בפיזיולוגיה נשימתית ועקרונות ה-DO2.docx</li>
+<li>Flow-Volume Loops in Fixed Upper Airway Obstruction.docx</li>
+<li>Physiological Analysis of the CO2 Ventilatory Response Curve.docx</li>
+<li>Alveolar Gas Equation Analysis at High Barometric Pressure.docx</li>
+<li>נוסחאות ודגשים בפיזיולוגיה נשימתית למבחני הרדמה שלב א'.docx</li>
+<li>Alveolar Gas Equation and Hypoventilation Mechanics.docx</li>
+<li>The Physiology and Calculation of Vital Capacity.docx</li>
+<li>השפעת תנוחה והרדמה על נפח ה-FRC בתפקוד נשימתי.docx</li>
+<li>פיזיולוגיה של אספקת חמצן רקמתית וחישובי DO2.docx</li>
+<li>פיזיולוגיה של שחלוף גזים: אפקט בוהר ואפקט הלדאן באנסתזיה.docx</li>
+<li>Alveolar Gas Equation Analysis: Dead Sea Oxygen Calculations.docx</li>
+<li>מנגנוני תמט ריאתי במהלך הרדמה כללית על פי מילר.docx</li>
+<li>פיזיולוגיה ופתופיזיולוגיה נשימתית: מחלות חסימתיות ורסטריקטיביות.docx</li>
+<li>Alveolar Gas Equation Analysis: Dead Sea Oxygen Calculations(1).docx</li>
+<li>Pulmonary Compliance and Pressure-Volume Pathophysiology.docx</li>
+<li>Anesthesia Phase A Examination Content Analysis.docx</li>
+<li>Evaluating Respiratory Risk in Thoracic Surgery Anesthesia.docx</li>
+<li>Respiratory Mechanics and Lung Volume Changes in Aging Patients.docx</li>
+<li>Pediatric Respiratory Mechanics and Chest Wall Compliance.docx</li>
+<li>Miller's Analysis of Physiological Dead Space Fraction.docx</li>
+<li>מנגנוני ויסות סטורציית חמצן ורידית וצריכת חמצן רקמתית.docx</li>
+<li>Inertance and the Dynamic Equation of Motion in Ventilation.docx</li>
+<li>Physiological Gradients Between the Lung Apex and Base.docx</li>
+<li>Clinical Management of Acquired Methemoglobinemia.docx</li>
+<li>פיזיולוגיה של הריאה: השפעת COPD על קיבולת השארית התפקודית.docx</li>
+<li>מנגנוני היפוקסמיה ואבחנה מבדלת של ARDS בפיזיולוגיה נשימתית.docx</li>
+<li>דינמיקת גז הרדמה בשאנט ריאתי מימין לשמאל.docx</li>
+<li>פיזיולוגיה של הנשימה: משוואות האוורור האלביאולרי והשטח המת.docx</li>
+</ul>
+</div>
+  <strong>YouShellNotPass</strong> · סיכום לשלב א׳ בהרדמה
+</div>
+</body>
+</html>

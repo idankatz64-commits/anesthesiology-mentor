@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.24 — Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)</title>
+<style>
+  :root {
+    --pink: #E31C64;
+    --pink-light: #ff4d8d;
+    --dark: #0d0d0d;
+    --card-bg: #161616;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --teal: #1de9b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    direction: rtl;
+    line-height: 1.75;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1a0011 60%, #0d0d0d 100%);
+    border-bottom: 2px solid var(--pink);
+    padding: 32px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-shapes { display: flex; gap: 8px; }
+  .sq { width:14px; height:14px; background:var(--pink); }
+  .ci { width:14px; height:14px; border-radius:50%; background:var(--pink); opacity:.6; }
+  .tr { width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:14px solid var(--pink); opacity:.8; }
+  .page-header h1 {
+    font-size: 1.5em;
+    font-weight: 900;
+    color: #fff;
+  }
+  .page-header h1 span { color: var(--pink); }
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+  h1 {
+    font-size: 1.8em;
+    font-weight: 900;
+    color: #fff;
+    border-bottom: 2px solid var(--pink);
+    padding-bottom: 10px;
+    margin: 0 0 24px;
+  }
+  h2 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--pink-light);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0 6px;
+    margin: 32px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2::before { content: '▸'; color: var(--pink); font-size: 0.9em; }
+  h3 {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--teal);
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 12px; color: #ddd; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 0.9em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--pink);
+    color: white;
+    padding: 10px 14px;
+    text-align: right;
+    font-weight: 700;
+  }
+  td { border: 1px solid var(--border); padding: 8px 14px; color: #ddd; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+  tr:hover td { background: rgba(227,28,100,0.05); }
+  code {
+    background: rgba(227,28,100,0.1);
+    color: var(--pink-light);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.88em;
+  }
+  blockquote {
+    border-right: 3px solid var(--pink);
+    background: rgba(227,28,100,0.06);
+    margin: 14px 0;
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    color: #ccc;
+    font-size: 0.95em;
+  }
+  ul, ol { padding-right: 20px; padding-left: 0; margin-bottom: 12px; }
+  li { margin-bottom: 5px; color: #ddd; }
+  strong { color: #fff; }
+  em { color: var(--teal); font-style: normal; font-weight: 600; }
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+  .page-footer {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.82em;
+    margin-top: 40px;
+  }
+  .page-footer strong { color: var(--pink); }
+  @media print {
+    body { background: white; color: black; }
+    .page-header { background: white; border-bottom: 2px solid #E31C64; }
+    h1 { color: black; border-color: #E31C64; }
+    h2 { color: #E31C64; border-color: #ccc; }
+    td, p, li { color: black; }
+    th { background: #E31C64; }
+    blockquote { background: #fff0f5; border-color: #E31C64; }
+    code { background: #f5f5f5; color: #c00; }
+  }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div class="header-shapes">
+    <div class="ci"></div><div class="tr"></div><div class="sq"></div>
+  </div>
+  <h1>You<span>Shell</span>NotPass &nbsp;·&nbsp; Ch.24 — Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)</h1>
+</div>
+<div class="content">
+<h1>24. Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents) — סיכום לשלב א׳</h1>
+<hr />
+<h2>עקרונות מפתח</h2>
+<ul>
+<li>
+<p><strong>שני סוגי NMBDs:</strong> Depolarizing (Succinylcholine בלבד) ו-Nondepolarizing (NDMRs — סטרואידלים ו-Benzylisoquinoliniums). Succinylcholine פועל על ידי <strong>depolarization ממושכת</strong> → אינאקטיבציה של ערוצי נתרן. NDMRs פועלים על ידי <strong>תחרות על תת-יחידות α</strong> של רצפטור ה-AChR הפוסט-סינפטי.</p>
+</li>
+<li>
+<p><strong>רצפטורי AChR:</strong> בבוגר — α₂βδε; ברחם/עוברי — α₂βγδ (זמן פתיחה ארוך, מוליכות נמוכה → רגישות יתר ל-NDMRs, עמידות יחסית ל-Succinylcholine). רצפטור פרה-סינפטי — α₃β₂ (אחראי ל-Fade בגירוי חוזרני).</p>
+</li>
+<li>
+<p><strong>היררכיית רגישות שרירים (מרגיש ← → עמיד):</strong></p>
+</li>
+<li><strong>הכי רגיש:</strong> שרירי דרכי אוויר עליונות (Geniohyoid, Masseter), שרירי בטן, Orbicularis oculi</li>
+<li><strong>ביניים:</strong> Adductor pollicis (סטנדרט ניטור NMT)</li>
+<li><strong>הכי עמיד:</strong> Laryngeal adductors, Diaphragm (דורש פי 1.4–2 מינון מה-Adductor pollicis)</li>
+<li>
+<p>⚠️ <strong>השלכה קלינית:</strong> Adductor pollicis תקין ≠ ביטחון מלא — שרירי דרכי האוויר עדיין יכולים להיות חסומים!</p>
+</li>
+<li>
+<p><strong>Sugammadex:</strong> Modified γ-cyclodextrin → <strong>Encapsulation</strong> 1:1 של Rocuronium/Vecuronium. מפל ריכוזים שולף NMBD מה-NMJ → היפוך בכל עומק בלוק. <strong>אינו</strong> פועל על Benzylisoquinoliniums (Cisatracurium, Atracurium).</p>
+</li>
+<li>
+<p><strong>Neostigmine:</strong> מעכב Acetylcholinesterase → מגביר ACh בסינפסה. <strong>מגבלה קריטית:</strong> תקרת אפקט (ceiling effect) — לא יעיל בבלוק עמוק. מינון מקסימלי יחיד: <strong>15–30 mcg/kg, רק כאשר אין Fade</strong> (TOF Count = 4 ללא fade).</p>
+</li>
+<li>
+<p><strong>Atracurium/Cisatracurium בכשל כלייתי:</strong> פינוי דרך <strong>Hofmann elimination</strong> ו-Ester hydrolysis — <strong>אינם תלויי איבר</strong> → משך פעולה <strong>ללא שינוי</strong> באי-ספיקת כליות. הבחירה הבטוחה ביותר ב-ESRD.</p>
+</li>
+<li>
+<p><strong>Succinylcholine והיפרקלמיה:</strong> מסוכן במצבים של Up-regulation של AChR מחוץ ל-NMJ (כוויות, Denervation, Immobilization, Upper/Lower Motor Neuron injury) → שחרור K⁺ מסיבי → Cardiac arrest.</p>
+</li>
+</ul>
+<hr />
+<h2>נוסחאות ונקודות חישוב</h2>
+<h3>מינוני Sugammadex לפי עומק בלוק</h3>
+<table>
+<thead>
+<tr>
+<th>עומק הבלוק</th>
+<th>קריטריון NMT</th>
+<th>מינון Sugammadex</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Minimal/Shallow Block</strong></td>
+<td>TOF ratio &lt; 0.9 (אך TOF count = 4)</td>
+<td><strong>2 mg/kg</strong></td>
+</tr>
+<tr>
+<td><strong>Moderate Block</strong></td>
+<td>TOF count 1–3 (T2 ב-PTC)</td>
+<td><strong>2 mg/kg</strong></td>
+</tr>
+<tr>
+<td><strong>Deep Block</strong></td>
+<td>PTC 1–2 (אין תגובה ל-TOF)</td>
+<td><strong>4 mg/kg</strong></td>
+</tr>
+<tr>
+<td><strong>Intense Block</strong> (RSI reversal)</td>
+<td>PTC = 0 / Immediate post-Rocuronium RSI</td>
+<td><strong>16 mg/kg</strong></td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>מינון לפי Actual Body Weight (ABW)</strong> — גם בהשמנת יתר! לא לפי IBW.</p>
+</blockquote>
+<hr />
+<h3>מינוני Rocuronium עיקריים</h3>
+<table>
+<thead>
+<tr>
+<th>אינדיקציה</th>
+<th>מינון</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Intubating dose (RSI)</td>
+<td><strong>1.2 mg/kg</strong></td>
+</tr>
+<tr>
+<td>Standard intubation</td>
+<td><strong>0.6 mg/kg</strong></td>
+</tr>
+<tr>
+<td>Maintenance</td>
+<td><strong>0.1–0.2 mg/kg</strong></td>
+</tr>
+<tr>
+<td>Re-intubation לאחר Sugammadex (5 דקות)</td>
+<td><strong>1.2 mg/kg</strong> → Onset מוארך (~3 דקות!)</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>מינוני Neostigmine לפי עומק בלוק</h3>
+<table>
+<thead>
+<tr>
+<th>מצב</th>
+<th>TOF</th>
+<th>מינון מקסימלי</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Minimal block בלבד</td>
+<td>TOF count = 4, <strong>ללא Fade</strong></td>
+<td><strong>15–30 mcg/kg</strong></td>
+</tr>
+<tr>
+<td>כל שאר המצבים</td>
+<td>TOF &lt; 4 או עם Fade</td>
+<td><strong>אין לתת Neostigmine — השתמש בSugammadex</strong></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>Succinylcholine — מינונים</h3>
+<table>
+<thead>
+<tr>
+<th>אוכלוסייה</th>
+<th>מינון</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>מבוגר</td>
+<td><strong>1–1.5 mg/kg</strong></td>
+</tr>
+<tr>
+<td>תינוק/ילד</td>
+<td><strong>2 mg/kg</strong> (Volume of Distribution גדול יותר)</td>
+</tr>
+<tr>
+<td>Priming (לא RSI)</td>
+<td>0.1 mg/kg</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h3>פרמקוקינטיקה — נתוני מפתח</h3>
+<table>
+<thead>
+<tr>
+<th>תרופה</th>
+<th>Elimination</th>
+<th>T½</th>
+<th>שינוי בכשל כלייתי</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Succinylcholine</td>
+<td>Butyrylcholinesterase (פלזמה)</td>
+<td>5–10 דקות</td>
+<td>מינימלי (אם Pseudocholinesterase תקין)</td>
+</tr>
+<tr>
+<td>Rocuronium</td>
+<td>כבדי בעיקר (Biliary); כלייתי 10–25%</td>
+<td>~60–90 דקות</td>
+<td><strong>Clearance יורד 33–39%</strong>, T½ מתארך</td>
+</tr>
+<tr>
+<td>Vecuronium</td>
+<td>כבדי בעיקר; כלייתי ~25%</td>
+<td>~70 דקות</td>
+<td>מוארך בכשל כלייתי</td>
+</tr>
+<tr>
+<td>Atracurium</td>
+<td>Hofmann + Ester hydrolysis</td>
+<td>~20 דקות</td>
+<td><strong>ללא שינוי</strong></td>
+</tr>
+<tr>
+<td>Cisatracurium</td>
+<td>Hofmann בעיקר</td>
+<td>~22 דקות</td>
+<td><strong>ללא שינוי</strong></td>
+</tr>
+<tr>
+<td>Pancuronium</td>
+<td>כלייתי (60–80%)</td>
+<td>~100 דקות</td>
+<td><strong>מוארך משמעותית — להימנע ב-ESRD</strong></td>
+</tr>
+<tr>
+<td>Sugammadex</td>
+<td>כלייתי (&gt;80%)</td>
+<td>~100 דקות</td>
+<td>להימנע ב-GFR &lt; 30 מל'/דקה</td>
+</tr>
+<tr>
+<td>Neostigmine</td>
+<td>כלייתי (~50%)</td>
+<td>~80 דקות</td>
+<td>מוארך בכשל כלייתי</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>נקודות בעלות תשואה גבוהה</h2>
+<h3>🔴 Sugammadex — נקודות ביחן קריטיות</h3>
+<ul>
+<li><strong>אמצעי מניעה:</strong> לאחר מתן Sugammadex — <strong>7 ימים</strong> נדרש שימוש באמצעי מניעה נוספים (Sugammadex קושר פרוגסטרון → מפחית יעילות גלולות).</li>
+<li><strong>Reintubation לאחר Sugammadex:</strong> 5 דקות לאחר 2 mg/kg → מתן חוזר של Rocuronium 1.2 mg/kg → <strong>T1=0% תוך ~3 דקות</strong> (ולא דקה כרגיל!) עקב Sugammadex שאריתי בפלזמה שקושר חלק מה-Rocuronium.</li>
+<li>אין לתת Sugammadex ב-<strong>GFR &lt; 30</strong>: הקומפלקס Sugammadex-Rocuronium לא מתנקה → סיכון ל-Recurarization.</li>
+<li><strong>אפיניות:</strong> Rocuronium &gt;&gt; Vecuronium (פי 2.5 פחות) &gt;&gt; Pancuronium (זניח — לא יעיל).</li>
+</ul>
+<h3>🔴 Succinylcholine — סיכונים</h3>
+<ul>
+<li><strong>היפרקלמיה קטלנית</strong> ב: כוויות (מ-24 שעות עד שנה!), Denervation, Spinal cord injury, Crush injury, Prolonged immobilization, Stroke — <strong>לא</strong> בכשל כלייתי כרוני ללא הנ"ל (K⁺ עולה ~0.5 מEq/L בלבד).</li>
+<li><strong>Phase II Block:</strong> Succinylcholine במינון גבוה/חשיפה ממושכת → מדמה NDMR Block (Fade, Post-tetanic facilitation) → <strong>Neostigmine</strong> עשוי לסייע (הפוך לPHASE I!).</li>
+<li><strong>Pseudocholinesterase deficiency:</strong> משך פעולה מוארך עד שעות → ניטור וונטילציה מכנית עד להתאוששות ספונטנית.</li>
+</ul>
+<h3>🔴 הפרדוקס: עוצמה מול Onset</h3>
+<ul>
+<li><strong>הפרדוקס של Rocuronium/Vecuronium:</strong> תרופות <strong>פחות עוצמתיות (ED₉₅ גבוה)</strong> → Onset <strong>מהיר יותר</strong> (יותר מולקולות מגיעות ל-NMJ). Rocuronium מהיר יותר מ-Vecuronium בגלל ED₉₅ גבוה יותר.</li>
+<li>Succinylcholine — <strong>Onset המהיר ביותר</strong> (~60 שניות) עקב ED₉₅ גבוה מאוד ופינוי מהיר.</li>
+</ul>
+<h3>🔴 Atracurium — נקודת תשאול</h3>
+<ul>
+<li>מטבוליט <strong>Laudanosine</strong> (Hofmann elimination) → עובר BBB → עלול לגרום לפרכוסים במינונים גבוהים מאוד (רלוונטי ב-ICU עם עירוי ממושך).</li>
+<li><strong>Histamine release</strong> — Atracurium &gt; Cisatracurium → Hypotension, Bronchospasm.</li>
+</ul>
+<h3>🔴 ילדים לעומת קשישים</h3>
+<table>
+<thead>
+<tr>
+<th>פרמטר</th>
+<th>תינוקות/ילדים</th>
+<th>קשישים</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Onset NDMRs</td>
+<td><strong>מהיר יותר</strong> (CO גבוה, זמן סירקולציה קצר)</td>
+<td><strong>איטי יותר</strong></td>
+</tr>
+<tr>
+<td>NMJ בשלות</td>
+<td>NMJ לא בשל עד גיל 2, Fetal AChR</td>
+<td>Sarcopenia, קפלי End-plate שטוחים</td>
+</tr>
+<tr>
+<td>Succinylcholine מינון</td>
+<td><strong>2 mg/kg</strong></td>
+<td>1–1.5 mg/kg</td>
+</tr>
+<tr>
+<td>משך NDMRs</td>
+<td><strong>קצר יותר</strong> (Clearance מהיר יחסי)</td>
+<td><strong>מוארך</strong> (Clearance ירוד)</td>
+</tr>
+<tr>
+<td>רגישות ל-NDMRs</td>
+<td><strong>רגישות יתר</strong> (Fetal AChR)</td>
+<td>רגישות מוגברת (Margin of safety ירוד)</td>
+</tr>
+</tbody>
+</table>
+<h3>🔴 גורמים מאריכי NMB (נקודות תשאול)</h3>
+<ul>
+<li><strong>Hypermagnesemia</strong> → מעכב שחרור ACh, מוריד מוליכות של End-plate → מאריך NDMRs.</li>
+<li><strong>Hypothermia</strong> → מאט Hofmann elimination → מאריך Atracurium/Cisatracurium.</li>
+<li><strong>Hypokalemia, Hypocalcemia</strong> → מגבירים רגישות ל-NDMRs.</li>
+<li><strong>Aminoglycosides, Clindamycin</strong> → מגבירים NMB.</li>
+<li><strong>Inhalational agents</strong> (Isoflurane, Sevoflurane, Desflurane) → מגבירים NMB (dose-dependent, נוסף על אפקט NDMRs).</li>
+<li><strong>Lithium</strong> → מאריך Succinylcholine וNDMRs.</li>
+</ul>
+<h3>🔴 Myasthenia Gravis (MG)</h3>
+<ul>
+<li><strong>עמידות</strong> ל-Succinylcholine (פחות רצפטורי AChR).</li>
+<li><strong>רגישות יתר</strong> ל-NDMRs → <strong>הפחת מינון ל-10–20% מהרגיל</strong>.</li>
+<li>Sugammadex — בחירת ההיפוך המועדפת.</li>
+<li>יש לנטר NMT בכל מקרה; סיכון ל-Residual Block ב-Extubation.</li>
+</ul>
+<hr />
+<h2>שאלות נפוצות בנושא</h2>
+<p><strong>שאלה 1 (מועד ספטמבר 2024, שאלה 42 / מאי 2024, שאלה 46):</strong><br />
+חולה מקבל Rocuronium לאינדוקציה. בתום הניתוח ניתן Sugammadex 2 mg/kg. כ-5 דקות לאחר מכן נדרשת אינטובציה דחופה מחדש. ניתן Rocuronium 1.2 mg/kg. מה יהיה T1 ומה Onset Time?</p>
+<p><strong>תשובה:</strong> T1 יגיע ל-0% (שיתוק מלא), אך Onset time יהיה <strong>~3 דקות</strong> (מוארך משמעותית) עקב Sugammadex שאריתי בפלזמה הקושר חלק מה-Rocuronium החדש ומפחית את מפל הריכוזים אל ה-NMJ.</p>
+<hr />
+<p><strong>שאלה 2 (מועד 2023, שאלה 107):</strong><br />
+לחולה עם ESRD (אי-ספיקת כליות סופנית) הזקוק לניתוח דחוף, איזה NMBD יציג משך פעולה ללא שינוי?</p>
+<p><strong>א. Rocuronium | ב. Vecuronium | ג. Pancuronium | ד. Atracurium</strong></p>
+<p><strong>תשובה: ד. Atracurium</strong> — פינוי דרך Hofmann elimination ו-Ester hydrolysis, <strong>ללא תלות בכליות</strong>. T½ זהה בחולים אנפריים ובריאים (~20 דקות).</p>
+<hr />
+<p><strong>שאלה 3:</strong><br />
+שריר מניטור לפי TOF מראה TOF ratio = 0.95. אך החולה מדווח על ראייה כפולה ובעיות בליעה. מה ההסבר?</p>
+<p><strong>תשובה:</strong> <strong>Residual Blockade</strong> — TOF ratio של Adductor pollicis יכול להיות תקין (&gt;0.9) בעוד ששרירי הלוע, הגרון ושרירי העיניים (רגישים יותר ל-NDMRs) עדיין חסומים חלקית. ה-Adductor pollicis הוא השריר <strong>הפחות רגיש</strong> ביחס לשרירי דרכי האוויר.</p>
+<hr />
+<p><strong>שאלה 4:</strong><br />
+ילד בן 8 חודשים מקבל Vecuronium. מה צפוי בהשוואה למבוגר?</p>
+<p><strong>תשובה:</strong> <br />
+- <strong>Onset מהיר יותר</strong> (Cardiac output יחסי גבוה, זמן סירקולציה קצר).<br />
+- <strong>רגישות מוגברת</strong> ל-NDMRs (Fetal AChR עם Margin of safety נמוך).<br />
+- <strong>מינון נמוך יותר</strong> נדרש (גם אם Volume of Distribution גדול — רגישות שולטת).<br />
+- Succinylcholine — <strong>לעומת זאת</strong> — דורש מינון <strong>גבוה יותר</strong> (2 mg/kg) בשל VD גדול.</p>
+<hr />
+<p><strong>שאלה 5:</strong><br />
+מהי הגישה הנכונה להיפוך בלוק עמוק (PTC = 1–2, אין תגובה ל-TOF) בניתוח שהסתיים?</p>
+<p><strong>א. Neostigmine 70 mcg/kg<br />
+ב. המתן עד TOF count = 4 ואז Neostigmine<br />
+ג. Sugammadex 4 mg/kg<br />
+ד. Sugammadex 2 mg/kg</strong></p>
+<p><strong>תשובה: ג. Sugammadex 4 mg/kg</strong> — Deep block (PTC 1–2, no TOF response) דורש 4 mg/kg Sugammadex. Neostigmine <strong>לא יעיל</strong> בבלוק עמוק (ceiling effect). המתנה עד TOF=4 מיותרת ואינה בטוחה קלינית.</p>
+<hr />
+<h2>קבצים בתיקייה</h2>
+<ul>
+<li>Clinical Pharmacology and Management of Sugammadex.docx</li>
+<li>Rocuronium Reintubation Dynamics Following Sugammadex Reversal.docx</li>
+<li>Neuromuscular Blockade_ Muscle Sensitivity Hierarchy and Clinical Monitoring.docx</li>
+<li>Neostigmine Dosing Strategies for Minimal Neuromuscular Block.docx</li>
+<li>Neuromuscular Blockade and Renal Failure Pharmacology.docx</li>
+<li>Neuromuscular Blockers Across the Lifespan_ Pediatric vs Geriatric Physiology.docx</li>
+<li>Flumazenil_ Clinical Mechanism and Pharmacological Reversal Profile.docx</li>
+<li>Hydrocortisone Antagonism of Nondepolarizing Neuromuscular Blockade.docx</li>
+<li>Sugammadex Dosing Logic in Bariatric Anesthesia.docx</li>
+<li>Drug Interactions Enhancing Nondepolarizing Neuromuscular Blockade.docx</li>
+<li>Neuromuscular Blockade Reversal and Sugammadex Dosing Guidelines.docx</li>
+<li>פרמקולוגיה של חוסמי צומת עצב-שריר וגורמים מאריכי שיתוק.docx</li>
+<li>Nondepolarizing Neuromuscular Blocking Drugs_ Molecular Mechanisms and Kinetics.docx</li>
+<li>Cardiac Output and Neuromuscular Blockade Onset Dynamics.docx</li>
+<li>Anesthesia Management for Myasthenia Gravis and Thymectomy.docx</li>
+<li>השפעת פלזמפרזיס ואלקטרוליטים על משך שיתוק שרירים.docx</li>
+<li>Physiological Factors Prolonging Neuromuscular Blockade.docx</li>
+<li>Neostigmine Reversal in Succinylcholine Phase II Block.docx</li>
+<li>פרמקולוגיה של משתקי שרירים בחולי שחמת כבד.docx</li>
+<li>Neostigmine and Succinylcholine_ Pharmacological Interactions and Recovery Times.docx</li>
+<li>Clinical Pharmacology and Management of Flumazenil.docx</li>
+<li>מנגנוני דה-סנסיטיזציה של קולטני אצטילכולין בניתוח מילר.docx</li>
+<li>השפעות קליניות וסתירות פרמקולוגיות במשתקי שרירים ע״פ מילר.docx</li>
+<li>Atracurium Clearance in Renal Failure Analysis.docx</li>
+<li>Clinical Definitions of Shallow Neuromuscular Block Depth.docx</li>
+<li>Neuromuscular Blockers in Pediatric and Geriatric Populations.docx</li>
+<li>מנגנון הפעולה והפרוטוקול הקליני של דנטרולן.docx</li>
+<li>Mitigating Residual Neuromuscular Blockade_ Strategies and Mechanisms.docx</li>
+<li>Anesthesia Phase A Examination Content Analysis.docx</li>
+<li>Sugammadex Interactions with Hormonal Contraceptives.docx</li>
+<li>Extubation and Neuromuscular Management in Myasthenia Gravis.docx</li>
+<li>The Potency-Onset Paradox of Rocuronium and Vecuronium.docx</li>
+<li>Succinylcholine_ Clinical Interactions and Board Examination Analysis.docx</li>
+<li>Optimal Rocuronium Dosing for Surgical Muscle Relaxation.docx</li>
+<li>דינמיקת קולטני אצטילכולין ומשמעותה הקלינית במרדים Miller.docx</li>
+<li>Succinylcholine Safety and Hyperkalemia in Renal Failure.docx</li>
+</ul>
+</div>
+  <strong>YouShellNotPass</strong> · סיכום לשלב א׳ בהרדמה
+</div>
+</body>
+</html>

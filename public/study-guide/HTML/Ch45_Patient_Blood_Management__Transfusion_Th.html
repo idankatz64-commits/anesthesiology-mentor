@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.45 — Patient Blood Management_ Transfusion Therapy</title>
+<style>
+  :root {
+    --pink: #E31C64;
+    --pink-light: #ff4d8d;
+    --dark: #0d0d0d;
+    --card-bg: #161616;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --teal: #1de9b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    direction: rtl;
+    line-height: 1.75;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1a0011 60%, #0d0d0d 100%);
+    border-bottom: 2px solid var(--pink);
+    padding: 32px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-shapes { display: flex; gap: 8px; }
+  .sq { width:14px; height:14px; background:var(--pink); }
+  .ci { width:14px; height:14px; border-radius:50%; background:var(--pink); opacity:.6; }
+  .tr { width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:14px solid var(--pink); opacity:.8; }
+  .page-header h1 {
+    font-size: 1.5em;
+    font-weight: 900;
+    color: #fff;
+  }
+  .page-header h1 span { color: var(--pink); }
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+  h1 {
+    font-size: 1.8em;
+    font-weight: 900;
+    color: #fff;
+    border-bottom: 2px solid var(--pink);
+    padding-bottom: 10px;
+    margin: 0 0 24px;
+  }
+  h2 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--pink-light);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0 6px;
+    margin: 32px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2::before { content: '▸'; color: var(--pink); font-size: 0.9em; }
+  h3 {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--teal);
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 12px; color: #ddd; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 0.9em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--pink);
+    color: white;
+    padding: 10px 14px;
+    text-align: right;
+    font-weight: 700;
+  }
+  td { border: 1px solid var(--border); padding: 8px 14px; color: #ddd; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+  tr:hover td { background: rgba(227,28,100,0.05); }
+  code {
+    background: rgba(227,28,100,0.1);
+    color: var(--pink-light);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.88em;
+  }
+  blockquote {
+    border-right: 3px solid var(--pink);
+    background: rgba(227,28,100,0.06);
+    margin: 14px 0;
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    color: #ccc;
+    font-size: 0.95em;
+  }
+  ul, ol { padding-right: 20px; padding-left: 0; margin-bottom: 12px; }
+  li { margin-bottom: 5px; color: #ddd; }
+  strong { color: #fff; }
+  em { color: var(--teal); font-style: normal; font-weight: 600; }
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+  .page-footer {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.82em;
+    margin-top: 40px;
+  }
+  .page-footer strong { color: var(--pink); }
+  @media print {
+    body { background: white; color: black; }
+    .page-header { background: white; border-bottom: 2px solid #E31C64; }
+    h1 { color: black; border-color: #E31C64; }
+    h2 { color: #E31C64; border-color: #ccc; }
+    td, p, li { color: black; }
+    th { background: #E31C64; }
+    blockquote { background: #fff0f5; border-color: #E31C64; }
+    code { background: #f5f5f5; color: #c00; }
+  }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div class="header-shapes">
+    <div class="ci"></div><div class="tr"></div><div class="sq"></div>
+  </div>
+  <h1>You<span>Shell</span>NotPass &nbsp;·&nbsp; Ch.45 — Patient Blood Management_ Transfusion Therapy</h1>
+</div>
+<div class="content">
+<h1>45. Patient Blood Management: Transfusion Therapy — סיכום לשלב א׳</h1>
+<hr />
+<h2>עקרונות מפתח</h2>
+<ul>
+<li><strong>Transfusion Trigger (סף עירוי):</strong> בגישה ה-Restrictive, עירוי מתבצע ב-Hb <strong>6–8 g/dL</strong>. הרף לא נקבע לפי Hb בלבד אלא לפי מצב קליני כולל.</li>
+<li><strong>Hemostatic Resuscitation (DCR):</strong> בטראומה מסיבית — יחס <strong>1:1:1</strong> (FFP : Platelets : PRBCs) למניעת Dilutional Coagulopathy ו-Lethal Triad (Hypothermia + Acidosis + Coagulopathy).</li>
+<li><strong>Citrate Toxicity → Hypocalcemia:</strong> הסיבוך המטבולי המיידי הקריטי ביותר ב-Massive Transfusion. סידן מיונן (Ionized Ca²⁺) נקשר לציטראט בשקיות הדם.</li>
+<li><strong>Storage Lesion:</strong> אחסון מנות דם גורם לכשל Na⁺/K⁺ ATPase → <strong>↓Na⁺, ↑K⁺, ↓pH, ↑Lactate</strong> בנוזל המנה.</li>
+<li><strong>TRALI vs. TACO:</strong> שתיהן מציגות Acute Pulmonary Edema תוך 6 שעות. ההבחנה: TRALI = Non-Cardiogenic (דלקתי), TACO = Cardiogenic/Hydrostatic (עומס נוזלים). <strong>Acute Lung Injury הוא הגורם המוביל לתחלואה ותמותה מעירוי דם.</strong></li>
+<li><strong>סקר שגרתי של מנות דם:</strong> כל מנה נבדקת ל-HIV, HBV, HCV, <strong>HTLV-1/2</strong>, Syphilis, West Nile Virus, Trypanosoma cruzi. <strong>CMV אינו נבדק שגרתית</strong> — מוגן ע"י Leukoreduction.</li>
+<li><strong>Preoperative Anemia:</strong> גורם סיכון עצמאי וניתן לטיפול לתחלואה ותמותה. טיפול ב-Iron (פומי/IV) לפני ניתוח הוא עקרון Patient Blood Management מרכזי.</li>
+</ul>
+<hr />
+<h2>נוסחאות ונקודות חישוב</h2>
+<h3>יחסי עירוי (Transfusion Ratios)</h3>
+<table>
+<thead>
+<tr>
+<th>מרכיב</th>
+<th>יחס ב-MTP</th>
+<th>הערות</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>PRBCs</td>
+<td>1</td>
+<td>בסיס החישוב</td>
+</tr>
+<tr>
+<td>FFP (Plasma)</td>
+<td>1</td>
+<td>מחליף גורמי קרישה</td>
+</tr>
+<tr>
+<td>Platelets</td>
+<td>1</td>
+<td>מחליף תפקוד טסיות</td>
+</tr>
+<tr>
+<td>&gt; <strong>הגדרת יחס:</strong> 1 unit PRBCs : 2 units Plasma : 1 unit Platelets = <strong>1:2:1</strong></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3>סיווג הלם דימומי (Hemorrhagic Shock Classes)</h3>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>איבוד דם (מ"ל)</th>
+<th>% מנפח הדם</th>
+<th>HR</th>
+<th>BP</th>
+<th>טיפול</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I</td>
+<td>עד 750</td>
+<td>עד 15%</td>
+<td>&lt;100</td>
+<td>תקין</td>
+<td>קריסטלואיד</td>
+</tr>
+<tr>
+<td>II</td>
+<td>750–1500</td>
+<td>15–30%</td>
+<td>100–120</td>
+<td>תקין/↓</td>
+<td>קריסטלואיד ± דם</td>
+</tr>
+<tr>
+<td>III</td>
+<td>1500–2000</td>
+<td>30–40%</td>
+<td>120–140</td>
+<td>↓</td>
+<td><strong>עירוי דם + MTP</strong></td>
+</tr>
+<tr>
+<td>IV</td>
+<td>&gt;2000</td>
+<td>&gt;40%</td>
+<td>&gt;140</td>
+<td>↓↓</td>
+<td>MTP + ניתוח דחוף</td>
+</tr>
+</tbody>
+</table>
+<h3>ערכי ייחוס למנות דם מאוחסנות</h3>
+<table>
+<thead>
+<tr>
+<th>פרמטר</th>
+<th>ערך בפלזמה תקינה</th>
+<th>ערך ב-Stored PRBCs</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Na⁺</td>
+<td>~140 mEq/L</td>
+<td><strong>↓ (~126 mEq/L ומטה)</strong></td>
+</tr>
+<tr>
+<td>K⁺</td>
+<td>3.5–5.0 mEq/L</td>
+<td><strong>↑ (עד 50–80 mEq/L)</strong></td>
+</tr>
+<tr>
+<td>pH</td>
+<td>7.35–7.45</td>
+<td><strong>↓ (~6.7)</strong></td>
+</tr>
+<tr>
+<td>2,3-DPG</td>
+<td>תקין</td>
+<td><strong>↓ (↑ Hb Affinity לO₂)</strong></td>
+</tr>
+</tbody>
+</table>
+<h3>ציטראט וסידן</h3>
+<ul>
+<li>קצב עירוי מסוכן: <strong>&gt;1 מנה ב-10 דקות</strong> או <strong>&gt;1.5 מ"ל/ק"ג/דקה</strong></li>
+<li>Citrate מטבוליזם: בכבד בריא — דקות. בהלם/היפותרמיה — <strong>נכשל</strong></li>
+</ul>
+<hr />
+<h2>נקודות בעלות תשואה גבוהה</h2>
+<h3>🔴 מלכודות קלאסיות במבחן</h3>
+<p><strong>1. TRALI vs. TACO — הנקודה הכי נבדקת:</strong><br />
+- <strong>שתיהן</strong> מתרחשות תוך <strong>6 שעות</strong> — הזמן לא מבדיל!<br />
+- <strong>TRALI:</strong> Hypotension + Fever + Non-Cardiogenic Edema + <strong>BNP תקין</strong> + <strong>PCWP תקין/נמוך</strong><br />
+- <strong>TACO:</strong> <strong>Hypertension</strong> + JVD + Cardiogenic Edema + <strong>↑BNP</strong> + <strong>↑PCWP</strong><br />
+- רדיוגרפיה: שתיהן מציגות Bilateral Infiltrates — <strong>לא מבדיל!</strong></p>
+<p><strong>2. Hypocalcemia &gt; Hyperkalemia ב-Massive Transfusion:</strong><br />
+- אשלגן עולה במנות ישנות אך מדולל ומטבוליזמו מהיר — לרוב לא קליני<br />
+- <strong>סידן</strong> — הגורם להיפוטנסיה <strong>עמידה לוזופרסורים ולנוזלים</strong> ← מדוד Ionized Ca²⁺ באופן קבוע!</p>
+<p><strong>3. CMV — אל תתבלבל:</strong><br />
+- CMV <strong>אינו</strong> נבדק בכל מנה (Universal Screening)<br />
+- הגנה עיקרית: <strong>Leukoreduction</strong> (הוירוס שוכן בליקוציטים)<br />
+- נבדק רק ב-Selected Inventory (פגים, מדוכאי חיסון)</p>
+<p><strong>4. HTLV — הנבדק שגרתית (מפתיע):</strong><br />
+- HTLV-1/2 כן נכלל ב-Universal Screening (קשור ל-T-cell Leukemia/Lymphoma ופגיעות נוירולוגיות)<br />
+- Hepatitis A <strong>אינו</strong> נבדק שגרתית (בניגוד ל-B וC)<br />
+- Gonorrhea <strong>אינה</strong> מועברת בעירוי דם — לא נבדקת כלל</p>
+<p><strong>5. Storage Lesion — שאלת הנתרן:</strong><br />
+- תשובה אינטואיטיבית שגויה: "אשלגן עולה" (נכון) → לכן נבדקת על <strong>נתרן שיורד</strong><br />
+- Na⁺ <strong>יורד</strong> במנת PRBCs כי Na⁺/K⁺ ATPase מפסיקה לפעול בקור</p>
+<p><strong>6. 2,3-DPG ו-Oxygen Delivery:</strong><br />
+- בדם מאוחסן: <strong>↓2,3-DPG → Left Shift של עקומת Oxyhemoglobin → ↑Hb Affinity לO₂ → ↓שחרור O₂ לרקמות</strong><br />
+- משמעות: PRBCs ישנות פחות יעילות בשחרור חמצן</p>
+<p><strong>7. Irradiated Blood Products:</strong><br />
+- אינדיקציות: מדוכאי חיסון קשים, השתלות, לידה פגים<br />
+- מניעת: <strong>Transfusion-Associated Graft-versus-Host Disease (TA-GvHD)</strong> — <strong>קטלני!</strong></p>
+<p><strong>8. Cryoprecipitate — הרכב ואינדיקציות:</strong><br />
+- מכיל: <strong>Fibrinogen (I), Factor VIII, vWF, Factor XIII, Fibronectin</strong><br />
+- אינדיקציות עיקריות: Hypofibrinogenemia (&lt;100–150 mg/dL), Hemophilia A, vWD, DIC<br />
+- <strong>בדימום מיילדותי:</strong> Fibrinogen הוא המרכיב הראשון שנמצא חסר</p>
+<hr />
+<h2>שאלות נפוצות בנושא</h2>
+<p><strong>שאלה 1:</strong><br />
+חולה בטראומה מסיבית מקבל 12 מנות PRBCs ב-45 דקות. לחץ הדם אינו מגיב לנוזלים ולנוראדרנלין. מה הסיבה הסבירה ביותר?</p>
+<blockquote>
+<p><strong>תשובה: Hypocalcemia (Citrate Toxicity).</strong> הציטראט בשקיות הדם קשר את הסידן המיונן. הטיפול: CaCl₂ IV או Calcium Gluconate. יש למדוד Ionized Ca²⁺ באופן שגרתי ב-Massive Transfusion.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 2:</strong><br />
+מה היחס הנכון למתן מוצרי דם ב-Massive Transfusion Protocol (MTP)?</p>
+<blockquote>
+<p><strong>תשובה: 1:1:1</strong> — FFP : Platelets : PRBCs. מבוסס על מחקרי PROPPR ו-PROMMTT. נועד לשחזר Whole Blood ולמנוע Dilutional Coagulopathy.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 3:</strong><br />
+חולה קיבל 2 מנות PRBCs ופיתח קוצר נשימה, חום, ויתר-לחץ דם, עם ממצאי Bilateral Infiltrates בצילום חזה. מה האבחנה הסבירה ביותר?</p>
+<blockquote>
+<p><strong>תשובה: TACO</strong> (Transfusion-Associated Circulatory Overload). יתר-לחץ דם + JVD + ↑BNP = Cardiogenic Pulmonary Edema. לו היה Hypotension + Fever בחולה נורמו-וולמי — TRALI.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 4:</strong><br />
+איזה מהפתוגנים הבאים <strong>אינו</strong> נבדק בסקר השגרתי של כל מנת דם?<br />
+א) HTLV-1/2<br />
+ב) CMV<br />
+ג) HCV<br />
+ד) West Nile Virus</p>
+<blockquote>
+<p><strong>תשובה: ב) CMV.</strong> CMV אינו נבדק שגרתית — ההגנה העיקרית מפניו היא Leukoreduction. כל האחרים נכללים ב-Universal Screening.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 5:</strong><br />
+מהו השינוי הביוכימי הצפוי ב-Supernatant של מנת PRBCs מאוחסנת 35 ימים?</p>
+<blockquote>
+<p><strong>תשובה: ↓Na⁺, ↑K⁺, ↓pH, ↓2,3-DPG, ↑Lactate.</strong> כשל Na⁺/K⁺ ATPase בקור → נתרן "נכנס" לתוך התא → <strong>ריכוז Na⁺ בנוזל המנה יורד.</strong> הנקודה הנבדקת: Na⁺ <strong>נמוך</strong> יותר (לא גבוה יותר) במנת דם מאוחסנת.</p>
+</blockquote>
+<hr />
+<h2>קבצים בתיקייה</h2>
+<ul>
+<li><code>Principles of Hemostatic Resuscitation and Balanced Blood Component Therapy.docx</code></li>
+<li><code>Electrolyte Management in Massive Blood Transfusion.docx</code></li>
+<li><code>Clinical Distinctions Between TRALI and TACO Transfusion Complications.docx</code></li>
+<li><code>Universal Screening Protocols for Blood Transfusion Pathogens.docx</code></li>
+<li><code>Biochemical Shifts and Sodium Dynamics in Stored Blood.docx</code></li>
+<li><code>Cryoprecipitate Composition and Clinical Indications in Anesthesia.docx</code></li>
+<li><code>סיבוכי עירוי דם_ דגש על תגובת חום לא המוליטית.docx</code></li>
+<li><code>Storage Protocols for Intraoperative Cell Salvage Blood.docx</code></li>
+<li><code>Potassium Concentrations in Stored Packed Red Blood Cells.docx</code></li>
+<li><code>Risk Factors and Clinical Analysis of TRALI.docx</code></li>
+<li><code>Physiological Analysis of Class II Hemorrhage Management.docx</code></li>
+<li><code>Clinical Indications for Cryoprecipitate Transfusion in Obstetric Hemorrhage.docx</code></li>
+<li><code>Principles of Blood Management and Transfusion Therapy.docx</code></li>
+<li><code>אבחון וניהול המודינמי של שוק המורגי לפי מילר.docx</code></li>
+<li><code>מוצרי דם מוקרנים_ אינדיקציות ומניעת מחלת השתל נגד המאכסן.docx</code></li>
+<li><code>קריטריונים והתוויות נגד לתרומת דם עצמית טרום-ניתוחית.docx</code></li>
+<li><code>התוויות למתן קריופרסיפיטאט_ ניתוח קליני ומלכודות בחינה.docx</code></li>
+<li><code>Storage Lesions and Hemoglobin Affinity in Banked Blood.docx</code></li>
+<li><code>Clinical Guidelines for Platelet Transfusion and Thermal Management.docx</code></li>
+</ul>
+</div>
+  <strong>YouShellNotPass</strong> · סיכום לשלב א׳ בהרדמה
+</div>
+</body>
+</html>

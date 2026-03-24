@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.38 — Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury</title>
+<style>
+  :root {
+    --pink: #E31C64;
+    --pink-light: #ff4d8d;
+    --dark: #0d0d0d;
+    --card-bg: #161616;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --teal: #1de9b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    direction: rtl;
+    line-height: 1.75;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1a0011 60%, #0d0d0d 100%);
+    border-bottom: 2px solid var(--pink);
+    padding: 32px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-shapes { display: flex; gap: 8px; }
+  .sq { width:14px; height:14px; background:var(--pink); }
+  .ci { width:14px; height:14px; border-radius:50%; background:var(--pink); opacity:.6; }
+  .tr { width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:14px solid var(--pink); opacity:.8; }
+  .page-header h1 {
+    font-size: 1.5em;
+    font-weight: 900;
+    color: #fff;
+  }
+  .page-header h1 span { color: var(--pink); }
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+  h1 {
+    font-size: 1.8em;
+    font-weight: 900;
+    color: #fff;
+    border-bottom: 2px solid var(--pink);
+    padding-bottom: 10px;
+    margin: 0 0 24px;
+  }
+  h2 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--pink-light);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0 6px;
+    margin: 32px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2::before { content: '▸'; color: var(--pink); font-size: 0.9em; }
+  h3 {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--teal);
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 12px; color: #ddd; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 0.9em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--pink);
+    color: white;
+    padding: 10px 14px;
+    text-align: right;
+    font-weight: 700;
+  }
+  td { border: 1px solid var(--border); padding: 8px 14px; color: #ddd; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+  tr:hover td { background: rgba(227,28,100,0.05); }
+  code {
+    background: rgba(227,28,100,0.1);
+    color: var(--pink-light);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.88em;
+  }
+  blockquote {
+    border-right: 3px solid var(--pink);
+    background: rgba(227,28,100,0.06);
+    margin: 14px 0;
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    color: #ccc;
+    font-size: 0.95em;
+  }
+  ul, ol { padding-right: 20px; padding-left: 0; margin-bottom: 12px; }
+  li { margin-bottom: 5px; color: #ddd; }
+  strong { color: #fff; }
+  em { color: var(--teal); font-style: normal; font-weight: 600; }
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+  .page-footer {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.82em;
+    margin-top: 40px;
+  }
+  .page-footer strong { color: var(--pink); }
+  @media print {
+    body { background: white; color: black; }
+    .page-header { background: white; border-bottom: 2px solid #E31C64; }
+    h1 { color: black; border-color: #E31C64; }
+    h2 { color: #E31C64; border-color: #ccc; }
+    td, p, li { color: black; }
+    th { background: #E31C64; }
+    blockquote { background: #fff0f5; border-color: #E31C64; }
+    code { background: #f5f5f5; color: #c00; }
+  }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div class="header-shapes">
+    <div class="ci"></div><div class="tr"></div><div class="sq"></div>
+  </div>
+  <h1>You<span>Shell</span>NotPass &nbsp;·&nbsp; Ch.38 — Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury</h1>
+</div>
+<div class="content">
+<h1>38. Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury — סיכום לשלב א׳</h1>
+<hr />
+<h2>עקרונות מפתח</h2>
+<ul>
+<li><strong>AKI סב-ניתוחי</strong> הוא רב-גורמי: Ischemia-Reperfusion Injury, דלקת (Inflammation), וטוקסינים — לרוב בשילוב ולא גורם יחיד.</li>
+<li><strong>Serum Creatinine</strong> הוא הכלי המעשי ביותר למעקב כלייתי תקופתי; אינדיקטורים מוקדמים (Cystatin C, IGFBP7×TIMP-2) עדיין בפיתוח קליני.</li>
+<li><strong>תפוקת שתן תוך-ניתוחית</strong> אינה ולידטית כמדד לתפקוד כלייתי עתידי — אך יש לנטר אותה, כי Oliguria תוך-ניתוחית קשורה לדיספונקציה לאחר הניתוח.</li>
+<li><strong>Hypotension ו-Hypovolemia תוך-ניתוחיים</strong> הם גורמי הסיכון המרכזיים הניתנים למניעה עבור AKI.</li>
+<li><strong>עצבוב סימפטטי</strong> לכלי הדם הכלייתיים מגיע מ-<strong>T4 עד L1</strong> דרך ה-Celiac Plexus וה-Renal Plexus — רלוונטי להשפעות של Regional Anesthesia על הכליה.</li>
+<li><strong>ב-Prerenal Azotemia</strong>: הכליה מנסה לשמר נפח על ידי ספיגה מקסימלית של Na⁺, מים ואוריאה — הכליה תקינה פונקציונלית, אך הפרפוזיה לקויה.</li>
+<li><strong>Balanced Salt Solutions</strong> (כגון LR) עדיפות על Normal Saline (0.9%) למניעת Hyperchloremic Metabolic Acidosis והגנה כלייתית.</li>
+</ul>
+<hr />
+<h2>נוסחאות ונקודות חישוב</h2>
+<h3>📊 טבלת קריטריוני AKI — RIFLE / AKIN / KDIGO (Miller Table 38.1)</h3>
+<table>
+<thead>
+<tr>
+<th>שלב</th>
+<th>RIFLE</th>
+<th>AKIN Stage</th>
+<th>Creatinine</th>
+<th>Urine Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td><strong>Risk</strong></td>
+<td>Stage 1</td>
+<td>×1.5–2.0 מהבסיס <strong>או</strong> עלייה ≥0.3 mg/dL</td>
+<td>&lt;0.5 mL/kg/h × <strong>6 שעות</strong></td>
+</tr>
+<tr>
+<td>2</td>
+<td><strong>Injury</strong></td>
+<td>Stage 2</td>
+<td><strong>×2–3 מהבסיס</strong></td>
+<td>&lt;0.5 mL/kg/h × <strong>12 שעות</strong></td>
+</tr>
+<tr>
+<td>3</td>
+<td><strong>Failure</strong></td>
+<td>Stage 3</td>
+<td>×3 מהבסיס <strong>או</strong> Cr ≥4.0 mg/dL <strong>או</strong> צורך ב-RRT</td>
+<td>&lt;0.3 mL/kg/h × 24 שעות <strong>או</strong> אנוריה × 12 שעות</td>
+</tr>
+<tr>
+<td>—</td>
+<td>Loss</td>
+<td>—</td>
+<td>אובדן תפקוד &gt;4 שבועות</td>
+<td>—</td>
+</tr>
+<tr>
+<td>—</td>
+<td>ESRD</td>
+<td>—</td>
+<td>אובדן תפקוד &gt;3 חודשים</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>⚠️ <strong>מלכודת נפוצה:</strong> עלייה של 50% בקריאטינין = ×1.5 = <strong>Stage 1 (Risk)</strong> — לא Stage 2!</p>
+</blockquote>
+<hr />
+<h3>📊 Prerenal vs. Intrinsic AKI — אבחנה מבדלת</h3>
+<table>
+<thead>
+<tr>
+<th>פרמטר</th>
+<th>Prerenal Azotemia</th>
+<th>ATN (Intrinsic AKI)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Urine Na⁺</td>
+<td><strong>&lt;20 mEq/L</strong></td>
+<td>&gt;40 mEq/L</td>
+</tr>
+<tr>
+<td>FENa</td>
+<td><strong>&lt;1%</strong></td>
+<td>&gt;2%</td>
+</tr>
+<tr>
+<td>Urine Osmolality</td>
+<td><strong>&gt;500 mOsm/kg</strong></td>
+<td>&lt;350 mOsm/kg</td>
+</tr>
+<tr>
+<td>BUN:Creatinine ratio</td>
+<td><strong>&gt;20:1</strong></td>
+<td>~10:1</td>
+</tr>
+<tr>
+<td>Urine Specific Gravity</td>
+<td><strong>&gt;1.020</strong></td>
+<td>~1.010</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>💡 <strong>נוסחת FENa:</strong> FENa (%) = (Urine Na × Plasma Cr) / (Plasma Na × Urine Cr) × 100</p>
+</blockquote>
+<hr />
+<h3>📊 Abdominal Compartment Syndrome (ACS) — ערכי סף</h3>
+<table>
+<thead>
+<tr>
+<th>IAP (mmHg)</th>
+<th>השפעה</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&gt;12</td>
+<td>Intraabdominal Hypertension (IAH)</td>
+</tr>
+<tr>
+<td>~15</td>
+<td>תחילת Oliguria</td>
+</tr>
+<tr>
+<td><strong>&gt;20 + כשל איברים</strong></td>
+<td><strong>ACS — הגדרה רשמית</strong></td>
+</tr>
+<tr>
+<td>~30</td>
+<td>Anuria</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>נקודות בעלות תשואה גבוהה</h2>
+<h3>🔴 עצבוב כלייתי ו-Regional Anesthesia</h3>
+<ul>
+<li>טווח <strong>T4–L1</strong> = עצבוב סימפטטי לכלי הדם הכלייתיים</li>
+<li>בלוק ספינלי/אפידורלי מעל T4 → Sympathectomy כלייתי מלא → שינויים ב-RBF</li>
+<li>שים לב: T8–L1 הוא הטווח הפרגנגליוני (כאב) — אך לבחינה, T4–L1 הוא הנכון להשפעה ווסקולרית</li>
+</ul>
+<h3>🔴 ATN — הסיבה העיקרית ל-AKI סב-ניתוחי</h3>
+<ul>
+<li><strong>ATN</strong> (Acute Tubular Necrosis) היא הסיבה הנפוצה <strong>ביותר</strong> ל-AKI סב-ניתוחי — <strong>לא</strong> Prerenal</li>
+<li>ה-Medulla הכלייתית פגיעה במיוחד לאיסכמיה (צריכת O₂ גבוהה, אספקת דם נמוכה יחסית)</li>
+<li>החלק הפגיע ביותר: <strong>S3 segment של Proximal Tubule</strong> ו-<strong>Thick Ascending Limb of Loop of Henle</strong></li>
+</ul>
+<h3>🔴 Angiotensin II — פעולה דיפרנציאלית</h3>
+<ul>
+<li>Angiotensin II מכווץ <strong>בעיקר את ה-Efferent Arteriole</strong> ← שומר על GFR למרות ירידה ב-RBF</li>
+<li><strong>ACE inhibitors / ARBs</strong> חוסמים מנגנון זה ← מסוכנים במצבי Hypovolemia</li>
+</ul>
+<h3>🔴 תרופות Renoprotective — הצמד האנטי-דלקתי</h3>
+<ul>
+<li><strong>Dexmedetomidine + Propofol</strong> — שתיהן בעלות פעילות Renoprotective דרך:</li>
+<li>העלאת ביטוי <strong>BMP-7</strong> (Bone Morphogenetic Protein-7)</li>
+<li>דיכוי קסקדת TNF-α</li>
+<li>פעילות נוגדת חמצון (Antioxidant)</li>
+<li><strong>Dexmedetomidine</strong>: מטה-אנליזה הראתה ירידה ב-AKI (Odds Ratio <strong>0.43</strong>)</li>
+<li>⚠️ Volatile Anesthetics — <strong>לא הוכחו</strong> כ-Renoprotective על אף מחקרי ה-Preconditioning</li>
+<li>⚠️ <strong>Dopamine במינון נמוך ("Renal dose")</strong> — <strong>אינה מונעת AKI</strong> ואינה מומלצת</li>
+</ul>
+<h3>🔴 Contrast-Induced Nephropathy (CIN) — מניעה</h3>
+<ul>
+<li>הידרציה ב-<strong>Normal Saline או Sodium Bicarbonate</strong> לפני ואחרי</li>
+<li><strong>N-Acetylcysteine</strong> — עדויות חלשות אך בטוח ונמוך בעלות</li>
+<li><strong>Mannitol</strong> — <strong>לא הוכח</strong> כמגן בצורה עקבית</li>
+<li>הימנע מ-NSAIDs, Aminoglycosides, ACEi סביב הפרוצדורה</li>
+</ul>
+<h3>🔴 Aortic Cross-Clamp — השפעה כלייתית</h3>
+<ul>
+<li><strong>Suprarrenal clamp</strong> → ירידה ישירה ב-RBF → AKI שכיח</li>
+<li><strong>Infrarenal clamp</strong> → <strong>אינו מונע AKI</strong> (בניגוד לאינטואיציה) — עדיין גורם לשינויים המודינמיים ו-Neurohormonal המשפיעים על הכליה</li>
+</ul>
+<h3>🔴 NSAIDs ו-Cyclo-oxygenase Inhibitors</h3>
+<ul>
+<li>חוסמים Prostaglandins → מסירים דילטציה מגנה של Afferent Arteriole</li>
+<li>מסוכנים במיוחד במצבי Hypovolemia, CHF, CKD קיים</li>
+</ul>
+<hr />
+<h2>שאלות נפוצות בנושא</h2>
+<hr />
+<p><strong>שאלה 1:</strong><br />
+מטופל לאחר ניתוח בטן גדול. קריאטינין בסיס 1.0 mg/dL, כעת 2.2 mg/dL (עלייה פי 2.2). תפוקת שתן 0.4 mL/kg/h × 14 שעות. מה שלב ה-AKIN?</p>
+<blockquote>
+<p>✅ <strong>Stage 2 (Injury)</strong> — קריאטינין עלה פי 2–3 מהבסיס, ותפוקת שתן &lt;0.5 mL/kg/h × 12 שעות.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 2:</strong><br />
+מה הטווח הנכון של סגמנטים בחוט השדרה המספקים עצבוב סימפטטי לכלי הדם הכלייתיים?</p>
+<blockquote>
+<p>✅ <strong>T4 עד L1</strong> — מתווך דרך Celiac Plexus ו-Renal Plexus. השלכה: בלוק ספינלי מעל T4 גורם ל-Sympathectomy כלייתי מלא.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 3:</strong><br />
+מה מגדיר Abdominal Compartment Syndrome (ACS)?</p>
+<blockquote>
+<p>✅ <strong>IAP &gt;20 mmHg + כשל איברים חדש</strong> (New organ dysfunction). אוליגוריה מתחילה כבר ב-IAP ~15 mmHg; אנוריה ב-~30 mmHg.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 4:</strong><br />
+איזו תרופה הרדמה IV הוכחה במטה-אנליזה כמורידה את שכיחות AKI עם Odds Ratio של 0.43?</p>
+<blockquote>
+<p>✅ <strong>Dexmedetomidine</strong> — מנגנון: Alpha-2 agonism → עלייה ב-BMP-7 → דיכוי דלקת ופיברוזיס כלייתי. Propofol מציגה מנגנון דומה אך ללא OR ספציפי זה.</p>
+</blockquote>
+<hr />
+<p><strong>שאלה 5:</strong><br />
+במטופל עם Prerenal Azotemia, מה צפוי למצוא בבדיקות שתן?</p>
+<blockquote>
+<p>✅ <strong>Na⁺ בשתן &lt;20 mEq/L, FENa &lt;1%, Osmolality &gt;500 mOsm/kg, BUN:Cr &gt;20:1</strong> — הכליה "רעבה לנתרן" ומרכזת שתן באגרסיביות. הטובולים תקינים — הבעיה היא בפרפוזיה בלבד.</p>
+</blockquote>
+<hr />
+<h2>קבצים בתיקייה</h2>
+<ul>
+<li><code>Sympathetic Innervation of the Renal Vasculature_ Miller_s Analysis.docx</code></li>
+<li><code>Miller's Analysis_ AKIN Criteria for Stage 2 Injury.docx</code></li>
+<li><code>Physiology and Management of Prerenal Azotemia.docx</code></li>
+<li><code>Clinical Foundations of Perioperative Renal Failure and ACS.docx</code></li>
+<li><code>Miller_s Guide to Renoprotective Anesthesia and Kidney Defense.docx</code></li>
+<li><code>קריטריונים לאבחון פגיעה כלייתית חריפה לפי Miller's Anesthesia.docx</code></li>
+</ul>
+<hr />
+<blockquote>
+<p>📌 <strong>מקור ראשי:</strong> Miller's Anesthesia, Chapter 38 — <em>Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury</em> (Liu, Legrand, Burkhardt)<br />
+<strong>פרקים משלימים:</strong> Chapter 15 (Renal Physiology), Chapter 55 (GU System), Chapter 52 (Vascular Surgery), Chapter 76 (PACU)</p>
+</blockquote>
+</div>
+  <strong>YouShellNotPass</strong> · סיכום לשלב א׳ בהרדמה
+</div>
+</body>
+</html>

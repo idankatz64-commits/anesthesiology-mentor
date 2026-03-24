@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Ch.58 — Anesthesia for Obstetrics</title>
+<style>
+  :root {
+    --pink: #E31C64;
+    --pink-light: #ff4d8d;
+    --dark: #0d0d0d;
+    --card-bg: #161616;
+    --border: #2a2a2a;
+    --text: #f0f0f0;
+    --text-muted: #888;
+    --teal: #1de9b6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--dark);
+    color: var(--text);
+    direction: rtl;
+    line-height: 1.75;
+  }
+  .page-header {
+    background: linear-gradient(135deg, #0d0d0d 0%, #1a0011 60%, #0d0d0d 100%);
+    border-bottom: 2px solid var(--pink);
+    padding: 32px 24px 24px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .header-shapes { display: flex; gap: 8px; }
+  .sq { width:14px; height:14px; background:var(--pink); }
+  .ci { width:14px; height:14px; border-radius:50%; background:var(--pink); opacity:.6; }
+  .tr { width:0; height:0; border-left:7px solid transparent; border-right:7px solid transparent; border-bottom:14px solid var(--pink); opacity:.8; }
+  .page-header h1 {
+    font-size: 1.5em;
+    font-weight: 900;
+    color: #fff;
+  }
+  .page-header h1 span { color: var(--pink); }
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 32px 20px;
+  }
+  h1 {
+    font-size: 1.8em;
+    font-weight: 900;
+    color: #fff;
+    border-bottom: 2px solid var(--pink);
+    padding-bottom: 10px;
+    margin: 0 0 24px;
+  }
+  h2 {
+    font-size: 1.2em;
+    font-weight: 700;
+    color: var(--pink-light);
+    border-bottom: 1px solid var(--border);
+    padding: 8px 0 6px;
+    margin: 32px 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  h2::before { content: '▸'; color: var(--pink); font-size: 0.9em; }
+  h3 {
+    font-size: 1em;
+    font-weight: 700;
+    color: var(--teal);
+    margin: 20px 0 8px;
+  }
+  p { margin-bottom: 12px; color: #ddd; }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 16px 0;
+    font-size: 0.9em;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  th {
+    background: var(--pink);
+    color: white;
+    padding: 10px 14px;
+    text-align: right;
+    font-weight: 700;
+  }
+  td { border: 1px solid var(--border); padding: 8px 14px; color: #ddd; }
+  tr:nth-child(even) td { background: rgba(255,255,255,0.03); }
+  tr:hover td { background: rgba(227,28,100,0.05); }
+  code {
+    background: rgba(227,28,100,0.1);
+    color: var(--pink-light);
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.88em;
+  }
+  blockquote {
+    border-right: 3px solid var(--pink);
+    background: rgba(227,28,100,0.06);
+    margin: 14px 0;
+    padding: 10px 16px;
+    border-radius: 0 8px 8px 0;
+    color: #ccc;
+    font-size: 0.95em;
+  }
+  ul, ol { padding-right: 20px; padding-left: 0; margin-bottom: 12px; }
+  li { margin-bottom: 5px; color: #ddd; }
+  strong { color: #fff; }
+  em { color: var(--teal); font-style: normal; font-weight: 600; }
+  hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+  .page-footer {
+    text-align: center;
+    padding: 24px;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.82em;
+    margin-top: 40px;
+  }
+  .page-footer strong { color: var(--pink); }
+  @media print {
+    body { background: white; color: black; }
+    .page-header { background: white; border-bottom: 2px solid #E31C64; }
+    h1 { color: black; border-color: #E31C64; }
+    h2 { color: #E31C64; border-color: #ccc; }
+    td, p, li { color: black; }
+    th { background: #E31C64; }
+    blockquote { background: #fff0f5; border-color: #E31C64; }
+    code { background: #f5f5f5; color: #c00; }
+  }
+</style>
+</head>
+<body>
+<div class="page-header">
+  <div class="header-shapes">
+    <div class="ci"></div><div class="tr"></div><div class="sq"></div>
+  </div>
+  <h1>You<span>Shell</span>NotPass &nbsp;·&nbsp; Ch.58 — Anesthesia for Obstetrics</h1>
+</div>
+<div class="content">
+<h1>58. Anesthesia for Obstetrics — סיכום לשלב א׳</h1>
+<hr />
+<h2>עקרונות מפתח</h2>
+<ul>
+<li><strong>שינויים פיזיולוגיים בהריון</strong> מתחילים ב-Trimester ראשון, משפיעים על כל מערכות הגוף, ומשנים את הפרמקוקינטיקה והפרמקודינמיקה של תרופות הרדמה</li>
+<li><strong>כל יולדת = Full Stomach</strong> — סכנת Aspiration קיימת בכל הליך הרדמתי; יש לשקול Aspiration Prophylaxis לפני כל ניתוח בהריון</li>
+<li><strong>זרימת דם לרחם ב-Term</strong> = 700–900 mL/min (~10% Cardiac Output) — דימום יכול להיות מסכן חיים במהירות</li>
+<li><strong>Uterine Perfusion Pressure</strong> יורדת ב: Hypotension, Aortocaval Compression, Sympathetic Blockade — כולן סיבות לדאגה עוברית</li>
+<li><strong>Phenylephrine</strong> = Vasopressor of Choice בניתוח קיסרי תחת Spinal Anesthesia (פחות Fetal Acidosis מ-Ephedrine)</li>
+<li><strong>Neuraxial Analgesia בלידה</strong> — אין להמתין לפתיחה מינימלית; הבקשה של היולדת = האינדיקציה</li>
+<li><strong>High Neuraxial Block</strong> = הסיבוך המ'גורי השכיח ביותר בהרדמה מיילדותית כיום (לאחר ירידה דרמטית בסיבוכי Airway עם המעבר להרדמה אזורית)</li>
+</ul>
+<hr />
+<h2>נוסחאות ונקודות חישוב</h2>
+<h3>שינויים פיזיולוגיים מרכזיים ב-Term</h3>
+<table>
+<thead>
+<tr>
+<th>פרמטר</th>
+<th>שינוי</th>
+<th>ערך / הערה</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Plasma Volume</strong></td>
+<td>↑ <strong>45–55%</strong></td>
+<td>הגדול מכולם</td>
+</tr>
+<tr>
+<td><strong>Red Cell Volume</strong></td>
+<td>↑ 20–30%</td>
+<td>קטן יחסית → Dilutional Anemia</td>
+</tr>
+<tr>
+<td><strong>Hemoglobin</strong></td>
+<td>↓</td>
+<td>~11.6 g/dL (פיזיולוגי)</td>
+</tr>
+<tr>
+<td><strong>Cardiac Output</strong></td>
+<td>↑ 40–50%</td>
+<td>↑ HR + ↑ SV</td>
+</tr>
+<tr>
+<td><strong>SVR</strong></td>
+<td>↓</td>
+<td>Progesterone → Vasodilation</td>
+</tr>
+<tr>
+<td><strong>Uterine Blood Flow</strong></td>
+<td>↑</td>
+<td>100 → 700–900 mL/min</td>
+</tr>
+<tr>
+<td><strong>FRC</strong></td>
+<td>↓ ~20%</td>
+<td>↑ סכנת Hypoxia במהלך Intubation</td>
+</tr>
+<tr>
+<td><strong>O₂ Consumption</strong></td>
+<td>↑ ~20%</td>
+<td>שילוב עם ↓FRC = חלון אפניאה קצר</td>
+</tr>
+</tbody>
+</table>
+<h3>Blood Loss Expected at Delivery</h3>
+<table>
+<thead>
+<tr>
+<th>סוג לידה</th>
+<th>אובדן דם מוערך</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Vaginal Delivery</td>
+<td>300–500 mL</td>
+</tr>
+<tr>
+<td>Cesarean Delivery</td>
+<td>800–1000 mL</td>
+</tr>
+</tbody>
+</table>
+<h3>FHR Classification — Three-Tier System (ACOG / Miller Box 58.2)</h3>
+<table>
+<thead>
+<tr>
+<th>קטגוריה</th>
+<th>Baseline</th>
+<th>Variability</th>
+<th>Decelerations</th>
+<th>משמעות</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Category I</strong> (Normal)</td>
+<td>110–160 bpm</td>
+<td>Moderate (6–25 bpm)</td>
+<td>אין Late/Variable; Early מותר</td>
+<td>Acid-base תקין; אין צורך בהתערבות</td>
+</tr>
+<tr>
+<td><strong>Category II</strong> (Indeterminate)</td>
+<td>כל שאר</td>
+<td>כל שאר</td>
+<td>לא עומד ב-I או III</td>
+<td>דורש מעקב והערכה</td>
+</tr>
+<tr>
+<td><strong>Category III</strong> (Abnormal)</td>
+<td>—</td>
+<td>Absent + Late/Variable; Sinusoidal</td>
+<td>—</td>
+<td>חמצת עוברית; דורש התערבות מיידית</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2>נקודות בעלות תשואה גבוהה</h2>
+<h3>🔴 Phenylephrine vs. Ephedrine — ההבדל הקריטי</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th><strong>Phenylephrine</strong></th>
+<th><strong>Ephedrine</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>מנגנון</td>
+<td>α₁ Agonist טהור</td>
+<td>α + β Agonist (מעורב)</td>
+</tr>
+<tr>
+<td>חציית שליה</td>
+<td>מינימלית</td>
+<td><strong>חוצה בקלות</strong> (ליפופילי)</td>
+</tr>
+<tr>
+<td>השפעה עוברית</td>
+<td>Acid-base תקין</td>
+<td>↑ Fetal metabolic rate → <strong>Fetal Acidosis</strong></td>
+</tr>
+<tr>
+<td>תופעת לוואי אימהית</td>
+<td>Reflex Bradycardia</td>
+<td>Tachycardia</td>
+</tr>
+<tr>
+<td><strong>המלצה</strong></td>
+<td><strong>✅ First Line</strong></td>
+<td>שמור למקרים עם Bradycardia אימהית</td>
+</tr>
+</tbody>
+</table>
+<h3>🔴 תזמון Epidural בלידה — המיתוס שנפל</h3>
+<ul>
+<li>❌ <strong>לא נכון</strong>: "יש להמתין לפתיחה של 4 ס"מ"</li>
+<li>✅ <strong>נכון</strong>: <strong>אין "מוקדם מדי"</strong> בשלב ראשון של לידה</li>
+<li>Early Epidural (&lt;3 ס"מ) <strong>אינו</strong> מעלה שיעור Cesarean ואינו מאריך שלב ראשון</li>
+<li><strong>Miller Quote</strong>: <em>"There is no point during the first stage of labor that is 'too early' to initiate epidural analgesia"</em></li>
+</ul>
+<h3>🔴 Dilutional Anemia — פיזיולוגית, לא פתולוגית</h3>
+<ul>
+<li>Plasma Volume ↑ 45–55% &gt; RBC Volume ↑ 20–30%</li>
+<li>Hgb ~11.6 g/dL = <strong>נורמלי בהריון</strong></li>
+<li>O₂ Delivery נשמרת בזכות ↑ Cardiac Output</li>
+</ul>
+<h3>🔴 High Neuraxial Block — מדוע שכיח בהריון?</h3>
+<ol>
+<li><strong>מכני</strong>: Aortocaval Compression → Epidural venous engorgement → ↓ נפח חלל אפידורלי/סאב-ארכנואידלי → התפשטות גדולה יותר</li>
+<li><strong>הורמונלי</strong>: Progesterone ↑ רגישות לחומרי הרדמה מקומיים</li>
+</ol>
+<h3>🔴 Fetal Heart Rate — Category I: הקריטריונים המלאים</h3>
+<ul>
+<li>Baseline: <strong>110–160 bpm</strong></li>
+<li>Variability: <strong>Moderate (6–25 bpm)</strong></li>
+<li><strong>אין</strong> Late Decelerations</li>
+<li><strong>אין</strong> Variable Decelerations</li>
+<li>Early Decelerations: <strong>מותר</strong> (= Head Compression, לא Hypoxia)</li>
+<li>Accelerations: <strong>מותר שיהיו או לא יהיו</strong></li>
+</ul>
+<h3>🔴 Placental Drug Transfer — גורמים מקלים מעבר</h3>
+<ul>
+<li>↑ Lipid Solubility (כמו Ephedrine)</li>
+<li>↓ Molecular Weight (&lt;500 Da)</li>
+<li>↓ Protein Binding</li>
+<li>Unionized form (קרוב ל-pKa פיזיולוגי)</li>
+<li>↑ Concentration Gradient אימהי-עוברי</li>
+</ul>
+<h3>🔴 Aspiration Risk — נקודה קריטית</h3>
+<ul>
+<li><strong>כל</strong> יולדת = Full Stomach</li>
+<li>מנגנונים: ↓ LES tone (Progesterone), ↑ Gastric pressure (Rחם), Delayed gastric emptying בכאב/אופיואידים</li>
+<li>יש לשקול: Sodium Citrate, H₂-blocker, Metoclopramide לפני הרדמה כללית</li>
+</ul>
+<hr />
+<h2>שאלות נפוצות בנושא</h2>
+<h3>שאלה 1</h3>
+<p><strong>יולדת בשבוע 38 מגיעה לניתוח קיסרי אלקטיבי תחת Spinal Anesthesia. לאחר מתן ה-Block, לחץ הדם יורד ל-80/50. מה הטיפול המועדף?</strong></p>
+<p><strong>תשובה: Phenylephrine</strong> (בולוס או אינפוזיה). זהו ה-Vasopressor of Choice — מתקן Hypotension אימהי מבלי לגרום ל-Fetal Acidosis, בניגוד ל-Ephedrine שחוצה את השליה ומגביר מטבוליזם עוברי.</p>
+<hr />
+<h3>שאלה 2</h3>
+<p><strong>ניטור עוברי מדגים: Baseline 130 bpm, Variability 10 bpm, Early Decelerations. מה הסיווג?</strong></p>
+<p><strong>תשובה: Category I</strong> — Baseline תקין (110–160), Variability מתונה (6–25), Early Decelerations מותרות ב-Category I (= Head Compression, לא מצוקה). אין Late/Variable Decelerations.</p>
+<hr />
+<h3>שאלה 3</h3>
+<p><strong>יולדת בשבוע 36 מבקשת Epidural בפתיחה של 2 ס"מ. הרופא הבכיר אומר "עדיין מוקדם מדי, להמתין ל-4 ס"מ." האם הוא צודק?</strong></p>
+<p><strong>תשובה: לא.</strong> על פי ה-ASA ומילר, <strong>אין פתיחה מינימלית</strong> למתן Neuraxial Analgesia. Early Epidural אינו מאריך לידה ואינו מעלה שיעור ניתוח קיסרי. הבקשה של היולדת = האינדיקציה.</p>
+<hr />
+<h3>שאלה 4</h3>
+<p><strong>בדיקת דם של אישה בשבוע 32 מגלה Hgb = 11.4 g/dL. מה ההסבר הסביר ביותר?</strong></p>
+<p><strong>תשובה: Physiologic Anemia of Pregnancy (Dilutional Anemia).</strong> Plasma Volume עולה 45–55% ואילו RBC Volume עולה רק 20–30% — הדילול גורם לירידת Hgb פיזיולוגית. Oxygen Delivery נשמרת בזכות ↑ Cardiac Output.</p>
+<hr />
+<h3>שאלה 5</h3>
+<p><strong>מה הסיבוך המ'גורי השכיח ביותר של הרדמה נוירואקסיאלית במיילדות?</strong></p>
+<p><strong>תשובה: High Neuraxial Block (Total Spinal).</strong> מכיוון שהמעבר להרדמה אזורית הפחית דרמטית את התמותה מסיבוכי Airway, ה-High Block הפך לסיבוך המ'גורי השכיח ביותר כיום. מוסבר ע"י Epidural venous engorgement + ↑ רגישות ל-Local Anesthetics בהשפעת Progesterone.</p>
+<hr />
+<h2>קבצים בתיקייה</h2>
+<ul>
+<li>Miller's Analysis of Fetal Heart Rate Classification Systems.docx</li>
+<li>פנילאפרין מול אפדרין_ ויסות לחץ דם והשפעות עובריות במיילדות.docx</li>
+<li>סיבוכים מג_וריים וחסם נוירואקסיאלי בהרדמה מיילדותית.docx</li>
+<li>Timing and Indications for Neuraxial Analgesia in Labor.docx</li>
+<li>שינויים בנפח הפלזמה והדם בקרב נשים הרות.docx</li>
+<li>שינויים המודינמיים בהריון לפי Miller_s Anesthesia.docx</li>
+<li>ניהול הרדמתי של פאוכרומוציטומה בהריון.docx</li>
+<li>Obstetric Respiratory Physiology and Miller's Anesthesia Parameters.docx</li>
+<li>Clinical Manifestations of Magnesium Toxicity in Perioperative Care.docx</li>
+<li>Neuraxial Analgesia Effects on Labor Progress according to Miller.docx</li>
+<li>ACOG Fetal Heart Rate Classification and Category III Criteria.docx</li>
+<li>Maternal Cardiac Arrest and Obstetric ACLS Protocols.docx</li>
+<li>Physiological Cardiovascular Changes and Pathology in Pregnancy.docx</li>
+<li>Miller's Anesthesia_ Clinical Definitions of Active Labor Stages.docx</li>
+<li>Clinical Indications for Immediate Epidural Blood Patch.docx</li>
+<li>סיווג ניטור דופק עוברי באלחלוש מיילדותי.docx</li>
+<li>פיזיולוגיה של הריון ואלחוש במיילדות.docx</li>
+<li>Clinical Indicators of Uterine Rupture in Obstetric Anesthesia.docx</li>
+<li>Physiological Hypercoagulability and TEG Parameters in Pregnancy.docx</li>
+<li>Miller's Protocol for Maternal Resuscitation and Perimortem Cesarean Delivery.docx</li>
+<li>Epinephrine Concentrations in Labor Epidural Analgesia.docx</li>
+<li>Physiological Changes in Pregnancy_ Miller's Anesthesia Clinical Review.docx</li>
+<li>Determinants of Placental Drug Transfer.docx</li>
+</ul>
+</div>
+  <strong>YouShellNotPass</strong> · סיכום לשלב א׳ בהרדמה
+</div>
+</body>
+</html>
