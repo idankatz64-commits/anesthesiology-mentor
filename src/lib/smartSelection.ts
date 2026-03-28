@@ -393,24 +393,52 @@ export function selectSmartQuestions(
     weights[4] = overrides.w5; // examProximity
   }
 
-  const scored = pool.map(q => ({
-    question: q,
-    score: computeSmartScore(q, { srsData, history, topicStats, globalAccuracy, weights }),
-  }));
+  // לא יותר ממה שיש בpool בפועל
+  const effectiveCount = Math.min(count, pool.length);
 
-  // Sort descending by score, with small random jitter to break ties
-  scored.sort((a, b) => (b.score + Math.random() * 0.001) - (a.score + Math.random() * 0.001));
-
-  // Take top N
-  const selected = scored.slice(0, Math.min(count, scored.length)).map(s => s.question);
-
-  // Shuffle the final selection so presentation order isn't predictable
-  for (let i = selected.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [selected[i], selected[j]] = [selected[j], selected[i]];
+  // ── STAGE 1: קבץ לפי נושא + חשב ציון לכל נושא ───────────────────
+  const byTopic: Record<string, Question[]> = {};
+  for (const q of pool) {
+    const topic = q[KEYS.TOPIC] || '__other__';
+    if (!byTopic[topic]) byTopic[topic] = [];
+    byTopic[topic].push(q);
   }
 
-  return selected;
+  const topics = Object.keys(byTopic);
+  const topicScores = computeTopicScores(topics, topicStats, globalAccuracy, weights);
+
+  // ── STAGE 2: הקצה slots לנושאים (פרופורציונלי + תקרת 25%) ────────
+  const slots = allocateSlots(topicScores, byTopic, effectiveCount);
+
+  // ── STAGE 3: בחר שאלות בתוך כל נושא לפי SRS urgency ──────────────
+  const selected: Question[] = [];
+  for (const topic of topics) {
+    const n = slots[topic] ?? 0;
+    if (n <= 0) continue;
+    const scored = byTopic[topic]
+      .map(q => ({ q, urgency: computeSrsUrgency(q, srsData) + Math.random() * 0.001 }))
+      .sort((a, b) => b.urgency - a.urgency);
+    selected.push(...scored.slice(0, n).map(s => s.q));
+  }
+
+  // ── מלא gaps: אם pool קטן מדי ב-slot מסוים, קח מהשאר ────────────
+  if (selected.length < effectiveCount) {
+    const usedIds = new Set(selected.map(q => q[KEYS.ID]));
+    const leftover = pool
+      .filter(q => !usedIds.has(q[KEYS.ID]))
+      .map(q => ({ q, urgency: computeSrsUrgency(q, srsData) + Math.random() * 0.001 }))
+      .sort((a, b) => b.urgency - a.urgency);
+    selected.push(...leftover.slice(0, effectiveCount - selected.length).map(s => s.q));
+  }
+
+  // Shuffle the final selection so presentation order isn't predictable
+  const result = selected.slice(0, effectiveCount);
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
 }
 
 // ── Simulation mode: proportional topic distribution ────────────────
