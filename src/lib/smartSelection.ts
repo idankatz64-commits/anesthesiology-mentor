@@ -159,6 +159,15 @@ function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
 }
 
+// ── SRS urgency for a single question ───────────────────────────────
+function computeSrsUrgency(q: Question, srsData: Record<string, SrsRecord>): number {
+  const srs = srsData[q[KEYS.ID]];
+  if (!srs) return 0.5; // אין רשומת SRS → עדיפות בינונית
+  const daysOverdue = (Date.now() - new Date(srs.next_review_date).getTime()) / 86400000;
+  if (daysOverdue <= 0) return 0; // עוד לא הגיע תורה
+  return clamp01(daysOverdue / 60); // מנורמל: 60 יום = 1.0
+}
+
 // ── Compute smart score for a single question ───────────────────────
 function computeSmartScore(q: Question, params: ScoringParams): number {
   const { srsData, topicStats, globalAccuracy, weights } = params;
@@ -168,18 +177,7 @@ function computeSmartScore(q: Question, params: ScoringParams): number {
   const today = new Date();
 
   // 1. srsUrgency
-  let srsUrgency = 0.5; // default if no SRS entry
-  const srs = srsData[qId];
-  if (srs) {
-    const reviewDate = new Date(srs.next_review_date);
-    const daysOverdue = (now - reviewDate.getTime()) / (1000 * 60 * 60 * 24);
-    if (daysOverdue <= 0) {
-      srsUrgency = 0; // not yet due
-    } else {
-      // max overdue = 60 days for normalization
-      srsUrgency = clamp01(daysOverdue / 60);
-    }
-  }
+  const srsUrgency = computeSrsUrgency(q, srsData);
 
   // 2. topicWeakness
   const ts = topicStats[topic];
