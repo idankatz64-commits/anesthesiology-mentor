@@ -124,6 +124,7 @@ export type ExamPhase = 'early' | 'approaching' | 'imminent';
 
 export function getExamProximityPhase(): ExamPhase {
   const daysLeft = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
+  if (daysLeft <= 0) return 'early';  // המבחן כבר עבר — חזרה למצב רגיל
   if (daysLeft > 90) return 'early';
   if (daysLeft > 30) return 'approaching';
   return 'imminent';

@@ -861,19 +861,34 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!savedSessionInfo || !dataRef.current.length) return false;
 
     const questionMap = new Map(dataRef.current.map(q => [q[KEYS.ID], q]));
-    const quiz = savedSessionInfo.questionIds
+
+    // בנה map של תשובות וconfidence לפי ID (לא לפי index).
+    // כך, אם שאלה נמחקה מה-DB מאז השמירה, שאר התשובות לא יחרגו ממיקומן.
+    const savedIds = savedSessionInfo.questionIds;
+    const answersById: Record<string, string | null> = {};
+    const confidenceById: Record<string, string | null> = {};
+    savedIds.forEach((id, i) => {
+      answersById[id] = savedSessionInfo.answers[i] ?? null;
+      confidenceById[id] = savedSessionInfo.confidence[i] ?? null;
+    });
+
+    const quiz = savedIds
       .map(id => questionMap.get(id))
       .filter((q): q is Question => !!q);
 
     if (quiz.length === 0) return false;
 
+    const answers = quiz.map(q => answersById[q[KEYS.ID]] ?? null);
+    const confidence = quiz.map(q => (confidenceById[q[KEYS.ID]] ?? null) as any);
+    const validIndex = Math.min(savedSessionInfo.index, quiz.length - 1);
+
     setSession({
       quiz,
-      index: savedSessionInfo.index,
+      index: validIndex,
       score: 0,
       mode: savedSessionInfo.mode,
-      answers: savedSessionInfo.answers,
-      confidence: savedSessionInfo.confidence,
+      answers,
+      confidence,
       flagged: new Set(savedSessionInfo.flagged),
       skipped: new Set(savedSessionInfo.skipped),
       sourceFilter: 'all',
