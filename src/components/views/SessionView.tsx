@@ -402,6 +402,7 @@ export default function SessionView() {
       if (userAns) {
         const isCorrect = userAns === q[KEYS.CORRECT];
         updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
+        updateSpacedRepetition(q[KEYS.ID], isCorrect, "confident", q[KEYS.TOPIC]);
       }
     });
     shouldAutoSaveRef.current = false;
