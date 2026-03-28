@@ -1,0 +1,41 @@
+{
+  "tracking": [
+    {
+      "date": "2026-03-28",
+      "week": 13,
+      "total_answered": 317,
+      "total_attempts": 335,
+      "global_accuracy": 0.713,
+      "coverage_pct": 0.317,
+      "ever_wrong": 96,
+      "currently_wrong": 94,
+      "fixed": 2,
+      "srs_total": 314,
+      "srs_due": 227,
+      "srs_mature": 1,
+      "srs_confident": 81,
+      "srs_hesitant": 207,
+      "srs_guessed": 26,
+      "avg_interval_days": 1.7,
+      "readiness_score": 49,
+      "projected_exam_pct": 0.62,
+      "bugs_fixed": [
+        "SRS interval overflow q2076 → 90d"
+      ],
+      "spearman_reps_acc": 0.975,
+      "spearman_ease_acc": 0.845,
+      "kw_pvalue_hour": 0.0136,
+      "afternoon_acc": 0.826,
+      "morning_acc": 0.65,
+      "notes": "Baseline — first report. Two-stage algorithm deployed. 8 bug fixes deployed."
+    }
+  ],
+  "meta": {
+    "user_id": "62194a25-81c8-4a01-a49a-912a55a026e1",
+    "user_email": "idankatz64@gmail.com",
+    "supabase_url": "https://ksbblqnwcmfylpxygyrj.supabase.co",
+    "total_questions_in_db": 1000,
+    "exam_date": "2026-06-16",
+    "report_version": 1
+  }
+}
