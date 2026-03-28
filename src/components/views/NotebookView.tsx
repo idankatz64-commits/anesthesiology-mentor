@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import DOMPurify from 'dompurify';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
 import { Search, Trash2 } from 'lucide-react';
@@ -69,7 +70,7 @@ export default function NotebookView() {
                 </div>
                 <div
                   className="rich-content bg-muted/50 p-4 rounded-xl border border-border text-sm text-foreground whitespace-pre-wrap font-light bidi-text"
-                  dangerouslySetInnerHTML={{ __html: progress.notes[id] }}
+                  dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(progress.notes[id]) }}
                 />
               </div>
             );

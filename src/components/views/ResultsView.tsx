@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { useMemo, useEffect, useRef, useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { KEYS } from '@/lib/types';
@@ -53,7 +54,7 @@ function SmartExplanation({ text }: { text: string }) {
       <div
         className="rich-content text-sm text-foreground bidi-text prose prose-sm max-w-none"
         style={{ lineHeight: '1.8' }}
-        dangerouslySetInnerHTML={{ __html: text }}
+        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }}
       />
     );
   }
