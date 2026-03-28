@@ -117,7 +117,7 @@ async function fetchAllRows<T>(
   let from = 0;
   while (true) {
     const { data, error } = await buildQuery().range(from, from + PAGE - 1);
-    if (error) { console.error('fetchAllRows error', error); break; }
+    if (error) { console.error('fetchAllRows error', error); throw error; }
     if (!data || data.length === 0) break;
     allData = allData.concat(data as T[]);
     if (data.length < PAGE) break;

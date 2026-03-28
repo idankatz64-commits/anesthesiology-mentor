@@ -260,7 +260,6 @@ export default function SessionView() {
   // Timer for exam mode (count up)
   useEffect(() => {
     if (mode !== "exam") return;
-    setTimerSeconds(0);
     const interval = setInterval(() => setTimerSeconds((p) => p + 1), 1000);
     return () => clearInterval(interval);
   }, [mode]);
@@ -276,7 +275,6 @@ export default function SessionView() {
   // Timer for simulation mode (countdown from 3 hours)
   useEffect(() => {
     if (!isSimulation) return;
-    setSimTimerSeconds(3 * 60 * 60);
     const interval = setInterval(
       () =>
         setSimTimerSeconds((p) => {
