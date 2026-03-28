@@ -168,6 +168,51 @@ function computeSrsUrgency(q: Question, srsData: Record<string, SrsRecord>): num
   return clamp01(daysOverdue / 60); // מנורמל: 60 יום = 1.0
 }
 
+// ── Topic-level scores (Stage 1 of two-stage selection) ──────────────
+// מחשב ציון לכל נושא עפ"י חולשה, תדירות תרגול, חשיבות למבחן
+function computeTopicScores(
+  topics: string[],
+  topicStats: Record<string, TopicStats>,
+  globalAccuracy: number,
+  weights: number[],
+): Record<string, number> {
+  const scores: Record<string, number> = {};
+  const daysUntilExam = (EXAM_DATE.getTime() - Date.now()) / 86400000;
+  const examProximity = daysUntilExam < 60 ? clamp01(1 - daysUntilExam / 60) : 0;
+
+  for (const topic of topics) {
+    const ts = topicStats[topic];
+
+    // חולשה יחסית לממוצע הכללי
+    let topicWeakness = 0.5; // default: נושא חדש שאין עליו נתונים
+    if (ts && globalAccuracy > 0) {
+      topicWeakness = clamp01(1 - ts.accuracy / globalAccuracy);
+    }
+
+    // כמה זמן לא תרגלנו את הנושא הזה (0=עכשיו, 1=30 יום ויותר)
+    let recencyGap = 1; // default: אף פעם לא תורגל
+    if (ts && ts.lastAnsweredTs > 0) {
+      recencyGap = clamp01((Date.now() - ts.lastAnsweredTs) / (30 * 86400000));
+    }
+
+    // רצף טעויות לאחרונה בנושא זה
+    const streakPenalty = ts ? clamp01(ts.recentWrongStreak / 5) : 0;
+
+    // חשיבות הנושא למבחן (Tier 1=1.0, Tier 2=0.6, Tier 3=0.2)
+    const yieldBoost = YIELD_TIER_MAP[topic] ?? 0.1; // ברירת מחדל: קצת חשוב
+
+    // weights: [srsUrgency(skip for topic), topicWeakness, recencyGap, streakPenalty, examProximity, yieldBoost]
+    scores[topic] =
+      weights[1] * topicWeakness +
+      weights[2] * recencyGap +
+      weights[3] * streakPenalty +
+      weights[4] * examProximity +
+      weights[5] * yieldBoost;
+  }
+
+  return scores;
+}
+
 // ── Compute smart score for a single question ───────────────────────
 function computeSmartScore(q: Question, params: ScoringParams): number {
   const { srsData, topicStats, globalAccuracy, weights } = params;
