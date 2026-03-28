@@ -260,6 +260,58 @@ function computeSmartScore(q: Question, params: ScoringParams): number {
   return score;
 }
 
+// ── Slot allocation per topic (Hamilton proportional method) ─────────
+// מחלק count שאלות בין נושאים פרופורציונלית לציון, עם תקרה למניעת שליטה
+function allocateSlots(
+  topicScores: Record<string, number>,
+  byTopic: Record<string, Question[]>,
+  count: number,
+): Record<string, number> {
+  const topics = Object.keys(topicScores);
+  if (topics.length === 0) return {};
+
+  // תקרה: נושא אחד לא יכול לתפוס יותר מ-25% מהסשן (מינימום 2 שאלות)
+  const maxPerTopic = Math.max(2, Math.ceil(count * 0.25));
+
+  const totalScore = topics.reduce((sum, t) => sum + topicScores[t], 0);
+
+  // שלב 1: חלק אידיאלי לכל נושא (עם נקודה עשרונית)
+  const ideal: Record<string, number> = {};
+  for (const t of topics) {
+    const proportion = totalScore > 0 ? topicScores[t] / totalScore : 1 / topics.length;
+    ideal[t] = proportion * count;
+  }
+
+  // שלב 2: floor לכולם, עם מגבלות (תקרה + כמה שיש בפועל בpool)
+  const slots: Record<string, number> = {};
+  let allocated = 0;
+  for (const t of topics) {
+    slots[t] = Math.min(
+      Math.floor(ideal[t]),
+      maxPerTopic,
+      byTopic[t].length,
+    );
+    allocated += slots[t];
+  }
+
+  // שלב 3: חלק את ה-slots שנותרו לנושאים עם השארית הגדולה ביותר
+  // (Hamilton method — אלה שה"מגיע להם" הכי הרבה מהחלק האידיאלי)
+  const remaining = count - allocated;
+  const candidates = topics
+    .filter(t => slots[t] < Math.min(maxPerTopic, byTopic[t].length))
+    .sort((a, b) => {
+      const fracDiff =
+        (ideal[b] - Math.floor(ideal[b])) - (ideal[a] - Math.floor(ideal[a]));
+      return fracDiff !== 0 ? fracDiff : topicScores[b] - topicScores[a];
+    });
+
+  for (let i = 0; i < remaining && i < candidates.length; i++) {
+    slots[candidates[i]]++;
+  }
+
+  return slots;
+}
+
 // ── Compute topic stats from history ────────────────────────────────
 export function computeTopicStats(
   history: Record<string, HistoryEntry>,
