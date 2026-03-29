@@ -20,6 +20,7 @@ import {
   Copy,
   Send,
   Calculator,
+  Link,
   Pencil,
   Check,
   Lightbulb,
@@ -31,6 +32,7 @@ import {
   Stethoscope,
 } from "lucide-react";
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import SquircleIcon from "@/components/SquircleIcon";
 import RichTextEditor from "@/components/RichTextEditor";
 import ShareQuestionButton from "@/components/ShareQuestionButton";
@@ -198,6 +200,14 @@ export default function SessionView() {
   const [timerSeconds, setTimerSeconds] = useState(resumedTimerSeconds ?? 0);
   const [simTimerSeconds, setSimTimerSeconds] = useState(resumedSimTimerSeconds ?? 3 * 60 * 60);
   const [calcOpen, setCalcOpen] = useState(false);
+  const [resourceLinks, setResourceLinks] = useState<{ id: string; title: string; url: string; category: string }[]>([]);
+
+  // Load resource links once
+  useEffect(() => {
+    supabase.from('resource_links').select('id, title, url, category').then(({ data }) => {
+      if (data) setResourceLinks(data);
+    });
+  }, []);
   const [editingExplanation, setEditingExplanation] = useState(false);
   const [explanationDraft, setExplanationDraft] = useState("");
   const [sectionTitleDrafts, setSectionTitleDrafts] = useState<string[]>([]);
@@ -638,6 +648,35 @@ export default function SessionView() {
             >
               <Calculator className="w-3.5 h-3.5" /> Σ
             </button>
+            {resourceLinks.length > 0 && (
+              <Popover>
+                <PopoverTrigger asChild>
+                  <button
+                    className="text-muted-foreground hover:text-primary transition flex items-center gap-1.5 text-xs font-bold bg-muted px-3 py-1.5 rounded-lg hover:bg-primary/10 border border-border"
+                    title="קישורי לימוד"
+                  >
+                    <Link className="w-3.5 h-3.5" />
+                  </button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-64 p-2 bg-card border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide px-2 pb-1.5">קישורי לימוד</p>
+                  <div className="space-y-1">
+                    {resourceLinks.map(link => (
+                      <a
+                        key={link.id}
+                        href={link.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 px-2 py-2 rounded-lg hover:bg-muted transition-colors text-sm text-foreground"
+                      >
+                        <Link className="w-3.5 h-3.5 text-primary shrink-0" />
+                        <span className="truncate">{link.title}</span>
+                      </a>
+                    ))}
+                  </div>
+                </PopoverContent>
+              </Popover>
+            )}
             <button onClick={() => toggleFavorite(serialNumber)} className="transition">
               <Star
                 className={`w-5 h-5 ${isFav ? "fill-warning text-warning" : "text-muted-foreground hover:text-warning"}`}
