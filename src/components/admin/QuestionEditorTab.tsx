@@ -13,6 +13,17 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X, Download, ChevronDown, Check, Mail, CalendarIcon, Clock } from 'lucide-react';
 import Papa from 'papaparse';
+
+/** מסיר תגי <img> מטקסט לפני ייצוא CSV — explanation מכיל HTML עם תמונות */
+function stripImages(text: string | null | undefined): string {
+  if (!text) return '';
+  return text.replace(/<img[^>]*>/gi, '[תמונה]').replace(/<[^>]+>/g, '').trim();
+}
+
+/** מנקה שורת שאלה מ-HTML images לפני ייצוא */
+function sanitizeForCsv(row: Record<string, unknown>): Record<string, unknown> {
+  return { ...row, explanation: stripImages(row.explanation as string) };
+}
 import { getChapterDisplay, resolveChapterName } from '@/data/millerChapters';
 import { format } from 'date-fns';
 import { he } from 'date-fns/locale';
@@ -213,7 +224,7 @@ function ExportByDateSection() {
         .in('id', ids);
       if (qError) throw qError;
 
-      const csv = Papa.unparse(questions ?? []);
+      const csv = Papa.unparse((questions ?? []).map(sanitizeForCsv));
       const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -256,7 +267,7 @@ function ExportByDateSection() {
         .in('id', ids);
       if (qError) throw qError;
 
-      const csv = Papa.unparse(questions ?? []);
+      const csv = Papa.unparse((questions ?? []).map(sanitizeForCsv));
       const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -447,7 +458,7 @@ export default function QuestionEditorTab() {
         if (data.length < batchSize) break;
         from += batchSize;
       }
-      const csv = Papa.unparse(allRows);
+      const csv = Papa.unparse(allRows.map(sanitizeForCsv));
       const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
