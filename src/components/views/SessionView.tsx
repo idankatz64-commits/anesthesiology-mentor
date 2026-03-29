@@ -612,9 +612,9 @@ export default function SessionView() {
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+        <div className="w-full bg-muted h-[3px] rounded-full overflow-hidden">
           <motion.div
-            className="bg-primary h-full rounded-full shadow-[0_0_8px_hsl(25_95%_53%/0.4)]"
+            className="bg-primary h-full rounded-full"
             layout
             style={{ width: `${progressPercent}%` }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
@@ -643,19 +643,19 @@ export default function SessionView() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => setCalcOpen(true)}
-              className="text-muted-foreground hover:text-primary transition flex items-center gap-1.5 text-xs font-bold bg-muted px-3 py-1.5 rounded-lg hover:bg-primary/10 border border-border"
+              className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted border border-border text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
               title="Formula Calculator"
             >
-              <Calculator className="w-3.5 h-3.5" /> Σ
+              <Calculator className="w-4 h-4" />
             </button>
             {resourceLinks.length > 0 && (
               <Popover>
                 <PopoverTrigger asChild>
                   <button
-                    className="text-muted-foreground hover:text-primary transition flex items-center gap-1.5 text-xs font-bold bg-muted px-3 py-1.5 rounded-lg hover:bg-primary/10 border border-border"
+                    className="w-8 h-8 flex items-center justify-center rounded-lg bg-muted border border-border text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
                     title="קישורי לימוד"
                   >
-                    <Link className="w-3.5 h-3.5" />
+                    <Link className="w-4 h-4" />
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-64 p-2 bg-card border-border">
@@ -677,7 +677,7 @@ export default function SessionView() {
                 </PopoverContent>
               </Popover>
             )}
-            <button onClick={() => toggleFavorite(serialNumber)} className="transition">
+            <button onClick={() => toggleFavorite(serialNumber)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition">
               <Star
                 className={`w-5 h-5 ${isFav ? "fill-warning text-warning" : "text-muted-foreground hover:text-warning"}`}
               />
@@ -852,13 +852,11 @@ export default function SessionView() {
                       color: "bg-destructive/20 text-destructive border-destructive/30",
                     },
                   ] as const
-                ).map(({ level, label, color }, i) => (
+                ).map(({ level, label, color }) => (
                   <button
                     key={level}
                     onClick={() => handleConfidenceSelect(level)}
-                    className={`flex-1 py-3.5 text-sm font-bold transition-all ${
-                      i < 2 ? "border-l border-border" : ""
-                    } hover:${color} text-muted-foreground hover:text-foreground`}
+                    className={`flex-1 py-3 text-sm font-semibold rounded-lg border transition-all ${color} opacity-80 hover:opacity-100`}
                   >
                     {label}
                   </button>
