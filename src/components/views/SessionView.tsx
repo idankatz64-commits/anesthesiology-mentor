@@ -498,33 +498,34 @@ export default function SessionView() {
   };
 
   const getOptionClasses = (opt: string) => {
-    let base = "w-full text-right p-5 rounded-xl border transition relative flex items-center group backdrop-blur-sm ";
+    // Base: clean border-2, no glow, no backdrop-blur — Notion-style minimal
+    const base = "w-full text-right p-4 rounded-xl border-2 transition-all duration-150 relative flex items-center group ";
 
     if (isSimulation) {
       if (savedAns === opt)
-        return base + "bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]";
-      return base + "bg-white/[0.03] border-border hover:border-primary/30 hover:bg-white/[0.06]";
+        return base + "border-primary bg-primary/8 text-foreground";
+      return base + "border-border bg-transparent hover:border-primary/50 hover:bg-primary/5";
     }
 
     if (isReviewMode) {
       if (opt === correctAns)
-        return base + "bg-success/10 border-success/30 text-success shadow-[0_0_15px_hsl(160_84%_39%/0.1)]";
+        return base + "border-success/60 bg-success/8 text-foreground";
       if (opt === savedAns && savedAns !== correctAns)
-        return base + "bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_15px_hsl(0_72%_51%/0.1)]";
-      return base + "opacity-60 bg-muted border-border";
+        return base + "border-destructive/50 bg-destructive/8 text-foreground";
+      return base + "border-border/40 bg-transparent opacity-50";
     }
 
     if (isPracticeRevealed) {
       if (opt === correctAns)
-        return base + "bg-success/10 border-success/30 text-success shadow-[0_0_15px_hsl(160_84%_39%/0.1)]";
+        return base + "border-success/60 bg-success/8 text-foreground";
       if (opt === savedAns)
-        return base + "bg-destructive/10 border-destructive/30 text-destructive shadow-[0_0_15px_hsl(0_72%_51%/0.1)]";
-      return base + "opacity-50 border-border";
+        return base + "border-destructive/50 bg-destructive/8 text-foreground";
+      return base + "border-border/40 bg-transparent opacity-45";
     }
 
     if (savedAns === opt)
-      return base + "bg-primary/10 border-primary ring-1 ring-primary/30 shadow-[0_0_15px_hsl(25_95%_53%/0.1)]";
-    return base + "bg-white/[0.03] border-border hover:border-primary/30 hover:bg-white/[0.06]";
+      return base + "border-primary bg-primary/8 text-foreground";
+    return base + "border-border bg-transparent hover:border-primary/50 hover:bg-primary/5";
   };
 
   const progressPercent = ((index + 1) / quiz.length) * 100;
@@ -812,10 +813,10 @@ export default function SessionView() {
                     disabled={isPracticeRevealed || isReviewMode || (isSimulation && savedAns !== null)}
                     className={getOptionClasses(opt)}
                   >
-                    <span className="w-9 h-9 rounded-full bg-muted text-muted-foreground font-bold flex items-center justify-center ml-4 text-sm group-hover:bg-primary/10 group-hover:text-primary transition-colors shrink-0">
+                    <span className="w-7 h-7 rounded-lg border border-border/60 text-muted-foreground font-mono text-xs font-bold flex items-center justify-center ml-4 shrink-0 group-hover:border-primary/40 group-hover:text-primary transition-colors">
                       {opt}
                     </span>
-                    <span className="flex-grow text-foreground text-lg font-light leading-snug bidi-text">{text}</span>
+                    <span className="flex-grow text-foreground text-base leading-relaxed bidi-text">{text}</span>
                     {!isSimulation && (isPracticeRevealed || isReviewMode) && opt === correctAns && (
                       <span className="absolute left-5 text-success text-xl">✓</span>
                     )}

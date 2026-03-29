@@ -212,20 +212,19 @@ export default function StatsView() {
 
         {/* ROW 2 — DB Status (3 cards) */}
         <motion.div variants={itemVariants} className="grid grid-cols-3 gap-3" dir="rtl">
-          <div className="glass-tile rounded-xl p-3 text-center">
-            <div className="text-[9px] text-muted-foreground mb-0.5">סה״כ שאלות במאגר</div>
-            <AnimatedNumber value={data.length} className="text-2xl font-black text-primary" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-          </div>
-          <div className="glass-tile rounded-xl p-3 text-center">
-            <div className="text-[9px] text-muted-foreground mb-0.5">כוללות הסבר</div>
-            <AnimatedNumber value={withExp} className="text-2xl font-black text-green-500" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-            <div className="text-[9px] text-muted-foreground mt-0.5">{data.length > 0 ? Math.round((withExp / data.length) * 100) : 0}% מהמאגר</div>
-          </div>
-          <div className="glass-tile rounded-xl p-3 text-center">
-            <div className="text-[9px] text-muted-foreground mb-0.5">ללא הסבר</div>
-            <AnimatedNumber value={withoutExp} className="text-2xl font-black text-destructive" style={{ fontFamily: "'Share Tech Mono', monospace" }} />
-            <div className="text-[9px] text-muted-foreground mt-0.5">{data.length > 0 ? Math.round((withoutExp / data.length) * 100) : 0}% מהמאגר</div>
-          </div>
+          {[
+            { label: 'סה״כ שאלות במאגר', value: data.length, color: 'text-primary' },
+            { label: 'כוללות הסבר', value: withExp, color: 'text-success', sub: `${data.length > 0 ? Math.round((withExp / data.length) * 100) : 0}% מהמאגר` },
+            { label: 'ללא הסבר', value: withoutExp, color: 'text-destructive', sub: `${data.length > 0 ? Math.round((withoutExp / data.length) * 100) : 0}% מהמאגר` },
+          ].map(item => (
+            <StatCard
+              key={item.label}
+              label={item.label}
+              value={<AnimatedNumber value={item.value} className={`text-2xl font-black ${item.color}`} style={{ fontFamily: "'Share Tech Mono', monospace" }} />}
+              sub={item.sub}
+              color={item.color}
+            />
+          ))}
         </motion.div>
 
         {/* ROW 3 — Personal Stats (6 cards) */}

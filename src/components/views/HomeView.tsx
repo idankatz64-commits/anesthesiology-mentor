@@ -9,7 +9,8 @@ import {
   FolderOpen, FileText, Link as LinkIcon, ExternalLink,
 } from 'lucide-react';
 import jigsawImg from '@/assets/jigsaw.png';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
+import { StatCard } from '@/components/stats/StatCard';
 import { getExamProximityPhase, EXAM_DATE } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
 import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
@@ -29,92 +30,86 @@ const cardVariant = {
 };
 
 /* ── Animated Icon Wrappers ── */
+// Animated icon wrappers — all respect prefers-reduced-motion
 function PulseIcon({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      animate={{ scale: [1, 1.15, 1], opacity: [0.85, 1, 0.85] }}
+      animate={reduced ? {} : { scale: [1, 1.12, 1], opacity: [0.85, 1, 0.85] }}
       transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-    >
-      {children}
-    </motion.div>
+    >{children}</motion.div>
   );
 }
 
 function SpinIcon({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      animate={{ rotate: 360 }}
-      transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
-    >
-      {children}
-    </motion.div>
+      animate={reduced ? {} : { rotate: 360 }}
+      transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
+    >{children}</motion.div>
   );
 }
 
+// RotateIcon: toned down from ±30° to ±12°, slower
 function RotateIcon({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      animate={{ rotate: [0, -30, 0, 30, 0] }}
-      transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
-    >
-      {children}
-    </motion.div>
+      animate={reduced ? {} : { rotate: [0, -12, 0, 12, 0] }}
+      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+    >{children}</motion.div>
   );
 }
 
+// FlipIcon: replaced 3D flip with a gentle bounce (less GPU intensive)
 function FlipIcon({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      animate={{ rotateY: [0, 180, 360] }}
-      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-      style={{ perspective: 200 }}
-    >
-      {children}
-    </motion.div>
+      animate={reduced ? {} : { y: [0, -5, 0] }}
+      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+    >{children}</motion.div>
   );
 }
 
 function BounceIcon({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      animate={{ y: [0, -4, 0] }}
-      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
-    >
-      {children}
-    </motion.div>
+      animate={reduced ? {} : { y: [0, -4, 0] }}
+      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
+    >{children}</motion.div>
   );
 }
 
 function ShakeIcon({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      animate={{ x: [0, -2, 2, -2, 0] }}
-      transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 3 }}
-    >
-      {children}
-    </motion.div>
+      animate={reduced ? {} : { x: [0, -2, 2, -2, 0] }}
+      transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 4 }}
+    >{children}</motion.div>
   );
 }
 
 function BeatIcon({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      animate={{ scale: [1, 1.2, 1, 1.15, 1] }}
-      transition={{ duration: 1.2, repeat: Infinity, repeatDelay: 2 }}
-    >
-      {children}
-    </motion.div>
+      animate={reduced ? {} : { scale: [1, 1.15, 1, 1.08, 1] }}
+      transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2.5 }}
+    >{children}</motion.div>
   );
 }
 
 function BlinkIcon({ children }: { children: React.ReactNode }) {
+  const reduced = useReducedMotion();
   return (
     <motion.div
-      animate={{ opacity: [1, 0.3, 1] }}
-      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-    >
-      {children}
-    </motion.div>
+      animate={reduced ? {} : { opacity: [1, 0.4, 1] }}
+      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+    >{children}</motion.div>
   );
 }
 
@@ -535,18 +530,9 @@ export default function HomeView() {
 
         {/* DB Status */}
         <div className="grid grid-cols-3 gap-3">
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold matrix-text">{data.length}</div>
-            <div className="text-[9px] text-muted-foreground font-medium mt-0.5">סה"כ שאלות</div>
-          </div>
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold text-success matrix-text">{withExp}</div>
-            <div className="text-[9px] text-success/70 font-medium mt-0.5">כוללות הסבר</div>
-          </div>
-          <div className="deep-tile p-3 text-center">
-            <div className="text-xl font-bold text-warning matrix-text">{withoutExp}</div>
-            <div className="text-[9px] text-warning/70 font-medium mt-0.5">ללא הסבר</div>
-          </div>
+          <StatCard variant="deep" label='סה"כ שאלות' value={<span className="text-xl font-bold matrix-text">{data.length}</span>} />
+          <StatCard variant="deep" label="כוללות הסבר" color="text-success" labelColor="text-success/70" value={<span className="text-xl font-bold text-success matrix-text">{withExp}</span>} />
+          <StatCard variant="deep" label="ללא הסבר" color="text-warning" labelColor="text-warning/70" value={<span className="text-xl font-bold text-warning matrix-text">{withoutExp}</span>} />
         </div>
       </div>
 
@@ -560,8 +546,8 @@ export default function HomeView() {
             src={jigsawImg}
             alt="Jigsaw"
             className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)]"
-            animate={{ rotate: [0, -15, 15, -10, 0], scale: [1, 1.1, 1, 1.05, 1] }}
-            transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut', repeatDelay: 2 }}
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
           />
         </div>
       </header>
