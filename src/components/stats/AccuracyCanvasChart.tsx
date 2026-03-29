@@ -467,7 +467,7 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
 
   if (loading) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-6 text-center">
+      <div className="bg-card border border-border rounded-xl p-6 text-center">
         <div className="text-sm text-muted-foreground">טוען נתונים...</div>
       </div>
     );
@@ -475,7 +475,7 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
 
   if (!data.length) {
     return (
-      <div className="bg-card border border-border rounded-2xl p-6 text-center" dir="rtl">
+      <div className="bg-card border border-border rounded-xl p-6 text-center" dir="rtl">
         <div className="text-sm text-muted-foreground">אין נתוני תרגול ב-90 הימים האחרונים</div>
       </div>
     );
@@ -498,7 +498,7 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
   const tooltipFlipX = tooltipPos && tooltipPos.x > containerWidth * 0.65;
 
   return (
-    <div className="bg-card border border-border rounded-2xl overflow-hidden" dir="rtl">
+    <div className="bg-card border border-border rounded-xl overflow-hidden" dir="rtl">
       <div className="flex items-center justify-between p-4 pb-2 flex-wrap gap-2">
         <div className="flex items-center gap-2.5">
           <span className="text-base">📈</span>

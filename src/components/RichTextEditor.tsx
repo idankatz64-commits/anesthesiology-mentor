@@ -292,7 +292,7 @@ export default function RichTextEditor({
       {/* Caption modal */}
       {captionModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-          <div className="bg-card border border-border rounded-2xl p-6 w-full max-w-md shadow-2xl mx-4">
+          <div className="bg-card border border-border rounded-xl p-6 w-full max-w-md shadow-2xl mx-4">
             <h3 className="text-sm font-bold text-foreground mb-3 flex items-center gap-2">
               <span className="text-red-400">📸</span>
               הוסף כיתוב לתמונה (אופציונלי)

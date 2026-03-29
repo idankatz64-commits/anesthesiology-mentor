@@ -86,7 +86,7 @@ export default function StrengthsWeaknessesTile({ topicData, weakZones, forgetti
                 initial={{ opacity: 0, scale: 0.92, y: 30 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                className="bg-card border border-border rounded-2xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10"
+                className="bg-card border border-border rounded-xl max-w-4xl w-full max-h-[85vh] overflow-y-auto p-6 relative z-10"
                 dir="rtl"
               >
                 <button

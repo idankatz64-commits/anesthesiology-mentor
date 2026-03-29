@@ -141,7 +141,7 @@ export default function Sidebar() {
               <SquircleIcon icon={isDark ? Sun : Moon} gradient="slate" size="sm" />
             </button>
 
-            <div className="bg-card/40 p-4 rounded-2xl border border-border/50 transition-colors">
+            <div className="bg-card/40 p-4 rounded-xl border border-border/50 transition-colors">
               <div className="flex justify-between items-end mb-2">
                 <div className="text-[10px] font-semibold text-muted-foreground uppercase tracking-widest">PROGRESS</div>
                 <span className="text-xl font-bold text-primary">{pct}%</span>

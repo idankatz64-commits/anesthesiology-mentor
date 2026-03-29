@@ -34,7 +34,7 @@ export default function NotebookView() {
           value={searchTerm}
           onChange={e => setSearchTerm(e.target.value)}
           placeholder="חפש בתוך ההערות..."
-          className="w-full p-4 pl-12 bg-card border border-border rounded-2xl shadow-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground transition"
+          className="w-full p-4 pl-12 bg-card border border-border rounded-xl shadow-sm outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-foreground transition"
         />
         <Search className="absolute left-5 top-5 w-4 h-4 text-muted-foreground" />
       </div>

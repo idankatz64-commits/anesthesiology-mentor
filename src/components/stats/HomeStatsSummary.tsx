@@ -118,8 +118,8 @@ export default function HomeStatsSummary() {
     };
   }, [progress.history, data]);
 
-  const accuracyColor = accuracy >= 70 ? '#22c55e' : accuracy >= 50 ? '#f59f0a' : '#ef4444';
-  const completionColor = '#10b981';
+  const accuracyColor = accuracy >= 70 ? 'hsl(var(--success))' : accuracy >= 50 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))';
+  const completionColor = 'hsl(var(--success))';
 
   return (
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">

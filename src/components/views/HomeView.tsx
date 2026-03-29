@@ -353,7 +353,7 @@ function SessionPanel({
           <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
             <motion.div
               className="h-full rounded-full"
-              style={{ backgroundColor: lastSession.pct >= 70 ? '#22c55e' : lastSession.pct >= 50 ? '#f59f0a' : '#ef4444' }}
+              style={{ backgroundColor: lastSession.pct >= 70 ? 'hsl(var(--success))' : lastSession.pct >= 50 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))' }}
               initial={{ width: 0 }}
               animate={{ width: `${lastSession.pct}%` }}
               transition={{ duration: 0.8, delay: 0.3 }}
@@ -507,7 +507,7 @@ export default function HomeView() {
       </AnimatePresence>
 
       {/* ═══ ANALYTICS BLOCK ═══ */}
-      <div className="flex flex-col gap-3 rounded-2xl">
+      <div className="flex flex-col gap-3">
         {/* Stats Row — full width */}
         <HomeStatsSummary />
 

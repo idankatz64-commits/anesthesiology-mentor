@@ -110,7 +110,7 @@ export const CommunityNotes = forwardRef<HTMLDivElement, CommunityNotesProps>(fu
   };
 
   return (
-    <div ref={ref} className="mt-6 p-6 bg-muted/30 rounded-2xl border border-border">
+    <div ref={ref} className="mt-6 p-6 bg-muted/30 rounded-xl border border-border">
       <h4 className="font-bold text-foreground mb-4 flex items-center gap-2 text-sm">
         💬 הערות קהילה ({notes.length})
       </h4>

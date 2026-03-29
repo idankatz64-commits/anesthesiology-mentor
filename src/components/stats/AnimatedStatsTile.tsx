@@ -40,7 +40,7 @@ export default function AnimatedStatsTile({ collapsed, expanded, className = '',
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         transition={spring}
-        className={`deep-tile rounded-2xl cursor-pointer ${className}`}
+        className={`deep-tile rounded-xl cursor-pointer ${className}`}
       >
         {collapsed}
       </motion.div>

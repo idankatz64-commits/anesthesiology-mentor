@@ -161,7 +161,7 @@ export default function ERITile({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 20 }}
                 transition={spring}
-                className="bg-card border border-border rounded-2xl w-[90vw] max-w-5xl max-h-[90vh] overflow-y-auto p-6 relative z-10"
+                className="bg-card border border-border rounded-xl w-[90vw] max-w-5xl max-h-[90vh] overflow-y-auto p-6 relative z-10"
                 dir="rtl"
               >
                 <button onClick={(e) => { e.stopPropagation(); setOpen(false); }} className="absolute top-4 left-4 w-8 h-8 rounded-lg bg-muted hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground transition z-20">

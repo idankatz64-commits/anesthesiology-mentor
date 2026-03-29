@@ -68,7 +68,7 @@ export default function AdminView() {
       </div>
 
       {/* Sync Section */}
-      <div className="bg-card border border-border rounded-2xl p-6 mb-6 shadow-sm">
+      <div className="bg-card border border-border rounded-xl p-6 mb-6 shadow-sm">
         <h3 className="font-bold text-foreground mb-4 text-lg">סנכרון שאלות</h3>
         <div className="flex flex-wrap items-center gap-4">
           <button
@@ -101,7 +101,7 @@ export default function AdminView() {
       </div>
 
       {/* Feedback Section */}
-      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+      <div className="bg-card border border-border rounded-xl overflow-hidden shadow-sm">
         <div className="px-6 py-4 border-b border-border">
           <h3 className="font-bold text-foreground text-lg">פידבקים</h3>
         </div>
