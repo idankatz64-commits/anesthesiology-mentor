@@ -5,6 +5,7 @@ import { Download, Upload, AlertTriangle, BookOpen, Target, Brain, BarChart3, Ch
 import { motion } from 'framer-motion';
 import AnimatedNumber from '@/components/AnimatedNumber';
 
+import { StatCard } from '@/components/stats/StatCard';
 import { useStatsData } from '@/components/stats/useStatsData';
 import ERITile from '@/components/stats/ERITile';
 import ForgettingRiskTile from '@/components/stats/ForgettingRiskTile';
