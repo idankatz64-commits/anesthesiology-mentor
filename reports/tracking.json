@@ -20,14 +20,44 @@
       "readiness_score": 49,
       "projected_exam_pct": 0.62,
       "bugs_fixed": [
-        "SRS interval overflow q2076 → 90d"
+        "SRS interval overflow q2076 \u2192 90d"
       ],
       "spearman_reps_acc": 0.975,
       "spearman_ease_acc": 0.845,
       "kw_pvalue_hour": 0.0136,
       "afternoon_acc": 0.826,
       "morning_acc": 0.65,
-      "notes": "Baseline — first report. Two-stage algorithm deployed. 8 bug fixes deployed."
+      "notes": "Baseline \u2014 first report. Two-stage algorithm deployed. 8 bug fixes deployed."
+    },
+    {
+      "date": "2026-03-29",
+      "week": 13,
+      "total_answered": 317,
+      "total_attempts": 348,
+      "global_accuracy": 0.7213,
+      "coverage_pct": 0.317,
+      "ever_wrong": 96,
+      "currently_wrong": 88,
+      "fixed": 8,
+      "srs_total": 314,
+      "srs_due": 266,
+      "srs_mature": 1,
+      "srs_confident": 90,
+      "srs_hesitant": 199,
+      "srs_guessed": 25,
+      "readiness_score": 47.2,
+      "projected_exam_pct": 0.5701,
+      "spearman_reps_acc": 0.9459,
+      "spearman_ease_acc": 0.8159,
+      "kw_pvalue_hour": 0.00451,
+      "afternoon_acc": 0.8537,
+      "morning_acc": 0.6579,
+      "bootstrap_ci_95": [
+        0.6719,
+        0.7729
+      ],
+      "days_left": 78,
+      "notes": "Week 2 report. Phase A+B UI improvements deployed."
     }
   ],
   "meta": {
