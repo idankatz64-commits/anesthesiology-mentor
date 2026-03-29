@@ -1,7 +1,7 @@
 import { useState, useEffect, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, LogOut, User, ChevronDown, BookOpen, RefreshCw, Activity, Heart } from 'lucide-react';
+import { LogIn, LogOut, User, ChevronDown, BookOpen, RefreshCw, Activity, Heart, FolderOpen, FileText, Link as LinkIcon } from 'lucide-react';
 import type { User as SupaUser } from '@supabase/supabase-js';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { useApp } from '@/contexts/AppContext';
@@ -13,6 +13,13 @@ const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
   const { syncStatus } = useApp();
+  const [resourceLinks, setResourceLinks] = useState<{ id: string; title: string; url: string; category: string }[]>([]);
+
+  useEffect(() => {
+    supabase.from('resource_links').select('id, title, url, category').then(({ data }) => {
+      if (data) setResourceLinks(data);
+    });
+  }, []);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -68,6 +75,26 @@ const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>
             </Tooltip>
           </TooltipProvider>
         )}
+
+        {/* Resource links from DB */}
+        {resourceLinks.map(link => {
+          const Icon = link.category === 'drive' ? FolderOpen : link.category === 'pdf' ? FileText : LinkIcon;
+          return (
+            <TooltipProvider key={link.id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    onClick={() => window.open(link.url, '_blank', 'noopener,noreferrer')}
+                    className="p-2 rounded-lg bg-card/40 border border-border/50 text-muted-foreground hover:text-primary hover:border-primary/30 hover:bg-primary/5 transition-all duration-200"
+                  >
+                    <Icon className="w-4 h-4" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent>{link.title}</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          );
+        })}
 
         {/* NotebookLM button */}
         <TooltipProvider>
