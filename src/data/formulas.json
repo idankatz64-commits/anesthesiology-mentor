@@ -9,6 +9,7 @@
           "name": "Systemic Vascular Resistance (SVR)",
           "expression": "((MAP - CVP) / CO) * 80",
           "unit": "dyne·s/cm⁵",
+          "description": "מדד להתנגדות כלי הדם הסיסטמיים. עולה בוזוקונסטריקציה, יורד בספסיס. SVR גבוה עם CO נמוך = cardiogenic shock. SVR נמוך עם CO גבוה = distributive shock.",
           "inputs": [
             { "id": "MAP", "label": "MAP (mmHg)", "default": 90 },
             { "id": "CVP", "label": "CVP (mmHg)", "default": 5 },
@@ -20,6 +21,7 @@
           "name": "Pulmonary Vascular Resistance (PVR)",
           "expression": "((MPAP - PAWP) / CO) * 80",
           "unit": "dyne·s/cm⁵",
+          "description": "PVR > 250 = pulmonary hypertension. עולה בהיפוקסיה, חמצת, ARDS. רלוונטי לניתוחי לב, השתלות ריאה, ולד עם מחלת לב מולדת.",
           "inputs": [
             { "id": "MPAP", "label": "MPAP (mmHg)", "default": 20 },
             { "id": "PAWP", "label": "PAWP (mmHg)", "default": 10 },
@@ -31,6 +33,7 @@
           "name": "Cardiac Output (Echo/Doppler)",
           "expression": "pi * (LVOT_D / 2)^2 * VTI * HR / 1000",
           "unit": "L/min",
+          "description": "חישוב CO מ-ECHO: VTI × CSA × HR. LVOT diameter נמדד ב-PLAX. VTI נמדד ב-A5C באמצעות PW Doppler. דיוק ±10-15% תלוי בחלון אקו.",
           "note": "LVOT diameter in cm, VTI in cm",
           "inputs": [
             { "id": "LVOT_D", "label": "LVOT Diameter (cm)", "default": 2 },
@@ -43,6 +46,7 @@
           "name": "Cardiac Output (Fick Principle)",
           "expression": "VO2 / (CaO2 - CvO2)",
           "unit": "L/min",
+          "description": "Gold standard למדידת CO. CaO2 - CvO2 = oxygen extraction. VO2 רגיל ~250 mL/min. CO רגיל 4-8 L/min. זהיר: שינוי ב-Hgb משפיע על CaO2.",
           "inputs": [
             { "id": "VO2", "label": "O₂ Consumption (mL/min)", "default": 250 },
             { "id": "CaO2", "label": "Arterial O₂ Content (mL/dL)", "default": 20 },
@@ -54,6 +58,7 @@
           "name": "Ejection Fraction (EF)",
           "expression": "((LVEDV - LVESV) / LVEDV) * 100",
           "unit": "%",
+          "description": "EF < 40% = reduced EF heart failure (HFrEF). EF 40-49% = mildly reduced. EF ≥ 50% = preserved (HFpEF). EF < 35% → ICD consideration.",
           "inputs": [
             { "id": "LVEDV", "label": "LVEDV (mL)", "default": 120 },
             { "id": "LVESV", "label": "LVESV (mL)", "default": 50 }
@@ -64,6 +69,7 @@
           "name": "Mixed Venous Saturation (SvO₂)",
           "expression": "SaO2 - (VO2 / (CO * 1.36 * Hgb))",
           "unit": "%",
+          "description": "SvO₂ נורמלי 65-75%. SvO₂ < 60% = inadequate DO₂ (shock, high VO₂). SvO₂ > 80% = distributive shock, sepsis, ECMO, wedged PA catheter.",
           "inputs": [
             { "id": "SaO2", "label": "SaO₂ (%)", "default": 98 },
             { "id": "VO2", "label": "O₂ Consumption (mL/min)", "default": 250 },
@@ -82,6 +88,7 @@
           "name": "Alveolar O₂ Tension (PAO₂)",
           "expression": "(FiO2 * 713) - (PaCO2 / 0.8)",
           "unit": "mmHg",
+          "description": "PAO₂ על אוויר חדר ~100 mmHg. A-a gradient = PAO₂ - PaO₂. gradient נורמלי <15 mmHg. Elevated gradient = V/Q mismatch, שאנט, diffusion failure.",
           "note": "Assumes Patm=760, PH₂O=47, so Patm-PH₂O=713",
           "inputs": [
             { "id": "FiO2", "label": "FiO₂ (fraction, e.g. 0.21)", "default": 0.21 },
@@ -93,6 +100,7 @@
           "name": "O₂ Content (CaO₂)",
           "expression": "(SaO2 / 100 * Hgb * 1.34) + (0.003 * PaO2)",
           "unit": "mL/dL",
+          "description": "99% מ-CaO₂ קשור ל-Hgb. הרכיב המומס (0.003 × PaO₂) זניח. Hgb 1g נושא 1.34 mL O₂. Anemia משפיעה יותר על CaO₂ מאשר hypoxemia קלה.",
           "inputs": [
             { "id": "SaO2", "label": "SaO₂ (%)", "default": 98 },
             { "id": "Hgb", "label": "Hemoglobin (g/dL)", "default": 12 },
@@ -104,6 +112,7 @@
           "name": "O₂ Delivery (DO₂)",
           "expression": "CaO2 * CO * 10",
           "unit": "mL/min",
+          "description": "DO₂ נורמלי 800-1200 mL/min. VO₂ נורמלי ~250 mL/min. DO₂/VO₂ ratio = 4:1 בנורמה. כשDO₂ יורד מ-~330 mL/min = oxygen delivery dependency (critical DO₂).",
           "inputs": [
             { "id": "CaO2", "label": "CaO₂ (mL/dL)", "default": 20 },
             { "id": "CO", "label": "Cardiac Output (L/min)", "default": 5 }
@@ -114,6 +123,7 @@
           "name": "Global O₂ Uptake (VO₂)",
           "expression": "10 * CO * (CaO2 - CvO2)",
           "unit": "mL/min",
+          "description": "VO₂ עולה בחום, כאב, ספסיס, פעילות. יורד בהיפותרמיה, הרדמה. VO₂ indexed (~110-160 mL/min/m²) שימושי ביותר בילדים ומבוגרים עם BSA שונה.",
           "inputs": [
             { "id": "CO", "label": "Cardiac Output (L/min)", "default": 5 },
             { "id": "CaO2", "label": "CaO₂ (mL/dL)", "default": 20 },
@@ -125,6 +135,7 @@
           "name": "Physiologic Dead Space (Vd/Vt)",
           "expression": "(PaCO2 - PeCO2) / PaCO2",
           "unit": "ratio",
+          "description": "Vd/Vt נורמלי 0.20-0.35. עולה ב-ARDS, PE, low CO. Vd/Vt > 0.6 = קשה לwean מ-ventilator. PeCO2 נמדד מ-ET CO₂ בנשיפה מלאה.",
           "inputs": [
             { "id": "PaCO2", "label": "PaCO₂ (mmHg)", "default": 40 },
             { "id": "PeCO2", "label": "PeCO₂ - Mixed Expired (mmHg)", "default": 28 }
@@ -135,6 +146,7 @@
           "name": "Shunt Fraction (Qs/Qt)",
           "expression": "(1 - SaO2) / (1 - SvO2)",
           "unit": "ratio",
+          "description": "שאנט נורמלי <5%. 5-20% = ירידה קלה-בינונית. >25% = refractory hypoxemia. ARDS לרוב 30-50%. בניגוד ל-V/Q mismatch — שאנט לא מגיב ל-FiO₂ גבוה.",
           "inputs": [
             { "id": "SaO2", "label": "SaO₂ (fraction)", "default": 0.98 },
             { "id": "SvO2", "label": "SvO₂ (fraction)", "default": 0.75 }
@@ -145,6 +157,7 @@
           "name": "Apnea-Hypopnea Index (AHI)",
           "expression": "(apnea + hypopnea) / total_sleep",
           "unit": "events/hr",
+          "description": "AHI < 5 = normal. 5-15 = mild OSA. 15-30 = moderate. > 30 = severe. OSA קשור ל-difficult airway, post-op complications. CPAP pre-op בקשה ≥15.",
           "inputs": [
             { "id": "apnea", "label": "Apnea events", "default": 10 },
             { "id": "hypopnea", "label": "Hypopnea events", "default": 15 },
@@ -162,6 +175,7 @@
           "name": "Henderson-Hasselbalch (pH)",
           "expression": "6.1 + log10(HCO3 / (PCO2 * 0.03))",
           "unit": "pH",
+          "description": "pH נורמלי 7.35-7.45. כל שינוי ב-PCO₂ ב-10 mmHg → שינוי pH ב-0.08. HCO₃⁻ נורמלי 22-26 mEq/L. Base deficit/excess = כמה HCO₃⁻ חסר/עודף.",
           "inputs": [
             { "id": "HCO3", "label": "HCO₃⁻ (mEq/L)", "default": 24 },
             { "id": "PCO2", "label": "PCO₂ (mmHg)", "default": 40 }
@@ -173,6 +187,7 @@
           "expression": "Na - Cl - HCO3",
           "unit": "mEq/L",
           "note": "Normal: 12–14 mEq/L",
+          "description": "AG נורמלי 8-12 mEq/L. AG גבוה = MUDPILES (Methanol, Uremia, DKA, Propylene glycol, INH, Lactic acidosis, Ethanol, Salicylates). זכור לתקן לאלבומין!",
           "inputs": [
             { "id": "Na", "label": "Na⁺ (mEq/L)", "default": 140 },
             { "id": "Cl", "label": "Cl⁻ (mEq/L)", "default": 104 },
@@ -185,6 +200,7 @@
           "expression": "(Na - Cl - HCO3) + 0.25 * (4 - albumin)",
           "unit": "mEq/L",
           "note": "Albumin in g/dL. Normal albumin = 4 g/dL",
+          "description": "חובה לתקן AG לאלבומין! כל 1 g/dL ירידה באלבומין → AG יורד ב-2.5 mEq/L. חולה ICU עם היפואלבומינמיה ו-AG 'נורמלי' עלול להסתיר HAGMA.",
           "inputs": [
             { "id": "Na", "label": "Na⁺ (mEq/L)", "default": 140 },
             { "id": "Cl", "label": "Cl⁻ (mEq/L)", "default": 104 },
@@ -198,6 +214,7 @@
           "expression": "(AG - 12) / (24 - HCO3)",
           "unit": "ratio",
           "note": "<0.4: Hyperchloremic normal AG | <1: High AG + normal AG | 1–2: Pure AG | >2: High AG + metabolic alkalosis",
+          "description": "כלי לגילוי mixed acid-base disorder. Δ/Δ < 1 = HAGMA + NAGMA יחד. Δ/Δ > 2 = HAGMA + metabolic alkalosis. Δ/Δ 1-2 = pure HAGMA.",
           "inputs": [
             { "id": "AG", "label": "Anion Gap (mEq/L)", "default": 18 },
             { "id": "HCO3", "label": "HCO₃⁻ (mEq/L)", "default": 18 }
@@ -208,6 +225,7 @@
           "name": "Free Water Deficit",
           "expression": "0.6 * weight * ((Na / 140) - 1)",
           "unit": "L",
+          "description": "תיקן היפרנתרמיה לאט! מקסימום 10-12 mEq/L לכל 24 שעות. תיקון מהיר → cerebral edema. TBW = 0.6×kg בגברים, 0.5×kg בנשים ובמבוגרים.",
           "inputs": [
             { "id": "weight", "label": "Weight (kg)", "default": 70 },
             { "id": "Na", "label": "Na⁺ (mEq/L)", "default": 155 }
@@ -219,6 +237,7 @@
           "expression": "EBV * (startHCT - targetHCT) / startHCT",
           "unit": "mL",
           "note": "EBV: ~70 mL/kg adults, ~80 mL/kg children",
+          "description": "Hct target בנוסח זה הוא ~21-24% (Hgb ~7-8). EBV: נוזלים 70 mL/kg במבוגר, 80 mL/kg בילד, 85-90 mL/kg בנבדון. כל 1 mL אובדן דם → החלף ב-3 mL crystalloid.",
           "inputs": [
             { "id": "EBV", "label": "EBV (mL)", "default": 4900 },
             { "id": "startHCT", "label": "Starting HCT (%)", "default": 38 },
@@ -231,6 +250,7 @@
           "expression": "2 * Na + 2 * K + glucose / 18 + BUN / 2.8",
           "unit": "mOsm/L",
           "note": "Normal: 285–295 mOsm/L",
+          "description": "Osmolar gap = measured - calculated. gap > 10 = טוקסינים (methanol, ethanol, ethylene glycol, isopropanol). Effective osmolarity = 2×Na + glucose/18 (ללא BUN שנחלש חופשי).",
           "inputs": [
             { "id": "Na", "label": "Na⁺ (mEq/L)", "default": 140 },
             { "id": "K", "label": "K⁺ (mEq/L)", "default": 4 },
@@ -249,6 +269,7 @@
           "name": "Volume of Distribution (Vd)",
           "expression": "dose / concentration",
           "unit": "L",
+          "description": "Vd גדול (>1 L/kg) = חומר שומני, נקשר לרקמות (digoxin, amiodarone). Vd קטן (<0.1 L/kg) = נשאר בפלסמה (heparin, albumin). Vd גדול → half-life ארוך, קשה לdialyze.",
           "inputs": [
             { "id": "dose", "label": "Dose (mg)", "default": 100 },
             { "id": "concentration", "label": "Plasma Concentration (mg/L)", "default": 2 }
@@ -259,6 +280,7 @@
           "name": "Half-Life (T½)",
           "expression": "0.693 * Vd / CL",
           "unit": "min",
+          "description": "5 t½ = steady state. 4 t½ = 94% elimination. ב-renal/hepatic failure: CL יורד → t½ עולה → הצטברות. dose = f(CL), interval = f(t½). Context-sensitive half-time ≠ elimination t½.",
           "inputs": [
             { "id": "Vd", "label": "Volume of Distribution (L)", "default": 20 },
             { "id": "CL", "label": "Clearance (L/min)", "default": 1 }
@@ -269,6 +291,7 @@
           "name": "Therapeutic Index",
           "expression": "LD50 / ED50",
           "unit": "ratio",
+          "description": "TI נמוך = window צר (digoxin TI ~2, lithium TI ~3). TI גבוה = בטוח יותר (penicillin TI >100). תרופות הרדמה לרוב TI נמוך → monitoring חיוני.",
           "inputs": [
             { "id": "LD50", "label": "LD₅₀", "default": 100 },
             { "id": "ED50", "label": "ED₅₀", "default": 10 }

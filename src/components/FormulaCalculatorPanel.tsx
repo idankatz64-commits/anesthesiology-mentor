@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { supabase } from '@/integrations/supabase/client';
+import formulasJson from '@/data/formulas.json';
 
 interface FormulaInput {
   id: string;
@@ -21,6 +22,7 @@ interface Formula {
   expression: string;
   unit: string;
   note?: string;
+  description?: string;
   inputs: FormulaInput[];
 }
 
@@ -63,47 +65,54 @@ export default function FormulaCalculatorPanel({
 
   useEffect(() => {
     if (!open) return;
-    const fetchFormulas = async () => {
+    const loadFormulas = async () => {
       setLoading(true);
+      // Try Supabase first, fall back to local JSON
       const { data, error } = await supabase
         .from('calculator_formulas')
         .select('*')
         .order('sort_order');
 
-      if (error) {
-        console.error('Error fetching calculator formulas:', error);
-        setLoading(false);
-        return;
-      }
-
-      // Group by category
-      const catMap: Record<string, Category> = {};
-      (data || []).forEach((row: any) => {
-        if (!catMap[row.category_id]) {
-          catMap[row.category_id] = {
-            id: row.category_id,
-            label: row.category_label,
-            formulas: [],
-          };
-        }
-        catMap[row.category_id].formulas.push({
-          id: row.id,
-          name: row.formula_name,
-          expression: row.expression,
-          unit: row.unit,
-          note: row.note || undefined,
-          inputs: (row.inputs as FormulaInput[]) || [],
+      if (!error && data && data.length > 0) {
+        const catMap: Record<string, Category> = {};
+        data.forEach((row: any) => {
+          if (!catMap[row.category_id]) {
+            catMap[row.category_id] = { id: row.category_id, label: row.category_label, formulas: [] };
+          }
+          catMap[row.category_id].formulas.push({
+            id: row.id,
+            name: row.formula_name,
+            expression: row.expression,
+            unit: row.unit,
+            note: row.note || undefined,
+            description: row.description || undefined,
+            inputs: (row.inputs as FormulaInput[]) || [],
+          });
         });
-      });
-
-      const cats = Object.values(catMap);
-      setCategories(cats);
-      if (cats.length > 0 && !selectedCategoryId) {
-        setSelectedCategoryId(cats[0].id);
+        const cats = Object.values(catMap);
+        setCategories(cats);
+        if (cats.length > 0 && !selectedCategoryId) setSelectedCategoryId(cats[0].id);
+      } else {
+        // Fallback: load from local formulas.json
+        const cats: Category[] = formulasJson.categories.map((cat: any) => ({
+          id: cat.id,
+          label: cat.label,
+          formulas: cat.formulas.map((f: any) => ({
+            id: f.id,
+            name: f.name,
+            expression: f.expression,
+            unit: f.unit,
+            note: f.note,
+            description: f.description,
+            inputs: f.inputs,
+          })),
+        }));
+        setCategories(cats);
+        if (cats.length > 0 && !selectedCategoryId) setSelectedCategoryId(cats[0].id);
       }
       setLoading(false);
     };
-    fetchFormulas();
+    loadFormulas();
   }, [open]);
 
   const selectedCategory = useMemo(
@@ -220,13 +229,16 @@ export default function FormulaCalculatorPanel({
               {/* Selected formula details */}
               {selectedFormula && (
                 <div className="space-y-4 pt-2">
-                  <div className="liquid-glass p-4">
-                    <h3 className="font-bold text-foreground text-sm mb-1">{selectedFormula.name}</h3>
-                    <code className="text-xs matrix-text block bg-muted/50 p-2 rounded-lg mt-1 font-mono break-all">
+                  <div className="liquid-glass p-4 space-y-2">
+                    <h3 className="font-bold text-foreground text-sm">{selectedFormula.name}</h3>
+                    <code className="text-xs matrix-text block bg-muted/50 p-2 rounded-lg font-mono break-all">
                       {selectedFormula.expression}
                     </code>
+                    {selectedFormula.description && (
+                      <p className="text-xs text-muted-foreground leading-relaxed border-t border-border/50 pt-2">{selectedFormula.description}</p>
+                    )}
                     {selectedFormula.note && (
-                      <p className="text-xs text-muted-foreground mt-2 italic">{selectedFormula.note}</p>
+                      <p className="text-xs text-amber-400/80 italic">{selectedFormula.note}</p>
                     )}
                   </div>
 
