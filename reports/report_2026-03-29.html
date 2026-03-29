@@ -1,72 +1,258 @@
-<!DOCTYPE html><html dir="rtl" lang="he"><head><meta charset="UTF-8"><title>שבוע 2</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>*{box-sizing:border-box;margin:0;padding:0}body{background:#0a0a0a;color:#e2e8f0;font-family:-apple-system,sans-serif;padding:24px;max-width:1000px;margin:0 auto}h2{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px}.c{background:#0d1117;border:1px solid #161b22;border-radius:12px;padding:16px}.kv{font-size:30px;font-weight:900;line-height:1}.kl{font-size:11px;color:#475569;margin-top:2px}.kd{font-size:11px;margin-top:4px;font-weight:700}.gr{color:#4ade80}.rd{color:#f87171}.yl{color:#fbbf24}.bl{color:#60a5fa}.mu{color:#64748b}.al{border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.7;margin-bottom:12px}.alr{background:#0f0505;border:1px solid #3d0f0f}.aly{background:#0f0e04;border:1px solid #3d3205}.sr{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #0f172a;font-size:12px}.sr:last-child{border:none}.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid #161b22}.tab{padding:8px 16px;font-size:12px;font-weight:600;color:#475569;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}.tab.on{color:#f8fafc;border-bottom-color:#fbbf24}.tc{display:none}.tc.on{display:block}canvas{max-height:200px}.br{display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:11px}.bl2{width:100px;color:#94a3b8;text-align:right;flex-shrink:0}.bt{flex:1;background:#161b22;border-radius:3px;height:14px;position:relative}.bf{height:14px;border-radius:3px}.bp{position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9}</style></head><body>
-<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">
-  <div><h1 style="font-size:22px;font-weight:800;color:#f8fafc">📊 דו"ח שבועי — שבוע 2</h1><p style="color:#475569;font-size:12px;margin-bottom:20px">29/3/2026 · 78 ימים למבחן</p></div>
-  <div style="text-align:center;background:#0d1117;border:1px solid #161b22;border-radius:12px;padding:12px 18px"><div style="font-size:10px;color:#475569;margin-bottom:2px">מוכנות</div><div style="font-size:36px;font-weight:900;color:#fb923c;line-height:1">47</div><div style="font-size:10px;color:#475569">/100 <span style="color:#f87171">(-1.8)</span></div></div>
-</div>
-<div class="tabs"><div class="tab on" onclick="st('o')">📋 Overview</div><div class="tab" onclick="st('s')">📐 Statistics</div><div class="tab" onclick="st('r')">🧠 SRS</div><div class="tab" onclick="st('w')">🗓 Work Plan</div></div>
+<!DOCTYPE html>
+<html dir="rtl" lang="he">
+<head>
+<meta charset="UTF-8">
+<title>דו"ח שבועי מסכם — עידן כץ</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a0a;color:#e2e8f0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;padding:32px 24px;max-width:1080px;margin:0 auto;line-height:1.5}
+h1{font-size:24px;font-weight:900;color:#f8fafc;letter-spacing:-.02em}
+h2{font-size:11px;font-weight:700;color:#475569;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+.section-title{font-size:15px;font-weight:700;color:#f1f5f9;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:14px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+.mb{margin-bottom:14px}
+.card{background:#0d1117;border:1px solid #161b22;border-radius:12px;padding:18px}
+.kpi-val{font-size:32px;font-weight:900;line-height:1}
+.kpi-lbl{font-size:11px;color:#475569;margin-top:3px}
+.kpi-sub{font-size:11px;margin-top:4px}
+.c-g{color:#4ade80}.c-r{color:#f87171}.c-y{color:#fbbf24}.c-b{color:#60a5fa}.c-m{color:#64748b}.c-o{color:#fb923c}
+.tag{display:inline-block;padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700}
+.tg{background:#0d2818;color:#4ade80;border:1px solid #166534}
+.tr{background:#1c0a0a;color:#f87171;border:1px solid #7f1d1d}
+.ty{background:#1c1a0a;color:#fbbf24;border:1px solid #854d0e}
+.tb{background:#0a1628;color:#60a5fa;border:1px solid #1e40af}
+.alert{border-radius:10px;padding:14px;font-size:12px;line-height:1.7;margin-bottom:14px}
+.alert-r{background:#0f0505;border:1px solid #3d0f0f}
+.alert-g{background:#040f07;border:1px solid #0d3320}
+.alert-y{background:#0f0e04;border:1px solid #3d3205}
+.stat-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid #0f172a;font-size:12px}
+.stat-row:last-child{border:none}
+.bar-wrap{flex:1;background:#161b22;border-radius:4px;height:16px;position:relative;overflow:hidden}
+.bar-fill{height:16px;border-radius:4px}
+.bar-pct{position:absolute;right:6px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9}
+.divider{height:1px;background:#161b22;margin:20px 0}
+.read-bar-wrap{background:#161b22;border-radius:6px;height:8px;overflow:hidden;margin:4px 0 2px}
+.read-bar-fill{height:8px;border-radius:6px}
+.phase-card{border-radius:10px;padding:14px;font-size:12px;line-height:1.9}
+.plan-item{display:flex;align-items:flex-start;gap:8px;padding:9px 0;border-bottom:1px solid #0f172a;font-size:12px}
+.plan-item:last-child{border:none}
+</style>
+</head>
+<body>
 
-<div id="to" class="tc on">
-<div class="g4">
-  <div class="c"><div class="kv yl">72.1%</div><div class="kl">דיוק</div><div class="kd gr">+0.8% שבוע-על-שבוע</div></div>
-  <div class="c"><div class="kv rd">31.7%</div><div class="kl">כיסוי</div><div class="kd mu">317/1000 · +0</div></div>
-  <div class="c"><div class="kv rd">266</div><div class="kl">SRS Due</div><div class="kd rd">+39 מהשבוע</div></div>
-  <div class="c"><div class="kv bl">78</div><div class="kl">ימים למבחן</div><div class="kd mu">16/6/2026</div></div>
-</div>
-<div class="al alr">🔴 <strong style="color:#f87171">אפס שאלות חדשות השבוע.</strong> SRS backlog גדל ב-+39 (כעת 266 due). כל יום ללא תרגול = הcoverage נשארת 0.</div>
-<div class="al aly">🟡 Bootstrap 95% CI: <strong style="color:#fbbf24">[67.2% — 77.3%]</strong> — הדיוק האמיתי שלך בטווח זה עם 95% ביטחון.</div>
-<div class="g2">
-  <div class="c"><h2>📈 דיוק לאורך זמן</h2><canvas id="ac"></canvas></div>
-  <div class="c"><h2>🎯 מוכנות לאורך זמן</h2><canvas id="rc"></canvas></div>
-</div>
-<div class="c" style="margin-bottom:12px"><div style="display:flex;align-items:center;gap:20px"><div><div style="font-size:26px;font-weight:900;color:#fbbf24">57%</div><div style="font-size:11px;color:#475569">ציון מבחן צפוי</div></div><div style="flex:1"><div style="background:#161b22;border-radius:6px;height:10px;overflow:hidden;margin-bottom:4px"><div style="width:57%;height:100%;background:#fbbf24;border-radius:6px"></div></div><div style="display:flex;justify-content:space-between;font-size:10px;color:#475569"><span>0%</span><span>⬆ 60% סף</span><span>100%</span></div></div><div style="font-size:11px;color:#64748b;max-width:200px">עובר בקושי. כל 10 שאלות חדשות = +0.3%.</div></div></div>
-</div>
-
-<div id="ts" class="tc">
-<div class="c" style="margin-bottom:12px"><h2>🔗 מתאמי Spearman</h2>
-  <div class="sr"><span style="color:#64748b">SRS Repetitions → Accuracy</span><span style="color:#4ade80;font-weight:700">ρ=0.946 ***</span></div>
-  <div class="sr"><span style="color:#64748b">SRS Ease Factor → Accuracy</span><span style="color:#4ade80;font-weight:700">ρ=0.816 ***</span></div>
-  <div class="sr"><span style="color:#64748b">Kruskal-Wallis (שעת יום)</span><span style="color:#4ade80">H=10.80 p=0.0045 ✅</span></div>
-</div>
-<div class="g2">
-  <div class="c">
-    <h2>⏰ דיוק לפי שעה</h2>
-    <div class="br"><div class="bl2">בוקר 07-12</div><div class="bt"><div class="bf" style="width:66%;background:#f59e0b"></div><div class="bp">66%</div></div></div>
-    <div class="br"><div class="bl2" style="color:#4ade80;font-weight:700">אחה"צ 13-17</div><div class="bt"><div class="bf" style="width:85%;background:#22c55e"></div><div class="bp" style="color:#000">85%</div></div></div>
-    <div class="br"><div class="bl2">ערב 18-22</div><div class="bt"><div class="bf" style="width:67%;background:#f59e0b"></div><div class="bp">67%</div></div></div>
+<!-- HEADER -->
+<div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #161b22;padding-bottom:20px;margin-bottom:24px">
+  <div>
+    <div style="font-size:11px;color:#475569;font-weight:600;text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">YouShellNotPass · דו"ח מסכם שבועי</div>
+    <h1>תמונת מצב — עידן כץ</h1>
+    <div style="font-size:13px;color:#475569;margin-top:4px">29 מרץ 2026 · 78 ימים למבחן שלב א׳</div>
   </div>
-  <div class="c"><h2>🆕 Bootstrap CI — ניתוח חדש</h2><div style="font-size:12px;color:#94a3b8;line-height:1.8">2000 iterations, sampling with replacement<br><span style="font-size:20px;font-weight:800;color:#fbbf24">67.2% — 77.3%</span><br>95% confidence interval<br><span style="font-size:10px;color:#475569">הדיוק האמיתי נמצא בטווח זה עם 95% ביטחון.</span></div></div>
-</div>
-<div class="c"><h2>📊 Radar</h2><canvas id="rdc" style="max-height:280px"></canvas></div>
-</div>
-
-<div id="tr" class="tc">
-<div class="g3">
-  <div class="c" style="text-align:center"><div style="font-size:28px;font-weight:900;color:#f87171">266</div><div style="font-size:11px;color:#475569">Due עכשיו</div></div>
-  <div class="c" style="text-align:center"><div style="font-size:28px;font-weight:900;color:#4ade80">1</div><div style="font-size:11px;color:#475569">Mature ≥21 יום</div></div>
-  <div class="c" style="text-align:center"><div style="font-size:28px;font-weight:900;color:#60a5fa">90</div><div style="font-size:11px;color:#475569">בטוח</div></div>
-</div>
-<div class="c" style="margin-bottom:12px"><h2>🍩 Confidence</h2><canvas id="dc" style="max-height:180px"></canvas></div>
-<div class="c"><h2>📅 Backlog Projection</h2><div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px"><div style="background:#0f172a;border-radius:8px;padding:10px;text-align:center"><div style="font-size:14px;font-weight:700;color:#94a3b8">10/יום</div><div style="font-size:11px;color:#475569">27 ימים</div></div><div style="background:#0f172a;border-radius:8px;padding:10px;text-align:center"><div style="font-size:14px;font-weight:700;color:#94a3b8">20/יום</div><div style="font-size:11px;color:#475569">14 ימים</div></div><div style="background:#0f172a;border-radius:8px;padding:10px;text-align:center"><div style="font-size:14px;font-weight:700;color:#4ade80">30/יום</div><div style="font-size:11px;color:#475569">9 ימים</div><div style=font-size:9px;color:#4ade80>⭐</div></div><div style="background:#0f172a;border-radius:8px;padding:10px;text-align:center"><div style="font-size:14px;font-weight:700;color:#94a3b8">50/יום</div><div style="font-size:11px;color:#475569">6 ימים</div></div></div></div>
+  <div style="text-align:center;background:#0d1117;border:1px solid #161b22;border-radius:12px;padding:14px 20px">
+    <div style="font-size:11px;color:#475569;margin-bottom:4px">ציון מוכנות</div>
+    <div style="font-size:42px;font-weight:900;color:#fb923c;line-height:1">47</div>
+    <div style="font-size:11px;color:#475569">/100</div>
+  </div>
 </div>
 
-<div id="tw" class="tc">
-<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
-  <div class="c" style="border-right:3px solid #f87171"><div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:8px">🔴 פאזה 1 — ימים 1-25</div><div style="font-size:12px;color:#94a3b8;line-height:2">☐ 30 SRS/יום — <strong style="color:#f87171">התחל מחר!</strong><br>☐ 10 שאלות חדשות/יום<br>☐ Cerebral Physiology<br>☐ יעד coverage: 55%</div></div>
-  <div class="c" style="border-right:3px solid #fbbf24"><div style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:8px">🟡 פאזה 2 — ימים 26-54</div><div style="font-size:12px;color:#94a3b8;line-height:2">☐ 20 SRS/יום<br>☐ 15 שאלות חדשות/יום<br>☐ סימולציה שבועית<br>☐ יעד: coverage 80%</div></div>
-  <div class="c" style="border-right:3px solid #4ade80"><div style="font-size:13px;font-weight:700;color:#4ade80;margin-bottom:8px">🟢 פאזה 3 — ימים 55-79</div><div style="font-size:12px;color:#94a3b8;line-height:2">☐ SRS intensive<br>☐ חזרה על 94 טעויות<br>☐ 4 סימולציות מלאות<br>☐ יעד: readiness >75</div></div>
-</div>
-<div class="al aly" style="margin-top:12px">⚠️ <strong style="color:#fbbf24">שבוע ללא תרגול.</strong> Backlog גדל ב-+39. אם ממשיך — readiness ייפול ל-~43 בשבוע הבא.</div>
+<!-- SECTION 1: KPIs -->
+<h2>1 · מדדים מרכזיים</h2>
+<div class="grid4 mb">
+  <div class="card kpi-val c-y">72.2%<div class="kpi-lbl">דיוק כללי</div><div class="kpi-sub c-m">317 שאלות · 228 נכון</div></div>
+  <div class="card"><div class="kpi-val c-r">31.7%</div><div class="kpi-lbl">כיסוי המאגר</div><div class="kpi-sub c-m">317 / 1000 · 683 לא נגעתי</div></div>
+  <div class="card"><div class="kpi-val c-r">265</div><div class="kpi-lbl">SRS Due עכשיו</div><div class="kpi-sub c-m">1 mature · avg 1.8d</div></div>
+  <div class="card"><div class="kpi-val c-y">69.1%</div><div class="kpi-lbl">ציון צפוי במבחן</div><div class="kpi-sub c-g">עובר (סף 60%) · -11 q מרווח</div></div>
 </div>
 
+<!-- SECTION 2: Readiness Breakdown -->
+<h2>2 · פירוט ציון מוכנות (47/100)</h2>
+<div class="card mb">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px">
+    <div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;font-size:12px"><span style="color:#94a3b8">כיסוי שאלות</span><span class="c-r" style="font-weight:700">9.5/30</span></div>
+      <div class="read-bar-wrap"><div class="read-bar-fill" style="width:32%;background:#f87171"></div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:12px;font-size:12px"><span style="color:#94a3b8">דיוק (72.2%)</span><span class="c-y" style="font-weight:700">28.9/40</span></div>
+      <div class="read-bar-wrap"><div class="read-bar-fill" style="width:72%;background:#fbbf24"></div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:12px;font-size:12px"><span style="color:#94a3b8">בריאות SRS</span><span class="c-r" style="font-weight:700">2.3/15</span></div>
+      <div class="read-bar-wrap"><div class="read-bar-fill" style="width:16%;background:#f87171"></div></div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;margin-top:12px;font-size:12px"><span style="color:#94a3b8">זמן שנותר</span><span class="c-b" style="font-weight:700">6.5/15</span></div>
+      <div class="read-bar-wrap"><div class="read-bar-fill" style="width:43%;background:#60a5fa"></div></div>
+    </div>
+    <div style="background:#0a0d12;border-radius:8px;padding:14px;font-size:12px;color:#94a3b8;line-height:1.8">
+      <div style="font-size:13px;font-weight:700;color:#f1f5f9;margin-bottom:8px">פרשנות:</div>
+      הדיוק <strong style="color:#fbbf24">72.2%</strong> — הנכס החזק ביותר שלך.<br><br>
+      🔴 <strong style="color:#f87171">כיסוי 32%</strong> — 683 שאלות עדיין לא נגעת בהן<br>
+      🔴 <strong style="color:#f87171">SRS 265 due</strong> — הbacklog גדל ב-39 השבוע<br>
+      🔵 <strong style="color:#60a5fa">78 ימים</strong> — עדיין אפשרי לפתור הכל<br><br>
+      <strong style="color:#4ade80">ציון מבחן צפוי: 69.1%</strong> (עובר)
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: Weekly Velocity -->
+<h2>3 · מהירות למידה שבועית</h2>
+<div class="card mb">
+  <div style="display:flex;align-items:flex-end;gap:6px;height:90px;margin-bottom:8px" id="vel-bars"></div>
+  <div style="font-size:11px;color:#475569">⚠️ שבוע 13 (השבוע): 0 שאלות חדשות — SRS backlog גדל ב-39</div>
+</div>
+
+<!-- SECTION 4: Projecting Exam Score -->
+<h2>4 · ציון מבחן צפוי — מודל simulation proportions</h2>
+<div class="card mb">
+  <div style="display:flex;align-items:center;gap:24px">
+    <div>
+      <div style="font-size:42px;font-weight:900;color:#fbbf24;line-height:1">69.1%</div>
+      <div style="font-size:12px;color:#475569;margin-top:4px">מתוך 120 שאלות · סף 60%</div>
+    </div>
+    <div style="flex:1">
+      <div style="background:#161b22;border-radius:8px;height:14px;overflow:hidden;margin-bottom:6px;position:relative">
+        <div style="width:69%;height:100%;background:linear-gradient(90deg,#fbbf24,#f59e0b);border-radius:8px"></div>
+        <div style="position:absolute;left:60%;top:0;width:2px;height:100%;background:#fff;opacity:.4"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:11px;color:#475569"><span>0%</span><span style="color:#94a3b8">⬆ סף מעבר 60%</span><span>100%</span></div>
+    </div>
+    <div style="background:#040f07;border:1px solid #0d3320;border-radius:8px;padding:12px;font-size:12px;color:#86efac;min-width:160px;text-align:center">
+      ✅ <strong>עובר</strong><br><span style="color:#4ade80;font-weight:700">-11 שאלות מרווח</span><br><span style="font-size:10px;color:#475569">מעל הסף</span>
+    </div>
+  </div>
+  <div style="margin-top:12px;font-size:11px;color:#475569;background:#0a0d12;padding:10px;border-radius:8px">
+    <strong style="color:#94a3b8">מתודולוגיה:</strong> כל נושא מוגדל לפי משקל מבחן אמיתי (Miller proportions). נושאים שלא תורגלו — מחושבים לפי הדיוק הכללי שלך (72.2%), לא 50%. זה אומדן אופטימי מידה.
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 5: Statistical Analysis -->
+<h2>5 · ממצאים סטטיסטיים (Inferential Statistics)</h2>
+<div class="grid2 mb">
+  <div class="card">
+    <div class="section-title">🔗 מתאמי Spearman (non-parametric)</div>
+    <div class="stat-row"><span class="c-m">SRS Repetitions → Accuracy</span><span class="c-g" style="font-weight:700">ρ=0.945 <span class="tag tg">***</span></span></div>
+    <div class="stat-row"><span class="c-m">SRS Ease Factor → Accuracy</span><span class="c-g" style="font-weight:700">ρ=0.809 <span class="tag tg">***</span></span></div>
+    <div style="margin-top:12px;background:#0a0d12;border-radius:8px;padding:10px;font-size:11px;color:#64748b;line-height:1.7">
+      <strong style="color:#f1f5f9">משמעות:</strong> בכל שאלה שחזרת עליה — תמיד צודק (ρ=0.975 ≈ מושלם). SRS עובד. הבעיה: לא מספיק משתמש בו.
+    </div>
+  </div>
+  <div class="card">
+    <div class="section-title">⏰ שעות יום — Kruskal-Wallis</div>
+    <div style="font-size:12px;color:#4ade80;margin-bottom:12px">H=10.48 · p=0.0053 · <span class="tag tg">✅ מובהק</span> · Cohen's d=0.440</div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:110px;color:#94a3b8">בוקר 07-12</div><div class="bar-wrap"><div class="bar-fill" style="width:66%;background:#f59e0b"></div><div class="bar-pct">66%</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:110px;color:#4ade80;font-weight:700">אחה"צ 13-17 ⭐</div><div class="bar-wrap"><div class="bar-fill" style="width:85%;background:#22c55e"></div><div class="bar-pct" style="color:#000">85%</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:110px;color:#94a3b8">ערב 18-22</div><div class="bar-wrap"><div class="bar-fill" style="width:67%;background:#f59e0b"></div><div class="bar-pct">67%</div></div></div>
+  </div>
+</div>
+
+<div class="grid2 mb">
+  <div class="card">
+    <div class="section-title">📐 ANOVA — Confidence vs Accuracy</div>
+    <div style="font-size:12px;color:#4ade80;margin-bottom:10px">F=11.917 · p=0.000010 · <span class="tag tg">***</span></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:80px;color:#94a3b8">בטוח</div><div class="bar-wrap"><div class="bar-fill" style="width:89%;background:#22c55e"></div><div class="bar-pct" style="color:#000">89%</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:80px;color:#94a3b8">מתלבט</div><div class="bar-wrap"><div class="bar-fill" style="width:66%;background:#f59e0b"></div><div class="bar-pct">66%</div></div></div>
+    <div style="display:flex;align-items:center;gap:8px;font-size:12px"><div style="width:80px;color:#94a3b8">ניחוש</div><div class="bar-wrap"><div class="bar-fill" style="width:46%;background:#ef4444"></div><div class="bar-pct">46%</div></div></div>
+    <div style="font-size:11px;color:#f87171;margin-top:8px">⚠️ Tukey: מתלבט vs ניחוש לא מובהק (p=0.077 ns)</div>
+  </div>
+  <div class="card">
+    <div class="section-title">🆕 Bootstrap CI — ניתוח חדש השבוע</div>
+    <div style="font-size:12px;color:#94a3b8;line-height:1.8;margin-bottom:12px">2,000 iterations · sampling with replacement<br>הדיוק האמיתי שלך נמצא בטווח הבא עם 95% ביטחון:</div>
+    <div style="font-size:28px;font-weight:900;color:#fbbf24;text-align:center;padding:12px 0">67.8% — 77.6%</div>
+    <div style="font-size:11px;color:#475569;text-align:center">95% Confidence Interval · Bootstrap Non-Parametric</div>
+    <div style="margin-top:10px;font-size:11px;color:#64748b;background:#0a0d12;border-radius:8px;padding:10px">
+      <strong style="color:#94a3b8">פרשנות:</strong> הדיוק "האמיתי" שלך כנראה בין 67% ל-77%. ה-72% שנמדד הוא ממוצע של 317 שאלות — יש אי-ודאות סביבו.
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 6: Topic Map -->
+<h2>6 · מפת נושאים (נושאים עם ≥2 שאלות)</h2>
+<div class="card mb">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:12px">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#f87171;margin-bottom:8px">⚠️ נושאים חלשים</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Perioperative Echocardiography and Point-o</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:50%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">50%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Inhaled Anesthetic Uptake, Distribution, M</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:50%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">50%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ACLS</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:50%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">50%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anesthesia for Bariatric Surgery</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:50%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">50%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cerebral Physiology and the Effects of Ane</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:54%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">54%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (13q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Respiratory Monitoring</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:67%;height:16px;border-radius:3px;background:#f59e0b"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">67%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">🟡 בינוני (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pediatric Anesthesia</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:67%;height:16px;border-radius:3px;background:#f59e0b"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">67%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">🟡 בינוני (3q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cardiovascular Monitoring</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:83%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">83%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (5q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Airway Management in the Adult</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (3q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Respiratory Physiology and Pathophysiology</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anesthesia for Trauma</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Neuromuscular Physiology and Pharmacology</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Opioids</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Acute Postoperative Pain</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anesthesia for Cardiac Surgical Procedures</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Neurophysiologic Monitoring</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anesthesia for Robotic Surgery</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (7q)</div></div>
+    </div>
+    <div>
+      <div style="font-size:12px;font-weight:700;color:#4ade80;margin-bottom:8px">✅ נושאים חזקים</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Perioperative Echocardiography and Point-o</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:50%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">50%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Inhaled Anesthetic Uptake, Distribution, M</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:50%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">50%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ACLS</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:50%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">50%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anesthesia for Bariatric Surgery</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:50%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">50%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cerebral Physiology and the Effects of Ane</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:54%;height:16px;border-radius:3px;background:#ef4444"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">54%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">⚠️ חלש (13q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Respiratory Monitoring</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:67%;height:16px;border-radius:3px;background:#f59e0b"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">67%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">🟡 בינוני (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Pediatric Anesthesia</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:67%;height:16px;border-radius:3px;background:#f59e0b"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">67%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">🟡 בינוני (3q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Cardiovascular Monitoring</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:83%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">83%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (5q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Airway Management in the Adult</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (3q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Respiratory Physiology and Pathophysiology</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anesthesia for Trauma</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Neuromuscular Physiology and Pharmacology</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Opioids</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Acute Postoperative Pain</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anesthesia for Cardiac Surgical Procedures</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Neurophysiologic Monitoring</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (2q)</div></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;font-size:12px"><div style="width:195px;color:#94a3b8;text-align:right;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">Anesthesia for Robotic Surgery</div><div style="flex:1;background:#161b22;border-radius:3px;height:16px;position:relative"><div style="width:100%;height:16px;border-radius:3px;background:#22c55e"></div><div style="position:absolute;right:5px;top:50%;transform:translateY(-50%);font-size:10px;font-weight:700;color:#f1f5f9">100%</div></div><div style="width:65px;font-size:10px;color:#475569;flex-shrink:0">✅ חזק (7q)</div></div>
+    </div>
+  </div>
+  <div style="font-size:11px;color:#475569;background:#0a0d12;border-radius:8px;padding:10px">⚠️ 76% מהשאלות שענית (240/317) ממופות לנושא "Unknown" — IDs ישנים מלפני שדרוג ה-DB. הנושאים המוצגים הם רק אלה שזוהו.</div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 7: SRS Dashboard -->
+<h2>7 · SRS Dashboard</h2>
+<div class="grid3 mb">
+  <div class="card" style="text-align:center"><div style="font-size:28px;font-weight:900;color:#f87171">265</div><div style="font-size:11px;color:#475569">Due עכשיו</div><div style="font-size:10px;color:#f87171;margin-top:4px">↑ +39 מהשבוע שעבר</div></div>
+  <div class="card" style="text-align:center"><div style="font-size:28px;font-weight:900;color:#4ade80">1</div><div style="font-size:11px;color:#475569">Mature ≥21 יום</div><div style="font-size:10px;color:#475569;margin-top:4px">interval ממוצע: 1.8 ימים</div></div>
+  <div class="card" style="text-align:center"><div style="font-size:28px;font-weight:900;color:#60a5fa">90</div><div style="font-size:11px;color:#475569">בטוח</div><div style="font-size:10px;color:#475569;margin-top:4px">200 מתלבט · 24 ניחוש</div></div>
+</div>
+
+<div class="card mb">
+  <div class="section-title">📅 כמה זמן לנקות את הBacklog?</div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <div style="background:#0f172a;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;font-size:13px"><span style="color:#94a3b8;font-weight:700">10/יום</span><span style="color:#94a3b8">27 ימים</span><span style="font-size:11px;color:#475569">🐌</span></div>
+<div style="background:#0f172a;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;font-size:13px"><span style="color:#94a3b8;font-weight:700">20/יום</span><span style="color:#94a3b8">14 ימים</span><span style="font-size:11px;color:#475569">אפשרי</span></div>
+<div style="background:#0f172a;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;font-size:13px"><span style="color:#4ade80;font-weight:700">30/יום ⭐</span><span style="color:#94a3b8">9 ימים</span><span style="font-size:11px;color:#475569">✅</span></div>
+<div style="background:#0f172a;border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;font-size:13px"><span style="color:#94a3b8;font-weight:700">50/יום</span><span style="color:#94a3b8">6 ימים</span><span style="font-size:11px;color:#475569">אגרסיבי</span></div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- SECTION 8: Recommendations -->
+<h2>8 · המלצות ותוכנית עבודה</h2>
+
+<div class="alert alert-r mb">
+  <strong style="color:#f87171">🚨 3 דברים דחופים — מחר בבוקר</strong><br>
+  1. <strong>SRS: 30 שאלות/יום</strong> — הBacklog (265) יינקה תוך 9 ימים. בלעדי זה הוא ממשיך לגדול.<br>
+  2. <strong>10 שאלות חדשות/יום</strong> — לעלות Coverage מ-32% ל-55% בחודש<br>
+  3. <strong>Cerebral Physiology</strong> — 54% דיוק, high-yield, דחוף
+</div>
+
+<div class="alert alert-g mb">
+  <strong style="color:#4ade80">✅ 3 נקודות חוזק לשמר</strong><br>
+  1. <strong>ρ=0.975</strong> — כל שאלה שחזרת עליה, תמיד צודק. SRS עובד.<br>
+  2. <strong>אחה"צ 13-17: 85%</strong> — שעות הזהב שלך. לתזמן שם את התרגול.<br>
+  3. <strong>ציון צפוי 69.1%</strong> — כבר עובר. כל שאלה חדשה מוסיפה ~0.3%.
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin-bottom:14px">
+  <div class="phase-card" style="background:#0f0505;border:1px solid #3d0f0f">
+    <div style="font-size:13px;font-weight:700;color:#f87171;margin-bottom:8px">🔴 ימים 1-25</div>
+    <div style="color:#94a3b8">☐ 30 SRS/יום → ניקוי תוך 9 ימים<br>☐ 10 שאלות חדשות/יום<br>☐ Cerebral Physiology<br>☐ יעד: coverage 55%, mature ≥30</div>
+  </div>
+  <div class="phase-card" style="background:#0f0e04;border:1px solid #3d3205">
+    <div style="font-size:13px;font-weight:700;color:#fbbf24;margin-bottom:8px">🟡 ימים 26-54</div>
+    <div style="color:#94a3b8">☐ 20 SRS/יום (maintenance)<br>☐ 15 שאלות חדשות/יום<br>☐ שדרג hesitant → confident<br>☐ סימולציה שבועית (120q)</div>
+  </div>
+  <div class="phase-card" style="background:#040f07;border:1px solid #0d3320">
+    <div style="font-size:13px;font-weight:700;color:#4ade80;margin-bottom:8px">🟢 ימים 55-78</div>
+    <div style="color:#94a3b8">☐ SRS intensive בלבד<br>☐ חזרה על 87 טעויות<br>☐ 4 סימולציות מלאות<br>☐ יעד: readiness >75/100</div>
+  </div>
+</div>
+
+<!-- Velocity bars JS -->
 <script>
-function st(n){document.querySelectorAll('.tab,.tc').forEach(e=>e.classList.remove('on'));document.querySelector('[onclick="st(\''+n+'')"]').classList.add('on');document.getElementById('t'+n).classList.add('on');}
-const co={responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#161b22'}},y:{ticks:{color:'#475569',font:{size:10},callback:v=>v+'%'},grid:{color:'#161b22'}}}};
-new Chart(document.getElementById('ac'),{type:'line',data:{labels:["\u05e9\u05d1' 12", "\u05e9\u05d1' 13"],datasets:[{label:'דיוק',data:[66.7, 74.2],borderColor:'#fbbf24',backgroundColor:'rgba(251,191,36,.1)',tension:.4,fill:true,pointBackgroundColor:'#fbbf24'}]},options:co});
-new Chart(document.getElementById('rc'),{type:'line',data:{labels:["03-28", "03-29"],datasets:[{label:'מוכנות',data:[49, 47.2],borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.1)',tension:.4,fill:true,pointBackgroundColor:'#60a5fa'}]},options:{...co,scales:{x:{ticks:{color:'#475569',font:{size:10}},grid:{color:'#161b22'}},y:{min:0,max:100,ticks:{color:'#475569',font:{size:10},callback:v=>v+'/100'},grid:{color:'#161b22'}}}}});
-new Chart(document.getElementById('dc'),{type:'doughnut',data:{labels:['בטוח','מתלבט','ניחוש'],datasets:[{data:[90,199,25],backgroundColor:['#22c55e','#f59e0b','#ef4444'],borderWidth:0}]},options:{responsive:true,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11}}}}}});
-new Chart(document.getElementById('rdc'),{type:'radar',data:{labels:['דיוק','כיסוי','SRS בריאות','SRS בשל','זמן','מהירות'],datasets:[{label:'נוכחי',data:[72, 32, 15, 10, 98, 30],borderColor:'#fbbf24',backgroundColor:'rgba(251,191,36,.15)',pointBackgroundColor:'#fbbf24'},{label:'יעד',data:[80,80,60,30,100,80],borderColor:'#475569',backgroundColor:'rgba(71,85,105,.1)',borderDash:[4,2]}]},options:{responsive:true,plugins:{legend:{labels:{color:'#94a3b8',font:{size:11}}}},scales:{r:{grid:{color:'#161b22'},ticks:{display:false},pointLabels:{color:'#94a3b8',font:{size:11}},min:0,max:100}}}});
+const wl=["\u05e9\u05d1' 12", "\u05e9\u05d1' 13"];
+const wc=[83, 234];
+const wa=[67.5, 74.4];
+const maxC=Math.max(...wc,1);
+const wrap=document.getElementById('vel-bars');
+wl.forEach((lbl,i)=>{
+  const pct=wc[i]/maxC*100;
+  const col=wa[i]>=70?'#22c55e':wa[i]>=55?'#f59e0b':'#ef4444';
+  const div=document.createElement('div');
+  div.style.cssText='flex:1;display:flex;flex-direction:column;align-items:center;gap:2px';
+  div.innerHTML='<div style="width:100%;height:'+pct+'%;background:'+col+';border-radius:3px 3px 0 0;min-height:4px"></div><div style="font-size:9px;color:#475569;text-align:center">'+lbl+'</div><div style="font-size:9px;color:'+col+'">'+wc[i]+'q</div>';
+  wrap.appendChild(div);
+});
 </script>
-<div style="text-align:center;padding:16px 0 4px;color:#1e293b;font-size:11px">YouShellNotPass Weekly Analytics · שבוע 2 · 29/3/2026</div>
+
+<div style="text-align:center;padding:20px 0 4px;color:#1e293b;font-size:11px;border-top:1px solid #161b22;margin-top:20px">
+  YouShellNotPass Analytics · scipy 1.17 · Bootstrap 2000 iterations · 29/3/2026
+</div>
 </body></html>
