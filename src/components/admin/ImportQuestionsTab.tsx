@@ -237,7 +237,7 @@ function BulkCsvImport() {
       source: lowerRow['source'] || lowerRow['institution'] || '',
       kind: lowerRow['kind'] || lowerRow['type'] || '',
       miller: lowerRow['miller'] || lowerRow['miller_page'] || '',
-      chapter: parseInt(lowerRow['chapter'] || lowerRow['topic_num'] || '0') || 0,
+      chapter: lowerRow['chapter'] || lowerRow['topic_num'] || '',
       media_type: lowerRow['media_type'] || lowerRow['mediakind'] || '',
       media_link: lowerRow['media_link'] || lowerRow['medialink'] || '',
       manually_edited: true,
