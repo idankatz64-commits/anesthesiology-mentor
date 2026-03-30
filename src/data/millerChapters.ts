@@ -69,7 +69,7 @@ export const MILLER_CHAPTERS: Record<number, string> = {
   68: "Ambulatory (Outpatient) Anesthesia",
   69: "Non–Operating Room Anesthesia",
   70: "Clinical Care in Extreme Environments: Physiology at High Altitude and in Space",
-  71: "Clinical Care in Extreme Environments: High Pressure, Immersion, Drowning",
+  71: "Clinical Care in Extreme Environments: High Pressure, Immersion, Drowning, Hypo-, and Hyperthermia",
   72: "Pediatric Anesthesia",
   73: "Anesthesia for Pediatric Cardiac Surgery",
   74: "Regional Anesthesia in Children",
