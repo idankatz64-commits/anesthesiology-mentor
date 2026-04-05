@@ -30,6 +30,7 @@ import {
   Activity,
   Droplets,
   Stethoscope,
+  RotateCcw,
 } from "lucide-react";
 import FormulaCalculatorPanel from "@/components/FormulaCalculatorPanel";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -179,6 +180,7 @@ export default function SessionView() {
     skipQuestion,
     updateHistory,
     updateSpacedRepetition,
+    markForReview,
 
     toggleFavorite,
     saveNote,
@@ -863,6 +865,22 @@ export default function SessionView() {
                   </button>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Mark for review — visible after answer is revealed */}
+          {(needsConfidence || isPracticeRevealed) && !isSimulation && !isReviewMode && (
+            <div className="mt-3 flex justify-center">
+              <button
+                onClick={async () => {
+                  await markForReview(serialNumber, qData[KEYS.TOPIC]);
+                  setConfidence(index, 'guessed');
+                }}
+                className="flex items-center gap-2 text-sm text-muted-foreground border border-border rounded-xl px-4 py-2 hover:border-destructive/50 hover:text-destructive transition-colors"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                לחזור על זה מחר
+              </button>
             </div>
           )}
 

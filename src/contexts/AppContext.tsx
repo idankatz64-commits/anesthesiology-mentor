@@ -48,6 +48,7 @@ interface AppContextType {
   skipQuestion: (index: number) => void;
   updateHistory: (id: string, isCorrect: boolean, topic?: string) => void;
   updateSpacedRepetition: (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel, topic?: string) => void;
+  markForReview: (questionId: string, topic?: string) => Promise<void>;
   
   // Progress actions
   toggleFavorite: (id: string) => void;
@@ -543,6 +544,62 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     // answer_history insert is now handled by updateHistory — no duplicate here
   }, []);
 
+  const markForReview = useCallback(async (questionId: string, topic?: string) => {
+    const userId = userIdRef.current;
+    if (!userId) return;
+
+    // Update local progress state (count as wrong)
+    setProgress(prev => {
+      const history = { ...prev.history };
+      if (!history[questionId]) history[questionId] = { answered: 0, correct: 0, lastResult: null, everWrong: false, timestamp: 0 };
+      const h = { ...history[questionId] };
+      h.answered++;
+      h.everWrong = true;
+      h.lastResult = 'wrong';
+      h.timestamp = Date.now();
+      history[questionId] = h;
+      return { ...prev, history };
+    });
+
+    // Reset SRS
+    const { data: existing } = await supabase
+      .from('spaced_repetition')
+      .select('ease_factor')
+      .eq('user_id', userId)
+      .eq('question_id', questionId)
+      .maybeSingle();
+
+    const ease = Math.max(1.3, ((existing as any)?.ease_factor ?? 2.5) - 0.2);
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const nextReviewDate = tomorrow.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+
+    await supabase.from('spaced_repetition').upsert({
+      user_id: userId,
+      question_id: questionId,
+      interval_days: 1,
+      ease_factor: ease,
+      repetitions: 0,
+      next_review_date: nextReviewDate,
+      confidence: 'guessed',
+      last_correct: false,
+      updated_at: new Date().toISOString(),
+    } as any, { onConflict: 'user_id,question_id' });
+
+    // Direct insert into answer_history with flagged_for_review=true
+    await supabase.from('answer_history').insert({
+      user_id: userId,
+      question_id: questionId,
+      topic: topic ?? null,
+      is_correct: false,
+      flagged_for_review: true,
+      answered_at: new Date().toISOString(),
+    } as any);
+
+    setConfidenceMap(prev => ({ ...prev, [questionId]: 'guessed' }));
+    toast.success('שאלה תחזור מחר לחזרה 🔁');
+  }, []);
+
 
   const toggleFavorite = useCallback((id: string) => {
     setProgress(prev => {
@@ -928,7 +985,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     syncStatus, lastSyncTime, triggerSync, invalidateQuestions,
     navigate, toggleTheme, closeWelcome,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
-    updateHistory, updateSpacedRepetition,
+    updateHistory, updateSpacedRepetition, markForReview,
     toggleFavorite, saveNote, deleteNote, setRating, addTag, removeTag, resetAllData, importData,
     toggleMultiSelect, resetFilters, setSourceFilter, toggleUnseenOnly,
     updateQuizQuestion,

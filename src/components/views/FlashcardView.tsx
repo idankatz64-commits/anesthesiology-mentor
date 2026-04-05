@@ -8,7 +8,7 @@ import { GlobalQuestionStats } from './SessionCommunity';
 type FlashcardMode = 'topics' | 'mistakes' | 'smart';
 
 export default function FlashcardView() {
-  const { data, progress, navigate, getDueQuestions, updateSpacedRepetition, updateHistory } = useApp();
+  const { data, progress, navigate, getDueQuestions, updateSpacedRepetition, updateHistory, markForReview } = useApp();
 
   const [phase, setPhase] = useState<'setup' | 'active' | 'done'>('setup');
   const [mode, setMode] = useState<FlashcardMode>('smart');
@@ -375,6 +375,20 @@ export default function FlashcardView() {
                 <button onClick={() => handleConfidence('confident')}
                   className="py-3 rounded-xl font-semibold text-sm bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-colors">
                   בטוח
+                </button>
+              </div>
+              <div className="mt-3 flex justify-center">
+                <button
+                  onClick={async () => {
+                    if (!current) return;
+                    await markForReview(current[KEYS.ID], current[KEYS.TOPIC]);
+                    if (index + 1 >= cards.length) setPhase('done');
+                    else { setIndex(prev => prev + 1); setFlipped(false); }
+                  }}
+                  className="flex items-center gap-2 text-sm text-muted-foreground border border-border rounded-xl px-4 py-2 hover:border-destructive/50 hover:text-destructive transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" />
+                  לחזור על זה מחר
                 </button>
               </div>
             </div>
