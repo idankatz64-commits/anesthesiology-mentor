@@ -499,19 +499,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let ease = (existing as any)?.ease_factor ?? 2.5;
     let reps = (existing as any)?.repetitions ?? 0;
 
-    if (!isCorrect) {
-      // Wrong: reset interval, decrease ease, reset reps
+    if (!isCorrect || confidence === 'guessed') {
+      // Wrong or guessed: reset — guessed is not real knowledge
       interval = 1;
       ease = Math.max(1.3, ease - 0.2);
       reps = 0;
-    } else if (confidence === 'hesitant' || confidence === 'guessed') {
-      // Correct but hesitant/guessed: modest interval growth
-      interval = Math.max(1, Math.round(interval * 1.2));
+    } else if (confidence === 'hesitant') {
+      // Correct but hesitant: modest interval growth, no ease change
+      interval = Math.max(1, Math.min(365, Math.round(interval * 1.2)));
       reps++;
     } else {
       // Correct + confident: full SM-2 growth
-      interval = Math.max(1, Math.round(interval * ease));
-      ease += 0.1;
+      interval = Math.max(1, Math.min(365, Math.round(interval * ease)));
+      ease = Math.min(4.0, ease + 0.1);
       reps++;
     }
 
