@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, ChevronLeft, ChevronRight, FileText, GraduationCap } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import FeedbackModal from './FeedbackModal';
@@ -17,6 +17,7 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'notebook', label: 'המחברת שלי', icon: <SquircleIcon icon={StickyNote} gradient="cyan" /> },
   { id: 'formula-sheet', label: 'Formula Sheet', icon: <SquircleIcon icon={FlaskConical} gradient="violet" /> },
   { id: 'summaries', label: 'סיכומי נושאים', icon: <SquircleIcon icon={FileText} gradient="cyan" /> },
+  { id: 'miller-guide', label: 'מדריך Miller', icon: <SquircleIcon icon={GraduationCap} gradient="violet" /> },
 ];
 
 export default function Sidebar() {

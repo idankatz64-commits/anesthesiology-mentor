@@ -89,4 +89,4 @@ export type MultiSelectState = {
   usertags: Set<string>;
 };
 
-export type ViewId = 'home' | 'setup-practice' | 'setup-exam' | 'session' | 'review' | 'results' | 'stats' | 'notebook' | 'simulation-results' | 'flashcards' | 'admin' | 'formula-sheet' | 'summaries';
+export type ViewId = 'home' | 'setup-practice' | 'setup-exam' | 'session' | 'review' | 'results' | 'stats' | 'notebook' | 'simulation-results' | 'flashcards' | 'admin' | 'formula-sheet' | 'summaries' | 'miller-guide';
