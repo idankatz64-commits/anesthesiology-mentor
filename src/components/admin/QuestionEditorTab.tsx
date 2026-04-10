@@ -4,6 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import RichTextEditor from '@/components/RichTextEditor';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -545,7 +546,7 @@ export default function QuestionEditorTab() {
           c: editForm.c,
           d: editForm.d,
           correct: editForm.correct,
-          explanation: editForm.explanation,
+          explanation: editForm.explanation && editForm.explanation.replace(/<[^>]+>/g, '').trim() ? editForm.explanation : null,
           topic: editForm.topic,
           year: editForm.year,
           source: editForm.source,
@@ -837,10 +838,11 @@ export default function QuestionEditorTab() {
 
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">הסבר</label>
-              <Textarea
-                value={editForm.explanation || ''}
-                onChange={(e) => setEditForm(f => ({ ...f, explanation: e.target.value }))}
-                rows={4}
+              <RichTextEditor
+                content={editForm.explanation || ''}
+                onChange={(html) => setEditForm(f => ({ ...f, explanation: html }))}
+                placeholder="הסבר מפורט לשאלה..."
+                minHeight="120px"
               />
             </div>
           </div>
