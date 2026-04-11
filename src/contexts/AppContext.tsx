@@ -304,6 +304,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
         hydrateUser(session?.user?.id ?? null);
+      } else if (event === 'TOKEN_REFRESHED' && session?.user?.id) {
+        // Re-check admin/editor role after token refresh — lightweight, no full re-hydration
+        const userId = session.user.id;
+        supabase.from('admin_users').select('role').eq('id', userId).maybeSingle()
+          .then(({ data: adminEntry }) => {
+            const userIsAdmin = adminEntry?.role === 'admin';
+            setIsAdmin(userIsAdmin);
+            setIsEditor(adminEntry?.role === 'editor' || userIsAdmin);
+          });
       }
     });
 
