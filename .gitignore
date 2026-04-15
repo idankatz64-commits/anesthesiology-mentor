@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local tooling and generated artifacts (not part of product)
+.claude/
+docs/superpowers/
+reports/
+scripts/master-report/__pycache__/
+*.pyc
