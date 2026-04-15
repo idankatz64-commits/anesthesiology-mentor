@@ -843,17 +843,31 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const userId = userIdRef.current;
     if (!userId) return [];
 
-    const today = new Date().toISOString().split('T')[0];
-    const { data: dueRows } = await supabase
-      .from('spaced_repetition')
-      .select('question_id')
-      .eq('user_id', userId)
-      .lte('next_review_date', today);
+    // Match Israel TZ used when storing next_review_date (line 532)
+    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 
-    if (!dueRows || dueRows.length === 0) return [];
+    // fetchAllRows paginates past the 1000-row default limit
+    const dueRows = await fetchAllRows<{ question_id: string }>(() =>
+      supabase
+        .from('spaced_repetition')
+        .select('question_id')
+        .eq('user_id', userId)
+        .lte('next_review_date', today)
+    );
 
+    if (dueRows.length === 0) return [];
     const dueIds = new Set(dueRows.map(r => r.question_id));
-    return dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
+
+    // Prefer in-memory cache when available
+    let matched = dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
+
+    // Fallback eliminates the race when questions haven't finished loading
+    if (matched.length === 0) {
+      const all = await fetchQuestions();
+      matched = all.filter(q => dueIds.has(q[KEYS.ID]));
+    }
+
+    return matched;
   }, []);
 
   const fetchSrsData = useCallback(async (): Promise<Record<string, { next_review_date: string }>> => {

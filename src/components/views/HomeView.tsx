@@ -18,6 +18,7 @@ import HomeTopicHeatmap from '@/components/stats/HomeTopicHeatmap';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DailyReportModal from '@/components/DailyReportModal';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const containerVariant = {
   hidden: {},
@@ -461,7 +462,11 @@ export default function HomeView() {
     try {
       const due = await getDueQuestions();
       if (due.length === 0) {
-        alert('אין שאלות לחזרה היום! תרגל שאלות חדשות.');
+        toast.info('אין שאלות לחזרה היום ✨', {
+          description: 'כל החזרות מעודכנות. אפשר לעבור לשאלות חדשות.',
+          action: { label: 'תרגול חכם', onClick: () => handleSmartPractice() },
+          duration: 6000,
+        });
         return;
       }
       startSession(due, Math.min(due.length, 30), 'practice');
