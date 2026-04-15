@@ -16,7 +16,7 @@ export interface SrsDashboardData {
   refresh: () => Promise<void>;
 }
 
-interface SrsRow { question_id: string; next_review_date: string; history?: boolean[] | null; }
+interface SrsRow { question_id: string; next_review_date: string; last_correct: boolean | null; }
 interface QLike { id: string; ref_id?: string; topic?: string | null; chapter?: number | null; question?: string | null; }
 
 export function aggregate(params: { srsRows: SrsRow[]; questions: QLike[]; today: string }) {
@@ -37,13 +37,13 @@ export function aggregate(params: { srsRows: SrsRow[]; questions: QLike[]; today
     const diff = daysBetween(today, srs.next_review_date);
     const topic = (q.topic ?? 'ללא נושא').trim() || 'ללא נושא';
     const chapter = q.chapter ?? 0;
-    const hist = Array.isArray(srs.history) ? srs.history : [];
-    const correct = hist.filter(Boolean).length;
+    const correct = srs.last_correct === true ? 1 : 0;
+    const hasHistory = srs.last_correct !== null ? 1 : 0;
 
     const t = topicAgg.get(topic) ?? { due: 0, overdue: 0, correct: 0, total: 0 };
-    t.correct += correct; t.total += hist.length;
+    t.correct += correct; t.total += hasHistory;
     const c = chapterAgg.get(chapter) ?? { totalInSrs: 0, due: 0, correct: 0, total: 0 };
-    c.totalInSrs += 1; c.correct += correct; c.total += hist.length;
+    c.totalInSrs += 1; c.correct += correct; c.total += hasHistory;
 
     if (diff < 0) { overdue++; t.overdue++; t.due++; c.due++; }
     else if (diff === 0) { dueToday++; t.due++; c.due++; }
@@ -110,7 +110,7 @@ async function fetchAllSrsRows(userId: string): Promise<SrsRow[]> {
   for (let from = 0; ; from += pageSize) {
     const { data, error } = await supabase
       .from('spaced_repetition')
-      .select('question_id, next_review_date, history')
+      .select('question_id, next_review_date, last_correct')
       .eq('user_id', userId)
       .range(from, from + pageSize - 1);
     if (error) throw error;

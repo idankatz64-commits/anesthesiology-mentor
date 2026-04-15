@@ -18,10 +18,10 @@ describe('aggregate', () => {
 
   it('counts dueToday and overdue correctly', () => {
     const srsRows = [
-      { question_id: 'q1', next_review_date: '2026-04-15', history: [] },
-      { question_id: 'q2', next_review_date: '2026-04-14', history: [] },
-      { question_id: 'q3', next_review_date: '2026-04-10', history: [] },
-      { question_id: 'q4', next_review_date: '2026-04-20', history: [] },
+      { question_id: 'q1', next_review_date: '2026-04-15', last_correct: null },
+      { question_id: 'q2', next_review_date: '2026-04-14', last_correct: null },
+      { question_id: 'q3', next_review_date: '2026-04-10', last_correct: null },
+      { question_id: 'q4', next_review_date: '2026-04-20', last_correct: null },
     ];
     const questions = [
       { id: 'q1', topic: 'A', chapter: 1 },
@@ -37,17 +37,17 @@ describe('aggregate', () => {
   });
 
   it('filters out SRS rows whose question was deleted', () => {
-    const srsRows = [{ question_id: 'orphan', next_review_date: today, history: [] }];
+    const srsRows = [{ question_id: 'orphan', next_review_date: today, last_correct: null }];
     const result = aggregate({ srsRows, questions: [], today });
     expect(result.stats.totalPending).toBe(0);
   });
 
   it('computes criticalScore = (1 - accuracy) * overdue and isCritical at P75', () => {
     const srsRows = [
-      { question_id: 'a1', next_review_date: '2026-04-10', history: [true, false] },
-      { question_id: 'a2', next_review_date: '2026-04-10', history: [false, false] },
-      { question_id: 'b1', next_review_date: '2026-04-14', history: [true, true] },
-      { question_id: 'c1', next_review_date: '2026-04-20', history: [true] },
+      { question_id: 'a1', next_review_date: '2026-04-10', last_correct: false },
+      { question_id: 'a2', next_review_date: '2026-04-10', last_correct: false },
+      { question_id: 'b1', next_review_date: '2026-04-14', last_correct: true },
+      { question_id: 'c1', next_review_date: '2026-04-20', last_correct: true },
     ];
     const questions = [
       { id: 'a1', topic: 'A', chapter: 1 },
@@ -58,13 +58,13 @@ describe('aggregate', () => {
     const result = aggregate({ srsRows, questions, today });
     const topicA = result.topics.find(t => t.topic === 'A')!;
     expect(topicA.overdue).toBe(2);
-    expect(topicA.accuracy).toBeCloseTo(0.25);
-    expect(topicA.criticalScore).toBeCloseTo(1.5);
+    expect(topicA.accuracy).toBe(0);
+    expect(topicA.criticalScore).toBe(2);
     expect(topicA.isCritical).toBe(true);
   });
 
   it('handles topic with no history: accuracy=0, criticalScore=overdue', () => {
-    const srsRows = [{ question_id: 'x1', next_review_date: '2026-04-10', history: [] }];
+    const srsRows = [{ question_id: 'x1', next_review_date: '2026-04-10', last_correct: null }];
     const questions = [{ id: 'x1', topic: 'X', chapter: 1 }] as any[];
     const result = aggregate({ srsRows, questions, today });
     const t = result.topics.find(tt => tt.topic === 'X')!;
@@ -74,7 +74,7 @@ describe('aggregate', () => {
   });
 
   it('decayBins[0].isOverdue=true iff any row is overdue or due today', () => {
-    const srsRows = [{ question_id: 'q', next_review_date: '2026-04-10', history: [] }];
+    const srsRows = [{ question_id: 'q', next_review_date: '2026-04-10', last_correct: null }];
     const questions = [{ id: 'q', topic: 'T', chapter: 1 }] as any[];
     const result = aggregate({ srsRows, questions, today });
     expect(result.decayBins[0].isOverdue).toBe(true);
@@ -82,7 +82,7 @@ describe('aggregate', () => {
   });
 
   it('chapters list only includes chapters the user has SRS rows in', () => {
-    const srsRows = [{ question_id: 'q', next_review_date: today, history: [] }];
+    const srsRows = [{ question_id: 'q', next_review_date: today, last_correct: null }];
     const questions = [{ id: 'q', topic: 'T', chapter: 7 }] as any[];
     const result = aggregate({ srsRows, questions, today });
     expect(result.chapters).toHaveLength(1);
