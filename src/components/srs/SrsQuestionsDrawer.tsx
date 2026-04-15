@@ -8,9 +8,20 @@ interface Props {
   onClose: () => void;
   markKnownDisabled?: boolean;
   onMarkKnown?: (id: string) => Promise<void>;
+  onStart?: () => void;
+  startDisabled?: boolean;
 }
 
-export function SrsQuestionsDrawer({ open, title, questions, onClose, markKnownDisabled, onMarkKnown }: Props) {
+export function SrsQuestionsDrawer({
+  open,
+  title,
+  questions,
+  onClose,
+  markKnownDisabled,
+  onMarkKnown,
+  onStart,
+  startDisabled,
+}: Props) {
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-50 flex" dir="rtl">
@@ -20,11 +31,22 @@ export function SrsQuestionsDrawer({ open, title, questions, onClose, markKnownD
           <h2 className="text-lg font-semibold">{title}</h2>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">✕</button>
         </div>
+
+        {onStart && (
+          <button
+            onClick={onStart}
+            disabled={startDisabled || questions.length === 0}
+            className="w-full mb-3 rounded-lg border bg-primary/10 hover:bg-primary/20 px-3 py-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            ▶ התחל סשן ({questions.length} שאלות)
+          </button>
+        )}
+
         {questions.length === 0 ? (
           <p className="text-sm text-muted-foreground">אין שאלות להצגה.</p>
         ) : (
           <ul className="space-y-2">
-            {questions.map(q => (
+            {questions.map((q) => (
               <li key={q.id} className="rounded-lg border p-3">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">

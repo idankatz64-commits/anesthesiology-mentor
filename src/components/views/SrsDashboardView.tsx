@@ -1,27 +1,123 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/contexts/AppContext';
 import { useSrsDashboard } from '@/components/srs/useSrsDashboard';
+import type { PendingQuestion, SessionFilter } from '@/components/srs/useSrsDashboard';
 import { SrsStatsRow } from '@/components/srs/SrsStatsRow';
 import { SrsDecayChart } from '@/components/srs/SrsDecayChart';
 import { SrsTopicTable } from '@/components/srs/SrsTopicTable';
 import { SrsChapterTable } from '@/components/srs/SrsChapterTable';
 import { SrsActionPanel } from '@/components/srs/SrsActionPanel';
 import { SrsQuestionsDrawer } from '@/components/srs/SrsQuestionsDrawer';
+import { addDaysIsrael, getIsraelToday } from '@/lib/dateHelpers';
+import type { Question } from '@/lib/types';
 
 interface DrawerState {
   title: string;
   ids: Set<string>;
+  filter: SessionFilter;
 }
 
 export function SrsDashboardView() {
-  const { currentView, navigate } = useApp();
+  const { currentView, navigate, startSession, data: ctxQuestions } = useApp();
   const enabled = currentView === 'srs-dashboard';
   const data = useSrsDashboard(enabled);
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
 
+  const questionMap = useMemo(
+    () => new Map<string, Question>((ctxQuestions ?? []).map((q) => [q.id, q])),
+    [ctxQuestions],
+  );
+
   const drawerQuestions = drawer
     ? data.pendingQuestions.filter((q) => drawer.ids.has(q.id))
     : [];
+
+  const poolFor = (filter: SessionFilter, smart: boolean): PendingQuestion[] => {
+    let pool = data.pendingQuestions;
+    if (filter.kind === 'topic') pool = pool.filter((q) => q.topic === filter.topic);
+    if (filter.kind === 'chapter') pool = pool.filter((q) => q.chapter === filter.chapter);
+    if (smart) pool = [...pool].sort((a, b) => b.daysOverdue - a.daysOverdue);
+    return pool;
+  };
+
+  const startFromPool = (pool: PendingQuestion[], count: number | 'all', smart: boolean) => {
+    if (questionMap.size === 0) {
+      toast.error('השאלות עדיין נטענות — נסה שוב בעוד רגע');
+      return;
+    }
+    const resolved = pool.map((pq) => questionMap.get(pq.id)).filter((q): q is Question => !!q);
+    if (resolved.length === 0) {
+      toast.error('לא נמצאו שאלות להתחיל סשן');
+      return;
+    }
+    const n = count === 'all' ? resolved.length : Math.min(count, resolved.length);
+    const selected = smart ? resolved.slice(0, n) : resolved;
+    const finalCount = smart ? selected.length : n;
+    startSession(selected, finalCount, 'practice');
+  };
+
+  const handleStartFromPanel = (filter: SessionFilter, count: number | 'all', smart: boolean) => {
+    startFromPool(poolFor(filter, smart), count, smart);
+  };
+
+  const handleStartFromDrawer = () => {
+    if (!drawer) return;
+    const pool = data.pendingQuestions.filter((q) => drawer.ids.has(q.id));
+    startFromPool(pool, 'all', false);
+    setDrawer(null);
+  };
+
+  const handleMarkKnown = async (id: string) => {
+    const { data: u, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !u.user?.id) {
+      toast.error('לא מחובר');
+      return;
+    }
+    const pending = data.pendingQuestions.find((q) => q.id === id);
+    const oldDate = pending?.nextReviewDate ?? getIsraelToday();
+    const newDate = addDaysIsrael(getIsraelToday(), 30);
+
+    if (drawer) {
+      const newIds = new Set(drawer.ids);
+      newIds.delete(id);
+      setDrawer({ ...drawer, ids: newIds });
+    }
+
+    const { error } = await supabase
+      .from('spaced_repetition')
+      .update({ next_review_date: newDate })
+      .eq('user_id', u.user.id)
+      .eq('question_id', id);
+
+    if (error) {
+      toast.error('שמירה נכשלה');
+      await data.refresh();
+      return;
+    }
+
+    toast.success('סומן כידוע — נדחה ב-30 יום', {
+      duration: 5000,
+      action: {
+        label: 'בטל',
+        onClick: async () => {
+          const { error: undoErr } = await supabase
+            .from('spaced_repetition')
+            .update({ next_review_date: oldDate })
+            .eq('user_id', u.user.id)
+            .eq('question_id', id);
+          if (undoErr) {
+            toast.error('הביטול נכשל');
+          } else {
+            toast.success('בוטל');
+          }
+          await data.refresh();
+        },
+      },
+    });
+    await data.refresh();
+  };
 
   if (data.loading) {
     return (
@@ -53,7 +149,7 @@ export function SrsDashboardView() {
 
       <SrsStatsRow stats={data.stats} />
       <SrsDecayChart bins={data.decayBins} />
-      <SrsActionPanel topics={data.topics} disabled />
+      <SrsActionPanel topics={data.topics} onStart={handleStartFromPanel} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <SrsTopicTable
@@ -62,7 +158,7 @@ export function SrsDashboardView() {
             const ids = new Set(
               data.pendingQuestions.filter((q) => q.topic === topic).map((q) => q.id),
             );
-            setDrawer({ title: `נושא: ${topic}`, ids });
+            setDrawer({ title: `נושא: ${topic}`, ids, filter: { kind: 'topic', topic } });
           }}
         />
         <SrsChapterTable
@@ -71,7 +167,7 @@ export function SrsDashboardView() {
             const ids = new Set(
               data.pendingQuestions.filter((q) => q.chapter === chapter).map((q) => q.id),
             );
-            setDrawer({ title: `פרק ${chapter}`, ids });
+            setDrawer({ title: `פרק ${chapter}`, ids, filter: { kind: 'chapter', chapter } });
           }}
         />
       </div>
@@ -81,7 +177,8 @@ export function SrsDashboardView() {
         title={drawer?.title ?? ''}
         questions={drawerQuestions}
         onClose={() => setDrawer(null)}
-        markKnownDisabled
+        onMarkKnown={handleMarkKnown}
+        onStart={handleStartFromDrawer}
       />
     </div>
   );
