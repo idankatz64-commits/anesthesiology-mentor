@@ -127,10 +127,12 @@ export function useSrsDashboard(enabled: boolean): SrsDashboardData {
   const [srsRows, setSrsRows] = useState<SrsRow[]>([]);
   const [fallbackQuestions, setFallbackQuestions] = useState<QLike[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadedOnce, setLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
-    setLoading(true); setError(null);
+    if (!loadedOnce) setLoading(true);
+    setError(null);
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user?.id) { setSrsRows([]); return; }
@@ -145,8 +147,11 @@ export function useSrsDashboard(enabled: boolean): SrsDashboardData {
     } catch (e: unknown) {
       console.error('useSrsDashboard refresh error:', e);
       setError(e instanceof Error ? e.message : 'שגיאה בטעינת הנתונים');
-    } finally { setLoading(false); }
-  }, [ctxQuestions]);
+    } finally {
+      setLoading(false);
+      setLoadedOnce(true);
+    }
+  }, [ctxQuestions, loadedOnce]);
 
   useEffect(() => { if (enabled) refresh(); }, [enabled, refresh]);
 
