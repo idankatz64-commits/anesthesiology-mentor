@@ -19,6 +19,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import DailyReportModal from '@/components/DailyReportModal';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useDueCount } from '@/components/srs/useDueCount';
 
 const containerVariant = {
   hidden: {},
@@ -139,10 +140,11 @@ function FormulaParam({ name }: { name: string }) {
 
 /* ── Focus Card (larger, decorative) ── */
 function FocusCard({
-  icon, title, description, onClick, accentColor, disabled,
+  icon, title, description, onClick, accentColor, disabled, badge,
 }: {
   icon: React.ReactNode; title: string; description: string;
   onClick: () => void; accentColor: string; disabled?: boolean;
+  badge?: number;
 }) {
   return (
     <motion.div
@@ -152,6 +154,11 @@ function FocusCard({
       className={`glass-tile relative overflow-hidden p-6 cursor-pointer group ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
       style={{ willChange: 'transform', borderColor: accentColor + '33' }}
     >
+      {badge !== undefined && badge > 0 && (
+        <span className="absolute top-3 left-3 rounded-full bg-red-500 text-white text-xs font-bold px-2 py-0.5 z-10 shadow-md">
+          {badge}
+        </span>
+      )}
       {/* Decorative circle */}
       <div
         className="absolute -right-6 -bottom-6 w-24 h-24 rounded-full opacity-10 pointer-events-none"
@@ -384,6 +391,7 @@ export default function HomeView() {
   const [resuming, setResuming] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [algoOpen, setAlgoOpen] = useState(false);
+  const { count: dueCount } = useDueCount();
 
   const examPhase = useMemo(() => getExamProximityPhase(), []);
   const [phaseDismissed, setPhaseDismissed] = useState(() => {
@@ -574,10 +582,10 @@ export default function HomeView() {
         <FocusCard
           icon={<RotateIcon><RefreshCcw className="w-7 h-7" /></RotateIcon>}
           title="חזרה מרווחת"
-          description="שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS."
-          onClick={handleSpacedRepetition}
+          description="שאלות שממתינות לחזרה היום"
+          onClick={() => navigate('srs-dashboard')}
           accentColor="#10b981"
-          disabled={loadingDue}
+          badge={dueCount}
         />
         <FocusCard
           icon={<SpinIcon><Timer className="w-7 h-7" /></SpinIcon>}
