@@ -2,9 +2,12 @@
 """Generate comprehensive HTML report from stats JSON."""
 
 import json
+from pathlib import Path
+
+HERE = Path(__file__).parent
 
 def load_stats():
-    with open("/tmp/master_stats_v2.json") as f:
+    with open(HERE / "master_stats_v2.json") as f:
         return json.load(f)
 
 def generate_html(s):
@@ -1284,9 +1287,10 @@ document.addEventListener('DOMContentLoaded', function() {{
 
 
 if __name__ == "__main__":
+    import sys
     stats = load_stats()
     html = generate_html(stats)
-    # Save to both locations
-    with open("/tmp/master_report_v2.html", "w") as f:
-        f.write(html)
-    print(f"HTML report written: /tmp/master_report_v2.html ({len(html):,} bytes)")
+    out = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE.parent.parent.parent / "reports" / "master_report_legacy_v2.html"
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(html)
+    print(f"HTML report written: {out} ({len(html):,} bytes)")
