@@ -579,14 +579,23 @@ export default function HomeView() {
           onClick={handleSmartPractice}
           accentColor="#f59f0a"
         />
-        <FocusCard
-          icon={<RotateIcon><RefreshCcw className="w-7 h-7" /></RotateIcon>}
-          title="חזרה מרווחת"
-          description="שאלות שממתינות לחזרה היום"
-          onClick={() => navigate('srs-dashboard')}
-          accentColor="#10b981"
-          badge={dueCount}
-        />
+        <div className="relative">
+          <FocusCard
+            icon={<RotateIcon><RefreshCcw className="w-7 h-7" /></RotateIcon>}
+            title="חזרה מרווחת"
+            description="שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS."
+            onClick={handleSpacedRepetition}
+            accentColor="#10b981"
+            disabled={loadingDue}
+            badge={dueCount}
+          />
+          <button
+            onClick={(e) => { e.stopPropagation(); navigate('srs-dashboard'); }}
+            className="absolute bottom-2 right-3 text-xs text-muted-foreground hover:text-foreground underline z-10"
+          >
+            📊 לוח SRS המלא
+          </button>
+        </div>
         <FocusCard
           icon={<SpinIcon><Timer className="w-7 h-7" /></SpinIcon>}
           title="מבחן סימולציה"
