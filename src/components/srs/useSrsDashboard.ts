@@ -123,8 +123,9 @@ async function fetchAllSrsRows(userId: string): Promise<SrsRow[]> {
 
 export function useSrsDashboard(enabled: boolean): SrsDashboardData {
   const ctx = useApp();
-  const questions = ctx.data;
+  const ctxQuestions = ctx.data;
   const [srsRows, setSrsRows] = useState<SrsRow[]>([]);
+  const [fallbackQuestions, setFallbackQuestions] = useState<QLike[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -133,8 +134,11 @@ export function useSrsDashboard(enabled: boolean): SrsDashboardData {
     try {
       const { data: u } = await supabase.auth.getUser();
       if (!u.user?.id) { setSrsRows([]); return; }
-      if (!questions || questions.length === 0) {
-        try { await fetchQuestionsCsv(); } catch { /* non-fatal */ }
+      if (!ctxQuestions || ctxQuestions.length === 0) {
+        try {
+          const fetched = await fetchQuestionsCsv();
+          setFallbackQuestions(fetched as unknown as QLike[]);
+        } catch { /* non-fatal */ }
       }
       const rows = await fetchAllSrsRows(u.user.id);
       setSrsRows(rows);
@@ -142,15 +146,20 @@ export function useSrsDashboard(enabled: boolean): SrsDashboardData {
       console.error('useSrsDashboard refresh error:', e);
       setError(e instanceof Error ? e.message : 'שגיאה בטעינת הנתונים');
     } finally { setLoading(false); }
-  }, [questions]);
+  }, [ctxQuestions]);
 
   useEffect(() => { if (enabled) refresh(); }, [enabled, refresh]);
 
+  const effectiveQuestions: QLike[] = useMemo(() => {
+    if (ctxQuestions && ctxQuestions.length > 0) return ctxQuestions as unknown as QLike[];
+    return fallbackQuestions;
+  }, [ctxQuestions, fallbackQuestions]);
+
   const agg = useMemo(() => aggregate({
     srsRows,
-    questions: (questions ?? []) as unknown as QLike[],
+    questions: effectiveQuestions,
     today: getIsraelToday(),
-  }), [srsRows, questions]);
+  }), [srsRows, effectiveQuestions]);
 
   return { loading, error, ...agg, refresh };
 }
