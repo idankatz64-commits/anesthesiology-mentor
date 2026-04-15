@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/contexts/AppContext';
@@ -24,6 +24,7 @@ export function SrsDashboardView() {
   const enabled = currentView === 'srs-dashboard';
   const data = useSrsDashboard(enabled);
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
+  const pendingUndosRef = useRef<Set<string>>(new Set());
 
   const questionMap = useMemo(
     () => new Map<string, Question>((ctxQuestions ?? []).map((q) => [q.id, q])),
@@ -53,9 +54,10 @@ export function SrsDashboardView() {
       return;
     }
     const n = count === 'all' ? resolved.length : Math.min(count, resolved.length);
+    // smart mode: pre-slice top-N by urgency (pool is already sorted in poolFor), shuffle within.
+    // non-smart: hand entire pool to startSession which will shuffle and slice to n.
     const selected = smart ? resolved.slice(0, n) : resolved;
-    const finalCount = smart ? selected.length : n;
-    startSession(selected, finalCount, 'practice');
+    startSession(selected, n, 'practice');
   };
 
   const handleStartFromPanel = (filter: SessionFilter, count: number | 'all', smart: boolean) => {
@@ -70,11 +72,16 @@ export function SrsDashboardView() {
   };
 
   const handleMarkKnown = async (id: string) => {
+    if (pendingUndosRef.current.has(id)) {
+      toast.info('יש פעולה ממתינה לביטול — המתן לפני סימון חוזר');
+      return;
+    }
     const { data: u, error: authErr } = await supabase.auth.getUser();
     if (authErr || !u.user?.id) {
       toast.error('לא מחובר');
       return;
     }
+    const userId = u.user.id;
     const pending = data.pendingQuestions.find((q) => q.id === id);
     const oldDate = pending?.nextReviewDate ?? getIsraelToday();
     const newDate = addDaysIsrael(getIsraelToday(), 30);
@@ -88,7 +95,7 @@ export function SrsDashboardView() {
     const { error } = await supabase
       .from('spaced_repetition')
       .update({ next_review_date: newDate })
-      .eq('user_id', u.user.id)
+      .eq('user_id', userId)
       .eq('question_id', id);
 
     if (error) {
@@ -97,15 +104,21 @@ export function SrsDashboardView() {
       return;
     }
 
+    pendingUndosRef.current.add(id);
+    const clearPending = () => pendingUndosRef.current.delete(id);
+
     toast.success('סומן כידוע — נדחה ב-30 יום', {
       duration: 5000,
+      onAutoClose: clearPending,
+      onDismiss: clearPending,
       action: {
         label: 'בטל',
         onClick: async () => {
+          clearPending();
           const { error: undoErr } = await supabase
             .from('spaced_repetition')
             .update({ next_review_date: oldDate })
-            .eq('user_id', u.user.id)
+            .eq('user_id', userId)
             .eq('question_id', id);
           if (undoErr) {
             toast.error('הביטול נכשל');

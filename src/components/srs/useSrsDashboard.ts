@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/contexts/AppContext';
 import { fetchQuestions as fetchQuestionsCsv } from '@/lib/csvService';
@@ -127,11 +127,11 @@ export function useSrsDashboard(enabled: boolean): SrsDashboardData {
   const [srsRows, setSrsRows] = useState<SrsRow[]>([]);
   const [fallbackQuestions, setFallbackQuestions] = useState<QLike[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadedOnce, setLoadedOnce] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const loadedOnceRef = useRef(false);
 
   const refresh = useCallback(async () => {
-    if (!loadedOnce) setLoading(true);
+    if (!loadedOnceRef.current) setLoading(true);
     setError(null);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -146,12 +146,12 @@ export function useSrsDashboard(enabled: boolean): SrsDashboardData {
       setSrsRows(rows);
     } catch (e: unknown) {
       console.error('useSrsDashboard refresh error:', e);
-      setError(e instanceof Error ? e.message : 'שגיאה בטעינת הנתונים');
+      setError('שגיאה בטעינת הנתונים');
     } finally {
       setLoading(false);
-      setLoadedOnce(true);
+      loadedOnceRef.current = true;
     }
-  }, [ctxQuestions, loadedOnce]);
+  }, [ctxQuestions]);
 
   useEffect(() => { if (enabled) refresh(); }, [enabled, refresh]);
 
