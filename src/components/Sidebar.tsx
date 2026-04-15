@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, ChevronLeft, ChevronRight, FileText, GraduationCap } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, ChevronLeft, ChevronRight, FileText, GraduationCap, Brain } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import FeedbackModal from './FeedbackModal';
@@ -14,6 +14,7 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: 'setup-practice', label: 'תרגול (Practice)', icon: <SquircleIcon icon={BookOpen} gradient="teal" /> },
   { id: 'setup-exam', label: 'בחינה (Exam)', icon: <SquircleIcon icon={Timer} gradient="orange" /> },
   { id: 'stats', label: 'סטטיסטיקה', icon: <SquircleIcon icon={BarChart3} gradient="blue" /> },
+  { id: 'srs-dashboard', label: 'חזרה מרווחת', icon: <SquircleIcon icon={Brain} gradient="rose" /> },
   { id: 'notebook', label: 'המחברת שלי', icon: <SquircleIcon icon={StickyNote} gradient="cyan" /> },
   { id: 'formula-sheet', label: 'Formula Sheet', icon: <SquircleIcon icon={FlaskConical} gradient="violet" /> },
   { id: 'summaries', label: 'סיכומי נושאים', icon: <SquircleIcon icon={FileText} gradient="cyan" /> },
