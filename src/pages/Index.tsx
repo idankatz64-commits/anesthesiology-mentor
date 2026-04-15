@@ -17,6 +17,7 @@ import AdminView from '@/components/views/AdminView';
 import FormulaSheetView from '@/components/views/FormulaSheetView';
 import SummariesView from '@/components/views/SummariesView';
 import MillerGuideView from '@/components/views/MillerGuideView';
+import { SrsDashboardView } from '@/components/views/SrsDashboardView';
 import { motion, AnimatePresence } from 'framer-motion';
 import { slideFromRight } from '@/lib/animations';
 
@@ -38,6 +39,7 @@ function AppContent() {
       case 'formula-sheet': return <FormulaSheetView />;
       case 'summaries': return <SummariesView />;
       case 'miller-guide': return <MillerGuideView />;
+      case 'srs-dashboard': return <SrsDashboardView />;
       default: return <HomeView />;
     }
   };
