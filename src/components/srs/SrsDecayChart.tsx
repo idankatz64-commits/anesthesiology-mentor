@@ -14,7 +14,7 @@ export function SrsDecayChart({ bins }: Props) {
           return (
             <div
               key={b.date}
-              className="flex-1 min-w-0 flex flex-col justify-end"
+              className="flex-1 min-w-0 h-full flex flex-col justify-end"
               title={`${b.date} — ${b.count} שאלות${b.topics.length ? ` (${b.topics.slice(0, 3).join(', ')})` : ''}`}
             >
               <div className={`${color} rounded-t w-full`} style={{ height: `${Math.max(height, b.count > 0 ? 2 : 0)}%` }} />
