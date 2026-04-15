@@ -1,0 +1,2094 @@
+{
+  "report_date": "2026-04-11",
+  "exam_date": "2026-06-16",
+  "days_left": 66,
+  "data_source": "user_answers (correct_count/answered_count) — corrected",
+  "globals": {
+    "total_questions_db": 3353,
+    "total_answered": 736,
+    "total_attempts": 1300,
+    "total_correct": 1011,
+    "accuracy": 77.8,
+    "coverage": 22.0,
+    "topics_studied": 77,
+    "topics_total": 77,
+    "days_left": 66
+  },
+  "ols": {
+    "slope": 0.655,
+    "p_value": 0.0741,
+    "r_squared": 0.147,
+    "intercept": 68.6,
+    "trend_direction": "up",
+    "significant": false
+  },
+  "bootstrap": {
+    "ci_lower": 75.5,
+    "ci_upper": 80.0,
+    "mean": 77.8
+  },
+  "monte_carlo": {
+    "n_simulations": 10000,
+    "exam_size": 200,
+    "median": 75.0,
+    "mean": 75.0,
+    "std": 3.4,
+    "percentiles": {
+      "p5": 69.5,
+      "p10": 70.5,
+      "p25": 72.5,
+      "p50": 75.0,
+      "p75": 77.0,
+      "p90": 79.0,
+      "p95": 80.5
+    },
+    "thresholds": {
+      "p_ge_60": 100.0,
+      "p_ge_65": 99.8,
+      "p_ge_70": 93.9,
+      "p_ge_75": 52.8,
+      "p_ge_80": 7.6
+    },
+    "histogram": [
+      [
+        60,
+        3
+      ],
+      [
+        62,
+        2
+      ],
+      [
+        64,
+        35
+      ],
+      [
+        66,
+        134
+      ],
+      [
+        68,
+        438
+      ],
+      [
+        70,
+        1112
+      ],
+      [
+        72,
+        1820
+      ],
+      [
+        74,
+        2329
+      ],
+      [
+        76,
+        2096
+      ],
+      [
+        78,
+        1269
+      ],
+      [
+        80,
+        538
+      ],
+      [
+        82,
+        192
+      ],
+      [
+        84,
+        31
+      ],
+      [
+        86,
+        1
+      ]
+    ]
+  },
+  "bayesian_pfail": [
+    {
+      "name": "Cardiopulmonary Resuscitation and Advanced Cardiac Life Support",
+      "p_fail": 0.932,
+      "db_weight": 0.0048,
+      "accuracy": 58.1,
+      "attempts": 31
+    },
+    {
+      "name": "Regional Anesthesia in Children",
+      "p_fail": 0.925,
+      "db_weight": 0.0075,
+      "accuracy": 53.3,
+      "attempts": 15
+    },
+    {
+      "name": "Interpreting the Medical Literature",
+      "p_fail": 0.911,
+      "db_weight": 0.0003,
+      "accuracy": 33.3,
+      "attempts": 3
+    },
+    {
+      "name": "Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity",
+      "p_fail": 0.833,
+      "db_weight": 0.0286,
+      "accuracy": 62.1,
+      "attempts": 29
+    },
+    {
+      "name": "Anesthesia for Ophthalmic Surgery",
+      "p_fail": 0.779,
+      "db_weight": 0.0042,
+      "accuracy": 50.0,
+      "attempts": 2
+    },
+    {
+      "name": "Sleep Medicine",
+      "p_fail": 0.775,
+      "db_weight": 0.0224,
+      "accuracy": 64.3,
+      "attempts": 28
+    },
+    {
+      "name": "Intravenous Anesthetics",
+      "p_fail": 0.773,
+      "db_weight": 0.0221,
+      "accuracy": 64.3,
+      "attempts": 28
+    },
+    {
+      "name": "Clinical Research",
+      "p_fail": 0.742,
+      "db_weight": 0.0018,
+      "accuracy": 60.0,
+      "attempts": 5
+    },
+    {
+      "name": "Immune Implications of Anesthesia Care and Practice",
+      "p_fail": 0.741,
+      "db_weight": 0.0006,
+      "accuracy": 60.0,
+      "attempts": 5
+    },
+    {
+      "name": "Anesthesia for Bariatric Surgery",
+      "p_fail": 0.725,
+      "db_weight": 0.0075,
+      "accuracy": 65.5,
+      "attempts": 29
+    },
+    {
+      "name": "Critical Care Anesthesiology",
+      "p_fail": 0.719,
+      "db_weight": 0.0152,
+      "accuracy": 64.7,
+      "attempts": 17
+    },
+    {
+      "name": "The Postanesthesia Care Unit",
+      "p_fail": 0.653,
+      "db_weight": 0.0095,
+      "accuracy": 66.7,
+      "attempts": 15
+    },
+    {
+      "name": "Anesthesia for Neurologic Surgery and Neurointerventions",
+      "p_fail": 0.648,
+      "db_weight": 0.0128,
+      "accuracy": 66.7,
+      "attempts": 3
+    },
+    {
+      "name": "Clinical Care in Extreme Environments: Physiology at High Altitude and in Space",
+      "p_fail": 0.648,
+      "db_weight": 0.0012,
+      "accuracy": 66.7,
+      "attempts": 6
+    },
+    {
+      "name": "Patient Blood Management: Coagulation",
+      "p_fail": 0.584,
+      "db_weight": 0.0173,
+      "accuracy": 69.2,
+      "attempts": 13
+    },
+    {
+      "name": "Cardiovascular Monitoring",
+      "p_fail": 0.545,
+      "db_weight": 0.0212,
+      "accuracy": 69.7,
+      "attempts": 76
+    },
+    {
+      "name": "Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations",
+      "p_fail": 0.523,
+      "db_weight": 0.0468,
+      "accuracy": 69.9,
+      "attempts": 123
+    },
+    {
+      "name": "Anesthesia for Fetal Surgery and Other Fetal Therapies",
+      "p_fail": 0.522,
+      "db_weight": 0.0027,
+      "accuracy": 75.0,
+      "attempts": 4
+    },
+    {
+      "name": "Anesthesia for Organ Procurement",
+      "p_fail": 0.521,
+      "db_weight": 0.0006,
+      "accuracy": 75.0,
+      "attempts": 4
+    },
+    {
+      "name": "Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function",
+      "p_fail": 0.496,
+      "db_weight": 0.0289,
+      "accuracy": 72.7,
+      "attempts": 11
+    }
+  ],
+  "ebbinghaus": {
+    "confident": {
+      "stability": 23.4,
+      "active_count": 309,
+      "due_count": 147,
+      "never_reviewed": 6,
+      "avg_ease": 2.57,
+      "avg_interval": 9.1,
+      "retention": {
+        "day_1": 95.8,
+        "day_7": 74.1,
+        "day_14": 55.0,
+        "day_30": 27.7,
+        "day_66": 5.9
+      }
+    },
+    "hesitant": {
+      "stability": 8.0,
+      "active_count": 256,
+      "due_count": 230,
+      "never_reviewed": 63,
+      "avg_ease": 2.43,
+      "avg_interval": 3.3,
+      "retention": {
+        "day_1": 88.3,
+        "day_7": 41.8,
+        "day_14": 17.4,
+        "day_30": 2.4,
+        "day_66": 0.0
+      }
+    },
+    "guessed": {
+      "stability": 3.6,
+      "active_count": 17,
+      "due_count": 83,
+      "never_reviewed": 86,
+      "avg_ease": 2.24,
+      "avg_interval": 1.6,
+      "retention": {
+        "day_1": 75.7,
+        "day_7": 14.2,
+        "day_14": 2.0,
+        "day_30": 0.0,
+        "day_66": 0.0
+      }
+    }
+  },
+  "evpi": [
+    {
+      "name": "Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity",
+      "evpi": 1.35,
+      "p_fail": 0.827,
+      "db_weight": 2.9,
+      "current_acc": 62.1,
+      "gap": 37.9,
+      "unique_answered": 15,
+      "db_count": 96
+    },
+    {
+      "name": "Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations",
+      "evpi": 1.11,
+      "p_fail": 0.526,
+      "db_weight": 4.7,
+      "current_acc": 69.9,
+      "gap": 30.1,
+      "unique_answered": 103,
+      "db_count": 157
+    },
+    {
+      "name": "Sleep Medicine",
+      "evpi": 0.92,
+      "p_fail": 0.764,
+      "db_weight": 2.2,
+      "current_acc": 64.3,
+      "gap": 35.7,
+      "unique_answered": 10,
+      "db_count": 75
+    },
+    {
+      "name": "Intravenous Anesthetics",
+      "evpi": 0.92,
+      "p_fail": 0.775,
+      "db_weight": 2.2,
+      "current_acc": 64.3,
+      "gap": 35.7,
+      "unique_answered": 15,
+      "db_count": 74
+    },
+    {
+      "name": "Critical Care Anesthesiology",
+      "evpi": 0.58,
+      "p_fail": 0.726,
+      "db_weight": 1.5,
+      "current_acc": 64.7,
+      "gap": 35.3,
+      "unique_answered": 10,
+      "db_count": 51
+    },
+    {
+      "name": "Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function",
+      "evpi": 0.57,
+      "p_fail": 0.478,
+      "db_weight": 2.9,
+      "current_acc": 72.7,
+      "gap": 27.3,
+      "unique_answered": 5,
+      "db_count": 97
+    },
+    {
+      "name": "Cardiovascular Monitoring",
+      "evpi": 0.53,
+      "p_fail": 0.554,
+      "db_weight": 2.1,
+      "current_acc": 69.7,
+      "gap": 30.3,
+      "unique_answered": 38,
+      "db_count": 71
+    },
+    {
+      "name": "Regional Anesthesia in Children",
+      "evpi": 0.48,
+      "p_fail": 0.927,
+      "db_weight": 0.7,
+      "current_acc": 53.3,
+      "gap": 46.7,
+      "unique_answered": 7,
+      "db_count": 25
+    },
+    {
+      "name": "Patient Blood Management: Coagulation",
+      "evpi": 0.46,
+      "p_fail": 0.574,
+      "db_weight": 1.7,
+      "current_acc": 69.2,
+      "gap": 30.8,
+      "unique_answered": 8,
+      "db_count": 58
+    },
+    {
+      "name": "Anesthesia for Obstetrics",
+      "evpi": 0.44,
+      "p_fail": 0.459,
+      "db_weight": 2.3,
+      "current_acc": 72.0,
+      "gap": 28.0,
+      "unique_answered": 12,
+      "db_count": 77
+    },
+    {
+      "name": "Anesthesia for Neurologic Surgery and Neurointerventions",
+      "evpi": 0.42,
+      "p_fail": 0.662,
+      "db_weight": 1.3,
+      "current_acc": 66.7,
+      "gap": 33.3,
+      "unique_answered": 2,
+      "db_count": 43
+    },
+    {
+      "name": "Inhaled Anesthetic Delivery Systems",
+      "evpi": 0.4,
+      "p_fail": 0.308,
+      "db_weight": 3.6,
+      "current_acc": 76.2,
+      "gap": 23.8,
+      "unique_answered": 13,
+      "db_count": 121
+    },
+    {
+      "name": "Cerebral Physiology and the Effects of Anesthetic Drugs",
+      "evpi": 0.34,
+      "p_fail": 0.202,
+      "db_weight": 4.3,
+      "current_acc": 74.4,
+      "gap": 25.6,
+      "unique_answered": 41,
+      "db_count": 145
+    },
+    {
+      "name": "Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)",
+      "evpi": 0.33,
+      "p_fail": 0.424,
+      "db_weight": 2.6,
+      "current_acc": 80.0,
+      "gap": 20.0,
+      "unique_answered": 3,
+      "db_count": 88
+    },
+    {
+      "name": "The Postanesthesia Care Unit",
+      "evpi": 0.31,
+      "p_fail": 0.654,
+      "db_weight": 1.0,
+      "current_acc": 66.7,
+      "gap": 33.3,
+      "unique_answered": 9,
+      "db_count": 32
+    },
+    {
+      "name": "Anesthesia for Bariatric Surgery",
+      "evpi": 0.28,
+      "p_fail": 0.733,
+      "db_weight": 0.7,
+      "current_acc": 65.5,
+      "gap": 34.5,
+      "unique_answered": 18,
+      "db_count": 25
+    },
+    {
+      "name": "Cardiopulmonary Resuscitation and Advanced Cardiac Life Support",
+      "evpi": 0.28,
+      "p_fail": 0.927,
+      "db_weight": 0.5,
+      "current_acc": 58.1,
+      "gap": 41.9,
+      "unique_answered": 13,
+      "db_count": 16
+    },
+    {
+      "name": "Anesthetic Implications of Concurrent Diseases",
+      "evpi": 0.25,
+      "p_fail": 0.418,
+      "db_weight": 2.0,
+      "current_acc": 80.0,
+      "gap": 20.0,
+      "unique_answered": 3,
+      "db_count": 68
+    },
+    {
+      "name": "Anesthesia for Trauma",
+      "evpi": 0.25,
+      "p_fail": 0.447,
+      "db_weight": 1.4,
+      "current_acc": 73.3,
+      "gap": 26.7,
+      "unique_answered": 9,
+      "db_count": 47
+    },
+    {
+      "name": "Neuromuscular Disorders and Other Genetic Disorders",
+      "evpi": 0.2,
+      "p_fail": 0.488,
+      "db_weight": 1.0,
+      "current_acc": 72.7,
+      "gap": 27.3,
+      "unique_answered": 6,
+      "db_count": 33
+    }
+  ],
+  "readiness": {
+    "eri": 67.5,
+    "components": {
+      "accuracy": 77.8,
+      "coverage": 36.7,
+      "critical_avg": 75.1,
+      "consistency": 81.6
+    },
+    "critical_topics_count": 15
+  },
+  "scenarios": [
+    {
+      "name": "מצב נוכחי",
+      "description": "ללא שינוי בקצב הלמידה",
+      "p70": 93.9,
+      "median": 75.0
+    },
+    {
+      "name": "השקעה מוגברת",
+      "description": "50 שאלות חדשות ליום + SRS יומי",
+      "p70": 99.9,
+      "median": 79.0
+    },
+    {
+      "name": "השקעה מינימלית",
+      "description": "רק SRS, בלי שאלות חדשות",
+      "p70": 88.9,
+      "median": 72.0
+    },
+    {
+      "name": "מיקוד בנושאים חלשים",
+      "description": "30 שאלות ליום מנושאים עם דיוק < 70%",
+      "p70": 99.9,
+      "median": 81.0
+    }
+  ],
+  "topic_table": [
+    {
+      "name": "Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations",
+      "db_count": 157,
+      "answered": 103,
+      "attempts": 123,
+      "correct": 86,
+      "accuracy": 69.9,
+      "coverage": 65.6
+    },
+    {
+      "name": "Cerebral Physiology and the Effects of Anesthetic Drugs",
+      "db_count": 145,
+      "answered": 41,
+      "attempts": 78,
+      "correct": 58,
+      "accuracy": 74.4,
+      "coverage": 28.3
+    },
+    {
+      "name": "Cardiac Physiology",
+      "db_count": 135,
+      "answered": 10,
+      "attempts": 17,
+      "correct": 14,
+      "accuracy": 82.4,
+      "coverage": 7.4
+    },
+    {
+      "name": "Respiratory Physiology and Pathophysiology",
+      "db_count": 132,
+      "answered": 13,
+      "attempts": 27,
+      "correct": 22,
+      "accuracy": 81.5,
+      "coverage": 9.8
+    },
+    {
+      "name": "Inhaled Anesthetic Delivery Systems",
+      "db_count": 121,
+      "answered": 13,
+      "attempts": 21,
+      "correct": 16,
+      "accuracy": 76.2,
+      "coverage": 10.7
+    },
+    {
+      "name": "Opioids",
+      "db_count": 98,
+      "answered": 11,
+      "attempts": 23,
+      "correct": 20,
+      "accuracy": 87.0,
+      "coverage": 11.2
+    },
+    {
+      "name": "Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function",
+      "db_count": 97,
+      "answered": 5,
+      "attempts": 11,
+      "correct": 8,
+      "accuracy": 72.7,
+      "coverage": 5.2
+    },
+    {
+      "name": "Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity",
+      "db_count": 96,
+      "answered": 15,
+      "attempts": 29,
+      "correct": 18,
+      "accuracy": 62.1,
+      "coverage": 15.6
+    },
+    {
+      "name": "Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)",
+      "db_count": 88,
+      "answered": 3,
+      "attempts": 5,
+      "correct": 4,
+      "accuracy": 80.0,
+      "coverage": 3.4
+    },
+    {
+      "name": "Anesthesia for Obstetrics",
+      "db_count": 77,
+      "answered": 12,
+      "attempts": 25,
+      "correct": 18,
+      "accuracy": 72.0,
+      "coverage": 15.6
+    },
+    {
+      "name": "Sleep Medicine",
+      "db_count": 75,
+      "answered": 10,
+      "attempts": 28,
+      "correct": 18,
+      "accuracy": 64.3,
+      "coverage": 13.3
+    },
+    {
+      "name": "Intravenous Anesthetics",
+      "db_count": 74,
+      "answered": 15,
+      "attempts": 28,
+      "correct": 18,
+      "accuracy": 64.3,
+      "coverage": 20.3
+    },
+    {
+      "name": "Basic Principles of Pharmacology",
+      "db_count": 73,
+      "answered": 8,
+      "attempts": 11,
+      "correct": 9,
+      "accuracy": 81.8,
+      "coverage": 11.0
+    },
+    {
+      "name": "Anesthesia for Cardiac Surgical Procedures",
+      "db_count": 73,
+      "answered": 5,
+      "attempts": 9,
+      "correct": 8,
+      "accuracy": 88.9,
+      "coverage": 6.8
+    },
+    {
+      "name": "Cardiovascular Monitoring",
+      "db_count": 71,
+      "answered": 38,
+      "attempts": 76,
+      "correct": 53,
+      "accuracy": 69.7,
+      "coverage": 53.5
+    },
+    {
+      "name": "Airway Management in the Adult",
+      "db_count": 71,
+      "answered": 5,
+      "attempts": 6,
+      "correct": 6,
+      "accuracy": 100.0,
+      "coverage": 7.0
+    },
+    {
+      "name": "Anesthetic Implications of Concurrent Diseases",
+      "db_count": 68,
+      "answered": 3,
+      "attempts": 5,
+      "correct": 4,
+      "accuracy": 80.0,
+      "coverage": 4.4
+    },
+    {
+      "name": "ACLS",
+      "db_count": 68,
+      "answered": 68,
+      "attempts": 96,
+      "correct": 85,
+      "accuracy": 88.5,
+      "coverage": 100.0
+    },
+    {
+      "name": "Preoperative Evaluation",
+      "db_count": 63,
+      "answered": 8,
+      "attempts": 15,
+      "correct": 14,
+      "accuracy": 93.3,
+      "coverage": 12.7
+    },
+    {
+      "name": "Pediatric Anesthesia",
+      "db_count": 63,
+      "answered": 35,
+      "attempts": 67,
+      "correct": 56,
+      "accuracy": 83.6,
+      "coverage": 55.6
+    },
+    {
+      "name": "Spinal, Epidural, and Caudal Anesthesia",
+      "db_count": 62,
+      "answered": 3,
+      "attempts": 7,
+      "correct": 6,
+      "accuracy": 85.7,
+      "coverage": 4.8
+    },
+    {
+      "name": "Perioperative Acid-Base Balance",
+      "db_count": 61,
+      "answered": 3,
+      "attempts": 6,
+      "correct": 5,
+      "accuracy": 83.3,
+      "coverage": 4.9
+    },
+    {
+      "name": "Neuromuscular Physiology and Pharmacology",
+      "db_count": 60,
+      "answered": 9,
+      "attempts": 18,
+      "correct": 18,
+      "accuracy": 100.0,
+      "coverage": 15.0
+    },
+    {
+      "name": "Patient Blood Management: Coagulation",
+      "db_count": 58,
+      "answered": 8,
+      "attempts": 13,
+      "correct": 9,
+      "accuracy": 69.2,
+      "coverage": 13.8
+    },
+    {
+      "name": "Respiratory Monitoring",
+      "db_count": 56,
+      "answered": 16,
+      "attempts": 40,
+      "correct": 34,
+      "accuracy": 85.0,
+      "coverage": 28.6
+    },
+    {
+      "name": "Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia",
+      "db_count": 53,
+      "answered": 4,
+      "attempts": 6,
+      "correct": 5,
+      "accuracy": 83.3,
+      "coverage": 7.5
+    },
+    {
+      "name": "Inhaled Anesthetics: Mechanisms of Action",
+      "db_count": 53,
+      "answered": 2,
+      "attempts": 2,
+      "correct": 2,
+      "accuracy": 100.0,
+      "coverage": 3.8
+    },
+    {
+      "name": "Perioperative Fluid and Electrolyte Therapy",
+      "db_count": 52,
+      "answered": 9,
+      "attempts": 15,
+      "correct": 13,
+      "accuracy": 86.7,
+      "coverage": 17.3
+    },
+    {
+      "name": "Local Anesthetics",
+      "db_count": 51,
+      "answered": 9,
+      "attempts": 14,
+      "correct": 13,
+      "accuracy": 92.9,
+      "coverage": 17.6
+    },
+    {
+      "name": "Critical Care Anesthesiology",
+      "db_count": 51,
+      "answered": 10,
+      "attempts": 17,
+      "correct": 11,
+      "accuracy": 64.7,
+      "coverage": 19.6
+    },
+    {
+      "name": "Anesthesia for Trauma",
+      "db_count": 47,
+      "answered": 9,
+      "attempts": 15,
+      "correct": 11,
+      "accuracy": 73.3,
+      "coverage": 19.1
+    },
+    {
+      "name": "Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)",
+      "db_count": 45,
+      "answered": 7,
+      "attempts": 14,
+      "correct": 11,
+      "accuracy": 78.6,
+      "coverage": 15.6
+    },
+    {
+      "name": "Anesthesia for Thoracic Surgery",
+      "db_count": 44,
+      "answered": 3,
+      "attempts": 6,
+      "correct": 5,
+      "accuracy": 83.3,
+      "coverage": 6.8
+    },
+    {
+      "name": "Anesthesia for Neurologic Surgery and Neurointerventions",
+      "db_count": 43,
+      "answered": 2,
+      "attempts": 3,
+      "correct": 2,
+      "accuracy": 66.7,
+      "coverage": 4.7
+    },
+    {
+      "name": "Neuromuscular Monitoring",
+      "db_count": 42,
+      "answered": 8,
+      "attempts": 16,
+      "correct": 12,
+      "accuracy": 75.0,
+      "coverage": 19.0
+    },
+    {
+      "name": "Patient Blood Management: Transfusion Therapy",
+      "db_count": 41,
+      "answered": 2,
+      "attempts": 3,
+      "correct": 3,
+      "accuracy": 100.0,
+      "coverage": 4.9
+    },
+    {
+      "name": "Neurocritical Care",
+      "db_count": 37,
+      "answered": 3,
+      "attempts": 6,
+      "correct": 5,
+      "accuracy": 83.3,
+      "coverage": 8.1
+    },
+    {
+      "name": "Geriatric Anesthesia",
+      "db_count": 35,
+      "answered": 19,
+      "attempts": 38,
+      "correct": 32,
+      "accuracy": 84.2,
+      "coverage": 54.3
+    },
+    {
+      "name": "Management of the Patient with Chronic Pain",
+      "db_count": 35,
+      "answered": 7,
+      "attempts": 15,
+      "correct": 11,
+      "accuracy": 73.3,
+      "coverage": 20.0
+    },
+    {
+      "name": "Neuromuscular Disorders and Other Genetic Disorders",
+      "db_count": 33,
+      "answered": 6,
+      "attempts": 11,
+      "correct": 8,
+      "accuracy": 72.7,
+      "coverage": 18.2
+    },
+    {
+      "name": "The Postanesthesia Care Unit",
+      "db_count": 32,
+      "answered": 9,
+      "attempts": 15,
+      "correct": 10,
+      "accuracy": 66.7,
+      "coverage": 28.1
+    },
+    {
+      "name": "Anesthesia for Vascular Surgery",
+      "db_count": 32,
+      "answered": 9,
+      "attempts": 16,
+      "correct": 12,
+      "accuracy": 75.0,
+      "coverage": 28.1
+    },
+    {
+      "name": "Pulmonary Pharmacology of Inhaled Anesthetics",
+      "db_count": 30,
+      "answered": 5,
+      "attempts": 10,
+      "correct": 8,
+      "accuracy": 80.0,
+      "coverage": 16.7
+    },
+    {
+      "name": "Patient Positioning and Associated Risks",
+      "db_count": 29,
+      "answered": 28,
+      "attempts": 59,
+      "correct": 47,
+      "accuracy": 79.7,
+      "coverage": 96.6
+    },
+    {
+      "name": "Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury",
+      "db_count": 26,
+      "answered": 2,
+      "attempts": 2,
+      "correct": 2,
+      "accuracy": 100.0,
+      "coverage": 7.7
+    },
+    {
+      "name": "Consciousness, Memory, and Anesthesia",
+      "db_count": 26,
+      "answered": 1,
+      "attempts": 2,
+      "correct": 2,
+      "accuracy": 100.0,
+      "coverage": 3.8
+    },
+    {
+      "name": "Anesthesia for Bariatric Surgery",
+      "db_count": 25,
+      "answered": 18,
+      "attempts": 29,
+      "correct": 19,
+      "accuracy": 65.5,
+      "coverage": 72.0
+    },
+    {
+      "name": "Regional Anesthesia in Children",
+      "db_count": 25,
+      "answered": 7,
+      "attempts": 15,
+      "correct": 8,
+      "accuracy": 53.3,
+      "coverage": 28.0
+    },
+    {
+      "name": "Monitoring the Brain's Response to Anesthesia and Surgery",
+      "db_count": 24,
+      "answered": 4,
+      "attempts": 7,
+      "correct": 7,
+      "accuracy": 100.0,
+      "coverage": 16.7
+    },
+    {
+      "name": "Anesthesia and the Renal and Genitourinary Systems",
+      "db_count": 23,
+      "answered": 4,
+      "attempts": 6,
+      "correct": 5,
+      "accuracy": 83.3,
+      "coverage": 17.4
+    },
+    {
+      "name": "Ambulatory (Outpatient) Anesthesia",
+      "db_count": 22,
+      "answered": 5,
+      "attempts": 9,
+      "correct": 8,
+      "accuracy": 88.9,
+      "coverage": 22.7
+    },
+    {
+      "name": "Implantable Cardiac Pulse Generators: Pacemakers and Cardioverter-Defibrillators",
+      "db_count": 21,
+      "answered": 3,
+      "attempts": 6,
+      "correct": 5,
+      "accuracy": 83.3,
+      "coverage": 14.3
+    },
+    {
+      "name": "Anesthesia for Otolaryngologic and Head-Neck Surgery",
+      "db_count": 21,
+      "answered": 1,
+      "attempts": 1,
+      "correct": 1,
+      "accuracy": 100.0,
+      "coverage": 4.8
+    },
+    {
+      "name": "Anesthesia for Orthopedic Surgery",
+      "db_count": 18,
+      "answered": 2,
+      "attempts": 4,
+      "correct": 4,
+      "accuracy": 100.0,
+      "coverage": 11.1
+    },
+    {
+      "name": "Neurophysiologic Monitoring",
+      "db_count": 17,
+      "answered": 4,
+      "attempts": 5,
+      "correct": 5,
+      "accuracy": 100.0,
+      "coverage": 23.5
+    },
+    {
+      "name": "Cardiopulmonary Resuscitation and Advanced Cardiac Life Support",
+      "db_count": 16,
+      "answered": 13,
+      "attempts": 31,
+      "correct": 18,
+      "accuracy": 58.1,
+      "coverage": 81.2
+    },
+    {
+      "name": "Anesthesia for Abdominal Organ Transplantation",
+      "db_count": 15,
+      "answered": 2,
+      "attempts": 4,
+      "correct": 4,
+      "accuracy": 100.0,
+      "coverage": 13.3
+    },
+    {
+      "name": "Extracorporeal Membrane Oxygenation and Cardiac Devices",
+      "db_count": 14,
+      "answered": 3,
+      "attempts": 5,
+      "correct": 4,
+      "accuracy": 80.0,
+      "coverage": 21.4
+    },
+    {
+      "name": "Intravenous Drug Delivery Systems",
+      "db_count": 14,
+      "answered": 2,
+      "attempts": 4,
+      "correct": 4,
+      "accuracy": 100.0,
+      "coverage": 14.3
+    },
+    {
+      "name": "Anesthesia for Ophthalmic Surgery",
+      "db_count": 14,
+      "answered": 2,
+      "attempts": 2,
+      "correct": 1,
+      "accuracy": 50.0,
+      "coverage": 14.3
+    },
+    {
+      "name": "Anesthesia for Robotic Surgery",
+      "db_count": 11,
+      "answered": 11,
+      "attempts": 16,
+      "correct": 15,
+      "accuracy": 93.8,
+      "coverage": 100.0
+    },
+    {
+      "name": "Risk of Anesthesia",
+      "db_count": 10,
+      "answered": 4,
+      "attempts": 9,
+      "correct": 8,
+      "accuracy": 88.9,
+      "coverage": 40.0
+    },
+    {
+      "name": "Anesthesia for Fetal Surgery and Other Fetal Therapies",
+      "db_count": 9,
+      "answered": 3,
+      "attempts": 4,
+      "correct": 3,
+      "accuracy": 75.0,
+      "coverage": 33.3
+    },
+    {
+      "name": "Acute Postoperative Pain",
+      "db_count": 9,
+      "answered": 3,
+      "attempts": 6,
+      "correct": 6,
+      "accuracy": 100.0,
+      "coverage": 33.3
+    },
+    {
+      "name": "Anesthesia for Correction of Cardiac Arrhythmias",
+      "db_count": 9,
+      "answered": 2,
+      "attempts": 3,
+      "correct": 3,
+      "accuracy": 100.0,
+      "coverage": 22.2
+    },
+    {
+      "name": "Anesthesia for Pediatric Cardiac Surgery",
+      "db_count": 8,
+      "answered": 5,
+      "attempts": 15,
+      "correct": 12,
+      "accuracy": 80.0,
+      "coverage": 62.5
+    },
+    {
+      "name": "Pediatric and Neonatal Critical Care",
+      "db_count": 8,
+      "answered": 2,
+      "attempts": 4,
+      "correct": 4,
+      "accuracy": 100.0,
+      "coverage": 25.0
+    },
+    {
+      "name": "Non-Operating Room Anesthesia",
+      "db_count": 6,
+      "answered": 2,
+      "attempts": 3,
+      "correct": 3,
+      "accuracy": 100.0,
+      "coverage": 33.3
+    },
+    {
+      "name": "Clinical Research",
+      "db_count": 6,
+      "answered": 3,
+      "attempts": 5,
+      "correct": 3,
+      "accuracy": 60.0,
+      "coverage": 50.0
+    },
+    {
+      "name": "Perioperative Neurocognitive Disorders",
+      "db_count": 5,
+      "answered": 3,
+      "attempts": 7,
+      "correct": 6,
+      "accuracy": 85.7,
+      "coverage": 60.0
+    },
+    {
+      "name": "Clinical Care in Extreme Environments: High Pressure, Immersion, Drowning, Hypo-, and Hyperthermia",
+      "db_count": 5,
+      "answered": 3,
+      "attempts": 7,
+      "correct": 6,
+      "accuracy": 85.7,
+      "coverage": 60.0
+    },
+    {
+      "name": "Clinical Care in Extreme Environments: Physiology at High Altitude and in Space",
+      "db_count": 4,
+      "answered": 4,
+      "attempts": 6,
+      "correct": 4,
+      "accuracy": 66.7,
+      "coverage": 100.0
+    },
+    {
+      "name": "Immune Implications of Anesthesia Care and Practice",
+      "db_count": 2,
+      "answered": 2,
+      "attempts": 5,
+      "correct": 3,
+      "accuracy": 60.0,
+      "coverage": 100.0
+    },
+    {
+      "name": "Anesthesia for Organ Procurement",
+      "db_count": 2,
+      "answered": 2,
+      "attempts": 4,
+      "correct": 3,
+      "accuracy": 75.0,
+      "coverage": 100.0
+    },
+    {
+      "name": "Burn Management",
+      "db_count": 2,
+      "answered": 1,
+      "attempts": 3,
+      "correct": 3,
+      "accuracy": 100.0,
+      "coverage": 50.0
+    },
+    {
+      "name": "Prehospital Care for Medical Emergencies and Trauma",
+      "db_count": 1,
+      "answered": 1,
+      "attempts": 3,
+      "correct": 3,
+      "accuracy": 100.0,
+      "coverage": 100.0
+    },
+    {
+      "name": "Interpreting the Medical Literature",
+      "db_count": 1,
+      "answered": 1,
+      "attempts": 3,
+      "correct": 1,
+      "accuracy": 33.3,
+      "coverage": 100.0
+    }
+  ],
+  "hourly": {
+    "morning": 77.5,
+    "afternoon": 70.9,
+    "evening": 70.3,
+    "best_hours": [
+      4,
+      20,
+      9,
+      5,
+      10
+    ],
+    "worst_hours": [
+      3,
+      18,
+      19,
+      16,
+      17
+    ]
+  },
+  "weekly": [
+    {
+      "week": 1,
+      "attempts": 334,
+      "correct": 239,
+      "accuracy": 71.6,
+      "days_active": 7,
+      "avg_daily": 47.7
+    },
+    {
+      "week": 2,
+      "attempts": 384,
+      "correct": 281,
+      "accuracy": 73.2,
+      "days_active": 7,
+      "avg_daily": 54.9
+    },
+    {
+      "week": 3,
+      "attempts": 652,
+      "correct": 494,
+      "accuracy": 75.8,
+      "days_active": 7,
+      "avg_daily": 93.1
+    }
+  ],
+  "marginal_gains": [
+    {
+      "name": "Critical Care Anesthesiology",
+      "delta_p70": 1.67,
+      "current_acc": 64.7,
+      "db_weight": 1.5,
+      "db_count": 51
+    },
+    {
+      "name": "Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)",
+      "delta_p70": 1.63,
+      "current_acc": 80.0,
+      "db_weight": 2.6,
+      "db_count": 88
+    },
+    {
+      "name": "Cardiac Physiology",
+      "delta_p70": 1.5,
+      "current_acc": 82.4,
+      "db_weight": 4.0,
+      "db_count": 135
+    },
+    {
+      "name": "Anesthesia for Neurologic Surgery and Neurointerventions",
+      "delta_p70": 1.47,
+      "current_acc": 66.7,
+      "db_weight": 1.3,
+      "db_count": 43
+    },
+    {
+      "name": "Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function",
+      "delta_p70": 1.4,
+      "current_acc": 72.7,
+      "db_weight": 2.9,
+      "db_count": 97
+    },
+    {
+      "name": "Perioperative Acid-Base Balance",
+      "delta_p70": 1.4,
+      "current_acc": 83.3,
+      "db_weight": 1.8,
+      "db_count": 61
+    },
+    {
+      "name": "Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity",
+      "delta_p70": 1.23,
+      "current_acc": 62.1,
+      "db_weight": 2.9,
+      "db_count": 96
+    },
+    {
+      "name": "Anesthetic Implications of Concurrent Diseases",
+      "delta_p70": 1.2,
+      "current_acc": 80.0,
+      "db_weight": 2.0,
+      "db_count": 68
+    },
+    {
+      "name": "Anesthesia and the Renal and Genitourinary Systems",
+      "delta_p70": 1.1,
+      "current_acc": 83.3,
+      "db_weight": 0.7,
+      "db_count": 23
+    },
+    {
+      "name": "Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia",
+      "delta_p70": 1.07,
+      "current_acc": 83.3,
+      "db_weight": 1.6,
+      "db_count": 53
+    },
+    {
+      "name": "Anesthesia for Obstetrics",
+      "delta_p70": 0.97,
+      "current_acc": 72.0,
+      "db_weight": 2.3,
+      "db_count": 77
+    },
+    {
+      "name": "Sleep Medicine",
+      "delta_p70": 0.97,
+      "current_acc": 64.3,
+      "db_weight": 2.2,
+      "db_count": 75
+    },
+    {
+      "name": "Patient Blood Management: Coagulation",
+      "delta_p70": 0.93,
+      "current_acc": 69.2,
+      "db_weight": 1.7,
+      "db_count": 58
+    },
+    {
+      "name": "Intravenous Anesthetics",
+      "delta_p70": 0.9,
+      "current_acc": 64.3,
+      "db_weight": 2.2,
+      "db_count": 74
+    },
+    {
+      "name": "Cerebral Physiology and the Effects of Anesthetic Drugs",
+      "delta_p70": 0.87,
+      "current_acc": 74.4,
+      "db_weight": 4.3,
+      "db_count": 145
+    }
+  ],
+  "tiers": [
+    {
+      "name": "Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function",
+      "priority": 0.1531,
+      "accuracy": 72.7,
+      "coverage": 5.2,
+      "db_count": 97,
+      "db_weight": 2.9,
+      "tier": "A"
+    },
+    {
+      "name": "Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)",
+      "priority": 0.105,
+      "accuracy": 80.0,
+      "coverage": 3.4,
+      "db_count": 88,
+      "db_weight": 2.6,
+      "tier": "A"
+    },
+    {
+      "name": "Cardiac Physiology",
+      "priority": 0.0959,
+      "accuracy": 82.4,
+      "coverage": 7.4,
+      "db_count": 135,
+      "db_weight": 4.0,
+      "tier": "A"
+    },
+    {
+      "name": "Anesthesia for Neurologic Surgery and Neurointerventions",
+      "priority": 0.0855,
+      "accuracy": 66.7,
+      "coverage": 4.7,
+      "db_count": 43,
+      "db_weight": 1.3,
+      "tier": "A"
+    },
+    {
+      "name": "Anesthetic Implications of Concurrent Diseases",
+      "priority": 0.0811,
+      "accuracy": 80.0,
+      "coverage": 4.4,
+      "db_count": 68,
+      "db_weight": 2.0,
+      "tier": "A"
+    },
+    {
+      "name": "Inhaled Anesthetic Delivery Systems",
+      "priority": 0.08,
+      "accuracy": 76.2,
+      "coverage": 10.7,
+      "db_count": 121,
+      "db_weight": 3.6,
+      "tier": "A"
+    },
+    {
+      "name": "Respiratory Physiology and Pathophysiology",
+      "priority": 0.074,
+      "accuracy": 81.5,
+      "coverage": 9.8,
+      "db_count": 132,
+      "db_weight": 3.9,
+      "tier": "A"
+    },
+    {
+      "name": "Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity",
+      "priority": 0.0695,
+      "accuracy": 62.1,
+      "coverage": 15.6,
+      "db_count": 96,
+      "db_weight": 2.9,
+      "tier": "A"
+    },
+    {
+      "name": "Perioperative Acid-Base Balance",
+      "priority": 0.0606,
+      "accuracy": 83.3,
+      "coverage": 4.9,
+      "db_count": 61,
+      "db_weight": 1.8,
+      "tier": "A"
+    },
+    {
+      "name": "Sleep Medicine",
+      "priority": 0.0599,
+      "accuracy": 64.3,
+      "coverage": 13.3,
+      "db_count": 75,
+      "db_weight": 2.2,
+      "tier": "A"
+    },
+    {
+      "name": "Spinal, Epidural, and Caudal Anesthesia",
+      "priority": 0.0528,
+      "accuracy": 85.7,
+      "coverage": 4.8,
+      "db_count": 62,
+      "db_weight": 1.8,
+      "tier": "A"
+    },
+    {
+      "name": "Anesthesia for Obstetrics",
+      "priority": 0.0413,
+      "accuracy": 72.0,
+      "coverage": 15.6,
+      "db_count": 77,
+      "db_weight": 2.3,
+      "tier": "A"
+    },
+    {
+      "name": "Cerebral Physiology and the Effects of Anesthetic Drugs",
+      "priority": 0.0392,
+      "accuracy": 74.4,
+      "coverage": 28.3,
+      "db_count": 145,
+      "db_weight": 4.3,
+      "tier": "A"
+    },
+    {
+      "name": "Intravenous Anesthetics",
+      "priority": 0.0389,
+      "accuracy": 64.3,
+      "coverage": 20.3,
+      "db_count": 74,
+      "db_weight": 2.2,
+      "tier": "A"
+    },
+    {
+      "name": "Patient Blood Management: Coagulation",
+      "priority": 0.0386,
+      "accuracy": 69.2,
+      "coverage": 13.8,
+      "db_count": 58,
+      "db_weight": 1.7,
+      "tier": "A"
+    },
+    {
+      "name": "Basic Principles of Pharmacology",
+      "priority": 0.0361,
+      "accuracy": 81.8,
+      "coverage": 11.0,
+      "db_count": 73,
+      "db_weight": 2.2,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia for Cardiac Surgical Procedures",
+      "priority": 0.0353,
+      "accuracy": 88.9,
+      "coverage": 6.8,
+      "db_count": 73,
+      "db_weight": 2.2,
+      "tier": "B"
+    },
+    {
+      "name": "Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia",
+      "priority": 0.0349,
+      "accuracy": 83.3,
+      "coverage": 7.5,
+      "db_count": 53,
+      "db_weight": 1.6,
+      "tier": "B"
+    },
+    {
+      "name": "Opioids",
+      "priority": 0.034,
+      "accuracy": 87.0,
+      "coverage": 11.2,
+      "db_count": 98,
+      "db_weight": 2.9,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia for Thoracic Surgery",
+      "priority": 0.0321,
+      "accuracy": 83.3,
+      "coverage": 6.8,
+      "db_count": 44,
+      "db_weight": 1.3,
+      "tier": "B"
+    },
+    {
+      "name": "Critical Care Anesthesiology",
+      "priority": 0.0274,
+      "accuracy": 64.7,
+      "coverage": 19.6,
+      "db_count": 51,
+      "db_weight": 1.5,
+      "tier": "B"
+    },
+    {
+      "name": "Neurocritical Care",
+      "priority": 0.0227,
+      "accuracy": 83.3,
+      "coverage": 8.1,
+      "db_count": 37,
+      "db_weight": 1.1,
+      "tier": "B"
+    },
+    {
+      "name": "Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations",
+      "priority": 0.0215,
+      "accuracy": 69.9,
+      "coverage": 65.6,
+      "db_count": 157,
+      "db_weight": 4.7,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia for Trauma",
+      "priority": 0.0195,
+      "accuracy": 73.3,
+      "coverage": 19.1,
+      "db_count": 47,
+      "db_weight": 1.4,
+      "tier": "B"
+    },
+    {
+      "name": "Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)",
+      "priority": 0.0185,
+      "accuracy": 78.6,
+      "coverage": 15.6,
+      "db_count": 45,
+      "db_weight": 1.3,
+      "tier": "B"
+    },
+    {
+      "name": "Neuromuscular Monitoring",
+      "priority": 0.0164,
+      "accuracy": 75.0,
+      "coverage": 19.0,
+      "db_count": 42,
+      "db_weight": 1.3,
+      "tier": "B"
+    },
+    {
+      "name": "Neuromuscular Disorders and Other Genetic Disorders",
+      "priority": 0.0148,
+      "accuracy": 72.7,
+      "coverage": 18.2,
+      "db_count": 33,
+      "db_weight": 1.0,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia for Ophthalmic Surgery",
+      "priority": 0.0146,
+      "accuracy": 50.0,
+      "coverage": 14.3,
+      "db_count": 14,
+      "db_weight": 0.4,
+      "tier": "B"
+    },
+    {
+      "name": "Management of the Patient with Chronic Pain",
+      "priority": 0.0139,
+      "accuracy": 73.3,
+      "coverage": 20.0,
+      "db_count": 35,
+      "db_weight": 1.0,
+      "tier": "B"
+    },
+    {
+      "name": "Regional Anesthesia in Children",
+      "priority": 0.0124,
+      "accuracy": 53.3,
+      "coverage": 28.0,
+      "db_count": 25,
+      "db_weight": 0.7,
+      "tier": "B"
+    },
+    {
+      "name": "Cardiovascular Monitoring",
+      "priority": 0.012,
+      "accuracy": 69.7,
+      "coverage": 53.5,
+      "db_count": 71,
+      "db_weight": 2.1,
+      "tier": "B"
+    },
+    {
+      "name": "Perioperative Fluid and Electrolyte Therapy",
+      "priority": 0.0119,
+      "accuracy": 86.7,
+      "coverage": 17.3,
+      "db_count": 52,
+      "db_weight": 1.6,
+      "tier": "B"
+    },
+    {
+      "name": "The Postanesthesia Care Unit",
+      "priority": 0.0113,
+      "accuracy": 66.7,
+      "coverage": 28.1,
+      "db_count": 32,
+      "db_weight": 1.0,
+      "tier": "B"
+    },
+    {
+      "name": "Pulmonary Pharmacology of Inhaled Anesthetics",
+      "priority": 0.0107,
+      "accuracy": 80.0,
+      "coverage": 16.7,
+      "db_count": 30,
+      "db_weight": 0.9,
+      "tier": "B"
+    },
+    {
+      "name": "Preoperative Evaluation",
+      "priority": 0.0099,
+      "accuracy": 93.3,
+      "coverage": 12.7,
+      "db_count": 63,
+      "db_weight": 1.9,
+      "tier": "B"
+    },
+    {
+      "name": "Respiratory Monitoring",
+      "priority": 0.0088,
+      "accuracy": 85.0,
+      "coverage": 28.6,
+      "db_count": 56,
+      "db_weight": 1.7,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia for Vascular Surgery",
+      "priority": 0.0085,
+      "accuracy": 75.0,
+      "coverage": 28.1,
+      "db_count": 32,
+      "db_weight": 1.0,
+      "tier": "B"
+    },
+    {
+      "name": "Implantable Cardiac Pulse Generators: Pacemakers and Cardioverter-Defibrillators",
+      "priority": 0.0073,
+      "accuracy": 83.3,
+      "coverage": 14.3,
+      "db_count": 21,
+      "db_weight": 0.6,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia and the Renal and Genitourinary Systems",
+      "priority": 0.0066,
+      "accuracy": 83.3,
+      "coverage": 17.4,
+      "db_count": 23,
+      "db_weight": 0.7,
+      "tier": "B"
+    },
+    {
+      "name": "Local Anesthetics",
+      "priority": 0.0062,
+      "accuracy": 92.9,
+      "coverage": 17.6,
+      "db_count": 51,
+      "db_weight": 1.5,
+      "tier": "B"
+    },
+    {
+      "name": "Pediatric Anesthesia",
+      "priority": 0.0056,
+      "accuracy": 83.6,
+      "coverage": 55.6,
+      "db_count": 63,
+      "db_weight": 1.9,
+      "tier": "B"
+    },
+    {
+      "name": "Extracorporeal Membrane Oxygenation and Cardiac Devices",
+      "priority": 0.0039,
+      "accuracy": 80.0,
+      "coverage": 21.4,
+      "db_count": 14,
+      "db_weight": 0.4,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia for Bariatric Surgery",
+      "priority": 0.0036,
+      "accuracy": 65.5,
+      "coverage": 72.0,
+      "db_count": 25,
+      "db_weight": 0.7,
+      "tier": "B"
+    },
+    {
+      "name": "Ambulatory (Outpatient) Anesthesia",
+      "priority": 0.0032,
+      "accuracy": 88.9,
+      "coverage": 22.7,
+      "db_count": 22,
+      "db_weight": 0.7,
+      "tier": "B"
+    },
+    {
+      "name": "Geriatric Anesthesia",
+      "priority": 0.003,
+      "accuracy": 84.2,
+      "coverage": 54.3,
+      "db_count": 35,
+      "db_weight": 1.0,
+      "tier": "B"
+    },
+    {
+      "name": "Cardiopulmonary Resuscitation and Advanced Cardiac Life Support",
+      "priority": 0.0025,
+      "accuracy": 58.1,
+      "coverage": 81.2,
+      "db_count": 16,
+      "db_weight": 0.5,
+      "tier": "B"
+    },
+    {
+      "name": "ACLS",
+      "priority": 0.0023,
+      "accuracy": 88.5,
+      "coverage": 100.0,
+      "db_count": 68,
+      "db_weight": 2.0,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia for Fetal Surgery and Other Fetal Therapies",
+      "priority": 0.002,
+      "accuracy": 75.0,
+      "coverage": 33.3,
+      "db_count": 9,
+      "db_weight": 0.3,
+      "tier": "B"
+    },
+    {
+      "name": "Patient Positioning and Associated Risks",
+      "priority": 0.0018,
+      "accuracy": 79.7,
+      "coverage": 96.6,
+      "db_count": 29,
+      "db_weight": 0.9,
+      "tier": "B"
+    },
+    {
+      "name": "Clinical Research",
+      "priority": 0.0014,
+      "accuracy": 60.0,
+      "coverage": 50.0,
+      "db_count": 6,
+      "db_weight": 0.2,
+      "tier": "B"
+    },
+    {
+      "name": "Risk of Anesthesia",
+      "priority": 0.0008,
+      "accuracy": 88.9,
+      "coverage": 40.0,
+      "db_count": 10,
+      "db_weight": 0.3,
+      "tier": "B"
+    },
+    {
+      "name": "Anesthesia for Pediatric Cardiac Surgery",
+      "priority": 0.0008,
+      "accuracy": 80.0,
+      "coverage": 62.5,
+      "db_count": 8,
+      "db_weight": 0.2,
+      "tier": "B"
+    },
+    {
+      "name": "Perioperative Neurocognitive Disorders",
+      "priority": 0.0004,
+      "accuracy": 85.7,
+      "coverage": 60.0,
+      "db_count": 5,
+      "db_weight": 0.1,
+      "tier": "B"
+    },
+    {
+      "name": "Clinical Care in Extreme Environments: High Pressure, Immersion, Drowning, Hypo-, and Hyperthermia",
+      "priority": 0.0004,
+      "accuracy": 85.7,
+      "coverage": 60.0,
+      "db_count": 5,
+      "db_weight": 0.1,
+      "tier": "C"
+    },
+    {
+      "name": "Clinical Care in Extreme Environments: Physiology at High Altitude and in Space",
+      "priority": 0.0004,
+      "accuracy": 66.7,
+      "coverage": 100.0,
+      "db_count": 4,
+      "db_weight": 0.1,
+      "tier": "C"
+    },
+    {
+      "name": "Anesthesia for Robotic Surgery",
+      "priority": 0.0002,
+      "accuracy": 93.8,
+      "coverage": 100.0,
+      "db_count": 11,
+      "db_weight": 0.3,
+      "tier": "C"
+    },
+    {
+      "name": "Immune Implications of Anesthesia Care and Practice",
+      "priority": 0.0002,
+      "accuracy": 60.0,
+      "coverage": 100.0,
+      "db_count": 2,
+      "db_weight": 0.1,
+      "tier": "C"
+    },
+    {
+      "name": "Anesthesia for Organ Procurement",
+      "priority": 0.0001,
+      "accuracy": 75.0,
+      "coverage": 100.0,
+      "db_count": 2,
+      "db_weight": 0.1,
+      "tier": "C"
+    },
+    {
+      "name": "Airway Management in the Adult",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 7.0,
+      "db_count": 71,
+      "db_weight": 2.1,
+      "tier": "C"
+    },
+    {
+      "name": "Neuromuscular Physiology and Pharmacology",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 15.0,
+      "db_count": 60,
+      "db_weight": 1.8,
+      "tier": "C"
+    },
+    {
+      "name": "Inhaled Anesthetics: Mechanisms of Action",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 3.8,
+      "db_count": 53,
+      "db_weight": 1.6,
+      "tier": "C"
+    },
+    {
+      "name": "Patient Blood Management: Transfusion Therapy",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 4.9,
+      "db_count": 41,
+      "db_weight": 1.2,
+      "tier": "C"
+    },
+    {
+      "name": "Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 7.7,
+      "db_count": 26,
+      "db_weight": 0.8,
+      "tier": "C"
+    },
+    {
+      "name": "Consciousness, Memory, and Anesthesia",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 3.8,
+      "db_count": 26,
+      "db_weight": 0.8,
+      "tier": "C"
+    },
+    {
+      "name": "Monitoring the Brain's Response to Anesthesia and Surgery",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 16.7,
+      "db_count": 24,
+      "db_weight": 0.7,
+      "tier": "C"
+    },
+    {
+      "name": "Anesthesia for Otolaryngologic and Head-Neck Surgery",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 4.8,
+      "db_count": 21,
+      "db_weight": 0.6,
+      "tier": "C"
+    },
+    {
+      "name": "Anesthesia for Orthopedic Surgery",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 11.1,
+      "db_count": 18,
+      "db_weight": 0.5,
+      "tier": "C"
+    },
+    {
+      "name": "Neurophysiologic Monitoring",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 23.5,
+      "db_count": 17,
+      "db_weight": 0.5,
+      "tier": "C"
+    },
+    {
+      "name": "Anesthesia for Abdominal Organ Transplantation",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 13.3,
+      "db_count": 15,
+      "db_weight": 0.4,
+      "tier": "C"
+    },
+    {
+      "name": "Intravenous Drug Delivery Systems",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 14.3,
+      "db_count": 14,
+      "db_weight": 0.4,
+      "tier": "C"
+    },
+    {
+      "name": "Acute Postoperative Pain",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 33.3,
+      "db_count": 9,
+      "db_weight": 0.3,
+      "tier": "C"
+    },
+    {
+      "name": "Anesthesia for Correction of Cardiac Arrhythmias",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 22.2,
+      "db_count": 9,
+      "db_weight": 0.3,
+      "tier": "C"
+    },
+    {
+      "name": "Pediatric and Neonatal Critical Care",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 25.0,
+      "db_count": 8,
+      "db_weight": 0.2,
+      "tier": "C"
+    },
+    {
+      "name": "Non-Operating Room Anesthesia",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 33.3,
+      "db_count": 6,
+      "db_weight": 0.2,
+      "tier": "C"
+    },
+    {
+      "name": "Burn Management",
+      "priority": 0.0,
+      "accuracy": 100.0,
+      "coverage": 50.0,
+      "db_count": 2,
+      "db_weight": 0.1,
+      "tier": "C"
+    }
+  ],
+  "srs": {
+    "total": 737,
+    "active": 582,
+    "never_reviewed": 155,
+    "total_due": 460,
+    "breakdown": {
+      "confident": {
+        "total": 315,
+        "due": 147,
+        "never_reviewed": 6,
+        "active": 309,
+        "avg_ease": 2.57,
+        "avg_interval": 9.1
+      },
+      "hesitant": {
+        "total": 319,
+        "due": 230,
+        "never_reviewed": 63,
+        "active": 256,
+        "avg_ease": 2.43,
+        "avg_interval": 3.3
+      },
+      "guessed": {
+        "total": 103,
+        "due": 83,
+        "never_reviewed": 86,
+        "active": 17,
+        "avg_ease": 2.24,
+        "avg_interval": 1.6
+      }
+    }
+  }
+}
