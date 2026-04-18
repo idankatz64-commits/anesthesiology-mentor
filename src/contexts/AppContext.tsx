@@ -8,6 +8,7 @@ import {
 } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { getIsraelToday, addDaysIsrael } from '@/lib/dateHelpers';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface SavedSessionData {
@@ -510,26 +511,26 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     let reps = (existing as any)?.repetitions ?? 0;
 
     if (!isCorrect || confidence === 'guessed') {
-      // Wrong or guessed: reset — guessed is not real knowledge
       interval = 1;
       ease = Math.max(1.3, ease - 0.2);
       reps = 0;
     } else if (confidence === 'hesitant') {
-      // Correct but hesitant: modest interval growth, no ease change
-      interval = Math.max(1, Math.min(365, Math.round(interval * 1.2)));
+      // SM-2 ramp with penalty: guesses/hesitations come back sooner
+      if (reps === 0)      interval = 1;
+      else if (reps === 1) interval = 3;
+      else                 interval = Math.max(1, Math.min(365, Math.round(interval * 1.2)));
+      ease = Math.max(1.3, ease - 0.05);
       reps++;
     } else {
-      // Correct + confident: full SM-2 growth
-      interval = Math.max(1, Math.min(365, Math.round(interval * ease)));
+      // Confident: standard SM-2 progression (1 → 6 → prev×ease)
+      if (reps === 0)      interval = 1;
+      else if (reps === 1) interval = 6;
+      else                 interval = Math.max(1, Math.min(365, Math.round(interval * ease)));
       ease = Math.min(4.0, ease + 0.1);
       reps++;
     }
 
-    // Compute next review date in Israel TZ
-    const now = new Date();
-    const nextDate = new Date(now.getTime());
-    nextDate.setDate(nextDate.getDate() + interval);
-    const nextReviewDate = nextDate.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+    const nextReviewDate = addDaysIsrael(getIsraelToday(), interval);
 
     const { error } = await supabase.from('spaced_repetition').upsert({
       user_id: userId,
@@ -579,9 +580,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .maybeSingle();
 
     const ease = Math.max(1.3, ((existing as any)?.ease_factor ?? 2.5) - 0.2);
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const nextReviewDate = tomorrow.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+    const nextReviewDate = addDaysIsrael(getIsraelToday(), 1);
 
     await supabase.from('spaced_repetition').upsert({
       user_id: userId,
@@ -843,20 +842,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const userId = userIdRef.current;
     if (!userId) return [];
 
-    // Match Israel TZ used when storing next_review_date (line 532)
-    const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+    const today = getIsraelToday();
+    const DAILY_SRS_CAP = 40;
 
-    // fetchAllRows paginates past the 1000-row default limit
-    const dueRows = await fetchAllRows<{ question_id: string }>(() =>
+    // fetchAllRows paginates past the 1000-row default limit; most overdue first
+    const dueRows = await fetchAllRows<{ question_id: string; next_review_date: string }>(() =>
       supabase
         .from('spaced_repetition')
-        .select('question_id')
+        .select('question_id, next_review_date')
         .eq('user_id', userId)
         .lte('next_review_date', today)
+        .order('next_review_date', { ascending: true })
     );
 
-    if (dueRows.length === 0) return [];
-    const dueIds = new Set(dueRows.map(r => r.question_id));
+    const cappedRows = dueRows.slice(0, DAILY_SRS_CAP);
+    if (cappedRows.length === 0) return [];
+    const dueIds = new Set(cappedRows.map(r => r.question_id));
 
     // Prefer in-memory cache when available
     let matched = dataRef.current.filter(q => dueIds.has(q[KEYS.ID]));
