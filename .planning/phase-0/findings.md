@@ -157,6 +157,16 @@ Reference: `.planning/phase-0/audit.log`. All fixes available via `npm audit fix
 
 ---
 
+## Finding #37 — Duplicate lockfiles (Lovable-era drift risk) — RESOLVED this session
+
+🟢 **Low.** Repo had three lockfiles side-by-side: `package-lock.json` (npm, active), `bun.lock` + `bun.lockb` (bun, Lovable-era legacy). All three were tracked in git. Two package-managers' lockfiles in the same repo invites dependency drift — a contributor on bun would update `bun.lockb` while CI/Vercel resolve from `package-lock.json`, producing divergent builds.
+
+**Fix applied:** `git rm bun.lock bun.lockb` → commit `be1d0c7 chore: remove stale non-npm lockfile (lovable cleanup)`. Verified `npm ci` on clean `node_modules` still resolves cleanly (662 packages, 30s, no errors).
+
+Same category as `@lovable.dev/cloud-auth-js` in deps (baseline.md): both are Lovable-era residue to clean up.
+
+---
+
 ## Next steps
 
 Pending user approval to proceed to:
