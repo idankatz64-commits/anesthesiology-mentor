@@ -1,0 +1,10 @@
+node_modules/
+dist/
+build/
+.next/
+coverage/
+*.log
+*.db
+*.sqlite
+supabase/functions/_deno/
+.vercel/
