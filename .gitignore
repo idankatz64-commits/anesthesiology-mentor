@@ -35,3 +35,6 @@ scripts/master-report/__pycache__/
 .env.local
 .env.*.local
 **/.env
+
+# Legacy v2 master report outputs (generated HTMLs, not source)
+scripts/master-report/_legacy_v2/*.html
