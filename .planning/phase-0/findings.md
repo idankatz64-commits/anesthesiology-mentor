@@ -167,9 +167,42 @@ Same category as `@lovable.dev/cloud-auth-js` in deps (baseline.md): both are Lo
 
 ---
 
+## Finding #38 — Local `.env` points to OLD inactive Supabase project — RESOLVED this session
+
+🔴 **Critical (local dev only — production unaffected).** Discovered during 0c smoke test: console + network requests on `http://localhost:8080/` were hitting `agmcauhjhfwksrjllxar.supabase.co` (the deprecated Supabase project flagged in CLAUDE.md as "DO NOT touch — old inactive") instead of the live `ksbblqnwcmfylpxygyrj`. Symptoms: `/auth/v1/token` → 400, `/rest/v1/resource_links` → 404 (that table doesn't exist in the old project). Login + all data reads broken locally.
+
+**Root cause:** Stale `.env` file in repo root (filesystem mtime Mar 29, gitignored). Three keys all pointed to old project: `VITE_SUPABASE_PROJECT_ID`, `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`. Likely a leftover from a pre-migration clone or Lovable-era handoff — never updated when the app moved to the new project.
+
+**Scope:** Local dev only. Vercel production uses its own project-level env vars (not this file), so anesthesiology-mentor.vercel.app is unaffected. The `.env` is in `.gitignore` (line 34 `.env`), so no risk of wrong creds leaking in source.
+
+**Fix applied:** Overwrote `.env` with correct values from Supabase MCP `get_publishable_keys` for project `ksbblqnwcmfylpxygyrj`. Killed old dev server (bg task `bk8y0x5cj`, serving stale env), restarted (`bkgl3zrfz`) — Vite reports fresh boot in 1057ms, HTTP 200 on `/`. User will hard-reload browser to clear cached requests.
+
+**Invalidates:** All smoke-test flows logged before this fix are invalid (they tested the wrong backend). 0c resumes from scratch after restart.
+
+**Related:** Same "Lovable-era residue" category as Finding #37 (duplicate lockfiles) and unused `@lovable.dev/cloud-auth-js` dep (baseline.md). Suggests a broader audit pass for other stale pre-migration artifacts.
+
+---
+
+## Finding #39 — React duplicate-key warning in `SrsDecayChart`
+
+🟡 **Medium.** Console warning seen during 0c smoke test:
+```
+Warning: Encountered two children with the same key, `1`.
+  at SrsDecayChart
+```
+Likely a `.map(item => <... key={item.someField}>)` where `someField` is not unique across the rendered list (e.g., a bucket or day index that repeats).
+
+**File:** `src/components/srs/SrsDecayChart.tsx` (around line 46 per user observation).
+
+**Impact:** React's reconciler can't distinguish sibling nodes with identical keys → possible incorrect DOM diff on re-render (wrong tooltip state, animation glitches), plus console noise. Not blocking, but should be fixed.
+
+**Fix (later, Phase 0e or 1):** Use a genuinely unique key — composite of fields that uniquely identify a row, or array index as a last resort. Full fix requires reading the component to see which field is duplicating.
+
+---
+
 ## Next steps
 
 Pending user approval to proceed to:
-- **0c** — manual smoke test by user (golden path: login, answer question, mark for review, resume session, stats render).
+- **0c** — manual smoke test by user (golden path: login, answer question, mark for review, resume session, stats render). **Restart from scratch after Finding #38 fix.**
 - **0d** — triage decision: which 🔴 to fix now vs. defer.
 - **0e** — execute approved fixes on `phase-0-code-review` branch, PR with preview URL.
