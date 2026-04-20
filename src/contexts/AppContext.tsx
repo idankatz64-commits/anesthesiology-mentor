@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
-import { fetchQuestions, syncQuestionsFromSheet, invalidateQuestionsCache } from '@/lib/csvService';
+import { fetchQuestions, invalidateQuestionsCache } from '@/lib/csvService';
 import {
   KEYS, WELCOME_KEY,
   type Question, type UserProgress, type SessionState,
@@ -70,10 +70,7 @@ interface AppContextType {
   // Quiz mutations (immutable)
   updateQuizQuestion: (index: number, fields: Partial<Question>) => void;
 
-  // Sync & cache
-  syncStatus: 'idle' | 'syncing' | 'done' | 'error';
-  lastSyncTime: string | null;
-  triggerSync: () => Promise<{ count: number } | null>;
+  // Cache
   invalidateQuestions: () => Promise<void>;
   
    // Computed
@@ -202,8 +199,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return true;
   });
   const [showWelcome, setShowWelcome] = useState(() => !localStorage.getItem(WELCOME_KEY));
-  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'done' | 'error'>('idle');
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   const [savedSessionInfo, setSavedSessionInfo] = useState<SavedSessionData | null>(null);
   const [loadingSavedSession, setLoadingSavedSession] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -320,7 +315,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Auto-sync from Google Sheets on mount, then fetch from DB
+  // Fetch questions from Supabase on mount, then check for saved session
   useEffect(() => {
     let cancelled = false;
     const init = async () => {
@@ -328,62 +323,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         const questions = await fetchQuestions();
         if (!cancelled) setData(questions);
       } catch (e) {
-        console.warn('Initial DB fetch failed, will retry after sync:', e);
+        console.warn('Initial DB fetch failed:', e);
       }
       if (!cancelled) setLoading(false);
 
-      // Check for saved session + whether background sync is allowed
-      let canRunBackgroundSync = false;
+      // Check for saved session to offer resume
       try {
         const { data: { session: authSession } } = await supabase.auth.getSession();
         const userId = authSession?.user?.id ?? null;
 
         if (userId) {
-          const [{ data: saved }, { data: roleEntry, error: roleError }] = await Promise.all([
-            supabase
-              .from('saved_sessions')
-              .select('session_data')
-              .eq('user_id', userId)
-              .maybeSingle(),
-            supabase
-              .from('admin_users')
-              .select('role')
-              .eq('id', userId)
-              .maybeSingle(),
-          ]);
+          const { data: saved } = await supabase
+            .from('saved_sessions')
+            .select('session_data')
+            .eq('user_id', userId)
+            .maybeSingle();
 
           if (saved?.session_data && !cancelled) {
             setSavedSessionInfo(saved.session_data as unknown as SavedSessionData);
-          }
-
-          if (!roleError && roleEntry?.role === 'admin') {
-            canRunBackgroundSync = true;
           }
         }
       } catch (e) {
         console.warn('Failed to check saved session:', e);
       }
       if (!cancelled) setLoadingSavedSession(false);
-
-      // sync-questions is protected: only authenticated admins should invoke it
-      if (!canRunBackgroundSync) {
-        if (!cancelled) setSyncStatus('idle');
-        return;
-      }
-
-      if (!cancelled) setSyncStatus('syncing');
-      try {
-        const result = await syncQuestionsFromSheet();
-        if (!cancelled) {
-          setSyncStatus('done');
-          setLastSyncTime(result.synced_at);
-          const questions = await fetchQuestions();
-          if (!cancelled) setData(questions);
-        }
-      } catch (e) {
-        console.warn('Auto-sync failed:', e);
-        if (!cancelled) setSyncStatus('error');
-      }
     };
     init();
     return () => { cancelled = true; };
@@ -894,21 +857,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setData(questions);
   }, []);
 
-  const triggerSync = useCallback(async () => {
-    setSyncStatus('syncing');
-    try {
-      const result = await syncQuestionsFromSheet();
-      setLastSyncTime(result.synced_at);
-      await invalidateQuestions();
-      setSyncStatus('done');
-      return { count: data.length };
-    } catch (e) {
-      console.error('Manual sync failed:', e);
-      setSyncStatus('error');
-      return null;
-    }
-  }, [invalidateQuestions, data.length]);
-
   const saveSessionToDb = useCallback(async (timerSeconds?: number, simTimerSeconds?: number) => {
     const userId = userIdRef.current;
     if (!userId) return;
@@ -1006,7 +954,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const value: AppContextType = {
     data, loading, progress, session, multiSelect, currentView, isDark, showWelcome,
     isAdmin, isEditor,
-    syncStatus, lastSyncTime, triggerSync, invalidateQuestions,
+    invalidateQuestions,
     navigate, toggleTheme, closeWelcome,
     startSession, setAnswer, setConfidence, setSessionIndex, toggleFlag, skipQuestion,
     updateHistory, updateSpacedRepetition, markForReview,
