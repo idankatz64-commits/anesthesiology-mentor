@@ -117,7 +117,7 @@ export default function DailyReportModal({ open, onClose }: { open: boolean; onC
 
   return (
     <Dialog open={open} onOpenChange={v => !v && onClose()}>
-      <DialogContent className="max-w-[90vw] sm:max-w-md" dir="rtl">
+      <DialogContent className="max-w-[90vw] sm:max-w-md" dir="rtl" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle className="text-lg font-bold">דו״ח יומי 📊</DialogTitle>
         </DialogHeader>

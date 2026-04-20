@@ -104,7 +104,7 @@ export default function AISummaryButton() {
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto" dir="rtl">
+        <DialogContent className="max-w-lg max-h-[80vh] overflow-y-auto" dir="rtl" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-right text-base">
               <Sparkles className="w-4 h-4 text-primary" />
