@@ -200,9 +200,121 @@ Likely a `.map(item => <... key={item.someField}>)` where `someField` is not uni
 
 ---
 
+## Finding #40 — Simulation mode: answer-lock regression
+
+🔴 **High.** In simulation mode, once an answer is clicked it cannot be changed before confirmation. User quote during 0c test (2026-04-20): _"ברגע מסמנים תשובה הוא לא נותן להחליף, זה לא היה וזה בעיה."_
+
+**Location:** `src/components/views/SessionView.tsx` — simulation branch (logic that handles `onAnswerSelect` / `selectedAnswer` state when `mode === 'simulation'`).
+
+**Scope:** REGRESSION. Previous behaviour allowed re-selecting an answer until the user confirmed. The exam-style UX explicitly requires the ability to change mind before committing — this is how the real שלב א' exam works and how the app worked historically. Current behaviour is both a functional regression and a pedagogy regression (blocks the "think twice before locking in" pattern).
+
+**Investigation step (before fix):**
+```
+git log --oneline src/components/views/SessionView.tsx | head -20
+```
+Then bisect around commits that touched the simulation branch — likely candidates are SRS-dashboard / SessionView refactors from the last 2–3 weeks (e.g. `0efcccf`, `880b64e`, `c9250e3`). Identify the specific commit that introduced the lock.
+
+**Fix:** in Phase 0e (if narrow and surgical) OR Phase 1 (if deeper refactor needed). Document the introducing commit in this finding before editing.
+
+---
+
+## Finding #41 — CORS blocks `sync-questions` Edge Function from `localhost`
+
+🟡 **Medium (dev-only).** Every dev session-init produces a browser console error:
+```
+Access to fetch at 'https://ksbblqnwcmfylpxygyrj.supabase.co/functions/v1/sync-questions'
+from origin 'http://localhost:8080' has been blocked by CORS policy:
+The 'Access-Control-Allow-Origin' header has a value
+'https://anesthesiology-mentor.vercel.app' that is not equal to the supplied origin.
+```
+
+**Location:** `supabase/functions/sync-questions/index.ts` — hardcoded `Access-Control-Allow-Origin: 'https://anesthesiology-mentor.vercel.app'` in the CORS headers block.
+
+**Called from:** `src/lib/csvService.ts:82` (`syncQuestionsFromGoogleSheets`) invoked by `src/contexts/AppContext.tsx:376` on app initialisation.
+
+**Impact:** "Auto-sync failed" toast / console error on every local dev boot. App still works — questions are served from cache and Supabase direct reads — but the dev noise obscures real errors and new contributors will think something is broken.
+
+**Fix (Phase 0e):** Allow-list `http://localhost:8080` alongside the Vercel origin. Pattern:
+```ts
+const ALLOWED_ORIGINS = new Set([
+  'https://anesthesiology-mentor.vercel.app',
+  'http://localhost:8080',
+]);
+const origin = req.headers.get('origin') ?? '';
+const allowOrigin = ALLOWED_ORIGINS.has(origin) ? origin : '';
+```
+Do NOT use `*` — the function is admin-only and expects a user JWT, so origin reflection is safer than wildcard.
+
+---
+
+## Finding #42 — Missing DB resources (404s) — schema gap vs CLAUDE.md — 🔴 Escalated
+
+🔴 **Critical.** Three Supabase resources that the frontend actively calls **do not exist** in the live schema of project `ksbblqnwcmfylpxygyrj`. Probed via Supabase MCP on 2026-04-20:
+
+| Resource | Kind | Called from | Status in live DB |
+|---|---|---|---|
+| `calculator_formulas` | table | calculator view (see GET `/rest/v1/calculator_formulas?select=*&order=sort_order.asc`) | **MISSING** (not in `list_tables` output) |
+| `get_question_success_rate` | RPC function | `src/components/SessionCommunity.tsx:14` — fires per question | **MISSING** (not in `pg_proc` for public schema) |
+| `get_global_daily_accuracy` | RPC function | stats daily accuracy tile | **MISSING** (not in `pg_proc` for public schema) |
+
+**`pg_proc` public-schema result for queried names (full):** `increment_user_answer`, `is_admin`, `is_editor`. The two RPCs above were not returned — the functions genuinely don't exist.
+
+**Schema gap vs CLAUDE.md:** `CLAUDE.md` documents `calculator_formulas` as a live table (line reference: "Supabase Tables" section). The live schema contradicts that — same goes for `anki_decks`, `anki_cards`, `study_rooms`, `room_participants`, `room_answers`, `user_feedback` (all listed in CLAUDE.md, none present in `list_tables`). That's seven documented tables missing from live DB.
+
+**Edge Function delta:** Baseline.md listed 6 edge functions; live now has 10 — new: `claude-ai`, `telegram-bot`, `idea-weekly-report`, `idea-reminders`. Out of current Phase 0 scope, but suggests `CLAUDE.md` and the earlier inventory are both drifting from reality.
+
+**Impact:**
+- **User-visible:** calculator view works only because of a fallback data path; community success-rate widget is silently degraded (404 every question load — `SessionCommunity.tsx` fires it on every render); stats daily-accuracy tile similarly degraded.
+- **Documentation:** `CLAUDE.md` + baseline inventory are stale and misleading for future agents / reviewers.
+
+**Severity upgrade rationale:** Initial triage had this at 🟡 pending MCP verification. Verification confirms the resources are missing (not RLS-blocked). A frontend that fires 404s on every session page load is a real regression and must be decided on before Phase 1 begins.
+
+**Action for 0d/0e:** three options —
+1. **Restore:** find the original migration (was it ever applied? check git history of `supabase/migrations/`) and re-apply.
+2. **Remove caller:** delete the frontend call sites if the feature was abandoned.
+3. **Stub RPCs:** add lightweight RPC definitions that return empty/zero so 404s stop without restoring full functionality.
+Decision requires product input from the user.
+
+**Sync CLAUDE.md in 0e or Phase 1** after the direction above is chosen — the doc's "Supabase Tables" section currently misrepresents reality.
+
+---
+
+## Finding #43 — Tiptap duplicate extension names in `RichTextEditor`
+
+🟢 **Low.** Console warning during any RichTextEditor mount:
+```
+Duplicate extension names found: ['link', 'underline'].
+```
+
+**Location:** `src/components/RichTextEditor.tsx:31` — the `extensions: [...]` array passed to `useEditor()`.
+
+**Root cause (likely):** `StarterKit` (used by Tiptap out of the box) already bundles `Link` and `Underline` (or similar). Adding them again as individual extensions registers the name twice, which Tiptap dedups with a warning.
+
+**Fix (0e or Phase 1):** either (a) remove the explicit `Link` / `Underline` imports from the extensions array, or (b) if configuration differs from the StarterKit defaults, configure via `StarterKit.configure({ link: {...}, underline: {...} })` or pass `StarterKit.configure({ link: false, underline: false })` and keep the explicit custom extensions.
+
+---
+
+## Finding #44 — Radix Dialog missing `aria-describedby` (accessibility)
+
+🟢 **Low (a11y).** Console warning when any dialog opens:
+```
+Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+```
+
+**Location:** unknown exact file without grepping — affects any `<DialogContent>` used without a `<DialogDescription>` child. Likely multiple call sites across modals (share question, feedback, flashcard settings, etc.).
+
+**Impact:** Screen readers cannot announce a description for the dialog, degrading accessibility. Not blocking, not user-visible in normal usage, but a standards violation Radix intentionally nudges about.
+
+**Fix (0e or Phase 1):** audit all `<DialogContent>` usages; either
+- add a `<DialogDescription>` child with a short purpose line (preferred), or
+- pass `aria-describedby={undefined}` explicitly when no description is meaningful (silences the warning while keeping the default).
+
+Grep target: `<DialogContent` in `src/components/**`.
+
+---
+
 ## Next steps
 
 Pending user approval to proceed to:
-- **0c** — manual smoke test by user (golden path: login, answer question, mark for review, resume session, stats render). **Restart from scratch after Finding #38 fix.**
-- **0d** — triage decision: which 🔴 to fix now vs. defer.
-- **0e** — execute approved fixes on `phase-0-code-review` branch, PR with preview URL.
+- **0d** — triage decision: which 🔴 to fix now vs. defer. Blocker set as of 2026-04-20: `#3, #5, #7, #10, #11, #13, #15, #38 (resolved), #40, #42`. New escalations in 0c: #40 and #42 (latter from 🟡 → 🔴). Suggested 0d order: **#40 (regression, small)** → **#42 (schema; needs product decision)** → remaining pre-existing 🔴s.
+- **0e** — execute approved fixes on `phase-0-code-review` branch, PR with preview URL. Cleanup candidates for same sweep: #41, #43, #44.
