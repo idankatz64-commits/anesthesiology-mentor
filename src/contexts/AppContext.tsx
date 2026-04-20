@@ -545,7 +545,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const ease = Math.max(1.3, ((existing as any)?.ease_factor ?? 2.5) - 0.2);
     const nextReviewDate = addDaysIsrael(getIsraelToday(), 1);
 
-    await supabase.from('spaced_repetition').upsert({
+    const { error: srsError } = await supabase.from('spaced_repetition').upsert({
       user_id: userId,
       question_id: questionId,
       interval_days: 1,
@@ -557,8 +557,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       updated_at: new Date().toISOString(),
     } as any, { onConflict: 'user_id,question_id' });
 
+    if (srsError) {
+      console.error('markForReview: spaced_repetition upsert failed', srsError);
+      toast.error('שמירת הסימון נכשלה — נסה שוב');
+      return;
+    }
+
     // Direct insert into answer_history with flagged_for_review=true
-    await supabase.from('answer_history').insert({
+    const { error: historyError } = await supabase.from('answer_history').insert({
       user_id: userId,
       question_id: questionId,
       topic: topic ?? null,
@@ -566,6 +572,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       flagged_for_review: true,
       answered_at: new Date().toISOString(),
     } as any);
+
+    if (historyError) {
+      console.error('markForReview: answer_history insert failed', historyError);
+      toast.error('שמירת היסטוריית תשובה נכשלה — הסימון עצמו נשמר');
+      // Continue — SRS already saved, history is secondary
+    }
 
     setConfidenceMap(prev => ({ ...prev, [questionId]: 'guessed' }));
     toast.success('שאלה תחזור מחר לחזרה 🔁');
@@ -877,11 +889,17 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       createdAt: new Date().toISOString(),
     };
 
-    await (supabase.from('saved_sessions') as any).upsert({
+    const { error: saveError } = await (supabase.from('saved_sessions') as any).upsert({
       user_id: userId,
       session_data: sessionData,
       updated_at: new Date().toISOString(),
     }, { onConflict: 'user_id' });
+
+    if (saveError) {
+      console.error('saveSessionToDb: upsert failed', saveError);
+      toast.error('שמירת הסשן נכשלה — התקדמות עלולה להאבד');
+      return;
+    }
 
     setSavedSessionInfo(sessionData);
   }, []);
