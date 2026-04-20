@@ -200,7 +200,7 @@ Likely a `.map(item => <... key={item.someField}>)` where `someField` is not uni
 
 ---
 
-## Finding #40 — Simulation mode: answer-lock regression
+## Finding #40 — Simulation mode: answer-lock regression ✅ RESOLVED (2026-04-20)
 
 🔴 **High.** In simulation mode, once an answer is clicked it cannot be changed before confirmation. User quote during 0c test (2026-04-20): _"ברגע מסמנים תשובה הוא לא נותן להחליף, זה לא היה וזה בעיה."_
 
@@ -208,13 +208,13 @@ Likely a `.map(item => <... key={item.someField}>)` where `someField` is not uni
 
 **Scope:** REGRESSION. Previous behaviour allowed re-selecting an answer until the user confirmed. The exam-style UX explicitly requires the ability to change mind before committing — this is how the real שלב א' exam works and how the app worked historically. Current behaviour is both a functional regression and a pedagogy regression (blocks the "think twice before locking in" pattern).
 
-**Investigation step (before fix):**
-```
-git log --oneline src/components/views/SessionView.tsx | head -20
-```
-Then bisect around commits that touched the simulation branch — likely candidates are SRS-dashboard / SessionView refactors from the last 2–3 weeks (e.g. `0efcccf`, `880b64e`, `c9250e3`). Identify the specific commit that introduced the lock.
+**Introducing commit:** `7d8bd6a` ("Changes", 2026-02-21 — bot commit that first added full simulation mode with countdown timer + separate UX). The lock was present from day one of simulation mode; user noticed the mismatch vs exam-mode behaviour during 0c manual test.
 
-**Fix:** in Phase 0e (if narrow and surgical) OR Phase 1 (if deeper refactor needed). Document the introducing commit in this finding before editing.
+**Resolution (Phase 0e, 2026-04-20):** Removed two symmetric guards that blocked re-selection —
+1. `src/components/views/SessionView.tsx:340` — `if (isSimulation && savedAns !== null) return;` inside `handleAnswer`
+2. `src/components/views/SessionView.tsx:815` — `(isSimulation && savedAns !== null)` inside button `disabled` prop
+
+Simulation now behaves identically to exam mode: user can change answer freely; moving to the next question via `handleNext` is the implicit "commit". `getOptionClasses` already handles the selected-state highlight correctly for re-selection. TypeScript check passed (`tsc --noEmit`).
 
 ---
 
