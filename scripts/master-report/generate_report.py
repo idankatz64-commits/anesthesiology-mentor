@@ -238,6 +238,12 @@ def compute_basics(data):
 
 def compute_ols_trend(data):
     accs = [d["a"] for d in data["daily"]]
+    if len(accs) < 3:
+        raise ValueError(
+            f"ols: insufficient data — need >= 3 daily points for a meaningful "
+            f"trend, got {len(accs)}. scipy.linregress returns NaN below that "
+            f"threshold and the HTML template embeds the result directly."
+        )
     x = np.arange(len(accs), dtype=float)
     y = np.array(accs, dtype=float)
     slope, intercept, r_value, p_value, _ = sp.linregress(x, y)
@@ -270,6 +276,14 @@ def compute_monte_carlo(data, days_left, n_sim=10000):
     topics_user = data["topics_user"]
     topics_db = data["topics_db"]
     total_db = data["total_db"]
+
+    if not topics_user:
+        raise ValueError(
+            "monte_carlo: topics_user is empty — refusing to run 10,000 exam "
+            "simulations against a generic Beta(1.2, 1.8) prior. That prior has "
+            "mean ~0.4 and would produce a phantom median around 40%, not the "
+            "user's real forecast. Check USER_ID / RLS before retrying."
+        )
 
     seen = set()
     params = []
@@ -351,7 +365,13 @@ def compute_ebbinghaus(data, days_left):
 def compute_readiness(data, basics, mc, bootstrap):
     ua_total = sum(t["c"] + t["w"] for t in data["topics_user"])
     ua_correct = sum(t["c"] for t in data["topics_user"])
-    ua_accuracy = ua_correct / ua_total * 100 if ua_total else 50
+    if ua_total == 0:
+        raise ValueError(
+            "readiness: no user_answers attempts found (accuracy component is "
+            "undefined). The April 18 phantom 37.5 came from a hidden 50-fallback "
+            "at this exact branch. Refusing to compute readiness from nothing."
+        )
+    ua_accuracy = ua_correct / ua_total * 100
     accuracy_score = min(ua_accuracy, 100)
     # Coverage: fraction of DB answered, target 60%
     coverage_frac = basics["coverage_pct"] / 100
@@ -360,15 +380,23 @@ def compute_readiness(data, basics, mc, bootstrap):
     topics_db = data["topics_db"]
     critical = [t for t in data["topics_user"]
                 if t["n"] >= 5 and topics_db.get(t["topic"], 0) >= 50]
-    critical_avg = (sum(t["c"] / t["n"] * 100 for t in critical) / len(critical)
-                    if critical else 50)
+    if not critical:
+        raise ValueError(
+            "readiness: no critical topics (n>=5 AND db>=50) — critical_avg "
+            "cannot be computed. Hidden 50-fallback removed; user needs more "
+            "attempts on major-weight topics before readiness is meaningful."
+        )
+    critical_avg = sum(t["c"] / t["n"] * 100 for t in critical) / len(critical)
     critical_score = min(critical_avg, 100)
 
     daily_accs = [d["a"] for d in data["daily"] if d["n"] >= 5]
-    if len(daily_accs) >= 3:
-        consistency_score = max(0, min(100, 100 - statistics.stdev(daily_accs) * 3))
-    else:
-        consistency_score = 50
+    if len(daily_accs) < 3:
+        raise ValueError(
+            f"readiness: consistency needs >= 3 days with n>=5 attempts, got "
+            f"{len(daily_accs)}. Hidden 50-fallback removed to prevent phantom "
+            f"readiness scores like April 18's 37.5."
+        )
+    consistency_score = max(0, min(100, 100 - statistics.stdev(daily_accs) * 3))
 
     readiness = round(
         accuracy_score * 0.25 + coverage_score * 0.25 +
