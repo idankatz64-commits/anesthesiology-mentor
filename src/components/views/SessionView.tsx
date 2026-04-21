@@ -337,7 +337,6 @@ export default function SessionView() {
 
   const handleAnswer = (opt: string) => {
     if (isPracticeRevealed || isReviewMode) return;
-    if (isSimulation && savedAns !== null) return;
     setAnswer(index, opt);
     if (isSimulation || isExam) return;
   };
@@ -406,15 +405,30 @@ export default function SessionView() {
     navigate("home");
   };
 
-  const handleSubmitSimulation = () => {
+  const handleSubmitSimulation = async () => {
+    const srsPromises: Promise<unknown>[] = [];
     quiz.forEach((q, i) => {
       const userAns = answers[i];
       if (userAns) {
         const isCorrect = userAns === q[KEYS.CORRECT];
         updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
-        updateSpacedRepetition(q[KEYS.ID], isCorrect, "confident", q[KEYS.TOPIC]);
+        srsPromises.push(
+          Promise.resolve(updateSpacedRepetition(q[KEYS.ID], isCorrect, "confident", q[KEYS.TOPIC]))
+        );
       }
     });
+
+    const results = await Promise.allSettled(srsPromises);
+    const failed = results.filter(r => r.status === "rejected").length;
+    if (failed > 0) {
+      console.error(`handleSubmitSimulation: ${failed}/${srsPromises.length} SRS writes failed`, results);
+      toast({
+        title: "שמירת SRS חלקית",
+        description: `${failed} מתוך ${srsPromises.length} שאלות לא נשמרו ל-SRS. מומלץ לפתוח שוב את השאלות הללו.`,
+        variant: "destructive",
+      });
+    }
+
     shouldAutoSaveRef.current = false;
     clearSavedSession();
     navigate("results");
@@ -812,7 +826,7 @@ export default function SessionView() {
                   <button
                     key={opt}
                     onClick={() => handleAnswer(opt)}
-                    disabled={isPracticeRevealed || isReviewMode || (isSimulation && savedAns !== null)}
+                    disabled={isPracticeRevealed || isReviewMode}
                     className={getOptionClasses(opt)}
                   >
                     <span className="w-7 h-7 rounded-lg border border-border/60 text-muted-foreground font-mono text-xs font-bold flex items-center justify-center ml-4 shrink-0 group-hover:border-primary/40 group-hover:text-primary transition-colors">

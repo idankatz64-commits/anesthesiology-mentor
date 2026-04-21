@@ -19,14 +19,60 @@ function toCSV(rows: Record<string, unknown>[]): string {
 serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   try {
+    // ── Auth: require Bearer token + admin role ──────────────────────────────
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const supabaseUser = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } }
+    );
+
+    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const { data: adminRow } = await supabaseUser
+      .from("admin_users")
+      .select("id")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (!adminRow) {
+      return new Response(JSON.stringify({ error: "Forbidden: admin only" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!RESEND_API_KEY) return new Response(JSON.stringify({ error: "RESEND_API_KEY לא מוגדר" }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
     const body = await req.json().catch(() => ({}));
     const targetEmail: string = body.email || Deno.env.get("ADMIN_EMAIL") || "";
-    const hoursBack: number = Number(body.hours) || 24;
+    // Cap hoursBack to [1, 168] (max 1 week) to prevent unbounded history dump
+    const hoursBack: number = Math.min(Math.max(Number(body.hours) || 24, 1), 168);
 
     if (!targetEmail) return new Response(JSON.stringify({ error: "לא סופקה כתובת מייל" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+
+    // Basic email format validation (server-side, in addition to frontend)
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(targetEmail)) {
+      return new Response(JSON.stringify({ error: "כתובת מייל לא תקינה" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const since = new Date(Date.now() - hoursBack * 60 * 60 * 1000).toISOString();

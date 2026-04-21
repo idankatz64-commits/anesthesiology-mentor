@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/contexts/AppContext';
-import { ShieldAlert, ArrowRight, Loader2, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { ShieldAlert, ArrowRight, Loader2 } from 'lucide-react';
 
 interface FeedbackRow {
   id: string;
@@ -14,11 +14,16 @@ interface FeedbackRow {
 }
 
 export default function AdminView() {
-  const { navigate, triggerSync, syncStatus, lastSyncTime, data } = useApp();
+  const { navigate } = useApp();
   const [rows, setRows] = useState<FeedbackRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [syncResult, setSyncResult] = useState<string | null>(null);
+
+  const formatDate = (d: string) => {
+    const date = new Date(d);
+    return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' }) +
+      ' ' + date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
+  };
 
   useEffect(() => {
     (async () => {
@@ -39,22 +44,6 @@ export default function AdminView() {
     })();
   }, []);
 
-  const handleSync = async () => {
-    setSyncResult(null);
-    const result = await triggerSync();
-    if (result) {
-      setSyncResult(`סונכרנו ${result.count} שאלות בהצלחה`);
-    } else {
-      setSyncResult('שגיאה בסנכרון');
-    }
-  };
-
-  const formatDate = (d: string) => {
-    const date = new Date(d);
-    return date.toLocaleDateString('he-IL', { day: 'numeric', month: 'short', year: 'numeric' }) +
-      ' ' + date.toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' });
-  };
-
   return (
     <div className="fade-in max-w-5xl mx-auto py-8">
       <div className="flex items-center justify-between mb-8">
@@ -65,39 +54,6 @@ export default function AdminView() {
           <ShieldAlert className="w-5 h-5 text-destructive" />
           <h2 className="text-xl font-bold text-foreground">ניהול מערכת</h2>
         </div>
-      </div>
-
-      {/* Sync Section */}
-      <div className="bg-card border border-border rounded-xl p-6 mb-6 shadow-sm">
-        <h3 className="font-bold text-foreground mb-4 text-lg">סנכרון שאלות</h3>
-        <div className="flex flex-wrap items-center gap-4">
-          <button
-            onClick={handleSync}
-            disabled={syncStatus === 'syncing'}
-            className="flex items-center gap-2 bg-primary text-primary-foreground px-5 py-2.5 rounded-xl font-medium hover:opacity-90 transition disabled:opacity-50 shadow-md"
-          >
-            {syncStatus === 'syncing' ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <RefreshCw className="w-4 h-4" />
-            )}
-            {syncStatus === 'syncing' ? 'מסנכרן...' : 'סנכרן שאלות'}
-          </button>
-          <div className="text-sm text-muted-foreground">
-            {data.length > 0 && <span>{data.length} שאלות בבסיס הנתונים</span>}
-          </div>
-        </div>
-        {syncResult && (
-          <div className={`mt-3 flex items-center gap-2 text-sm font-medium ${syncResult.includes('שגיאה') ? 'text-destructive' : 'text-success'}`}>
-            {syncResult.includes('שגיאה') ? <XCircle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
-            {syncResult}
-          </div>
-        )}
-        {lastSyncTime && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            סנכרון אחרון: {formatDate(lastSyncTime)}
-          </p>
-        )}
       </div>
 
       {/* Feedback Section */}

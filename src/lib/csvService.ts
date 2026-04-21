@@ -74,18 +74,3 @@ export async function fetchQuestions(retries = 3, skipCache = false): Promise<Qu
   return [];
 }
 
-/** Trigger the sync edge function to pull from Google Sheets into Supabase */
-export async function syncQuestionsFromSheet(): Promise<{ count: number; synced_at: string }> {
-  const { data, error } = await supabase.functions.invoke('sync-questions');
-
-  if (error) {
-    console.error('Sync error:', error);
-    throw new Error(error.message || 'Sync failed');
-  }
-
-  if (data?.error) {
-    throw new Error(data.error);
-  }
-
-  return { count: data.count, synced_at: data.synced_at };
-}

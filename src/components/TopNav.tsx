@@ -1,10 +1,9 @@
 import { useState, useEffect, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
-import { LogIn, LogOut, User, ChevronDown, BookOpen, RefreshCw, Activity, Heart, FolderOpen, FileText, Link as LinkIcon } from 'lucide-react';
+import { LogIn, LogOut, User, ChevronDown, BookOpen, Activity, Heart, FolderOpen, FileText, Link as LinkIcon } from 'lucide-react';
 import type { User as SupaUser } from '@supabase/supabase-js';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
-import { useApp } from '@/contexts/AppContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import SquircleIcon from './SquircleIcon';
 
@@ -12,7 +11,6 @@ const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>
   const [user, setUser] = useState<SupaUser | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const navigate = useNavigate();
-  const { syncStatus } = useApp();
   const [resourceLinks, setResourceLinks] = useState<{ id: string; title: string; url: string; category: string }[]>([]);
 
   useEffect(() => {
@@ -61,21 +59,6 @@ const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>
 
       {/* Right side actions */}
       <div className="flex items-center gap-2">
-        {/* Sync indicator */}
-        {syncStatus === 'syncing' && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground px-2.5 py-1 rounded-full bg-primary/10 border border-primary/20">
-                  <RefreshCw className="w-3 h-3 animate-spin text-primary" />
-                  <span className="hidden md:inline text-primary/80">מסנכרן...</span>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>מסנכרן שאלות מ-Google Sheets</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
-
         {/* Resource links from DB */}
         {resourceLinks.map(link => {
           const Icon = link.category === 'drive' ? FolderOpen : link.category === 'pdf' ? FileText : LinkIcon;
