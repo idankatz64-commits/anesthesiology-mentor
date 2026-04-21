@@ -32,18 +32,24 @@ Playwright perf assertion.
 
 | # | LCP (ms) | Rating |
 |---|----------|--------|
-| 1 | _TBD_    | _TBD_  |
-| 2 | _TBD_    | _TBD_  |
-| 3 | _TBD_    | _TBD_  |
+| 1 | 7700     | Poor   |
+| 2 | 7600     | Poor   |
+| 3 | 7600     | Poor   |
 
-**Median:** _TBD_ ms
+**Median:** 7600 ms  (Rating: **Poor** — >3× Google's "poor" threshold of 2500ms)
 
-**Captured on:** _TBD_
-**Chrome version:** _TBD_
-**Device emulation:** Moto G4 + Slow 4G + 4× CPU throttle
+**Captured on:** 2026-04-21
+**Chrome version:** Chrome stable (macOS)
+**Capture method:** Chrome DevTools → Lighthouse tab → Mode: Navigation, Device: Mobile, Categories: Performance. Lighthouse applies its default mobile throttling profile (Moto G4-class CPU at 4× slowdown, Slow 4G network 150/1638 Kbps @ 150ms RTT), which matches the target emulation profile.
+**URL measured:** https://anesthesiology-mentor.vercel.app/stats (production legacy StatsView, feature flag off)
+**Run in:** Chrome Incognito window (no extensions)
 
-> Status: **awaiting manual capture at Wave 0 STOP.** `phase-1-wave-0-complete`
-> tag is blocked until 3 readings + median are filled in here.
+> Status: **✅ captured.** Wave 0 STOP artifact complete.
+> `phase-1-wave-0-complete` tag unblocked — pending user approval to push + tag.
+>
+> **Target for W2.8 Playwright perf assertion:** LCP < 2500 ms on `/stats` with flag
+> ON. This represents a **>67% reduction** from the 7600ms baseline and crossing
+> from "Poor" into "Good" per Google Web Vitals thresholds.
 
 ---
 
