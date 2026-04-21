@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AppProvider } from '@/contexts/AppContext';
 import { useAdminGuard } from '@/hooks/useAdminGuard';
 import { Link } from 'react-router-dom';
-import { Loader2, Users, Upload, ArrowRight, ShieldAlert, FlaskConical, BarChart3, FileEdit, Link as LinkIcon, BookOpen } from 'lucide-react';
+import { Loader2, Users, Upload, ArrowRight, ShieldAlert, FlaskConical, BarChart3, FileEdit, Link as LinkIcon, BookOpen, Flag } from 'lucide-react';
 import UserManagementTab from '@/components/admin/UserManagementTab';
 import ImportQuestionsTab from '@/components/admin/ImportQuestionsTab';
 import FormulaManagementTab from '@/components/admin/FormulaManagementTab';
@@ -10,10 +10,19 @@ import EditorActivityTab from '@/components/admin/EditorActivityTab';
 import QuestionEditorTab from '@/components/admin/QuestionEditorTab';
 import ResourceLinksTab from '@/components/admin/ResourceLinksTab';
 import SummariesManagementTab from '@/components/admin/SummariesManagementTab';
+import DebugFlagsTab from '@/components/admin/DebugFlagsTab';
 import { motion } from 'framer-motion';
 import { fadeUp } from '@/lib/animations';
 
-type AdminTab = 'user-management' | 'import-questions' | 'formula-management' | 'editor-activity' | 'question-editor' | 'resource-links' | 'summaries';
+type AdminTab =
+  | 'user-management'
+  | 'import-questions'
+  | 'formula-management'
+  | 'editor-activity'
+  | 'question-editor'
+  | 'resource-links'
+  | 'summaries'
+  | 'debug-flags';
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'user-management', label: 'User Management', icon: <Users className="w-5 h-5" /> },
@@ -23,6 +32,7 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: 'resource-links', label: 'קישורים', icon: <LinkIcon className="w-5 h-5" /> },
   { id: 'formula-management', label: 'Formula Management', icon: <FlaskConical className="w-5 h-5" /> },
   { id: 'editor-activity', label: 'דוח עורכים', icon: <BarChart3 className="w-5 h-5" /> },
+  { id: 'debug-flags', label: 'Debug Flags', icon: <Flag className="w-5 h-5" /> },
 ];
 
 export default function AdminDashboard() {
@@ -97,6 +107,7 @@ export default function AdminDashboard() {
             {activeTab === 'resource-links' && <ResourceLinksTab />}
             {activeTab === 'summaries' && <SummariesManagementTab />}
             {activeTab === 'editor-activity' && <EditorActivityTab isActive={activeTab === 'editor-activity'} />}
+            {activeTab === 'debug-flags' && <DebugFlagsTab />}
           </div>
         </main>
       </motion.div>
