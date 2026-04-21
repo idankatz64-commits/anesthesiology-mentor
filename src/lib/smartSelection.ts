@@ -12,7 +12,9 @@ export const SESSION_SIZE_CONFIG: Record<SessionSize, { count: number; label: st
 };
 
 // ── Yield Tier Map ──────────────────────────────────────────────────
-const YIELD_TIER_MAP: Record<string, number> = {
+// Exported for Phase 1 Stats V2 (`src/lib/recommendations.ts`). Single source
+// of truth — never redefine this mapping elsewhere.
+export const YIELD_TIER_MAP: Record<string, number> = {
   // Tier 1 (1.0)
   'Cardiac Physiology': 1.0,
   'Respiratory Physiology': 1.0,
