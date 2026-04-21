@@ -16,8 +16,10 @@ Three primitives plus one integration function:
 * ``build_review_logs(answer_history, spaced_repetition) -> list[ReviewLog]``
 * ``calibrate(review_logs) -> tuple[list[float], dict]``
 * ``compute_retention_curves(cards, parameters, days) -> list[float]``
-* ``compute_decay_from_srs(srs_summary, spaced_repetition_rows,
-      answer_history_rows, days_left, parameters=None) -> dict``
+* ``compute_decay_from_srs(srs_summary, has_history, days_left,
+      parameters=None) -> dict`` — ``has_history`` is a bool; HF.5b
+      replaced the earlier (rows, rows) pair which was used only as
+      ``bool(...)`` internally.
 
 The HTML template at ``generate_report.py:822-825`` reads four curve keys —
 ``confident``, ``hesitant``, ``guessed``, ``total`` — plus ``days``. Any
@@ -380,10 +382,10 @@ class TestHtmlContract:
     def test_returns_exactly_four_curve_keys(
         self, srs_summary_full, srs_rows_full, history_rows_full
     ):
+        # has_history=True — fixtures have both SRS and history rows.
         result = compute_decay_from_srs(
             srs_summary=srs_summary_full,
-            spaced_repetition_rows=srs_rows_full,
-            answer_history_rows=history_rows_full,
+            has_history=bool(srs_rows_full) or bool(history_rows_full),
             days_left=66,
         )
         assert set(result["curves"].keys()) == {
@@ -398,8 +400,7 @@ class TestHtmlContract:
     ):
         result = compute_decay_from_srs(
             srs_summary=srs_summary_full,
-            spaced_repetition_rows=srs_rows_full,
-            answer_history_rows=history_rows_full,
+            has_history=bool(srs_rows_full) or bool(history_rows_full),
             days_left=66,
         )
         assert result["days"] == [0, 7, 14, 30, 66]
@@ -409,8 +410,7 @@ class TestHtmlContract:
     ):
         result = compute_decay_from_srs(
             srs_summary=srs_summary_full,
-            spaced_repetition_rows=srs_rows_full,
-            answer_history_rows=history_rows_full,
+            has_history=bool(srs_rows_full) or bool(history_rows_full),
             days_left=66,
         )
         for name, curve in result["curves"].items():
@@ -427,7 +427,6 @@ class TestHtmlContract:
         with pytest.raises(ValueError, match=r"(?i)insufficient"):
             compute_decay_from_srs(
                 srs_summary=empty_srs,
-                spaced_repetition_rows=[],
-                answer_history_rows=[],
+                has_history=False,
                 days_left=66,
             )

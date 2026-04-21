@@ -19,7 +19,6 @@ Environment variables (or .env file):
 
 import argparse
 import json
-import math
 import os
 import random
 import statistics
@@ -41,6 +40,8 @@ try:
 except ImportError:
     print("ERROR: supabase-py not installed. Run: pip install supabase")
     sys.exit(1)
+
+from fsrs_module import compute_decay_from_srs
 
 random.seed(42)
 np.random.seed(42)
@@ -417,25 +418,6 @@ def compute_evpi(data):
     return results[:15]
 
 
-def compute_ebbinghaus(data, days_left):
-    days = [0, 7, 14, 30, days_left]
-    srs = data["srs"]
-    curves = {}
-    for conf, d in srs.items():
-        S = d["avg_interval"] * (2.5 if conf == "confident" else 1.5 if conf == "hesitant" else 0.8)
-        curves[conf] = [round(math.exp(-day / S) * 100, 1) if day > 0 else 100.0
-                        for day in days]
-    total = sum(v["total"] for v in srs.values())
-    if total > 0:
-        curves["total"] = [
-            round(sum(curves[c][i] * srs[c]["total"] / total for c in srs), 1)
-            for i in range(len(days))
-        ]
-    else:
-        curves["total"] = [100.0] * len(days)
-    return {"days": days, "curves": curves}
-
-
 def compute_readiness(data, basics, mc, bootstrap):
     ua_total = sum(t["c"] + t["w"] for t in data["topics_user"])
     ua_correct = sum(t["c"] for t in data["topics_user"])
@@ -578,7 +560,13 @@ def compute_all(data, days_left):
     bootstrap = compute_bootstrap_ci(data)
     mc = compute_monte_carlo(data, days_left)
     evpi = compute_evpi(data)
-    decay = compute_ebbinghaus(data, days_left)
+    srs_total = sum(int(v.get("total") or 0) for v in (data.get("srs") or {}).values())
+    has_history = srs_total > 0 or bool(data.get("daily"))
+    decay = compute_decay_from_srs(
+        srs_summary=data["srs"],
+        has_history=has_history,
+        days_left=days_left,
+    )
     readiness = compute_readiness(data, basics, mc, bootstrap)
     hourly_il = convert_hourly_to_israel(data["hourly_utc"])
     print("  Computing marginal gains (this takes ~30s)...")

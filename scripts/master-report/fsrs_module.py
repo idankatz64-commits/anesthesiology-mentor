@@ -192,8 +192,7 @@ def _bucket_card(
 
 def compute_decay_from_srs(
     srs_summary: dict,
-    spaced_repetition_rows: list[dict],
-    answer_history_rows: list[dict],
+    has_history: bool,
     days_left: int,
     parameters: list[float] | None = None,
 ) -> dict:
@@ -202,13 +201,28 @@ def compute_decay_from_srs(
     Contract pinned by ``generate_report.py:822-825`` — four curve keys
     (``confident``, ``hesitant``, ``guessed``, ``total``) plus ``days``.
 
-    HF.3 invariant: when SRS buckets are empty *and* no history rows exist,
+    Args:
+        srs_summary: Aggregated bucket data (confident/hesitant/guessed),
+            each with ``total`` + ``avg_interval``. Shape matches
+            ``fetch_data`` output at ``generate_report.py:178-194``.
+        has_history: ``True`` if the user has any answer_history or
+            spaced_repetition records. Used only to distinguish the two
+            empty-SRS cases: an "empty user" (raise under HF.3) vs an
+            "active user with zero tracked SRS cards" (return defaults).
+            Prior versions took raw row lists and reduced them to
+            ``bool(...)`` internally — interface-dishonest, since the
+            rows themselves were never inspected.
+        days_left: Number of days to project the last retention point to.
+        parameters: Optional fitted FSRS parameter vector. Calibration
+            wiring, if added in a future HF, will route ``calibrate()``
+            output through this kwarg.
+
+    HF.3 invariant: when SRS buckets are empty *and* no history exists,
     raise ``ValueError`` instead of returning a flat-100% phantom curve.
     """
     total_tracked = sum(
         int((srs_summary.get(b, {}) or {}).get("total") or 0) for b in _BUCKET_ORDER
     )
-    has_history = bool(answer_history_rows) or bool(spaced_repetition_rows)
     if total_tracked == 0 and not has_history:
         raise ValueError(
             "insufficient SRS and history data to compute retention "
