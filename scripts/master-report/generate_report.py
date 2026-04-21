@@ -271,8 +271,27 @@ def compute_bootstrap_ci(data, n_iter=2000):
     return results
 
 
-def compute_monte_carlo(data, days_left, n_sim=10000):
-    """DB-weighted MC using user_answers (correct_count/answered_count) for reliable posteriors."""
+def compute_monte_carlo(data, days_left, n_sim=10000, exam_size=200, seed=None):
+    """Honest Beta-binomial Monte Carlo — simulate ``exam_size``-question exams.
+
+    Each of ``n_sim`` simulations:
+      1. Sample per-topic accuracy from Beta(correct+1, wrong+1) posterior.
+      2. For each of ``exam_size`` questions, pick a topic by DB weight, then
+         flip a Bernoulli with that topic's sampled accuracy.
+      3. Score = (correct / exam_size) * 100.
+
+    Unstudied topics (appear in ``topics_db`` but not ``topics_user``) get a
+    ``Beta(1, 1)`` uniform prior per plan HF.4. "Rest of DB" weight that is not
+    covered by ``topics_db`` also gets ``Beta(1, 1)``.
+
+    This replaces the old algorithm that collapsed each sim to a single weighted
+    average of Beta samples. That approach hid the question-level discreteness
+    and produced artificially tight CIs; the v2 port honors the binomial exam
+    structure Step 1 actually has.
+
+    ``seed`` (optional) uses a dedicated ``numpy.random.Generator`` for
+    determinism. Passing ``seed=42`` reproduces byte-identical output.
+    """
     topics_user = data["topics_user"]
     topics_db = data["topics_db"]
     total_db = data["total_db"]
@@ -280,47 +299,102 @@ def compute_monte_carlo(data, days_left, n_sim=10000):
     if not topics_user:
         raise ValueError(
             "monte_carlo: topics_user is empty — refusing to run 10,000 exam "
-            "simulations against a generic Beta(1.2, 1.8) prior. That prior has "
-            "mean ~0.4 and would produce a phantom median around 40%, not the "
-            "user's real forecast. Check USER_ID / RLS before retrying."
+            "simulations against a generic Beta(1, 1) prior. That uniform prior "
+            "has mean 0.5 and would produce a phantom median around 50%, not "
+            "the user's real forecast. Check USER_ID / RLS before retrying."
         )
 
-    seen = set()
-    params = []
+    # Build parallel (alpha, beta, weight) vectors across three bucket types:
+    #   - studied topics (informative Beta posterior)
+    #   - unstudied topics in topics_db (uniform prior)
+    #   - "rest of DB" not covered by topics_db (uniform prior)
+    seen: set[str] = set()
+    alphas: list[float] = []
+    betas: list[float] = []
+    weights: list[float] = []
     accounted = 0
 
     for t in topics_user:
         db = topics_db.get(t["topic"], max(t["n"], 5))
-        params.append((t["c"] + 1, t["w"] + 1, db / total_db))
+        alphas.append(t["c"] + 1)
+        betas.append(t["w"] + 1)
+        weights.append(db / total_db)
         seen.add(t["topic"])
         accounted += db
 
     for topic, db in topics_db.items():
         if topic not in seen:
-            params.append((1.2, 1.8, db / total_db))
+            alphas.append(1)
+            betas.append(1)
+            weights.append(db / total_db)
             accounted += db
 
-    remaining = max(0, 1.0 - accounted / total_db)
+    remaining = max(0.0, 1.0 - accounted / total_db)
     if remaining > 0.01:
-        params.append((1.2, 1.8, remaining))
+        alphas.append(1)
+        betas.append(1)
+        weights.append(remaining)
 
-    scores = sorted(
-        sum(random.betavariate(a, b) * w for a, b, w in params) * 100
-        for _ in range(n_sim)
-    )
-    median = round(statistics.median(scores), 1)
-    buckets = list(range(30, 100, 5))
-    hist = [[b, round(sum(1 for s in scores if b <= s < b + 5) / n_sim * 100, 2)]
-            for b in buckets]
+    a = np.asarray(alphas, dtype=float)
+    b = np.asarray(betas, dtype=float)
+    w = np.asarray(weights, dtype=float)
+    w = w / w.sum()  # guard against floating-point drift
+    n_topics = w.size
+
+    rng = np.random.default_rng(seed)
+
+    # (n_sim, n_topics): one Beta draw per topic per sim — the "what I know about
+    # my topic-level accuracy on this hypothetical exam day" sample.
+    topic_acc = rng.beta(a, b, size=(n_sim, n_topics))
+    # (n_sim, exam_size): per-question topic index, sampled from DB weights.
+    topic_ids = rng.choice(n_topics, size=(n_sim, exam_size), p=w)
+    # (n_sim, exam_size): prob of correct for each question, looked up from topic_acc.
+    p_correct = np.take_along_axis(topic_acc, topic_ids, axis=1)
+    # Bernoulli flip per question.
+    correct = rng.random((n_sim, exam_size)) < p_correct
+    # Per-sim score as % correct.
+    scores = correct.sum(axis=1) / exam_size * 100.0
+
+    percentiles = {
+        f"p{p}": round(float(np.percentile(scores, p)), 1)
+        for p in (5, 10, 25, 50, 75, 90, 95)
+    }
+    thresholds = {
+        f"p_ge_{t}": round(float(np.mean(scores >= t)) * 100, 1)
+        for t in (60, 65, 70, 75, 80)
+    }
+
+    # v2 histogram: 2% bins, (bin_lo, count) pairs.
+    hist_counts: dict[int, int] = {}
+    for s in scores:
+        bin_lo = int(s // 2) * 2
+        hist_counts[bin_lo] = hist_counts.get(bin_lo, 0) + 1
+    histogram = sorted(hist_counts.items())
+
+    # Flat-compat histogram: 5% bins from 30..95, % of sims per bin — matches the
+    # active HTML template at lines 685-745.
+    flat_hist = [
+        [lo, round(float(np.mean((scores >= lo) & (scores < lo + 5))) * 100, 2)]
+        for lo in range(30, 100, 5)
+    ]
 
     return {
-        "median": median,
-        "p5": round(scores[int(n_sim * 0.05)], 1),
-        "p95": round(scores[int(n_sim * 0.95)], 1),
-        "p60": round(sum(1 for s in scores if s >= 60) / n_sim * 100, 1),
-        "p70": round(sum(1 for s in scores if s >= 70) / n_sim * 100, 1),
-        "p80": round(sum(1 for s in scores if s >= 80) / n_sim * 100, 1),
-        "hist": hist,
+        # Richer v2 output (HF.4 plan, Scenarios/Trajectory in HF.7 will use these)
+        "n_simulations": n_sim,
+        "exam_size": exam_size,
+        "median": round(float(np.median(scores)), 1),
+        "mean": round(float(np.mean(scores)), 1),
+        "std": round(float(np.std(scores, ddof=1)), 1),
+        "percentiles": percentiles,
+        "thresholds": thresholds,
+        "histogram": histogram,
+        # Flat compat keys (active HTML template)
+        "p5": percentiles["p5"],
+        "p95": percentiles["p95"],
+        "p60": thresholds["p_ge_60"],
+        "p70": thresholds["p_ge_70"],
+        "p80": thresholds["p_ge_80"],
+        "hist": flat_hist,
     }
 
 
