@@ -195,6 +195,26 @@ def fetch_data(supabase, user_id):
     }
 
 
+def abort_if_no_user_data(data: dict) -> None:
+    """Fail-fast sentinel: refuse to generate a report from empty fetch.
+
+    The April 18 run produced a phantom report (readiness=37.5, MC median=38.2,
+    flat 100% retention) because ``fetch_data`` silently returned empty
+    collections and every compute_* step had a "return zeros on empty" branch.
+
+    If both ``topics_user`` and ``daily`` are empty it means the fetch saw no
+    user activity at all — usually a wrong USER_ID or an anon key hitting RLS.
+    We stop here so downstream math never runs on nothing.
+    """
+    if not data.get("topics_user") and not data.get("daily"):
+        sys.exit(
+            "ABORT: fetch_data returned no user activity "
+            "(topics_user=[], daily=[]). Check USER_ID, verify SUPABASE_KEY is "
+            "a service_role key (needed to bypass RLS), or confirm the user "
+            "has answered any questions. Refusing to generate a phantom report."
+        )
+
+
 # ════════════════════════════════════════════════════════════
 # STATISTICAL MODULES
 # ════════════════════════════════════════════════════════════
@@ -733,6 +753,7 @@ def main():
 
     supabase = create_client(config.supabase_url, config.supabase_key)
     data = fetch_data(supabase, config.user_id)
+    abort_if_no_user_data(data)
     stats = compute_all(data, days_left)
 
     # Generate HTML
