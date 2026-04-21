@@ -1,0 +1,14 @@
+# Master Report — development dependencies
+# Runtime deps are in requirements.txt; install both in dev:
+#   pip install -r requirements.txt -r requirements-dev.txt
+-r requirements.txt
+
+# Testing
+pytest>=7.0.0
+pytest-cov>=4.1.0
+
+# FSRS scheduler + parameter optimizer (HF.5)
+fsrs[optimizer]>=4.0.0
+
+# HTML templating (HF.10)
+jinja2>=3.1.0
