@@ -157,19 +157,28 @@ Each task block below obeys the deep-work rules: `<read_first>` enumerates the e
   Hand-compute ground truth table (hardcoded constants in the test file):
 
     ground_truth = [
-        {"date": "2026-03-01", "accuracy": 0.7,   "coverage": 0.10, "retention": 0.0,  "consistency": 0.0},
-        {"date": "2026-03-02", "accuracy": 0.8,   "coverage": 0.18, "retention": <computed>, "consistency": <computed>},
-        {"date": "2026-03-03", "accuracy": 0.7,   "coverage": 0.21, "retention": <computed>, "consistency": <computed>},
+        # accuracy = correct/total for the day. coverage = distinct_qids_seen_to_date / total_db.
+        # retention and consistency are omitted — Path C asserts range + day-0 invariant only.
+        {"date": "2026-03-01", "accuracy": 0.7, "coverage": 0.10},
+        {"date": "2026-03-02", "accuracy": 0.8, "coverage": 0.18},
+        {"date": "2026-03-03", "accuracy": 0.7, "coverage": 0.21},
     ]
-    # Executor computes exact floats in T1 per the formulas locked in T4's action block.
 
-  Assertions:
+  Assertions (Path C — strict on stable components, behavioral on placeholder components):
     1. len(result) == 3
     2. [s.date for s in result] == ["2026-03-01", "2026-03-02", "2026-03-03"] (strictly ascending)
-    3. For each i in [0,1,2] and each c in {"accuracy","coverage","retention","consistency"}:
-         abs(getattr(result[i], c) - ground_truth[i][c]) < 1e-6
-    4. **[0,1] LOCK** — For every i and every c:
-         assert 0.0 <= getattr(result[i], c) <= 1.0, f"{c} on day {i} out of [0,1]"
+    3. Strict equality (accuracy + coverage — formulas stable across hf-6b swap):
+         For each i in [0,1,2] and each c in {"accuracy","coverage"}:
+           abs(getattr(result[i], c) - ground_truth[i][c]) < 1e-6
+    4. Behavioral (retention + consistency — placeholder formulas; hf-6b will swap):
+         4a. Range: for each i and each c in {"retention","consistency"}:
+               assert 0.0 <= getattr(result[i], c) <= 1.0
+         4b. Retention day-0 invariant: by Option A (repeats-ratio), day 0 has no prior
+             history, so retention MUST be exactly 0.0 on day 0:
+               assert result[0].retention == 0.0, "day 0 has no prior repeats — retention must be 0.0"
+    5. [0,1] LOCK (accuracy + coverage — belt-and-suspenders):
+         For each i and each c in {"accuracy","coverage"}:
+           assert 0.0 <= getattr(result[i], c) <= 1.0, f"{c} on day {i} out of [0,1]"
        Citation comment in the test: `# Per wondrous-popping-sunrise.md line 128: Readiness = w·components · 100, clipped [0,100]`.
 
   Run `pytest scripts/master-report/tests/test_eri_calibration.py::test_build_daily_snapshots_shape_and_values -q`
@@ -207,7 +216,7 @@ Each task block below obeys the deep-work rules: `<read_first>` enumerates the e
     @pytest.mark.unit
     @pytest.mark.parametrize("bad_input,expected_substring", [
         ({"total_db": 100, "answer_history": []},                        "empty"),
-        ({"total_db": 100, "answer_history": [_single_row]},             "consistency"),  # or "days"
+        ({"total_db": 100, "answer_history": [_single_row]},             "days"),  # n_days=1 < 5 threshold
         (None,                                                            None),            # TypeError acceptable
     ])
     def test_build_daily_snapshots_raises_on_empty_history(bad_input, expected_substring):
