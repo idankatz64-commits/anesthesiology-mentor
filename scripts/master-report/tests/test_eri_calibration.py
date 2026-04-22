@@ -360,3 +360,61 @@ def test_html_flag_is_english_literal():
     history = _build_n_day_history(n_days=5)
     result = compute_readiness_calibrated(history, components={})
     assert result["fit_quality"] == "insufficient_history"
+
+
+# ------------------------------------------------------------
+# hf-6b T2 — HF.3 boundary tests (raise vs labeled fallback)
+# ------------------------------------------------------------
+
+@pytest.mark.unit
+@pytest.mark.parametrize("n_days", [1, 2, 3])
+def test_raises_when_n_minus_1_below_3(n_days):
+    """REQ-HF6b-5: OLS with N-1 < 3 is undefined → ValueError (HF.3)."""
+    # n_days=1 is caught upstream by build_daily_snapshots (< 2 distinct days).
+    # n_days=2,3 reach compute_readiness_calibrated with N-1 in {1, 2}.
+    if n_days == 1:
+        # build_daily_snapshots raises first — that's still a ValueError.
+        history = _build_n_day_history(n_days=1)
+        with pytest.raises(ValueError):
+            compute_readiness_calibrated(history, components={})
+        return
+    history = _build_n_day_history(n_days=n_days)
+    with pytest.raises(ValueError) as exc:
+        compute_readiness_calibrated(history, components={})
+    msg = str(exc.value).lower()
+    assert any(
+        kw in msg
+        for kw in ("insufficient", "undefined", "regression", "fewer", "n-1", "n - 1")
+    ), f"ValueError message must name insufficient-data reason; got: {exc.value!r}"
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("n_days", [4, 14])
+def test_labeled_fallback_for_n_minus_1_in_3_to_13(n_days):
+    """REQ-HF6b-5: N-1 ∈ [3..13] returns labeled fallback — MUST NOT raise."""
+    history = _build_n_day_history(n_days=n_days)
+    result = compute_readiness_calibrated(history, components={})
+    assert result["fit_quality"] == "insufficient_history"
+    assert result["weights"] == _V2_FALLBACK_WEIGHTS
+
+
+@pytest.mark.unit
+def test_boundary_n_minus_1_equals_14_may_calibrate():
+    """REQ-HF6b-2: N-1 = 14 with strong planted linear relationship → calibrated."""
+    history = _build_linear_history(
+        n_days=15, total_db=100,
+        weights={"accuracy": 0.3, "coverage": 0.2, "retention": 0.4, "consistency": 0.1},
+        intercept=0.05, noise_sd=0.01, seed=42,
+    )
+    result = compute_readiness_calibrated(history, components={})
+    assert result["fit_quality"] == "calibrated"
+
+
+@pytest.mark.unit
+def test_no_silent_fallback_tokens_in_module():
+    """REQ-HF6b-5: module-level source scan for silent-fallback anti-patterns."""
+    src = (SCRIPT_DIR / "eri_calibration.py").read_text()
+    assert "np.nan_to_num" not in src, "silent fallback via nan_to_num forbidden (HF.3)"
+    assert "return {}" not in src, "silent empty-dict return forbidden (HF.3)"
+    if "try:" in src:
+        assert "raise" in src, "try: present without explicit raise (HF.3 violation)"
