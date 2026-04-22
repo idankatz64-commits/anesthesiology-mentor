@@ -2,9 +2,9 @@
 
 **as-of:** 2026-04-22
 **current_phase:** hf-6a
-**status:** CP2 complete — KEEP A confirmed post-probe (2026-04-22); CONFIDENCE_PARTIAL documented; hf-6c queued (post-hf-6b)
+**status:** CP4 GREEN complete — build_daily_snapshots landed, byte-identity verified, Split=B lock enforced
 **branch:** phase-1-stats-cleanup
-**HEAD:** a0baa20
+**HEAD:** 1989fdfe671d349d9e29b0c2488a38f61071a5e1
 
 ---
 
@@ -38,6 +38,8 @@ invariants, scope boundaries) are load-bearing; line numbers are not.
   **Decision: KEEP A confirmed.** A'.1 infeasible in hf-6a (retroactive
   proxy biased; schema change breaks CP1 lock). Path ג locked: hf-6c
   added to ROADMAP.
+- **CP3 — ✅ complete.** RED gate at bceee59: 3 tests fail with ModuleNotFoundError (expected — module not yet created).
+- **CP4 — ✅ complete.** GREEN gate: `eri_calibration.py` created per PLAN T4; all 3 tests green; 6 proofs in VERIFICATION.md confirm byte-identity lock (REQ-HF6a-5), no hf-6b scope creep (REQ-HF6a-2,4,5), no HTML change (scope-lock), Split=B (callable only — not wired into compute_all).
 
 ## Completed phases
 
@@ -46,5 +48,4 @@ invariants, scope boundaries) are load-bearing; line numbers are not.
 
 ## Next action
 
-On **CP2 ✅**: proceed to CP3 (RED gate) — produce hf6a.T0 + hf6a.T1 + hf6a.T2
-per PLAN.md Section 3. Wait for advisor CP3 prompt.
+On **CP4 ✅**: proceed to CP5 (advisor verify) — then CP6 (integration + merge-gate). Await advisor CP5 prompt.

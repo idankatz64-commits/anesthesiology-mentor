@@ -501,7 +501,7 @@ Each task block below obeys the deep-work rules: `<read_first>` enumerates the e
   - `grep -n "try:" scripts/master-report/eri_calibration.py` returns 0 matches (or, if present, each try must be paired with an explicit `raise` in its except — no silent swallowing).
   - `grep -n "print(" scripts/master-report/eri_calibration.py` returns 0 matches (per ~/.claude/rules/python/hooks.md: use `logging`, not `print`).
   - `grep -n "@dataclass(frozen=True)" scripts/master-report/eri_calibration.py` returns ≥ 1 match.
-  - `python -c "from dataclasses import fields, is_dataclass; import sys; sys.path.insert(0, 'scripts/master-report'); from eri_calibration import DailySnapshot; assert is_dataclass(DailySnapshot) and DailySnapshot.__dataclass_params__.frozen and [(f.name, f.type) for f in fields(DailySnapshot)] == [('date', str), ('accuracy', float), ('coverage', float), ('retention', float), ('consistency', float)]; print('ok')"` prints "ok".
+  - `python -c "import sys; sys.path.insert(0, 'scripts/master-report'); from dataclasses import fields, is_dataclass; from typing import get_type_hints; from eri_calibration import DailySnapshot; assert is_dataclass(DailySnapshot); assert DailySnapshot.__dataclass_params__.frozen; assert [f.name for f in fields(DailySnapshot)] == ['date', 'accuracy', 'coverage', 'retention', 'consistency']; assert get_type_hints(DailySnapshot) == {'date': str, 'accuracy': float, 'coverage': float, 'retention': float, 'consistency': float}; print('ok')"` prints "ok". (Uses `typing.get_type_hints()` because the module is authored with `from __future__ import annotations` per T4 — raw `f.type` returns strings, not type objects.)
   - No edits to any file other than `scripts/master-report/eri_calibration.py`.
 </acceptance_criteria>
 
@@ -546,7 +546,13 @@ Each task block below obeys the deep-work rules: `<read_first>` enumerates the e
     # Expected: 0 matches.
 
     # Proof 6 — no hf-6b scope creep
-    grep -rn "compute_readiness_calibrated\|fit_quality\|OLS\|weight_swap" scripts/master-report/
+    # Scoped to hf-6b-unique tokens only. "OLS" alone is deliberately excluded:
+    # it matches the pre-existing compute_ols_trend (HF.3, commit 3236022) which
+    # computes daily-accuracy trend for the HTML chart — unrelated to hf-6b's
+    # planned compute_readiness_calibrated regression over ERI components.
+    # _legacy_v2/ and cache dirs excluded as they are archival / auto-generated.
+    grep -rn --exclude-dir=_legacy_v2 --exclude-dir=__pycache__ --exclude-dir=.pytest_cache \
+         "compute_readiness_calibrated\|fit_quality\|weight_swap" scripts/master-report/
     # Expected: 0 matches.
 
   Append all six results verbatim to VERIFICATION.md.
@@ -688,7 +694,7 @@ All items must be checked before squash-merging `phase-1-stats-cleanup` → `mai
 - [ ] No new template files under `scripts/master-report/` (outside `eri_calibration.py` and the new test file).
 
 ### No hf-6b scope creep
-- [ ] `grep -rn "compute_readiness_calibrated\|fit_quality\|OLS\|weight_swap" scripts/master-report/` returns 0 matches.
+- [ ] `grep -rn --exclude-dir=_legacy_v2 --exclude-dir=__pycache__ --exclude-dir=.pytest_cache "compute_readiness_calibrated\|fit_quality\|weight_swap" scripts/master-report/` returns 0 matches. (Scoped to hf-6b-unique tokens; `OLS` alone is excluded because `compute_ols_trend` from HF.3 pre-dates hf-6a and is unrelated to hf-6b's compute_readiness_calibrated regression. See Proof 6 rationale in Section 5.)
 - [ ] No feature flag added anywhere in the diff.
 - [ ] `compute_readiness` is still present in `generate_report.py` at lines 421-469 (deprecate-then-delete precedent from HF.5b — deletion lives in hf-6b).
 
@@ -836,7 +842,10 @@ grep -n "build_daily_snapshots\|eri_calibration" scripts/master-report/generate_
 # (must return 0 matches)
 
 # Prove no hf-6b scope creep
-grep -rn "compute_readiness_calibrated\|fit_quality\|OLS\|weight_swap" scripts/master-report/
+# Scoped to hf-6b-unique tokens; "OLS" deliberately excluded (matches pre-existing
+# compute_ols_trend from HF.3, unrelated to hf-6b). _legacy_v2/ and cache dirs excluded.
+grep -rn --exclude-dir=_legacy_v2 --exclude-dir=__pycache__ --exclude-dir=.pytest_cache \
+     "compute_readiness_calibrated\|fit_quality\|weight_swap" scripts/master-report/
 # (must return 0 matches)
 
 # Prove no HTML change
@@ -852,19 +861,23 @@ grep -n "try:" scripts/master-report/eri_calibration.py
 grep -n "print(" scripts/master-report/eri_calibration.py
 # (must return 0 matches)
 
-# Prove DailySnapshot is frozen with correct fields
+# Prove DailySnapshot is frozen with correct fields and types.
+# Uses typing.get_type_hints() because eri_calibration.py is authored with
+# `from __future__ import annotations` (PEP 563, mandated by T4); raw `f.type`
+# returns string annotations like 'str' rather than <class 'str'>.
 python -c "
 import sys
 sys.path.insert(0, 'scripts/master-report')
 from eri_calibration import DailySnapshot
 from dataclasses import fields, is_dataclass
+from typing import get_type_hints
 assert is_dataclass(DailySnapshot), 'not a dataclass'
 assert DailySnapshot.__dataclass_params__.frozen, 'not frozen'
-print([(f.name, f.type) for f in fields(DailySnapshot)])
+assert [f.name for f in fields(DailySnapshot)] == ['date', 'accuracy', 'coverage', 'retention', 'consistency'], 'field names mismatch'
+assert get_type_hints(DailySnapshot) == {'date': str, 'accuracy': float, 'coverage': float, 'retention': float, 'consistency': float}, 'field types mismatch'
+print('ok')
 "
-# (must print exactly: [('date', <class 'str'>), ('accuracy', <class 'float'>),
-#                      ('coverage', <class 'float'>), ('retention', <class 'float'>),
-#                      ('consistency', <class 'float'>)])
+# (must print exactly: ok)
 
 # Tag before merge
 git tag hf-6a-wave-0-complete
