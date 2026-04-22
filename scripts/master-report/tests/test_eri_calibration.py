@@ -154,3 +154,209 @@ def test_build_daily_snapshots_raises_on_empty_history(bad_input, expected_subst
         build_daily_snapshots(bad_input)
     if expected_substring is not None:
         assert expected_substring in str(exc.value).lower()
+
+
+# ============================================================
+# hf-6b — RED tests for compute_readiness_calibrated (CP2)
+# ============================================================
+# Added by hf-6b CP2 T1/T2/T3. The import below fails with ImportError
+# until hf-6b CP3 T4 implements the function — intended RED state.
+
+from eri_calibration import compute_readiness_calibrated  # noqa: E402, F401
+
+import numpy as np  # noqa: E402
+from datetime import date as _date, timedelta as _timedelta  # noqa: E402
+
+
+def _build_n_day_history(n_days: int, total_db: int = 100) -> dict:
+    """Synthetic history: n_days distinct dates, ~10 answers/day, ~70% correct."""
+    base = _date(2026, 3, 1)
+    answer_history = []
+    for day_idx in range(n_days):
+        date_iso = (base + _timedelta(days=day_idx)).isoformat()
+        for i in range(10):
+            answer_history.append({
+                "answered_at": f"{date_iso}T08:{i:02d}:00Z",
+                "is_correct": i < 7,
+                "question_id": f"q-{day_idx:03d}-{i:03d}",
+                "topic": "ACLS",
+            })
+    return {"total_db": int(total_db), "answer_history": answer_history}
+
+
+def _build_linear_history(
+    n_days: int,
+    total_db: int,
+    weights: dict,
+    intercept: float,
+    noise_sd: float,
+    seed: int = 42,
+) -> dict:
+    """Synthetic history where next-day accuracy ≈ w·components + intercept + ε.
+
+    Day 0 + day 1 are baseline (components require N>=2 snapshots). From day 2
+    onward: target_acc(i+1) = w·snap(i) + intercept + rng.normal(0, noise_sd).
+    Deterministic via numpy.random.default_rng(seed). This helper IS T3's
+    fixture contract — if T4 weight recovery fails, suspect this first.
+    """
+    rng = np.random.default_rng(seed)
+    total_db = int(total_db)
+    n_per_day = 15
+    answer_history: list = []
+    introduced_count = 0
+    next_target = 0.5 + float(rng.uniform(-0.05, 0.05))
+    base = _date(2026, 3, 1)
+
+    for day_idx in range(n_days):
+        date_iso = (base + _timedelta(days=day_idx)).isoformat()
+        target_a = max(0.1, min(0.9, next_target))
+
+        if day_idx == 0:
+            n_new, n_rep = n_per_day, 0
+        else:
+            n_new = min(5, n_per_day)
+            n_rep = n_per_day - n_new
+
+        rows = []
+        for j in range(n_new):
+            qid = f"q-{introduced_count:04d}"
+            introduced_count += 1
+            rows.append({
+                "answered_at": f"{date_iso}T08:{j:02d}:00Z",
+                "is_correct": False,
+                "question_id": qid,
+                "topic": "ACLS",
+            })
+        for j in range(n_rep):
+            qid = f"q-{j:04d}"
+            rows.append({
+                "answered_at": f"{date_iso}T09:{j:02d}:00Z",
+                "is_correct": False,
+                "question_id": qid,
+                "topic": "ACLS",
+            })
+
+        n_correct = round(target_a * n_per_day)
+        for i, r in enumerate(rows):
+            r["is_correct"] = i < n_correct
+
+        answer_history.extend(rows)
+
+        if day_idx >= 1:
+            partial = {"total_db": total_db, "answer_history": answer_history}
+            snaps = build_daily_snapshots(partial)
+            s = snaps[-1]
+            next_target = (
+                weights["accuracy"] * s.accuracy
+                + weights["coverage"] * s.coverage
+                + weights["retention"] * s.retention
+                + weights["consistency"] * s.consistency
+                + intercept
+                + float(rng.normal(0, noise_sd))
+            )
+        else:
+            next_target = 0.5 + float(rng.uniform(-0.05, 0.05))
+
+    return {"total_db": total_db, "answer_history": answer_history}
+
+
+_V2_FALLBACK_WEIGHTS = {
+    "accuracy": 0.25,
+    "coverage": 0.25,
+    "retention": 0.30,
+    "consistency": 0.20,
+    "intercept": 0.0,
+}
+
+
+@pytest.mark.unit
+def test_returns_exact_dict_shape():
+    """REQ-HF6b-1: exact return dict shape — keys, types, ranges."""
+    history = _build_n_day_history(n_days=16)
+    result = compute_readiness_calibrated(history, components={})
+
+    assert isinstance(result, dict)
+    assert set(result.keys()) == {"readiness", "weights", "fit_quality"}
+
+    assert isinstance(result["readiness"], float)
+    assert 0.0 <= result["readiness"] <= 100.0
+
+    assert set(result["weights"].keys()) == {
+        "accuracy", "coverage", "retention", "consistency", "intercept",
+    }
+    for v in result["weights"].values():
+        assert isinstance(v, float)
+
+    assert result["fit_quality"] in {"calibrated", "insufficient_history", "poor_fit"}
+
+
+@pytest.mark.unit
+def test_branch_insufficient_history():
+    """REQ-HF6b-3: 5 days → N-1 = 4 ∈ [3..13] → labeled fallback, no raise."""
+    history = _build_n_day_history(n_days=5)
+    result = compute_readiness_calibrated(history, components={})
+    assert result["fit_quality"] == "insufficient_history"
+    assert result["weights"] == _V2_FALLBACK_WEIGHTS
+
+
+@pytest.mark.unit
+def test_branch_poor_fit():
+    """REQ-HF6b-3: N-1 = 19, target independent of features → R² < 0.3 → poor_fit."""
+    rng = np.random.default_rng(0)
+    total_db = 100
+    answer_history: list = []
+    base = _date(2026, 3, 1)
+    n_per_day = 15
+    introduced = 0
+    for day_idx in range(20):
+        date_iso = (base + _timedelta(days=day_idx)).isoformat()
+        target_a = float(rng.uniform(0.3, 0.8))
+        n_new = n_per_day if day_idx == 0 else min(5, n_per_day)
+        n_rep = n_per_day - n_new
+        rows = []
+        for j in range(n_new):
+            qid = f"q-{introduced:04d}"
+            introduced += 1
+            rows.append({
+                "answered_at": f"{date_iso}T08:{j:02d}:00Z",
+                "is_correct": False,
+                "question_id": qid,
+                "topic": "ACLS",
+            })
+        for j in range(n_rep):
+            qid = f"q-{j:04d}"
+            rows.append({
+                "answered_at": f"{date_iso}T09:{j:02d}:00Z",
+                "is_correct": False,
+                "question_id": qid,
+                "topic": "ACLS",
+            })
+        n_correct = round(target_a * n_per_day)
+        for i, r in enumerate(rows):
+            r["is_correct"] = i < n_correct
+        answer_history.extend(rows)
+    history = {"total_db": total_db, "answer_history": answer_history}
+    result = compute_readiness_calibrated(history, components={})
+    assert result["fit_quality"] == "poor_fit"
+    assert result["weights"] == _V2_FALLBACK_WEIGHTS
+
+
+@pytest.mark.unit
+def test_branch_calibrated():
+    """REQ-HF6b-2: 20 days with planted linear target + tight noise → calibrated."""
+    history = _build_linear_history(
+        n_days=20, total_db=100,
+        weights={"accuracy": 0.3, "coverage": 0.2, "retention": 0.4, "consistency": 0.1},
+        intercept=0.05, noise_sd=0.01, seed=42,
+    )
+    result = compute_readiness_calibrated(history, components={})
+    assert result["fit_quality"] == "calibrated"
+    assert result["weights"]["accuracy"] != 0.25
+
+
+@pytest.mark.unit
+def test_html_flag_is_english_literal():
+    """REQ-HF6b-1 + REQ-HF6b-3: internal flag value is English literal."""
+    history = _build_n_day_history(n_days=5)
+    result = compute_readiness_calibrated(history, components={})
+    assert result["fit_quality"] == "insufficient_history"
