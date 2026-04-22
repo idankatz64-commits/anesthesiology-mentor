@@ -4,7 +4,19 @@
 **current_phase:** hf-6a
 **status:** CP2 complete — KEEP A confirmed post-probe (2026-04-22); CONFIDENCE_PARTIAL documented; hf-6c queued (post-hf-6b)
 **branch:** phase-1-stats-cleanup
-**HEAD:** b1584f3
+**HEAD:** a0baa20
+
+---
+
+## Citations policy
+
+Function/block references in `.planning/` docs cite **name**, not line number.
+Line numbers are advisory and may drift without constituting a spec error.
+Verify by `grep` (e.g., `grep -n "def compute_readiness" scripts/master-report/generate_report.py`).
+
+Rationale: as code evolves, line numbers shift. Chasing them in docs creates
+churn without improving correctness. Semantic claims (range locks, byte-identity
+invariants, scope boundaries) are load-bearing; line numbers are not.
 
 ---
 

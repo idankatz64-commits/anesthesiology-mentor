@@ -27,8 +27,7 @@ retention, consistency.
 - `build_daily_snapshots` is a top-level callable with a typed signature.
 - Return value is a list of per-day records containing:
   `date`, `accuracy`, `coverage`, `retention`, `consistency`.
-- Each component is a float in `[0, 1]` (or whatever unit the OLS fit in hf-6b
-  expects — to be confirmed during planning).
+- Each component is a float in `[0, 1]` (range locked at CP1 per PLAN.md).
 
 ---
 
