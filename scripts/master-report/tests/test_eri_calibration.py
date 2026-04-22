@@ -418,3 +418,33 @@ def test_no_silent_fallback_tokens_in_module():
     assert "return {}" not in src, "silent empty-dict return forbidden (HF.3)"
     if "try:" in src:
         assert "raise" in src, "try: present without explicit raise (HF.3 violation)"
+
+
+# ------------------------------------------------------------
+# hf-6b T3 — synthetic weight-recovery precision test (±0.05)
+# ------------------------------------------------------------
+
+@pytest.mark.unit
+def test_recovers_planted_weights_within_tolerance():
+    """REQ-HF6b-2 + wondrous line 130: fit recovers planted weights within ±0.05."""
+    planted = {"accuracy": 0.30, "coverage": 0.20, "retention": 0.40, "consistency": 0.10}
+    planted_intercept = 0.05
+    # N = 30 days → training rows = 29. Above the 14-row gate AND above the
+    # noisy-conditioning threshold per §7 R-B2. Tight noise (sd=0.01) → strong recovery.
+    history = _build_linear_history(
+        n_days=30, total_db=100,
+        weights=planted, intercept=planted_intercept,
+        noise_sd=0.01, seed=42,
+    )
+    components = build_daily_snapshots(history)[-1].__dict__
+    result = compute_readiness_calibrated(history, components=components)
+    assert result["fit_quality"] == "calibrated", (
+        f"expected calibrated, got {result['fit_quality']}"
+    )
+    fitted = result["weights"]
+    for k, planted_w in planted.items():
+        assert abs(fitted[k] - planted_w) <= 0.05, (
+            f"{k}: planted={planted_w}, fitted={fitted[k]}, "
+            f"|diff|={abs(fitted[k]-planted_w)} > 0.05 (REQ-HF6b-2)"
+        )
+    assert abs(fitted["intercept"] - planted_intercept) <= 0.05
