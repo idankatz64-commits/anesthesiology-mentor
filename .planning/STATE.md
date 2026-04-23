@@ -2,7 +2,7 @@
 
 **as-of:** 2026-04-23
 **current_phase:** hf-6b
-**status:** CP4 **CLOSED** (2026-04-23) — code-review audit PASS across all 4 criteria on `compute_readiness_calibrated` in `scripts/master-report/eri_calibration.py`: (a) raise-vs-fallback boundary — every error path raises labeled `ValueError` with HF.3 token prefix; (b) no-silent-fallback grep scan — all `fit_quality` returns ∈ `{"calibrated","insufficient_history","poor_fit"}`, no orphan defaults, no exception-swallowing; (c) Split=B byte-identity re-check — AST walker confirmed zero import-time side effects in `eri_calibration.py`; `grep compute_readiness_calibrated generate_report.py` → 0 matches; `diff b1584f3..HEAD -- generate_report.py` for lines 421-469 → 0 lines; (d) verdict PASS → advance to CP5 (no REQ-HF6b-8 filed). Cosmetic drift noted (non-blocking): CP4 scope statement referenced `b1584f3:scripts/master-report/eri_calibration.py` but file was created in hf-6b; byte-identity intent verified against correct path (`compute_readiness` in `generate_report.py`). **CP3 history preserved:** Commits A..F on `phase-1-stats-cleanup` under Option 5 criterion (R²>0.70 OR max-abs-error<12.0; observed R²≈0.7649, max_abs≈9.60); 18/18 pytest GREEN. **Invariants at CP4 close (HEAD `37cb763`):** Split=B held; byte-identity 421-469 held; G1 docstring bias preserved; G2 commit-body citations present on Commits C+E. **Current position:** CP5 wrap-up + cross-phase handshake to hf-6c in progress (Wave C = T5/T6/T7 deferred to hf-6c by design).
+**status:** hf-6b **PHASE COMPLETE** (2026-04-23). CP0..CP5 all closed on `phase-1-stats-cleanup`. CP5 (wrap-up + cross-phase handshake to hf-6c) closed administratively: CP4 CLOSE recorded in Commit 1 (`c1d0098`); CP5 CLOSE + handshake recorded in Commit 2 (this commit). Phase-level merge-gate deferred to end of hf-6c per hf-6a precedent (runs once for hf-6a + hf-6b + hf-6c together). **Deliverables:** `compute_readiness_calibrated` in `scripts/master-report/eri_calibration.py` — 3-feature OLS calibration (accuracy, coverage, retention + intercept; `consistency` dropped per REQ-HF6b-7 due to structural multicollinearity with rolling-window formula); 18 pytest cases GREEN (R²≈0.7649, max_abs≈9.60 under Option 5 criterion R²>0.70 OR max-abs<12.0); Split=B (callable-only, not wired into `compute_all`); byte-identity 421-469 lock on legacy `compute_readiness` held against hf-6a baseline `b1584f3`. **Wave C (T5/T6/T7 — HTML surface + wire-in + legacy delete) deferred to hf-6c by design** — both hf-6a locks release atomically at hf-6c T6+T7. **Invariants at phase close:** Split=B held; byte-identity 421-469 held; G1 docstring bias preserved; G2 commit-body citations present on Commits C (`d1e97e0`) + E (`73c0240`); pytest 18/18 GREEN re-verified pre-push.
 **branch:** phase-1-stats-cleanup
 
 > **HEAD omitted by policy** — use `git rev-parse HEAD` live when needed.
@@ -236,41 +236,84 @@ load-bearing; line numbers and SHAs are not.
 
 ## Next action
 
-**CP5 wrap-up + cross-phase handshake to hf-6c — in progress.**
+**hf-6c CP0 — bootstrap next phase.** hf-6b is phase-complete; next action
+sits with hf-6c. See Cross-phase handshake block below for scope + locks
+that release on arrival.
 
-CP4 closed at HEAD `37cb763` (branch `phase-1-stats-cleanup`). CP5 scope is
-administrative: record CP4 CLOSE in state docs, write the cross-phase
-handshake block below for hf-6c, refresh auto-memory, pytest re-verify, then
-two state commits. No code changes land in CP5 (hf-6b source code is frozen
-at HEAD `37cb763`).
+---
 
-**CP5 steps (in execution order):**
-1. CP-STATE.md updated for CP4 CLOSE (done — YAML `current_cp: CP5`,
-   `last_completed_cp: CP4`; GSD position block refreshed; CP4 CLOSE event
-   prepended to recent events log).
-2. STATE.md updated for CP4 CLOSE (this file, in progress — status line 5
-   rewritten; CP4 entry appended to Active Checkpoints; this Next action
-   block rewritten).
-3. **Commit 1:** `state(hf-6b): CP4 CLOSED — code-review audit PASS`
-   (CP-STATE.md + STATE.md only; no code).
-4. CP-STATE.md add CP5 CLOSE event + YAML `current_cp: CP5` stays (phase
-   complete marker at event level, not YAML level — phase-complete is
-   hf-6a's precedent: phase stays marked CP5 in CP-STATE until merge-gate
-   runs at end of hf-6c).
-5. STATE.md add cross-phase handshake block for hf-6c (see below).
-6. Refresh `~/.claude/projects/.../memory/project_hf6b_state_sync.md`
-   auto-memory — reflect hf-6b phase close + emergency-recovery anchor for
-   future fresh windows.
-7. **Final pytest:** `python3 -m pytest
-   scripts/master-report/tests/test_eri_calibration.py -v` → must remain
-   18/18 GREEN (no regression during CP5 state edits; state edits are
-   markdown-only and cannot affect test execution, but belt-and-suspenders
-   verification is the CP5 exit gate).
-8. **Commit 2:** `state(hf-6b): CP5 CLOSED — phase complete, handshake to
-   hf-6c` (CP-STATE.md + STATE.md + auto-memory).
-9. Ask user re `git push` to `origin/phase-1-stats-cleanup` (per
-   `git_workflow` project rule — user has zero code background, push is
-   the only backup; must not assume).
+## Cross-phase handshake to hf-6c
 
-> Cross-phase handshake block for hf-6c will be appended here on CP5 CLOSE
-> (Commit 2 of the CP5 wrap-up sequence).
+hf-6b closes scope-contained. **Wave C (T5/T6/T7) — HTML surface + wire-in +
+legacy delete — is deferred to hf-6c by design.** hf-6c is expected to break
+both hf-6a locks in a single atomic push window.
+
+### Lock releases expected in hf-6c
+
+- **Split=B lock release (hf-6c T6):** wire `compute_readiness_calibrated`
+  into `compute_all` (or equivalent caller in `generate_report.py`).
+  Immediately before the T6 commit, `grep compute_readiness_calibrated
+  scripts/master-report/generate_report.py` will transition from **0 matches
+  (current)** to **≥1 match**. This is expected and correct — the Split=B
+  lock exists precisely to defer wire-in from hf-6b to hf-6c.
+- **Byte-identity 421-469 lock release (hf-6c T7):** delete the legacy
+  `compute_readiness` function from `generate_report.py`. `git diff
+  b1584f3..HEAD -- scripts/master-report/generate_report.py` for lines
+  421-469 will transition from **0 lines (current)** to the full deletion
+  diff. T7 MUST land atomically with T5+T6 — partial state (new function
+  wired but legacy still present, or legacy deleted but new function not
+  wired) is forbidden.
+- **Wave C serial push window:** T5 → T6 → T7 land as a single push window
+  (all three commits staged, tested, pushed together). Between pushes is
+  NOT a valid checkpoint — the repo must be self-consistent before any
+  push reaches `origin/phase-1-stats-cleanup`.
+
+### Invariants that remain authoritative in hf-6c
+
+- **Option 5 REQ-HF6b-2 criterion** (R² > 0.70 OR max-abs < 12.0 on [0,100]
+  readiness scale). Test lives in
+  `scripts/master-report/tests/test_eri_calibration.py::test_predictions_match_planted_within_tolerance`
+  and continues to run once wire-in happens. Observed at hf-6b close:
+  R²≈0.7649, max_abs≈9.60.
+- **REQ-HF6b-7 note:** 3-feature OLS model. `consistency` dropped from
+  regression (coefficient hardcoded to 0.0 for ABI stability). Coefficients
+  are non-interpretable by spec due to structural collinearity (FSRS
+  retention reconstruction couples retention to cumulative accuracy);
+  predictions are the acceptance criterion. hf-6c HTML surface (T5) must
+  surface `fit_quality ∈ {"calibrated","insufficient_history","poor_fit"}`
+  as user-visible text per CP0 Design Decision 2 (flag-never-displayed IS
+  silent fallback per Law 1 extension).
+- **HF.3 no-silent-fallback:** every error path in
+  `compute_readiness_calibrated` raises labeled `ValueError` with HF.3
+  token prefix. Wiring into `compute_all` must preserve this — caller must
+  either let the `ValueError` propagate (for genuinely unrecoverable
+  states) or catch it and surface a labeled fallback in the HTML output
+  (not a silent defaults-dict).
+
+### Merge-gate schedule
+
+Phase-level merge-gate (CP6-equivalent) is **deferred to end of hf-6c per
+hf-6a precedent** — runs once for all three phases (hf-6a + hf-6b + hf-6c)
+together. hf-6c CP6 is the single merge-gate for the entire stats-cleanup
+stack.
+
+### Entry point for hf-6c
+
+Read (in this order):
+1. This STATE.md (current phase + handshake).
+2. `.planning/phases/hf-6b/CP-STATE.md` CP5 CLOSE event (detailed wrap-up).
+3. `.planning/phases/hf-6a/VERIFICATION.md` (hf-6a proofs, especially the
+   lock declarations).
+4. `.planning/REQUIREMENTS.md` REQ-HF6b-1..7 (including the WITHDRAWN
+   REQ-HF6b-6 audit block — intentional for audit trail).
+
+`.planning/phases/hf-6c/` directory does NOT exist yet — hf-6c CP0 will
+create it (REQUIREMENTS extension + PLAN.md + CP-STATE.md scaffolding).
+Branch `phase-1-stats-cleanup` continues to be the working branch.
+
+### Auto-memory anchor
+
+Emergency recovery state snapshot at
+`~/.claude/projects/-Users-idankatz15-Desktop-3-APP-DEV-repo-temp/memory/project_hf6b_state_sync.md`
+— read in fresh hf-6c windows to recover hf-6b close state (branch SHAs,
+pytest counts, invariant status) without re-reading full planning docs.

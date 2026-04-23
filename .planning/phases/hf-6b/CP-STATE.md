@@ -19,10 +19,10 @@ protocol_version: v2.2
 
 ## GSD position
 
-- **Phase:** hf-6b (ERI calibration — `compute_readiness_calibrated` with OLS regression on daily snapshots)
-- **Current CP:** CP5 (wrap-up + cross-phase handshake to hf-6c for Wave C: T5/T6/T7 HTML surface + wire-in + legacy delete)
-- **Last completed CP:** CP4 (PASS — code-review audit on `compute_readiness_calibrated`: (a) raise-vs-fallback boundary — every error path raises labeled ValueError with HF.3 token prefix; (b) no-silent-fallback grep scan — all `fit_quality` returns ∈ `{"calibrated","insufficient_history","poor_fit"}`, no orphan defaults; (c) Split=B invariant re-check — AST walker confirmed zero import-time side effects in `eri_calibration.py`, byte-identity lock on `generate_report.py` lines 421-469 vs hf-6a baseline `b1584f3` verified via `git diff b1584f3..HEAD -- generate_report.py` → 0 lines; (d) verdict PASS across all 4 criteria. Cosmetic drift noted: CP4 scope statement referenced `b1584f3:scripts/master-report/eri_calibration.py` but file was created in hf-6b, not at b1584f3 — classified as cosmetic per `feedback_cosmetic_vs_semantic` memory; byte-identity intent verified against correct path.)
-- **Next CP:** CP5 (current — wrap-up + cross-phase handshake to hf-6c)
+- **Phase:** hf-6b (ERI calibration — `compute_readiness_calibrated` with OLS regression on daily snapshots) — **PHASE COMPLETE 2026-04-23**
+- **Current CP:** CP5 CLOSED — phase complete; cross-phase handshake to hf-6c written in STATE.md; auto-memory refreshed; pytest 18/18 GREEN re-confirmed pre-push.
+- **Last completed CP:** CP5 (PASS — administrative wrap-up: CP4 CLOSE recorded in state docs; cross-phase handshake block appended to STATE.md declaring Wave C = T5/T6/T7 deferred to hf-6c by design, both hf-6a locks (Split=B + byte-identity 421-469) will release atomically at hf-6c T6+T7; auto-memory `project_hf6b_state_sync.md` refreshed as emergency-recovery anchor; pytest final verification 18/18 GREEN; 2 commits landed — Commit 1 (CP4 CLOSED) + Commit 2 (CP5 CLOSED + handshake).)
+- **Next CP:** N/A — hf-6b phase complete. Phase-level merge-gate deferred to end of hf-6c per hf-6a precedent (runs once for hf-6a + hf-6b + hf-6c together).
 
 ## Predecessor anchor
 
@@ -65,6 +65,20 @@ protocol_version: v2.2
   asymmetric fail-fast. PASS → continue to Option (a) disposition.
 
 ## Recent events (newest on top)
+
+- 2026-04-23 — **CP5 CLOSE — PHASE COMPLETE. hf-6b closes clean; cross-phase handshake to hf-6c written; auto-memory refreshed; pytest 18/18 GREEN re-confirmed.** Administrative wrap-up executed in 4 steps per user-approved plan ("קדימה מאושר"):
+  - **Step 1:** CP-STATE.md updated for CP4 CLOSE (YAML `current_cp: CP4→CP5`, `last_completed_cp: CP3→CP4`; GSD position block refreshed; CP4 CLOSE event prepended to recent events log).
+  - **Step 2:** STATE.md updated for CP4 CLOSE (status line rewritten from "CP3 CLOSED... CP4 OPEN; CP5 pending" to "CP4 CLOSED"; CP4 entry appended to Active Checkpoints; Next action block rewritten to describe CP5 wrap-up).
+  - **Commit 1 (`c1d0098`):** `state(hf-6b): CP4 CLOSED — code-review audit PASS`. CP-STATE.md + STATE.md only. No code changes.
+  - **Step 3 (this event):** CP5 CLOSE event added to CP-STATE.md recent events log; GSD position block updated to show phase complete.
+  - **Step 4:** STATE.md — cross-phase handshake block appended below Next action, declaring: (i) Wave C (T5/T6/T7) deferred to hf-6c by design; (ii) Split=B lock will release at hf-6c T6 (wire-in of `compute_readiness_calibrated` into `compute_all`); (iii) byte-identity 421-469 lock will release at hf-6c T7 (delete legacy `compute_readiness` from `generate_report.py`); (iv) T5→T6→T7 must land as a single atomic push window (no partial state permitted); (v) merge-gate (CP6-equivalent) deferred to end of hf-6c per hf-6a precedent; (vi) Option 5 REQ-HF6b-2 criterion (R² > 0.70 OR max-abs < 12.0) remains authoritative and will continue to run once wired; (vii) REQ-HF6b-7 note — 3-feature OLS, coefficients non-interpretable by spec, predictions are the acceptance criterion.
+  - **Step 5:** Auto-memory `project_hf6b_state_sync.md` refreshed — reflects hf-6b phase-complete status as emergency-recovery anchor for future fresh windows.
+  - **Step 6 (final pytest):** `python3 -m pytest scripts/master-report/tests/test_eri_calibration.py -v` → 18/18 GREEN. State-only edits cannot affect test execution, but belt-and-suspenders verification is the CP5 exit gate.
+  - **Commit 2:** `state(hf-6b): CP5 CLOSED — phase complete, handshake to hf-6c` — CP-STATE.md + STATE.md + auto-memory. No code changes.
+  - **Invariants at phase close:** Split=B held (grep 0 matches in `generate_report.py`); byte-identity 421-469 held (diff 0 lines vs `b1584f3`); G1 docstring bias preserved in `eri_calibration.py`; G2 commit-body citations present on Commits C (`d1e97e0`) and E (`73c0240`); pytest 18/18 GREEN under Option 5 thresholds.
+  - **Compaction counters at phase close:** `compactions_within_cp: 0` (CP5 ran within fresh window budget); `compactions_all_time: 6` (phase total, observational — below soft-5-within-CP and hard-10-within-CP v2.2 Option B thresholds throughout).
+  - **Next phase entry point (hf-6c):** read this CP-STATE.md CP5 CLOSE event + STATE.md cross-phase handshake block + `.planning/phases/hf-6a/VERIFICATION.md` + REQUIREMENTS.md REQ-HF6b-1..7. `.planning/phases/hf-6c/` directory does not exist yet; hf-6c CP0 will create it.
+  - **Push status (post-commit):** pending user approval per `git_workflow` project rule (zero code background, push is the only backup; must not assume).
 
 - 2026-04-23 — **CP4 CLOSE — PASS. Code-review audit on `compute_readiness_calibrated` clean across all 4 criteria.** Fresh single-window (v2.2) session resumed CP4 after CP3 close. Audit scope (verbatim from resume instruction): (a) raise-vs-fallback boundary audit on `compute_readiness_calibrated` in `scripts/master-report/eri_calibration.py`; (b) no-silent-fallback grep scan; (c) Split=B invariant re-check (byte-identity of `compute_readiness` lines 421-469 vs hf-6a baseline `b1584f3`); (d) verdict: PASS → advance to CP5; FAIL → file REQ-HF6b-8.
   - **Criterion (a) — raise-vs-fallback boundary:** PASS. Read `eri_calibration.py` lines 163-317. Every error path raises labeled `ValueError` with HF.3 token prefix (`"insufficient_history:"`, `"poor_fit:"`, plus propagated `ValueError` from `build_daily_snapshots` for None/bad-dict/empty-rows/<2-days). Happy path returns dict with `fit_quality ∈ {"calibrated","insufficient_history","poor_fit"}`. `_clip(x)` helper at lines 39-45 has three return statements but all are pure float-clamp ops (not error paths) — correctly classified as non-boundary per HF.3. Constants at lines 163-175 (`V2_FALLBACK_WEIGHTS`, `_MIN_PAIRS_FOR_REGRESSION=3`, `_MIN_PAIRS_FOR_CALIBRATION=14`, `_MIN_R_SQUARED=0.3`) match REQ-HF6b-7 3-feature model; `weights["consistency"] = 0.0` hardcoded at line 294 for ABI stability per CP3 Commit C.
