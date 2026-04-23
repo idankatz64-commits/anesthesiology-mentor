@@ -1,7 +1,7 @@
 ---
 phase: hf-6b
-current_cp: CP4
-last_completed_cp: CP3
+current_cp: CP5
+last_completed_cp: CP4
 last_updated: 2026-04-23
 mode: single-window
 compactions_within_cp: 0
@@ -20,9 +20,9 @@ protocol_version: v2.2
 ## GSD position
 
 - **Phase:** hf-6b (ERI calibration — `compute_readiness_calibrated` with OLS regression on daily snapshots)
-- **Current CP:** CP4 (code-review — raise-vs-fallback boundary audit + no-silent-fallback scan on `compute_readiness_calibrated`)
-- **Last completed CP:** CP3 (GREEN — 7 commits landed: Commit A `3e27eaf` revert rolling-window + safety net; Commit B `71df35d` revert safety-net trigger test; Commit C `d1e97e0` 3-feature OLS; Commit D `57d5811` REQ-HF6b-6 withdrawn + REQ-HF6b-7 appended; state doc `2355376`; Commit E `73c0240` prediction-accuracy test per Option 5 disposition; Commit F `480d76b` REQ-HF6b-2 amendment. pytest 18/18 GREEN with R²≈0.7649, max_abs_error≈9.60 on thresholds R²>0.70 OR max-abs<12.0. All 4 invariants held: Split=B, byte-identity 421-469, G1 docstring, G2 commit body.)
-- **Next CP:** CP5 (wrap-up + cross-phase handshake)
+- **Current CP:** CP5 (wrap-up + cross-phase handshake to hf-6c for Wave C: T5/T6/T7 HTML surface + wire-in + legacy delete)
+- **Last completed CP:** CP4 (PASS — code-review audit on `compute_readiness_calibrated`: (a) raise-vs-fallback boundary — every error path raises labeled ValueError with HF.3 token prefix; (b) no-silent-fallback grep scan — all `fit_quality` returns ∈ `{"calibrated","insufficient_history","poor_fit"}`, no orphan defaults; (c) Split=B invariant re-check — AST walker confirmed zero import-time side effects in `eri_calibration.py`, byte-identity lock on `generate_report.py` lines 421-469 vs hf-6a baseline `b1584f3` verified via `git diff b1584f3..HEAD -- generate_report.py` → 0 lines; (d) verdict PASS across all 4 criteria. Cosmetic drift noted: CP4 scope statement referenced `b1584f3:scripts/master-report/eri_calibration.py` but file was created in hf-6b, not at b1584f3 — classified as cosmetic per `feedback_cosmetic_vs_semantic` memory; byte-identity intent verified against correct path.)
+- **Next CP:** CP5 (current — wrap-up + cross-phase handshake to hf-6c)
 
 ## Predecessor anchor
 
@@ -65,6 +65,18 @@ protocol_version: v2.2
   asymmetric fail-fast. PASS → continue to Option (a) disposition.
 
 ## Recent events (newest on top)
+
+- 2026-04-23 — **CP4 CLOSE — PASS. Code-review audit on `compute_readiness_calibrated` clean across all 4 criteria.** Fresh single-window (v2.2) session resumed CP4 after CP3 close. Audit scope (verbatim from resume instruction): (a) raise-vs-fallback boundary audit on `compute_readiness_calibrated` in `scripts/master-report/eri_calibration.py`; (b) no-silent-fallback grep scan; (c) Split=B invariant re-check (byte-identity of `compute_readiness` lines 421-469 vs hf-6a baseline `b1584f3`); (d) verdict: PASS → advance to CP5; FAIL → file REQ-HF6b-8.
+  - **Criterion (a) — raise-vs-fallback boundary:** PASS. Read `eri_calibration.py` lines 163-317. Every error path raises labeled `ValueError` with HF.3 token prefix (`"insufficient_history:"`, `"poor_fit:"`, plus propagated `ValueError` from `build_daily_snapshots` for None/bad-dict/empty-rows/<2-days). Happy path returns dict with `fit_quality ∈ {"calibrated","insufficient_history","poor_fit"}`. `_clip(x)` helper at lines 39-45 has three return statements but all are pure float-clamp ops (not error paths) — correctly classified as non-boundary per HF.3. Constants at lines 163-175 (`V2_FALLBACK_WEIGHTS`, `_MIN_PAIRS_FOR_REGRESSION=3`, `_MIN_PAIRS_FOR_CALIBRATION=14`, `_MIN_R_SQUARED=0.3`) match REQ-HF6b-7 3-feature model; `weights["consistency"] = 0.0` hardcoded at line 294 for ABI stability per CP3 Commit C.
+  - **Criterion (b) — no-silent-fallback grep scan:** PASS. `grep -rn "return V2_FALLBACK_WEIGHTS" scripts/master-report/eri_calibration.py` → 0 matches (no naked fallbacks). `grep -rn "except.*:\s*return" scripts/master-report/eri_calibration.py` → 0 matches (no silent exception swallowing). `grep -rn "fit_quality" scripts/master-report/eri_calibration.py` → all occurrences tied to labeled dict returns; no orphan string literals. Every path out of `compute_readiness_calibrated` either raises or returns a dict with labeled `fit_quality` — HF.3 invariant intact.
+  - **Criterion (c) — Split=B byte-identity re-check:** PASS. Two sub-verifications: (c.1) `grep -n "build_daily_snapshots\|compute_readiness_calibrated\|eri_calibration" scripts/master-report/generate_report.py` → 0 matches (Split=B still held — callable-only, not wired into `compute_all`). (c.2) `git diff b1584f3..HEAD -- scripts/master-report/generate_report.py` inspected for lines 421-469 region → zero changes in that block (byte-identity lock vs hf-6a baseline still held; lock active until hf-6c Wave C T7 — atomic delete-plus-swap). (c.3) AST walker run on `eri_calibration.py` (module-level statements only): confirmed no import-time side effects — all executable code is inside function bodies or dataclass decorators; no `__init__` mutations, no module-level calls beyond imports/constants.
+  - **Criterion (d) — verdict:** PASS. All 4 criteria clean. No REQ-HF6b-8 needed. Advance to CP5.
+  - **Cosmetic drift noted (non-blocking per `feedback_cosmetic_vs_semantic`):** CP4 resume instruction referenced path `b1584f3:scripts/master-report/eri_calibration.py` for byte-identity baseline, but that file did not exist at `b1584f3` (created mid-hf-6b in Commit C `d1e97e0`). Byte-identity intent was against `compute_readiness` in `generate_report.py` (the 421-469 block locked in hf-6a). Classified as cosmetic drift — scope intent verified against the correct file; no semantic block.
+  - **Invariants re-verified at `37cb763` (HEAD at CP4 entry):** Split=B held (grep 0 matches); byte-identity 421-469 held (diff 0 lines); G1 docstring bias statement present in `eri_calibration.py`; G2 commit body citations present in Commit C (`d1e97e0`) and Commit E (`73c0240`); pytest 18/18 GREEN re-confirmed (`python3 -m pytest scripts/master-report/tests/test_eri_calibration.py -v`).
+  - **Per-CP reset:** `compactions_within_cp` held at 0 (CP4 ran within fresh window budget).
+  - **CP5 scope:** wrap-up + cross-phase handshake to hf-6c. Wave C (T5 HTML surface / T6 wire-in / T7 legacy delete) explicitly deferred to hf-6c — will break Split=B + byte-identity 421-469 by design at that phase. No phase-level merge-gate here (hf-6a precedent — merge-gate runs at end of hf-6c, all three phases together).
+
+- 2026-04-23 — **Protocol tweak (user feedback): Tier 2 (🔄 machine paste-back) scoped to 2-window GSD only; single-window (v2.2 default) = Tier 1 (Hebrew human layer) only.** User directive (verbatim): "תקשיב כל עוד אתה מסביר לי בצורה פשוטה וברורה מה אץה עושה אין צורך ב-TIER2 אלא אם לך יש שימוש בזה ( אני חושב שזה שארית מהקובץ הנחיות הישן שעבדנו עם חלון יועץ, לדעתי אין בזה צורך בשבילי אם אתה צריך בשבילך תשאיר בשמלה)". Rationale: in single-window, there is no advisor to paste-back to; the 🔄 block is dead weight. Updated auto-memory `feedback_two_tier_output.md` with scope clarification; MEMORY.md index updated. CP-STATE deltas now written directly to this file (not emitted as paste-back blocks) when closing a CP.
 
 - 2026-04-23 — **CP3 CLOSE — GREEN. Option 5 disposition fully applied; 18/18 pytest PASS.** Fresh single-window (v2.2) executed the pending E + F commits from the prior session's DRAFTED-BUT-NOT-COMMITTED state:
   - **Commit E (`73c0240`):** `test(hf-6b): prediction-accuracy criterion per REQ-HF6b-2 Option 5`. `test_predictions_match_planted_within_tolerance` threshold set to **R² > 0.70 OR max-abs error < 12.0** on [0,100] readiness scale (Option A within Option 5 — quantization-aware: daily accuracy is 1/n_per_day-quantized, so smooth predictor cannot beat the quantization floor; e.g. 8 Q/day → 12.5% floor; 15 Q/day → 6.67% floor). Docstring updated with Option 5 disposition + quantization rationale.

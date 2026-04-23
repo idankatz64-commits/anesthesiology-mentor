@@ -2,7 +2,7 @@
 
 **as-of:** 2026-04-23
 **current_phase:** hf-6b
-**status:** CP3 **CLOSED** (2026-04-23) — Commits A..F all landed on `phase-1-stats-cleanup`: A=`3e27eaf` (revert Commit5), B=`71df35d` (revert Commit6), C=`d1e97e0` (3-feature OLS), D=`57d5811` (REQ-HF6b-6 withdrawn + REQ-HF6b-7 appended), E=`73c0240` (prediction-accuracy test rewrite per Option 5), F=`480d76b` (REQ-HF6b-2 acceptance amended). State-sync commit `3125b78` records CP3→CP4 transition. **pytest:** 18/18 GREEN under Option 5 criterion (R²>0.70 OR max-abs-error<12.0); observed R²≈0.7649, max_abs≈9.60. **Invariants verified at HEAD `3125b78`:** Split=B held (`grep compute_readiness_calibrated generate_report.py` → 0 matches); byte-identity 421-469 held (`diff b1584f3..HEAD -- generate_report.py` → 0 lines); G1 (docstring bias note on FSRS look-ahead) preserved; G2 (commit body citing O-1 disposition) preserved on Commit C. **Option 5 ruling (2026-04-23, user-approved "מאשר הכל"):** REQ-HF6b-2 acceptance redefined from per-feature coefficient recovery to prediction-level agreement — rationale: OLS under structural accuracy↔retention collinearity only identifies linear combinations (`w_acc + w_ret`), not individual weights; application semantics depend on readiness predictions, not per-feature coefficients; REQ-HF6b-7 already declared 3-feature weights non-interpretable. **Current position:** CP4 code-review OPEN (raise-vs-fallback boundary audit + no-silent-fallback scan on `compute_readiness_calibrated`); CP5 wrap-up pending.
+**status:** CP4 **CLOSED** (2026-04-23) — code-review audit PASS across all 4 criteria on `compute_readiness_calibrated` in `scripts/master-report/eri_calibration.py`: (a) raise-vs-fallback boundary — every error path raises labeled `ValueError` with HF.3 token prefix; (b) no-silent-fallback grep scan — all `fit_quality` returns ∈ `{"calibrated","insufficient_history","poor_fit"}`, no orphan defaults, no exception-swallowing; (c) Split=B byte-identity re-check — AST walker confirmed zero import-time side effects in `eri_calibration.py`; `grep compute_readiness_calibrated generate_report.py` → 0 matches; `diff b1584f3..HEAD -- generate_report.py` for lines 421-469 → 0 lines; (d) verdict PASS → advance to CP5 (no REQ-HF6b-8 filed). Cosmetic drift noted (non-blocking): CP4 scope statement referenced `b1584f3:scripts/master-report/eri_calibration.py` but file was created in hf-6b; byte-identity intent verified against correct path (`compute_readiness` in `generate_report.py`). **CP3 history preserved:** Commits A..F on `phase-1-stats-cleanup` under Option 5 criterion (R²>0.70 OR max-abs-error<12.0; observed R²≈0.7649, max_abs≈9.60); 18/18 pytest GREEN. **Invariants at CP4 close (HEAD `37cb763`):** Split=B held; byte-identity 421-469 held; G1 docstring bias preserved; G2 commit-body citations present on Commits C+E. **Current position:** CP5 wrap-up + cross-phase handshake to hf-6c in progress (Wave C = T5/T6/T7 deferred to hf-6c by design).
 **branch:** phase-1-stats-cleanup
 
 > **HEAD omitted by policy** — use `git rev-parse HEAD` live when needed.
@@ -170,6 +170,55 @@ load-bearing; line numbers and SHAs are not.
   - G2 commit body citation of O-1 disposition present on Commit C
   - REQ-HF6a-1 (`consistency ∈ [0, 1]`) held: `_clip` still applied in
     `build_daily_snapshots`
+- **CP4 — ✅ complete** (2026-04-23, PASS at HEAD `37cb763`). Code-review
+  audit on `compute_readiness_calibrated` in
+  `scripts/master-report/eri_calibration.py`. Four criteria verified:
+  - **(a) Raise-vs-fallback boundary:** PASS. Every error path raises
+    labeled `ValueError` with HF.3 token prefix (`"insufficient_history:"`,
+    `"poor_fit:"`, plus propagated `ValueError` from `build_daily_snapshots`
+    for None / bad-dict / empty-rows / <2-days). Happy path returns dict with
+    `fit_quality ∈ {"calibrated","insufficient_history","poor_fit"}`.
+    `_clip(x)` helper (three returns) correctly classified as non-boundary
+    per HF.3 — pure float-clamp, not error paths. Constants
+    (`_MIN_PAIRS_FOR_REGRESSION=3`, `_MIN_PAIRS_FOR_CALIBRATION=14`,
+    `_MIN_R_SQUARED=0.3`, `V2_FALLBACK_WEIGHTS`) match REQ-HF6b-7 3-feature
+    model; `weights["consistency"] = 0.0` hardcoded for ABI stability per
+    CP3 Commit C (`d1e97e0`).
+  - **(b) No-silent-fallback grep scan:** PASS.
+    `grep -rn "return V2_FALLBACK_WEIGHTS" scripts/master-report/eri_calibration.py`
+    → 0 matches (no naked fallbacks).
+    `grep -rn "except.*:\s*return" scripts/master-report/eri_calibration.py`
+    → 0 matches (no silent exception swallowing). Every path out of
+    `compute_readiness_calibrated` either raises or returns a dict with
+    labeled `fit_quality` — HF.3 invariant intact.
+  - **(c) Split=B byte-identity re-check:** PASS. (c.1)
+    `grep -n "build_daily_snapshots\|compute_readiness_calibrated\|eri_calibration"
+    scripts/master-report/generate_report.py` → 0 matches (callable-only lock
+    held). (c.2) `git diff b1584f3..HEAD -- scripts/master-report/generate_report.py`
+    inspected for 421-469 region → 0 changes (byte-identity vs hf-6a baseline
+    held; lock active until hf-6c Wave C T7). (c.3) AST walker on
+    `eri_calibration.py` module-level statements → 0 import-time side effects
+    (all executable code inside function bodies or dataclass decorators).
+  - **(d) Verdict:** PASS. All 4 criteria clean. No REQ-HF6b-8 needed.
+    Advance to CP5.
+
+  **Cosmetic drift noted (non-blocking per `feedback_cosmetic_vs_semantic`):**
+  CP4 resume instruction referenced path `b1584f3:scripts/master-report/eri_calibration.py`
+  for byte-identity baseline, but that file did not exist at `b1584f3` (created
+  mid-hf-6b in Commit C `d1e97e0`). Byte-identity intent was against
+  `compute_readiness` in `generate_report.py` (the 421-469 block locked in
+  hf-6a). Scope intent verified against the correct file; no semantic block.
+
+  **Invariants re-verified at `37cb763` (HEAD at CP4 entry):**
+  - Split=B held: grep 0 matches on generate_report.py
+  - Byte-identity 421-469 held: diff 0 lines vs b1584f3
+  - G1 docstring bias statement present in `eri_calibration.py`
+  - G2 commit body citations present on Commit C (`d1e97e0`) and Commit E (`73c0240`)
+  - pytest 18/18 GREEN re-confirmed via `python3 -m pytest
+    scripts/master-report/tests/test_eri_calibration.py -v`
+
+  **Per-CP reset:** `compactions_within_cp` held at 0 (CP4 ran within fresh
+  window budget; no compaction triggered during audit).
 
 ## Recently completed phases
 
@@ -187,29 +236,41 @@ load-bearing; line numbers and SHAs are not.
 
 ## Next action
 
-**CP4 code-review — fresh work-window.**
+**CP5 wrap-up + cross-phase handshake to hf-6c — in progress.**
 
-CP3 closed successfully at HEAD `3125b78` (branch `phase-1-stats-cleanup`,
-pushed to origin). Entry point for the next work-window is
-`.planning/phases/hf-6b/CP-STATE.md` → CP4 scope block.
+CP4 closed at HEAD `37cb763` (branch `phase-1-stats-cleanup`). CP5 scope is
+administrative: record CP4 CLOSE in state docs, write the cross-phase
+handshake block below for hf-6c, refresh auto-memory, pytest re-verify, then
+two state commits. No code changes land in CP5 (hf-6b source code is frozen
+at HEAD `37cb763`).
 
-**CP4 scope (per CP-STATE.md CP3 CLOSE event):**
-1. Raise-vs-fallback boundary audit on `compute_readiness_calibrated`
-   (`scripts/master-report/eri_calibration.py`) — confirm every branch that
-   must raise (HF.3 N-1 < 3) raises with `ValueError`, and every branch that
-   must return a labeled fallback (`fit_quality ∈ {"insufficient_history",
-   "poor_fit"}`) does so without silent degradation.
-2. No-silent-fallback scan — grep for HF.3 anti-patterns (`try:` without
-   `raise`, `return {}`, `np.nan_to_num`, default-on-exception) in the new
-   function + its helpers.
-3. Split=B invariant re-check (grep `compute_readiness_calibrated` in
-   `generate_report.py` → still 0 matches). Wire-in is deferred to hf-6c.
-4. CP4 verdict → CP5 wrap-up (phase-level merge-gate deferred to end of
-   hf-6c per hf-6a precedent).
+**CP5 steps (in execution order):**
+1. CP-STATE.md updated for CP4 CLOSE (done — YAML `current_cp: CP5`,
+   `last_completed_cp: CP4`; GSD position block refreshed; CP4 CLOSE event
+   prepended to recent events log).
+2. STATE.md updated for CP4 CLOSE (this file, in progress — status line 5
+   rewritten; CP4 entry appended to Active Checkpoints; this Next action
+   block rewritten).
+3. **Commit 1:** `state(hf-6b): CP4 CLOSED — code-review audit PASS`
+   (CP-STATE.md + STATE.md only; no code).
+4. CP-STATE.md add CP5 CLOSE event + YAML `current_cp: CP5` stays (phase
+   complete marker at event level, not YAML level — phase-complete is
+   hf-6a's precedent: phase stays marked CP5 in CP-STATE until merge-gate
+   runs at end of hf-6c).
+5. STATE.md add cross-phase handshake block for hf-6c (see below).
+6. Refresh `~/.claude/projects/.../memory/project_hf6b_state_sync.md`
+   auto-memory — reflect hf-6b phase close + emergency-recovery anchor for
+   future fresh windows.
+7. **Final pytest:** `python3 -m pytest
+   scripts/master-report/tests/test_eri_calibration.py -v` → must remain
+   18/18 GREEN (no regression during CP5 state edits; state edits are
+   markdown-only and cannot affect test execution, but belt-and-suspenders
+   verification is the CP5 exit gate).
+8. **Commit 2:** `state(hf-6b): CP5 CLOSED — phase complete, handshake to
+   hf-6c` (CP-STATE.md + STATE.md + auto-memory).
+9. Ask user re `git push` to `origin/phase-1-stats-cleanup` (per
+   `git_workflow` project rule — user has zero code background, push is
+   the only backup; must not assume).
 
-**Historical risk clause (obsolete, retained for audit trail):** the
-pre-close plan included a risk clause citing thresholds R² ≥ 0.95 and max
-prediction error ≤ 5.0. These were superseded by Option 5 thresholds
-(R² > 0.70 OR max-abs < 12.0), and the rewritten test landed as Commit
-E=`73c0240` with the Option-5 thresholds and passed (observed R²≈0.7649,
-max_abs≈9.60). No risk clause is active at CP4 entry.
+> Cross-phase handshake block for hf-6c will be appended here on CP5 CLOSE
+> (Commit 2 of the CP5 wrap-up sequence).
