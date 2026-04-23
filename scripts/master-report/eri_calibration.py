@@ -26,8 +26,6 @@ import statistics
 from dataclasses import dataclass
 from typing import Any
 
-_CONSISTENCY_WINDOW: int = 7  # REQ-HF6b-6: rolling-window stdev — prevents OLS identifiability collapse that cumulative stdev causes after ~10 days.
-
 
 @dataclass(frozen=True)
 class DailySnapshot:
@@ -134,16 +132,11 @@ def build_daily_snapshots(history: dict[str, Any]) -> list[DailySnapshot]:
         # coverage = cumulative distinct q_ids / total_db, [0, 1]
         coverage = _clip(len(seen_qids) / total_db)
 
-        # consistency — stdev-normalized on accuracies in a rolling window of the
-        # last _CONSISTENCY_WINDOW days (REQ-HF6b-6). Supersedes the cumulative
-        # stdev used in hf-6a (see VERIFICATION.md): cumulative stdev converges to
-        # a near-constant plateau after ~10 days, which made the consistency
-        # column collinear with the intercept column and destroyed OLS
-        # identifiability. Formula: 1.0 - min(1.0, stdev / 0.5), clipped.
+        # consistency — stdev-normalized on accuracies up to and including today.
+        # 1.0 - min(1.0, stdev / 0.5), clipped.
         daily_accuracies.append(accuracy)
-        window = daily_accuracies[-_CONSISTENCY_WINDOW:]
-        if len(window) >= 2:
-            sd = statistics.stdev(window)
+        if len(daily_accuracies) >= 2:
+            sd = statistics.stdev(daily_accuracies)
             consistency = _clip(1.0 - min(1.0, sd / 0.5))
         else:
             consistency = 0.0
@@ -178,7 +171,6 @@ V2_FALLBACK_WEIGHTS: dict[str, float] = {
 _MIN_PAIRS_FOR_REGRESSION: int = 3
 _MIN_PAIRS_FOR_CALIBRATION: int = 14
 _MIN_R_SQUARED_FOR_CALIBRATION: float = 0.3
-_VANISHING_COEF_THRESHOLD: float = 0.05  # REQ-HF6b-6: safety net — if the recovered consistency coefficient collapses to ~0, the feature is unidentifiable; downgrade to poor_fit rather than publish a misleading calibration.
 _READINESS_CLIP_LOW: float = 0.0
 _READINESS_CLIP_HIGH: float = 100.0
 
@@ -281,12 +273,6 @@ def compute_readiness_calibrated(
             r_squared = 1.0 - ss_res / ss_tot
 
         if r_squared < _MIN_R_SQUARED_FOR_CALIBRATION:
-            weights = dict(V2_FALLBACK_WEIGHTS)
-            fit_quality = "poor_fit"
-        elif abs(float(coef[3])) < _VANISHING_COEF_THRESHOLD:
-            # REQ-HF6b-6 safety net: consistency coefficient collapsed to ~0,
-            # indicating the feature is unidentifiable from the rest of the
-            # design matrix on this user's history. Labeled fallback (HF.3).
             weights = dict(V2_FALLBACK_WEIGHTS)
             fit_quality = "poor_fit"
         else:
