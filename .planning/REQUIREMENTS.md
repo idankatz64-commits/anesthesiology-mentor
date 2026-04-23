@@ -405,3 +405,131 @@ retention therefore carries look-ahead bias.
 **Decision owner.** Advisor at CP2, per `~/.claude/plans/hf6b-advisor-window-prompt.md`
 Advisor Cadence table. Outcome recorded in `phases/hf-6b/PLAN.md` and
 referenced (by name, not line) from this REQ section.
+
+---
+
+## HF-6c Requirements (Wave C cutover — master-report scope only)
+
+**Phase scope.** Wave C of the stats-cleanup stack: release both hf-6a locks
+(Split=B + byte-identity 421-469) by wiring `compute_readiness_calibrated` into
+the master-report pipeline and deleting the legacy `compute_readiness`. Scope
+is **master-report only** (`scripts/master-report/generate_report.py`); the
+live app `StatsView` is out of scope for this phase (user directive: "לא נקדים
+את המאוחר").
+
+**CP0 Design Decisions (locked 2026-04-23 with user):**
+- **DD-1** — HTML location: new `<div class="kpi-subtitle">` inside the ERI
+  `<div class="kpi-card">`, directly under the existing
+  `<div class="kpi-value">{r['readiness']}</div>`. New row, not replacing the
+  number.
+- **DD-2** — Hebrew wording (clinical + R² always shown):
+  - `calibrated` → `"כיול מוצלח · R²={r2:.2f}"`
+  - `insufficient_history` → `"היסטוריה קצרה · R²={r2:.2f}"`
+  - `poor_fit` → `"כיול חלש · R²={r2:.2f}"`
+
+  R² is always rendered. When R² is unavailable (NaN or undefined), render as
+  `R²=—` rather than omitting the token.
+- **DD-3** — Fallback display: same line, amber color `#FFB020` (existing
+  palette — same as the "דיוק" KPI) on both `insufficient_history` and
+  `poor_fit`. Default `calibrated` keeps teal `#00D4CC`. No separate banner,
+  no icon, no tooltip.
+- **DD-4** — Transition mode: **CUTOVER**. No shadow mode, no feature flag,
+  no A/B. T5+T6+T7 land atomically and replace the legacy pipeline in one
+  push window.
+
+---
+
+### REQ-HF6c-1 — T5 HTML surfacing of fit_quality + R²
+
+**REQ-HF6c-1**: Master-report HTML must surface `fit_quality` and R² as
+user-visible text directly below the ERI numeric value inside the ERI
+`kpi-card`.
+
+**Acceptance criteria:**
+- A new element (`<div class="kpi-subtitle">` or equivalent) appears inside
+  the ERI `kpi-card` block, immediately after
+  `<div class="kpi-value">{r['readiness']}</div>`.
+- Text content follows the DD-2 clinical-Hebrew + R² pattern verbatim.
+- Color follows DD-3: teal `#00D4CC` for `calibrated`; amber `#FFB020` for
+  `insufficient_history` and `poor_fit`.
+- R² is always rendered (with `—` sentinel when unavailable).
+- No separate banner, no icon, no tooltip — color is the only differentiator
+  between calibrated and fallback states.
+- **Law 1 compliance:** flag-never-displayed IS silent fallback per hf-6b CP0
+  Design Decision 2. This subtitle element is the obligation-satisfying HTML
+  surface.
+
+### REQ-HF6c-2 — T6 wire-in with labeled exception handling (Option B)
+
+**REQ-HF6c-2**: T6 wires `compute_readiness_calibrated(history, components)`
+into `compute_all` (or equivalent caller path in `generate_report.py`). The
+caller must catch `ValueError` raised by the calibration and map the HF.3
+token prefix to a labeled fallback surfaced via REQ-HF6c-1 — not crash the
+full report, and not surface a silent default.
+
+**Exception policy (CP0-resolved as Option B — catch + label):**
+- The wired call site wraps `compute_readiness_calibrated(...)` in `try /
+  except ValueError as e`.
+- On `ValueError`, the caller parses the HF.3 token prefix
+  (`"insufficient_history:"` / `"poor_fit:"`) from `str(e)` and sets
+  `fit_quality` accordingly for the downstream HTML renderer (consumed by
+  REQ-HF6c-1).
+- `readiness` fallback value when `ValueError` is caught: render as `"—"`
+  sentinel in the HTML `kpi-value`. Do NOT substitute a numeric default that
+  could be mistaken for a calibrated value.
+- R² fallback when unavailable: `"—"` rendered via REQ-HF6c-1 template
+  (`R²=—`).
+
+**Acceptance criteria:**
+- `grep compute_readiness_calibrated scripts/master-report/generate_report.py`
+  transitions from **0 matches (current)** to **≥1 match** after T6 lands.
+- `grep "from eri_calibration" scripts/master-report/generate_report.py`
+  returns ≥1 match (the import wire).
+- **HF.3 compliance:** the try/except is not silent — amber subtitle per
+  REQ-HF6c-1 surfaces the caught state. A caught exception without HTML
+  surface would violate HF.3 and is forbidden.
+- Split=B lock (hf-6a invariant) officially releases at T6.
+
+### REQ-HF6c-3 — T7 legacy `compute_readiness` deletion
+
+**REQ-HF6c-3**: T7 deletes the legacy `compute_readiness(data, basics, mc,
+bootstrap)` function (the 421-469 region byte-identity-locked against
+hf-6a baseline `b1584f3`) from `generate_report.py`. All previous call
+sites must already route through `compute_readiness_calibrated` via T6 when
+this commit lands.
+
+**Acceptance criteria:**
+- `git diff b1584f3..HEAD -- scripts/master-report/generate_report.py` for
+  the 421-469 region transitions from **0 lines (current)** to the full
+  deletion diff.
+- `grep -n "def compute_readiness(" scripts/master-report/generate_report.py`
+  → 0 matches after T7.
+- No remaining direct call to `compute_readiness(` in `generate_report.py`.
+- Byte-identity 421-469 lock (hf-6a invariant) officially releases at T7.
+
+### REQ-HF6c-4 — Atomic Wave C push window
+
+**REQ-HF6c-4**: T5, T6, and T7 land as a single atomic push window on
+`phase-1-stats-cleanup`. Between commits, the repo must be self-consistent;
+partial state must not reach `origin/phase-1-stats-cleanup`.
+
+**Acceptance criteria:**
+- All three commits (T5, T6, T7) are authored on the same branch in one
+  session.
+- `git push` runs once at the end of Wave C, not after each commit
+  individually. Intermediate commits live only in the local working copy.
+- pytest `scripts/master-report/tests/test_eri_calibration.py` remains
+  GREEN after all three commits land locally, before the single push.
+- `python3 scripts/master-report/generate_report.py` smoke-runs without
+  exception on a sample DB before push (both calibrated and caught-ValueError
+  paths exercised if possible).
+- Merge-gate (CP6-equivalent) remains deferred to end of hf-6c per the
+  hf-6a precedent — runs once for hf-6a + hf-6b + hf-6c together.
+
+**Forbidden partial states (any of these on `origin/phase-1-stats-cleanup`
+at any time is a REQ-HF6c-4 violation):**
+- T5 HTML added but T6 wire-in absent → subtitle renders with stale data
+  source.
+- T6 wired but T7 not executed → legacy `compute_readiness` still present
+  but unreferenced; drift surface.
+- T7 executed but T5 or T6 absent → report pipeline broken / runtime error.
