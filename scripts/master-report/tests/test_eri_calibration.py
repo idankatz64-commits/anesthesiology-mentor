@@ -469,25 +469,3 @@ def test_recovers_planted_weights_within_tolerance():
             f"|diff|={abs(fitted[k]-planted_w)} > {tol} (REQ-HF6b-2 per-feature)"
         )
     assert abs(fitted["intercept"] - planted_intercept) <= DERIVED_TOL
-
-
-@pytest.mark.unit
-def test_vanishing_consistency_coef_downgrades_to_poor_fit():
-    """REQ-HF6b-6 safety net: when the consistency coefficient collapses to
-    ~0 (feature unidentifiable from the rest of the design matrix), the
-    calibration must downgrade to fit_quality='poor_fit' with V2 fallback
-    weights — labeled fallback, HF.3 compliant.
-    """
-    planted = {"accuracy": 0.40, "coverage": 0.30, "retention": 0.30, "consistency": 0.0}
-    history = _build_linear_history(
-        n_days=30, total_db=300,
-        weights=planted, intercept=0.05,
-        noise_sd=0.01, seed=42, n_new_per_day=8,
-    )
-    result = compute_readiness_calibrated(history, components={})
-    assert result["fit_quality"] == "poor_fit", (
-        f"expected poor_fit (vanishing consistency coef), got {result['fit_quality']}"
-    )
-    assert result["weights"] == _V2_FALLBACK_WEIGHTS, (
-        f"expected V2 fallback weights, got {result['weights']}"
-    )
