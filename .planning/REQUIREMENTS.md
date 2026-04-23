@@ -169,8 +169,19 @@ w_cons·consistency + intercept`, where y is next-day accuracy.
 - Intercept term included (column of 1s in X, or library-handled intercept).
 - When fit succeeds (N - 1 ≥ 14 AND R² ≥ 0.3): `fit_quality="calibrated"`,
   `weights` = fitted coefficients.
-- Test (per wondrous line 130): synthetic history with known linear
-  relationship → recovered weights within ±0.05 of ground truth.
+- Test (per wondrous line 130, amended 2026-04-23 per CP3 Option 5
+  disposition): under planted linear synthetic data with tight per-answer
+  noise, the fitted 3-feature OLS model predicts next-day accuracy within
+  tolerance: **R² > 0.70 OR max-abs error < 12.0 on the [0,100] readiness
+  scale** (thresholds account for daily-accuracy quantization at
+  1/n_per_day).
+
+> **Note (2026-04-23, Option 5 disposition).** Original per-feature
+> coefficient-recovery criterion was dropped — structural multicollinearity
+> in the fixture (accuracy/coverage/retention all grow monotonically)
+> creates an equivalence class of OLS solutions, so coefficient recovery
+> is not identifiable. Prediction accuracy on observed targets is the
+> sound empirical criterion.
 
 ---
 
