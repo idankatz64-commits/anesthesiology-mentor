@@ -152,3 +152,152 @@ def build_daily_snapshots(history: dict[str, Any]) -> list[DailySnapshot]:
         )
 
     return snapshots
+
+
+# ============================================================
+# hf-6b — personalized readiness via OLS calibration (CP3 T4)
+# ============================================================
+
+import numpy as np  # noqa: E402
+
+V2_FALLBACK_WEIGHTS: dict[str, float] = {
+    "accuracy": 0.25,
+    "coverage": 0.25,
+    "retention": 0.30,
+    "consistency": 0.20,
+    "intercept": 0.0,
+}
+
+_MIN_PAIRS_FOR_REGRESSION: int = 3
+_MIN_PAIRS_FOR_CALIBRATION: int = 14
+_MIN_R_SQUARED_FOR_CALIBRATION: float = 0.3
+_READINESS_CLIP_LOW: float = 0.0
+_READINESS_CLIP_HIGH: float = 100.0
+
+
+def compute_readiness_calibrated(
+    history: dict[str, Any],
+    components: dict[str, float],
+) -> dict[str, Any]:
+    """Personalized readiness via OLS calibration on daily snapshots (hf-6b).
+
+    Fits next-day accuracy against same-day snapshot features
+    (accuracy, coverage, retention, consistency) using ordinary least
+    squares on the user's own history. Returns fitted readiness,
+    recovered weights, and a fit_quality flag describing the branch taken.
+
+    Contract (REQ-HF6b-1):
+        Returns dict with exactly the keys
+        {"readiness", "weights", "fit_quality"}.
+        - readiness: float in [0, 100] (clipped).
+        - weights: dict with keys
+          {"accuracy", "coverage", "retention", "consistency", "intercept"};
+          all values are float.
+        - fit_quality: one of
+          {"calibrated", "insufficient_history", "poor_fit"}
+          (English literals -- machine contract; HTML surface is T5's job).
+
+    Branch table (HF.3; REQ-HF6b-3 + REQ-HF6b-5):
+        N-1 < 3              -> raise ValueError (undefined regression).
+        3 <= N-1 < 14        -> labeled fallback, fit_quality="insufficient_history".
+        N-1 >= 14, R^2 < 0.3  -> labeled fallback, fit_quality="poor_fit".
+        N-1 >= 14, R^2 >= 0.3 -> OLS coefficients, fit_quality="calibrated".
+        (N = number of DailySnapshots returned by build_daily_snapshots.)
+
+    Note: retention feature is slightly optimistic because FSRS parameters
+    used to reconstruct per-day retention were calibrated on the full history,
+    including days that occur after each snapshot. This is an accepted
+    look-ahead bias per CP2 O-1 disposition (c); see REQUIREMENTS.md §9.
+
+    Degenerate-target case (O-3 polish):
+        If ss_tot == 0 (zero variance in next-day accuracy targets), R^2
+        is set to 0.0 -> enters poor_fit branch with labeled V2 fallback.
+        HF.3 compliant -- labeled, never silent.
+
+    Args:
+        history: same shape as build_daily_snapshots; dict with keys
+            "total_db" (int) and "answer_history" (list of rows).
+        components: dict with at least the four feature keys
+            ("accuracy", "coverage", "retention", "consistency") in
+            [0, 1]. Missing keys default to 0.0 -- safe because readiness
+            is always clipped to [0, 100].
+
+    Returns:
+        dict with keys {"readiness", "weights", "fit_quality"} per
+        contract above.
+
+    Raises:
+        ValueError: if the underlying history yields fewer than 4
+            distinct days (N <= 3 -> N-1 <= 2). Also propagates any
+            ValueError from build_daily_snapshots (e.g., single-day
+            history, empty answer_history).
+    """
+    snapshots = build_daily_snapshots(history)
+    n_pairs = len(snapshots) - 1
+
+    if n_pairs < _MIN_PAIRS_FOR_REGRESSION:
+        raise ValueError(
+            "compute_readiness_calibrated: insufficient history for "
+            f"regression -- need N-1 >= {_MIN_PAIRS_FOR_REGRESSION} "
+            f"training pairs, got N-1 = {n_pairs}. OLS on fewer pairs is "
+            "undefined (HF.3 -- labeled raise, not silent)."
+        )
+
+    if n_pairs < _MIN_PAIRS_FOR_CALIBRATION:
+        weights: dict[str, float] = dict(V2_FALLBACK_WEIGHTS)
+        fit_quality = "insufficient_history"
+    else:
+        x_rows: list[list[float]] = []
+        y_vals: list[float] = []
+        for i in range(n_pairs):
+            s = snapshots[i]
+            x_rows.append(
+                [s.accuracy, s.coverage, s.retention, s.consistency, 1.0]
+            )
+            y_vals.append(snapshots[i + 1].accuracy)
+        x_matrix = np.array(x_rows, dtype=float)
+        y_vector = np.array(y_vals, dtype=float)
+
+        coef, _residuals, _rank, _sv = np.linalg.lstsq(
+            x_matrix, y_vector, rcond=None
+        )
+
+        y_pred = x_matrix @ coef
+        ss_res = float(np.sum((y_vector - y_pred) ** 2))
+        y_mean = float(np.mean(y_vector))
+        ss_tot = float(np.sum((y_vector - y_mean) ** 2))
+
+        if ss_tot == 0.0:
+            r_squared = 0.0
+        else:
+            r_squared = 1.0 - ss_res / ss_tot
+
+        if r_squared < _MIN_R_SQUARED_FOR_CALIBRATION:
+            weights = dict(V2_FALLBACK_WEIGHTS)
+            fit_quality = "poor_fit"
+        else:
+            weights = {
+                "accuracy": float(coef[0]),
+                "coverage": float(coef[1]),
+                "retention": float(coef[2]),
+                "consistency": float(coef[3]),
+                "intercept": float(coef[4]),
+            }
+            fit_quality = "calibrated"
+
+    raw_readiness = (
+        weights["accuracy"] * float(components.get("accuracy", 0.0))
+        + weights["coverage"] * float(components.get("coverage", 0.0))
+        + weights["retention"] * float(components.get("retention", 0.0))
+        + weights["consistency"] * float(components.get("consistency", 0.0))
+        + weights["intercept"]
+    ) * 100.0
+    readiness = max(
+        _READINESS_CLIP_LOW, min(_READINESS_CLIP_HIGH, raw_readiness)
+    )
+
+    return {
+        "readiness": float(readiness),
+        "weights": weights,
+        "fit_quality": fit_quality,
+    }
