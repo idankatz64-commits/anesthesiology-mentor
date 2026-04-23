@@ -1,10 +1,10 @@
 ---
 phase: hf-6c
-current_cp: CP0
-last_completed_cp: null
+current_cp: CP1
+last_completed_cp: CP0
 last_updated: 2026-04-23
 mode: single-window
-compactions_within_cp: 1
+compactions_within_cp: 0
 compactions_all_time: 1
 re_anchor_tests: {passed: 0, failed: 0}
 owner: work-window
@@ -66,6 +66,62 @@ protocol_version: v2.2
   near-threshold compaction counts.)
 
 ## Recent events (newest on top)
+
+- 2026-04-23 — **CP1 OPEN — PLAN.md drafted by `gsd-planner`; all 5 open questions RESOLVED.**
+  PLAN.md now at `.planning/phases/hf-6c/PLAN.md` (553+ lines, 3 tasks T5/T6/T7 + CP1-verify
+  checkpoint; 2 files in `files_modified` + 1 deletion target). Planner surfaced 5 open questions;
+  user rulings captured verbatim 2026-04-23: **"2. חי 3. FORCE 4. מינימום 5. למחוק קדימה"**.
+
+  - **Q-1 RESOLVED = (c):** Expose `r2` from `compute_readiness_calibrated` via a 1-line
+    additive change to its return dict in `eri_calibration.py` (lines 313-317 — `r_squared` is
+    already computed on line 283 and was being discarded; just add `"r2": float(r_squared)`
+    as a new key). Folded into T5 as Step 0. **NO algorithm/fit/error-contract change** — only
+    the return shape grows by one key. DD-2 template (CP-STATE DD-2, above) now renders real
+    R² value (e.g., `R²=0.76`) on the calibrated path; falls back to `"—"` only if the key is
+    somehow missing. `eri_calibration.py` added to `files_modified` in PLAN.md frontmatter with
+    explicit carve-out: 1-line additive ONLY, everything else remains FROZEN.
+
+  - **Q-2 RESOLVED = live:** Smoke-run environment for T5/T6/T7 automated verify is **live
+    Supabase** (`SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` required). No fixture/mock path.
+    Rationale: master-report is always run live in production — fixtures would be brittle and
+    diverge from reality.
+
+  - **Q-3 RESOLVED = FORCE ALLOWED** (user override of default revert-only policy):
+    For `phase-1-stats-cleanup` branch ONLY, if CP1-verify FAILS post-push,
+    `git push --force-with-lease origin phase-1-stats-cleanup` is authorized for rollback to
+    pre-cutover SHA (`1246531` at CP0 entry). `git revert` remains as fallback if branch
+    protection blocks force-push. **`main` branch is NOT covered** by this ruling — main
+    remains force-push-prohibited per global `<git_workflow>` rule. `--force-with-lease`
+    mandated (not bare `--force`) to abort on concurrent pushes. Co-worker warning documented
+    in PLAN.md `<rollback_plan>`.
+
+  - **Q-4 RESOLVED = minimum:** Q5 SELECT extension is `question_id, topic` ONLY — no
+    speculative columns (`user_id`, `time_spent_ms`, etc.). YAGNI — additive SELECTs can be
+    extended in a future phase if/when `build_daily_snapshots` actually needs more fields.
+
+  - **Q-5 RESOLVED = delete:** `tests/test_compute_readiness.py` is DELETED in the T7 commit
+    window via `git rm tests/test_compute_readiness.py`. No port to
+    `compute_readiness_calibrated` (out of Wave C scope); no `@pytest.mark.skip`. Coverage of
+    the calibrated path is tracked via hf-6b SPOKE suite (18/18 GREEN) — deletion does not
+    leave a coverage hole for the new code.
+
+  - **Drift fix during CP1 close:** The `gsd-planner` draft of PLAN.md T5 Step 2 used Hebrew
+    wording (`"כיול: מדויק (R²=...)"`, `"כיול: התאמה חלשה — ציון משוקלל מ-fallback"`, etc.)
+    that DID NOT match CP-STATE DD-2 verbatim templates (`"כיול מוצלח · R²={r2:.2f}"`,
+    `"היסטוריה קצרה · R²={r2:.2f}"`, `"כיול חלש · R²={r2:.2f}"`). Semantic drift (user-facing
+    text is semantic, per feedback memory). PLAN.md T5 Step 2 corrected to match DD-2 verbatim
+    before CP1 commit. DD-2 remains authoritative.
+
+  - **Lock status at CP1 open (unchanged from CP0 entry):**
+    - Split=B callable-only lock: **HELD** (releases at T6 wire-in).
+    - Byte-identity 421-469 lock vs `b1584f3`: **HELD** (releases at T7 delete).
+
+  - **Compaction counter reset:** Per v2.2 Option B per-CP reset, `compactions_within_cp: 0`
+    on CP1 entry. All-time counter remains at 1 (observational).
+
+  - **Next work:** CP1 commit (PLAN.md + this CP-STATE.md event log) → user approves push →
+    CP1 CLOSED → CP2 opens for Wave C execution (T5→T6→T7 atomic push window). Execution timing
+    TBD by user availability.
 
 - 2026-04-23 — **CP0 ENTRY — hf-6c opened on top of hf-6b CP5 CLOSE.** Fresh phase; all 4
   Design Decisions confirmed by user and encoded in REQUIREMENTS.md; Option B exception policy
