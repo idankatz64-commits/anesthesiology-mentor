@@ -182,9 +182,17 @@ def compute_readiness_calibrated(
     """Personalized readiness via OLS calibration on daily snapshots (hf-6b).
 
     Fits next-day accuracy against same-day snapshot features
-    (accuracy, coverage, retention, consistency) using ordinary least
+    (accuracy, coverage, retention) + intercept using ordinary least
     squares on the user's own history. Returns fitted readiness,
     recovered weights, and a fit_quality flag describing the branch taken.
+
+    Consistency is excluded from the OLS regression due to structural
+    multicollinearity with accuracy (REQ-HF6b-7): the stdev-of-accuracies
+    formula that defines consistency mathematically contains the accuracy
+    column, producing an unidentifiable column in X. The weights dict
+    still has a "consistency" key (hardcoded 0.0 in the calibrated
+    branch; V2_FALLBACK_WEIGHTS["consistency"] in fallback branches)
+    for ABI compatibility with REQ-HF6b-1.
 
     Contract (REQ-HF6b-1):
         Returns dict with exactly the keys
@@ -251,8 +259,10 @@ def compute_readiness_calibrated(
         y_vals: list[float] = []
         for i in range(n_pairs):
             s = snapshots[i]
+            # REQ-HF6b-7: 3 features + intercept (consistency excluded —
+            # see docstring for rationale).
             x_rows.append(
-                [s.accuracy, s.coverage, s.retention, s.consistency, 1.0]
+                [s.accuracy, s.coverage, s.retention, 1.0]
             )
             y_vals.append(snapshots[i + 1].accuracy)
         x_matrix = np.array(x_rows, dtype=float)
@@ -276,12 +286,16 @@ def compute_readiness_calibrated(
             weights = dict(V2_FALLBACK_WEIGHTS)
             fit_quality = "poor_fit"
         else:
+            # REQ-HF6b-7: 3-feature OLS — coef is length 4
+            # (acc, cov, ret, intercept). Consistency hardcoded 0.0 in
+            # calibrated branch; V2_FALLBACK_WEIGHTS retains 0.20 in
+            # fallback branches.
             weights = {
                 "accuracy": float(coef[0]),
                 "coverage": float(coef[1]),
                 "retention": float(coef[2]),
-                "consistency": float(coef[3]),
-                "intercept": float(coef[4]),
+                "consistency": 0.0,
+                "intercept": float(coef[3]),
             }
             fit_quality = "calibrated"
 
