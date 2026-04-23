@@ -149,3 +149,28 @@ change, and no hf-6b scope creep all verified. CP4 GREEN gate complete.
 New tests (T0 + T1 + T2 × 3 parametrize = 5 pytest items / 3 test functions):
 `pytest scripts/master-report/tests/test_eri_calibration.py -q` → `5 passed`,
 exit 0.
+
+---
+
+## Supersession note — `consistency` formula (added 2026-04-23, hf-6b CP3)
+
+The `consistency` formula in `build_daily_snapshots`
+(originally: `1.0 - statistics.stdev(daily_accuracies) / 0.5` —
+cumulative over full history) is **superseded** in hf-6b by
+REQ-HF6b-7 (3-feature OLS model: accuracy, coverage, retention +
+intercept). Note: REQ-HF6b-6 was drafted (rolling-window consistency)
+but withdrawn on arrival per CP3 HARD STOP v3 Option (a) — see
+REQUIREMENTS.md REQ-HF6b-6 block (retained for audit) and CP3
+diagnostic in git log.
+
+REQ-HF6a-1 acceptance criteria (`DailySnapshot.consistency: float ∈ [0, 1]`,
+component presence) **still hold** under the new formula. This is
+**not** a formal hf-6a re-open — hf-6a's
+`test_build_daily_snapshots_shape_and_values` explicitly documented
+the consistency formula as a placeholder
+(`"placeholder formulas; hf-6b will swap"` — inline comment at
+`tests/test_eri_calibration.py:126`), so this is the deferred
+completion of the originally-anticipated swap.
+
+Byte-identity lock on `compute_readiness` (`generate_report.py:421-469`)
+and Split=B (callable-only, no wire-in) both remain in force.
