@@ -237,8 +237,10 @@ def _build_linear_history(
             })
 
         n_correct = round(target_a * n_per_day)
-        for i, r in enumerate(rows):
-            r["is_correct"] = i < n_correct
+        is_correct_flags = [True] * n_correct + [False] * (n_per_day - n_correct)
+        rng.shuffle(is_correct_flags)
+        for r, ic in zip(rows, is_correct_flags):
+            r["is_correct"] = ic
 
         answer_history.extend(rows)
 
