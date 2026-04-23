@@ -31,29 +31,25 @@ protocol_version: v2.2
   - byte-identity lock on `compute_readiness` (lines 421-469) active until hf-6b deprecation
   - CP6 deferred (merge-gate runs at end of hf-6c, all three phases together)
 
-## Window health (v2.1 — Option B thresholds)
+## Window health (v2.2 — single-window, Option B thresholds)
 
-| Window | Within-CP | All-time (phase) | Re-anchor (P/F this CP) | Status |
-|--------|-----------|------------------|-------------------------|--------|
-| advisor | 4/10 | 5 | 1/0 | wrap-up pending — Option 5 ruled, state commit imminent |
-| work | 6/10 | 6 | 1/0 | CP3 Option (a) partial-pass landed (Commits A-D clean); E+F deferred to fresh window per user "מאשר הכל" |
+| Scope | Within-CP | All-time (phase) | Status |
+|-------|-----------|------------------|--------|
+| single-window | see YAML `compactions_within_cp` | observational | CP4 entry — fresh budget after CP3→CP4 reset |
 
-**Compaction Gate Protocol (v2.1 — Option B, 2026-04-23):**
-- **Soft threshold:** 5 compactions within current CP → testing window auto-runs
-  one Re-Anchor Sanity Test on the other (Mechanism 10).
+**Compaction Gate Protocol (v2.2 — single-window, 2026-04-23):**
+- **Soft threshold:** 5 compactions within current CP → wrap-up warning + state commit.
 - **Hard threshold:** 10 compactions within current CP → wrap-up mandatory.
-- **Per-CP reset:** on CP transition, within-CP counter resets to 0 for both
-  windows. All-time counter keeps incrementing (observational only, not a gate).
-- **Asymmetric fail-fast (Mechanism 10 integration):**
-  - Advisor fails a Re-Anchor test → wrap-up **immediately** (no second test).
-  - Work fails first → second test on different topic; two fails → wrap-up.
+- **Per-CP reset:** on CP transition, within-CP counter resets to 0. All-time
+  counter keeps incrementing (observational only, not a gate).
+- **Tier 1 rule:** every Hebrew response must include the current
+  `📊 Compactions: X/5` count so the user can steer.
 
-> **Note on per-CP reset at CP1→CP2 (2026-04-23):** advisor within-CP counter
-> reset 1→0 per Option B rule. All-time counter stays at 1 (CP0 auto-compaction
-> burst carried over as observational record, not a gate). Both windows now
-> fresh for CP2. First Re-Anchor Sanity Test not required at this handshake —
-> deferred to natural trigger (soft 5 within-CP OR next CP transition if user
-> wants smoke-test).
+> **v2.2 migration note (2026-04-23):** v2.1 was a dual-window protocol
+> (separate advisor/work counters) with Mechanism 10 Re-Anchor Sanity Tests at
+> cross-window transitions. v2.2 collapses to a single window and drops the
+> dual-counter machinery (see MEMORY.md `feedback_single_window_mode`). The
+> historical v2.1 Re-Anchor log below is retained as audit trail.
 
 ## Re-Anchor log (newest on top)
 

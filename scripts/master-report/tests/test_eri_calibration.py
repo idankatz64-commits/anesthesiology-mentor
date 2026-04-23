@@ -206,6 +206,16 @@ def _build_linear_history(
     linear function of time, breaking multicollinearity between accuracy,
     coverage, and retention (CP3 T4 SECOND ESCALATION — advisor-ruled
     structural decorrelation fix).
+
+    NOTE (REQ-HF6b-7, CP3 Option 5 — 2026-04-23): the target formula still
+    includes the `+ weights["consistency"] * s.consistency` term for backward
+    compatibility with historical planted dicts (`test_branch_calibrated` and
+    `test_boundary_n_minus_1_equals_14_may_calibrate` still pass
+    `consistency: 0.1`). Production OLS is 3-feature and ignores this column
+    entirely (`weights["consistency"]=0.0` hardcoded), so the term is benign
+    — it contributes to the synthetic target but is never recovered by the
+    fitter. For `test_predictions_match_planted_within_tolerance`, planted
+    consistency is 0.0, making the term literally zero.
     """
     rng = np.random.default_rng(seed)
     total_db = int(total_db)

@@ -8,7 +8,7 @@ budget_days: 1
 waves: 3
 autonomous: false
 feature_flag: null   # hotfix track uses deprecate-then-delete, not flags
-requirements: [REQ-HF6b-1, REQ-HF6b-2, REQ-HF6b-3, REQ-HF6b-4, REQ-HF6b-5]
+requirements: [REQ-HF6b-1, REQ-HF6b-2, REQ-HF6b-3, REQ-HF6b-4, REQ-HF6b-5, REQ-HF6b-7]   # REQ-HF6b-6 DRAFTED AND WITHDRAWN 2026-04-23; REQ-HF6b-7 supersedes (3-feature OLS, CP3 Option 5)
 predecessor_head: 639ea3b   # hf-6a GREEN — verify live via `git rev-parse HEAD` before T1
 research_file: null
 review_file: null
@@ -88,6 +88,14 @@ That is the observable end state of hf-6b. Everything else is scaffolding that m
 ---
 
 ## Section 3 — Tasks T1..T7
+
+> **⚠️ REQ-mapping note (post-CP3, 2026-04-23).** The "REQ mapping" column in the
+> table below cites `REQ-HF6b-1..5` per the original plan. Post-CP3, T3+T4 are
+> also governed by **REQ-HF6b-7** (3-feature OLS supersedes the 5-feature model;
+> acceptance criterion is prediction accuracy per Option 5 disposition). Treat
+> every occurrence of `REQ-HF6b-2` on rows T3 and T4 below as implicitly
+> harmonized with REQ-HF6b-7. REQ-HF6b-6 was DRAFTED AND WITHDRAWN — see
+> REQUIREMENTS.md for the withdrawn-on-arrival audit block.
 
 **Legend:**
 - **Effort:** S (≤1 h), M (1–3 h), L (3–6 h)
@@ -325,6 +333,17 @@ That is the observable end state of hf-6b. Everything else is scaffolding that m
 ---
 
 ### T4 — GREEN: implement `compute_readiness_calibrated` in `eri_calibration.py`
+
+> **⚠️ SUPERSEDED in CP3 (2026-04-23) by REQ-HF6b-7.** The pseudocode below
+> describes the original **5-feature** OLS (`[accuracy, coverage, retention,
+> consistency, 1.0]` → 5 coefficients). The **actual production implementation
+> is 3-feature** OLS: `[accuracy, coverage, retention, 1.0]` → 4 coefficients,
+> with `weights["consistency"] = 0.0` hardcoded for ABI stability. The
+> `MIN_TRAINING_ROWS: int = 3` rationale comment (below) still correctly
+> guards against under-determined fits, but the "5-coeff fit undefined"
+> wording is stale — the current 4-coeff fit is also undefined for N-1 < 3.
+> See REQ-HF6b-7 and `scripts/master-report/eri_calibration.py` at HEAD for
+> authoritative shape. This section retained verbatim as pre-CP3 audit trail.
 
 ```xml
 <read_first>

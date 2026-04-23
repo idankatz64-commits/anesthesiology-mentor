@@ -150,6 +150,14 @@ Consumes the output of `build_daily_snapshots` (REQ-HF6a-1).
 
 ### REQ-HF6b-2 — OLS fit contract
 
+> **⚠️ SUPERSEDED in part by REQ-HF6b-7 (2026-04-23, CP3 disposition).**
+> The `w_cons·consistency` term in the Goal formula below is historical.
+> Production is a **3-feature OLS** (accuracy, coverage, retention + intercept);
+> `weights["consistency"]` is hardcoded to `0.0` for ABI stability.
+> Acceptance criterion was also amended per Option 5 (prediction accuracy, not
+> coefficient recovery) — see the "Note (2026-04-23, Option 5 disposition)" block
+> below and REQ-HF6b-7 for the current contract.
+
 **Goal.** When data is sufficient (n ≥ 14 days AND resulting R² ≥ 0.3), fit
 OLS regression `y = w_acc·accuracy + w_cov·coverage + w_ret·retention +
 w_cons·consistency + intercept`, where y is next-day accuracy.
