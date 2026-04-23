@@ -191,6 +191,7 @@ def _build_linear_history(
     intercept: float,
     noise_sd: float,
     seed: int = 42,
+    n_new_per_day: int | None = None,
 ) -> dict:
     """Synthetic history where next-day accuracy ≈ w·components + intercept + ε.
 
@@ -198,6 +199,13 @@ def _build_linear_history(
     onward: target_acc(i+1) = w·snap(i) + intercept + rng.normal(0, noise_sd).
     Deterministic via numpy.random.default_rng(seed). This helper IS T3's
     fixture contract — if T4 weight recovery fails, suspect this first.
+
+    If n_new_per_day is None (default) the legacy behavior holds: n_new is
+    fixed at 5 per day from day 1 onward. If set to an int k, n_new is drawn
+    per day via rng.integers(2, k + 1) so coverage no longer grows as a
+    linear function of time, breaking multicollinearity between accuracy,
+    coverage, and retention (CP3 T4 SECOND ESCALATION — advisor-ruled
+    structural decorrelation fix).
     """
     rng = np.random.default_rng(seed)
     total_db = int(total_db)
@@ -213,8 +221,12 @@ def _build_linear_history(
 
         if day_idx == 0:
             n_new, n_rep = n_per_day, 0
-        else:
+        elif n_new_per_day is None:
             n_new = min(5, n_per_day)
+            n_rep = n_per_day - n_new
+        else:
+            n_new = int(rng.integers(2, n_new_per_day + 1))
+            n_new = min(n_new, n_per_day)
             n_rep = n_per_day - n_new
 
         rows = []
@@ -434,9 +446,9 @@ def test_recovers_planted_weights_within_tolerance():
     # N = 30 days → training rows = 29. Above the 14-row gate AND above the
     # noisy-conditioning threshold per §7 R-B2. Tight noise (sd=0.01) → strong recovery.
     history = _build_linear_history(
-        n_days=30, total_db=100,
+        n_days=30, total_db=300,
         weights=planted, intercept=planted_intercept,
-        noise_sd=0.01, seed=42,
+        noise_sd=0.01, seed=42, n_new_per_day=8,
     )
     components = build_daily_snapshots(history)[-1].__dict__
     result = compute_readiness_calibrated(history, components=components)
