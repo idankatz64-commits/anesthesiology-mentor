@@ -431,11 +431,12 @@ def compute_evpi(data):
 def _compute_sub_scores(data: dict, basics: dict) -> dict[str, float]:
     """Per-component sub-scores for radar + terminal surface (hf-6c T6).
 
-    Verbatim extraction from legacy ``compute_readiness`` lines 421-468 (minus
-    the final readiness aggregation, which now comes from
-    ``compute_readiness_calibrated``). All 3 HF.3 ValueError raises preserved —
-    they fire BEFORE the calibrator call and are NOT caught by Option B (Option
-    B scope is the calibrator only; these raises remain as legacy invariants).
+    Extracted from the legacy ``compute_readiness`` function (deleted in hf-6c
+    T7), minus the final fixed-weight aggregation — that aggregation is now
+    replaced by ``compute_readiness_calibrated`` (OLS on per-user history).
+    All 3 HF.3 ValueError raises preserved — they fire BEFORE the calibrator
+    call and are NOT caught by Option B (Option B scope is the calibrator only;
+    these raises remain as legacy invariants).
     """
     ua_total = sum(t["c"] + t["w"] for t in data["topics_user"])
     ua_correct = sum(t["c"] for t in data["topics_user"])
@@ -479,57 +480,6 @@ def _compute_sub_scores(data: dict, basics: dict) -> dict[str, float]:
         "critical_avg": round(critical_avg, 1),
         "critical_score": round(critical_score, 1),
         "consistency_score": round(consistency_score, 1),
-    }
-
-
-def compute_readiness(data, basics, mc, bootstrap):
-    ua_total = sum(t["c"] + t["w"] for t in data["topics_user"])
-    ua_correct = sum(t["c"] for t in data["topics_user"])
-    if ua_total == 0:
-        raise ValueError(
-            "readiness: no user_answers attempts found (accuracy component is "
-            "undefined). The April 18 phantom 37.5 came from a hidden 50-fallback "
-            "at this exact branch. Refusing to compute readiness from nothing."
-        )
-    ua_accuracy = ua_correct / ua_total * 100
-    accuracy_score = min(ua_accuracy, 100)
-    # Coverage: fraction of DB answered, target 60%
-    coverage_frac = basics["coverage_pct"] / 100
-    coverage_score = min(100, coverage_frac / 0.6 * 100)
-
-    topics_db = data["topics_db"]
-    critical = [t for t in data["topics_user"]
-                if t["n"] >= 5 and topics_db.get(t["topic"], 0) >= 50]
-    if not critical:
-        raise ValueError(
-            "readiness: no critical topics (n>=5 AND db>=50) — critical_avg "
-            "cannot be computed. Hidden 50-fallback removed; user needs more "
-            "attempts on major-weight topics before readiness is meaningful."
-        )
-    critical_avg = sum(t["c"] / t["n"] * 100 for t in critical) / len(critical)
-    critical_score = min(critical_avg, 100)
-
-    daily_accs = [d["a"] for d in data["daily"] if d["n"] >= 5]
-    if len(daily_accs) < 3:
-        raise ValueError(
-            f"readiness: consistency needs >= 3 days with n>=5 attempts, got "
-            f"{len(daily_accs)}. Hidden 50-fallback removed to prevent phantom "
-            f"readiness scores like April 18's 37.5."
-        )
-    consistency_score = max(0, min(100, 100 - statistics.stdev(daily_accs) * 3))
-
-    readiness = round(
-        accuracy_score * 0.25 + coverage_score * 0.25 +
-        critical_score * 0.30 + consistency_score * 0.20, 1
-    )
-    return {
-        "readiness": readiness,
-        "accuracy_score": round(accuracy_score, 1),
-        "coverage_score": round(coverage_score, 1),
-        "critical_score": round(critical_score, 1),
-        "critical_avg": round(critical_avg, 1),
-        "consistency_score": round(consistency_score, 1),
-        "hist_accuracy": round(ua_accuracy, 1),
     }
 
 
