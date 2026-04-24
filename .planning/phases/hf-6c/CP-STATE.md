@@ -1,11 +1,11 @@
 ---
 phase: hf-6c
-current_cp: CP1
-last_completed_cp: CP0
+current_cp: CP1-verify
+last_completed_cp: CP1
 last_updated: 2026-04-24
 mode: single-window
-compactions_within_cp: 1
-compactions_all_time: 2
+compactions_within_cp: 2
+compactions_all_time: 3
 re_anchor_tests: {passed: 0, failed: 0}
 owner: work-window
 protocol_version: v2.2
@@ -66,6 +66,103 @@ protocol_version: v2.2
   near-threshold compaction counts.)
 
 ## Recent events (newest on top)
+
+- 2026-04-24 — **Wave C CODE COMPLETE — T5 + T6 + T7 all committed; CP1-verify in progress.**
+  Three Wave C tasks executed in sequence per REQ-HF6c-1/2/3. All three SHAs now sit on
+  `phase-1-stats-cleanup` ahead of `origin` along with the prior drift-fix commit:
+
+  - **T5 (`8c2758c`) — `refactor(hf-6c): T5 surface ERI fit_quality via kpi-subtitle (+ r2 from calibrator)`**
+    - Step 0: added `"r2": float(r_squared)` to `compute_readiness_calibrated` return dict
+      (`eri_calibration.py`). Single additive key — algorithm/fit/contract unchanged per Q-1 ruling.
+    - Step 0.5 (latent-bug fix discovered mid-T5): initialized `r_squared = 0.0` BEFORE the
+      `n_pairs < _MIN_PAIRS_FOR_CALIBRATION` branch. Without this init, the insufficient_history /
+      ValueError paths would hit `UnboundLocalError` on the new `"r2": float(r_squared)` line.
+      Matches existing `ss_tot == 0.0` precedent for the poor_fit branch.
+    - Step 1: added `.kpi-subtitle` + `.kpi-subtitle.fallback` CSS (green `#00D4CC` default,
+      amber `#FFB020` fallback) to `generate_html` inline CSS.
+    - Step 2: added `eri_card` Python block before the HTML template build; replaced the inline
+      `kpi-card` HTML for ERI with `{eri_card}`. Hebrew subtitle templates match DD-2 verbatim:
+      `"כיול מוצלח · R²={r2:.2f}"` / `"היסטוריה קצרה · R²={r2:.2f}"` /
+      `"כיול חלש · R²={r2:.2f}"` / `"כיול לא זמין · R²=—"` (defensive 4th branch for missing key).
+    - Step 2.5: updated `test_eri_calibration.py` key-set assertion to
+      `{"readiness", "weights", "fit_quality", "r2"}` (4-key, was 3-key).
+    - Verification: pytest 63/63 pass; adapted smoke (in-process template exercise across all 4
+      branches) — all 4 subtitles render with correct color + correct Hebrew.
+
+  - **T6 (`f4a750d`) — `refactor(hf-6c): T6 wire compute_readiness_calibrated into compute_all`**
+    - Edit 1: `from eri_calibration import compute_readiness_calibrated` at module top.
+      **→ Split=B callable-only lock RELEASED at this commit (as planned in CP0 DD-4 cutover).**
+    - Edit 2: extended Q5 SELECT in `fetch_data` to include `question_id, questions(topic)` and
+      built a raw `answer_history` list in the same loop that built the `daily` aggregation.
+      Q5 ruling "minimum" respected — only `question_id + topic` added, no speculative columns.
+    - Edit 3: added `"answer_history": answer_history` to `fetch_data` return dict.
+    - Edit 4: new `_compute_sub_scores(data, basics)` helper — verbatim extraction of the
+      per-component math (accuracy/coverage/critical/consistency) from the legacy function,
+      minus the fixed-weight aggregation. All 3 HF.3 ValueError raises preserved (no attempts
+      / no critical topics / <3 consistency days with n≥5).
+    - Edit 5: replaced `readiness = compute_readiness(data, basics, mc, bootstrap)` at the
+      compute_all call site with the Option B wire-in: sub_scores → components dict →
+      history dict → `try: compute_readiness_calibrated(...) except ValueError as e:` with
+      token parse (`str(e).split(":", 1)[0]`), stderr log, and `"—"` sentinel readiness on
+      the caught branch. REQ-HF6c-2 / Option B policy compliance = full.
+    - Edit 6: terminal ERI print guarded — renders
+      `ERI:      — (calibration fallback: <token>)` on the sentinel path, regular
+      `ERI:      {n}/100` otherwise.
+    - PLAN drifts auto-resolved per user autonomy rule (scope: `scripts/master-report/*` = safe):
+      import path = `from eri_calibration import ...` (NOT `scripts.master_report...` — hyphen
+      in dir name blocks dotted import); `data["total_db"]` used directly (not `basics["total_db"]`
+      which doesn't exist); single helper `_compute_sub_scores` instead of 6 separate helpers
+      proposed in PLAN (semantically identical, avoids duplicated per-component computation).
+    - Verification: pytest 63/63 pass (unchanged — T6 adds no new tests, but exercises the
+      existing calibrator suite through the new wire-in). Adapted smoke (direct-import
+      calibrator call on 4 synthetic histories) — calibrated / insufficient_history / ValueError
+      `<2 days` / ValueError empty — all 4 Option B branches emit correct `fit_quality` +
+      correct token parse + correct sentinel on the fallback path.
+
+  - **T7 (`11d0f04`) — `refactor(hf-6c): T7 delete legacy compute_readiness + its tests`**
+    - Deleted `compute_readiness(data, basics, mc, bootstrap)` entirely (~49 lines: the
+      fixed-weight aggregator `0.25·acc + 0.25·cov + 0.30·crit + 0.20·cons`). The
+      aggregation logic is now replaced by `compute_readiness_calibrated` (OLS on per-user
+      history); the per-component ValueError invariants survive inside `_compute_sub_scores`.
+      **→ Byte-identity 421-469 lock vs baseline `b1584f3` RELEASED at this commit.**
+    - `git rm scripts/master-report/tests/test_compute_readiness.py` — 4 tests that pinned
+      the v3 fallback-removal contract on the deleted function. Per Q-5 ruling "delete", no
+      port to the calibrated path (its coverage lives in the hf-6b SPOKE suite which remains
+      GREEN 18/18 post-T7). No `@pytest.mark.skip` half-measure.
+    - Harmonized `_compute_sub_scores` docstring — dropped stale `"421-468"` line-range
+      reference (the referenced function no longer exists).
+    - Verification: pytest 59/59 pass (63 − 4 removed = 59, exactly as expected). Grep
+      sweep: `grep "compute_readiness\b" scripts/master-report/` with `compute_readiness_calibrated`
+      + `_compute_sub_scores` + `_legacy_v2` excluded → **1 hit** inside the
+      `_compute_sub_scores` docstring note (`"deleted in hf-6c T7"`) — a historical comment,
+      not a live reference.
+
+  - **Locks status post-Wave-C (both as planned):**
+    - Split=B callable-only lock: **RELEASED at T6** (compute_readiness_calibrated now
+      imported + called from generate_report.py).
+    - Byte-identity 421-469 lock vs `b1584f3`: **RELEASED at T7** (source function deleted).
+
+  - **Commits ahead of `origin/phase-1-stats-cleanup` (4 total, atomic push window per REQ-HF6c-4):**
+    1. `3393c0a` docs(hf-6c): CP1-post drift fix — PLAN.md paths + python3 executable corrections
+    2. `8c2758c` refactor(hf-6c): T5 surface ERI fit_quality via kpi-subtitle (+ r2 from calibrator)
+    3. `f4a750d` refactor(hf-6c): T6 wire compute_readiness_calibrated into compute_all
+    4. `11d0f04` refactor(hf-6c): T7 delete legacy compute_readiness + its tests
+
+  - **CP1-verify status:** pytest baseline = 59/59 GREEN. Syntax = OK. Live smoke-run against
+    Supabase (Q-2 "live" ruling) still pending — will happen naturally next time user runs
+    master-report. Per REQ-HF6c-4, the 4 commits push together as one atomic window to avoid
+    any intermediate state where `generate_report.py` imports `compute_readiness_calibrated`
+    but still defines (and would still try to call, via the old call site) the legacy
+    `compute_readiness`. Current in-repo state: T6 + T7 are both applied, so the atomic
+    invariant is preserved locally as well.
+
+  - **Compaction counters at Wave-C completion:** `compactions_within_cp: 2` (CP1-post
+    drift-fix session-resume + Wave-C session-resume), `compactions_all_time: 3`. Both well
+    below soft-5 threshold — no wrap-up pressure.
+
+  - **Next work:** ask user to approve `git push origin phase-1-stats-cleanup` per project
+    `<git_workflow>` rule. After push: CP1-verify CLOSED → CP2 for manual smoke-verification
+    (live Supabase run) + STATE.md phase-level update.
 
 - 2026-04-24 — **CP1-post drift harmonization — PLAN.md paths + python3 executable corrections.**
   Pre-flight verification of PLAN.md surfaced 3 semantic drifts that would have blocked every
