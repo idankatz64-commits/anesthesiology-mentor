@@ -74,6 +74,20 @@ def get_config():
 # DATA FETCHING (READ-ONLY)
 # ════════════════════════════════════════════════════════════
 
+def _fetch_all(build_query, chunk: int = 1000) -> list[dict]:
+    """Paginate past PostgREST's 1000-row default. `build_query()` must return a fresh builder."""
+    rows: list[dict] = []
+    offset = 0
+    while True:
+        res = build_query().range(offset, offset + chunk - 1).execute()
+        batch = res.data or []
+        rows.extend(batch)
+        if len(batch) < chunk:
+            break
+        offset += chunk
+    return rows
+
+
 def fetch_data(supabase, user_id):
     """Fetch all needed data from Supabase. READ-ONLY queries only."""
     print("  Fetching data from Supabase (READ-ONLY)...")
@@ -91,12 +105,14 @@ def fetch_data(supabase, user_id):
 
     # Q3: User performance per topic (user_answers — final SRS state)
     # Schema note: `wrong_count` does not exist; derive as answered_count - correct_count.
-    res = (supabase.table("user_answers")
-           .select("question_id, correct_count, answered_count, questions(topic)")
-           .eq("user_id", user_id)
-           .execute())
+    # Paginated to bypass PostgREST's 1000-row default (user has >1000 rows).
+    user_answers_rows = _fetch_all(lambda: (
+        supabase.table("user_answers")
+        .select("question_id, correct_count, answered_count, questions(topic)")
+        .eq("user_id", user_id)
+    ))
     topics_user = {}
-    for row in res.data:
+    for row in user_answers_rows:
         topic = row["questions"]["topic"] if row.get("questions") else "Unknown"
         if topic not in topics_user:
             topics_user[topic] = {"topic": topic, "n": 0, "c": 0, "w": 0}
@@ -115,12 +131,14 @@ def fetch_data(supabase, user_id):
 
     if not rpc_data:
         # Schema note: answer_history has `topic` column directly — no JOIN needed.
-        res = (supabase.table("answer_history")
-               .select("is_correct, topic")
-               .eq("user_id", user_id)
-               .execute())
+        # Paginated to bypass 1000-row default.
+        history_rows = _fetch_all(lambda: (
+            supabase.table("answer_history")
+            .select("is_correct, topic")
+            .eq("user_id", user_id)
+        ))
         topics_history = {}
-        for row in res.data:
+        for row in history_rows:
             topic = row.get("topic") or "Unknown"
             if topic not in topics_history:
                 topics_history[topic] = {"topic": topic, "n": 0, "c": 0, "w": 0}
@@ -134,14 +152,16 @@ def fetch_data(supabase, user_id):
         topics_history = rpc_data
 
     # Q5: Daily performance + raw answer stream for calibrator (hf-6c T6 — REQ-HF6a-2)
-    res = (supabase.table("answer_history")
-           .select("answered_at, is_correct, question_id, topic")
-           .eq("user_id", user_id)
-           .order("answered_at")
-           .execute())
+    # Paginated — this is the ERI calibrator's input; truncation here silently corrupts ERI.
+    history_stream = _fetch_all(lambda: (
+        supabase.table("answer_history")
+        .select("answered_at, is_correct, question_id, topic")
+        .eq("user_id", user_id)
+        .order("answered_at")
+    ))
     daily = {}
     answer_history: list[dict] = []
-    for row in res.data:
+    for row in history_stream:
         d = row["answered_at"][:10]
         if d not in daily:
             daily[d] = {"n": 0, "c": 0}
@@ -154,15 +174,16 @@ def fetch_data(supabase, user_id):
             "question_id": row["question_id"],
             "topic": row.get("topic") or "Unknown",
         })
+    # Date label: "YYYY-MM-DD" -> "DD/MM" (Israeli format).
     daily_list = [
-        {"d": d.split("-", 1)[1].replace("-", "/"), "n": v["n"],
+        {"d": f"{d[8:10]}/{d[5:7]}", "n": v["n"],
          "a": round(v["c"] / v["n"] * 100, 1)}
         for d, v in sorted(daily.items())
     ]
 
-    # Q6: Hourly performance (UTC)
+    # Q6: Hourly performance (UTC) — reuses the paginated Q5 stream.
     hourly = {}
-    for row in res.data:
+    for row in history_stream:
         h = int(row["answered_at"][11:13])
         if h not in hourly:
             hourly[h] = {"n": 0, "c": 0}
@@ -176,15 +197,17 @@ def fetch_data(supabase, user_id):
 
     # Q7: SRS data
     # Schema note: column is `interval_days` (not `interval`).
-    res = (supabase.table("spaced_repetition")
-           .select("confidence, next_review_date, interval_days")
-           .eq("user_id", user_id)
-           .execute())
+    # Paginated to bypass 1000-row default.
+    srs_rows = _fetch_all(lambda: (
+        supabase.table("spaced_repetition")
+        .select("confidence, next_review_date, interval_days")
+        .eq("user_id", user_id)
+    ))
     today_str = date.today().isoformat()
     srs = {"confident": {"total": 0, "due": 0, "intervals": []},
            "hesitant": {"total": 0, "due": 0, "intervals": []},
            "guessed": {"total": 0, "due": 0, "intervals": []}}
-    for row in res.data:
+    for row in srs_rows:
         conf = row.get("confidence", "hesitant")
         if conf not in srs:
             conf = "hesitant"
