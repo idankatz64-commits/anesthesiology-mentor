@@ -7,7 +7,7 @@ depends_on: []
 files_modified:
   - scripts/master-report/generate_report.py
   - scripts/master-report/eri_calibration.py  # T5 Step 0 only — 1-line additive `r2` key (Q-1 resolution c, 2026-04-23)
-  - tests/test_compute_readiness.py           # T7 Step 5 — DELETED (Q-5 resolution: למחוק, 2026-04-23)
+  - scripts/master-report/tests/test_compute_readiness.py           # T7 Step 5 — DELETED (Q-5 resolution: למחוק, 2026-04-23)
 autonomous: false
 requirements:
   - REQ-HF6c-1
@@ -77,7 +77,7 @@ Output: Single modified file `scripts/master-report/generate_report.py`; all Wav
 
 **IN SCOPE (carve-outs added post Q-1..Q-5 2026-04-23):**
 - `scripts/master-report/eri_calibration.py` — 1-line additive edit ONLY (add `"r2": float(r_squared)` to return dict, lines 313-317). No other changes permitted. Algorithm, fit logic, and error contract remain FROZEN. (Q-1 resolution c)
-- `tests/test_compute_readiness.py` — DELETED in T7 commit window (Q-5 resolution: למחוק)
+- `scripts/master-report/tests/test_compute_readiness.py` — DELETED in T7 commit window (Q-5 resolution: למחוק)
 
 **OUT OF SCOPE (explicit):**
 - `src/` live-app `StatsView` — deferred to a later phase per user directive
@@ -234,7 +234,7 @@ No parallelism possible within this plan.
     **Q-1 RESOLVED 2026-04-23 = (c):** `r2` is now exposed via Step 0 above. DD-2 template renders real R² value (e.g., `R²=0.76`) on calibrated path; falls back to `"—"` only if `r2` key somehow missing.
   </action>
   <verify>
-    <automated>python scripts/master-report/generate_report.py --dry-run --output /tmp/hf6c-t5-smoke.html 2>&amp;1 | grep -q "kpi-subtitle" &amp;&amp; grep -q "kpi-subtitle" /tmp/hf6c-t5-smoke.html &amp;&amp; grep -q '"r2":' scripts/master-report/eri_calibration.py</automated>
+    <automated>python3 scripts/master-report/generate_report.py --dry-run --output /tmp/hf6c-t5-smoke.html 2>&amp;1 | grep -q "kpi-subtitle" &amp;&amp; grep -q "kpi-subtitle" /tmp/hf6c-t5-smoke.html &amp;&amp; grep -q '"r2":' scripts/master-report/eri_calibration.py</automated>
   </verify>
   <done>
     - Step 0 applied: `"r2": float(r_squared)` present in `eri_calibration.py::compute_readiness_calibrated` return dict.
@@ -353,7 +353,7 @@ No parallelism possible within this plan.
     **Split=B callable-only lock releases at end of this task** (after first successful call to `compute_readiness_calibrated` on live data).
   </action>
   <verify>
-    <automated>cd /Users/idankatz15/Desktop/3_APP_DEV/repo-temp &amp;&amp; python -c "from scripts.master_report.generate_report import compute_all; print('import OK')" &amp;&amp; python scripts/master-report/generate_report.py --dry-run --output /tmp/hf6c-t6-smoke.html &amp;&amp; grep -q "compute_readiness_calibrated" scripts/master-report/generate_report.py &amp;&amp; grep -q "except ValueError" scripts/master-report/generate_report.py</automated>
+    <automated>cd /Users/idankatz15/Desktop/3_APP_DEV/repo-temp &amp;&amp; python3 -c "from scripts.master_report.generate_report import compute_all; print('import OK')" &amp;&amp; python3 scripts/master-report/generate_report.py --dry-run --output /tmp/hf6c-t6-smoke.html &amp;&amp; grep -q "compute_readiness_calibrated" scripts/master-report/generate_report.py &amp;&amp; grep -q "except ValueError" scripts/master-report/generate_report.py</automated>
   </verify>
   <done>
     - `compute_readiness_calibrated` imported and called in `compute_all`.
@@ -396,20 +396,20 @@ No parallelism possible within this plan.
 
     **Step 5 — DELETE legacy test file** (Q-5 RESOLVED 2026-04-23 = למחוק):
     ```bash
-    git rm tests/test_compute_readiness.py
+    git rm scripts/master-report/tests/test_compute_readiness.py
     ```
     This stages the deletion into the T7 commit. No port to `compute_readiness_calibrated`; no skip-marker. Rationale: the tests target a function that no longer exists; coverage of the calibrated path is tracked separately (hf-6b SPOKE test suite, 18/18 GREEN).
 
     **Byte-identity lock releases at end of this task.**
   </action>
   <verify>
-    <automated>cd /Users/idankatz15/Desktop/3_APP_DEV/repo-temp &amp;&amp; ! grep -qE "^def compute_readiness\(" scripts/master-report/generate_report.py &amp;&amp; python scripts/master-report/generate_report.py --dry-run --output /tmp/hf6c-t7-smoke.html</automated>
+    <automated>cd /Users/idankatz15/Desktop/3_APP_DEV/repo-temp &amp;&amp; ! grep -qE "^def compute_readiness\(" scripts/master-report/generate_report.py &amp;&amp; python3 scripts/master-report/generate_report.py --dry-run --output /tmp/hf6c-t7-smoke.html</automated>
   </verify>
   <done>
     - `def compute_readiness(` no longer exists in `scripts/master-report/generate_report.py`.
     - `git diff b1584f3 -- scripts/master-report/generate_report.py` shows 421-469 deletion recorded.
     - Smoke run (T6 + T7 combined) produces HTML without traceback or NameError.
-    - `tests/test_compute_readiness.py` deleted via `git rm` (Q-5 = למחוק, 2026-04-23).
+    - `scripts/master-report/tests/test_compute_readiness.py` deleted via `git rm` (Q-5 = למחוק, 2026-04-23).
     - Byte-identity lock documented as RELEASED in CP-STATE.
   </done>
 </task>
@@ -426,7 +426,7 @@ No parallelism possible within this plan.
     **Step 1** — Run a live master-report build against live Supabase:
     ```bash
     cd /Users/idankatz15/Desktop/3_APP_DEV/repo-temp
-    python scripts/master-report/generate_report.py --output /tmp/hf6c-cp1-live.html
+    python3 scripts/master-report/generate_report.py --output /tmp/hf6c-cp1-live.html
     open /tmp/hf6c-cp1-live.html
     ```
     **Step 2** — In the rendered HTML, visually confirm:
@@ -453,7 +453,7 @@ Per REQ-HF6c-4: all three task commits must land on `origin/phase-1-stats-cleanu
 **Commit strategy inside the window:**
 1. `refactor(hf-6c): T5 surface ERI fit_quality via kpi-subtitle (+ r2 from calibrator)` — eri_calibration.py 1-line additive (Q-1 c) + CSS + HTML template.
 2. `feat(hf-6c): T6 wire compute_readiness_calibrated with Option B exception policy` — helpers + import + try/except + Q5 SELECT extension (question_id, topic minimum per Q-4) + terminal-print guard.
-3. `chore(hf-6c): T7 delete legacy compute_readiness (lines 421-469 vs b1584f3) + rm tests/test_compute_readiness.py` — pure deletion + test file removal per Q-5.
+3. `chore(hf-6c): T7 delete legacy compute_readiness (lines 421-469 vs b1584f3) + rm scripts/master-report/tests/test_compute_readiness.py` — pure deletion + test file removal per Q-5.
 
 **Push command:**
 ```bash
@@ -471,10 +471,10 @@ Before starting T5:
 - [x] Q-2 = live Supabase for smoke runs (not fixture/mock).
 - [x] Q-3 = **FORCE-push ALLOWED** for post-push rollback (user override — default was revert-only; see `<rollback_plan>` for updated procedure).
 - [x] Q-4 = minimum additive Q5 SELECT = `question_id, topic` only. No speculative columns (YAGNI).
-- [x] Q-5 = DELETE `tests/test_compute_readiness.py` in T7 commit (no port, no skip).
+- [x] Q-5 = DELETE `scripts/master-report/tests/test_compute_readiness.py` in T7 commit (no port, no skip).
 - [ ] `git status` clean on `phase-1-stats-cleanup`.
 - [ ] HEAD matches STATE.md (`1246531` or newer confirmed).
-- [ ] pytest baseline GREEN (`pytest tests/ -x --ignore=tests/test_compute_readiness.py`).
+- [ ] pytest baseline GREEN (`pytest scripts/master-report/tests/ -x --ignore=scripts/master-report/tests/test_compute_readiness.py`).
 - [ ] Supabase env vars set (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`).
 </pre_flight_checklist>
 
@@ -530,7 +530,7 @@ Non-destructive — adds history instead of rewriting.
 | R-2 | Shape mismatch: new 3-key dict vs 7-key consumers (radar, terminal) | HIGH | HIGH | T6 Step 2 extracts 6 `_compute_*` helpers preserving legacy math; T6 Step 4 merges new + legacy keys into unified 9-key shape. |
 | R-3 | Q5 fetch_data gap breaks `build_daily_snapshots` inside calibrated path | MEDIUM | HIGH | T6 Step 3 extends SELECT additively (`question_id, topic`); hf-6a REQ-HF6a-2 precedent. |
 | R-4 | Supabase env missing at smoke time → dry-run fails | LOW | MEDIUM | Pre-flight checklist enforces env vars; user_setup frontmatter lists sources. |
-| R-5 | pytest breaks after T7 deletes `compute_readiness` (4 tests target it) | ~~HIGH~~ RESOLVED | ~~MEDIUM~~ | **Q-5 RESOLVED 2026-04-23 = DELETE** — `git rm tests/test_compute_readiness.py` in T7 commit. Coverage of calibrated path tracked via hf-6b SPOKE suite (18/18 GREEN). |
+| R-5 | pytest breaks after T7 deletes `compute_readiness` (4 tests target it) | ~~HIGH~~ RESOLVED | ~~MEDIUM~~ | **Q-5 RESOLVED 2026-04-23 = DELETE** — `git rm scripts/master-report/tests/test_compute_readiness.py` in T7 commit. Coverage of calibrated path tracked via hf-6b SPOKE suite (18/18 GREEN). |
 | R-6 | Atomic push window violated by mid-window CP1-verify failure | MEDIUM | HIGH | All commits prepared locally before push; rollback_plan covers pre-push reset cleanly. |
 | R-7 | Sentinel `—` string in `readiness` breaks downstream JSON serialization or format strings | MEDIUM | MEDIUM | T6 Step 6 guards terminal print; T5 kpi-card inspects `fit_quality` not value; no other JSON consumers in scope. |
 | R-8 | Force-push regression if post-push rollback needed | MEDIUM | HIGH | **Q-3 RESOLVED 2026-04-23 = FORCE ALLOWED** (user override). Mitigations: `--force-with-lease` (not bare `--force`), single-dev branch, `main` protected separately, co-worker warnings documented in rollback_plan. |
@@ -547,7 +547,7 @@ Non-destructive — adds history instead of rewriting.
 
 **Q-4 [RESOLVED = minimum]:** Q5 SELECT extension = `question_id, topic` ONLY. No speculative columns (`user_id`, `time_spent_ms`, etc.). YAGNI — add them in a future phase if/when `build_daily_snapshots` actually needs them.
 
-**Q-5 [RESOLVED = delete]:** `tests/test_compute_readiness.py` is DELETED in the T7 commit window via `git rm`. No port to `compute_readiness_calibrated`; no skip-marker. Coverage of the calibrated path is tracked via hf-6b SPOKE suite (18/18 GREEN).
+**Q-5 [RESOLVED = delete]:** `scripts/master-report/tests/test_compute_readiness.py` is DELETED in the T7 commit window via `git rm`. No port to `compute_readiness_calibrated`; no skip-marker. Coverage of the calibrated path is tracked via hf-6b SPOKE suite (18/18 GREEN).
 </open_questions>
 
 <verification>
@@ -568,7 +568,7 @@ Plan is complete when:
 2. `scripts/master-report/generate_report.py` does NOT contain `def compute_readiness(` (legacy function deleted).
 3. `scripts/master-report/generate_report.py` contains `except ValueError` with HF.3 token parsing.
 4. `scripts/master-report/eri_calibration.py::compute_readiness_calibrated` return dict includes `"r2"` key (Q-1 resolution c).
-5. `tests/test_compute_readiness.py` no longer exists in the working tree (Q-5 resolution: למחוק).
+5. `scripts/master-report/tests/test_compute_readiness.py` no longer exists in the working tree (Q-5 resolution: למחוק).
 6. Generated HTML contains `class="kpi-subtitle"` in the ERI kpi-card area.
 7. Generated HTML contains one of the 4 Hebrew subtitle templates (calibrated / poor_fit / insufficient_history / unknown).
 8. Three commits landed atomically on `origin/phase-1-stats-cleanup` in a single push.

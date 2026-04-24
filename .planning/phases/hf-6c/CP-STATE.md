@@ -2,10 +2,10 @@
 phase: hf-6c
 current_cp: CP1
 last_completed_cp: CP0
-last_updated: 2026-04-23
+last_updated: 2026-04-24
 mode: single-window
-compactions_within_cp: 0
-compactions_all_time: 1
+compactions_within_cp: 1
+compactions_all_time: 2
 re_anchor_tests: {passed: 0, failed: 0}
 owner: work-window
 protocol_version: v2.2
@@ -66,6 +66,65 @@ protocol_version: v2.2
   near-threshold compaction counts.)
 
 ## Recent events (newest on top)
+
+- 2026-04-24 — **CP1-post drift harmonization — PLAN.md paths + python3 executable corrections.**
+  Pre-flight verification of PLAN.md surfaced 3 semantic drifts that would have blocked every
+  automated verify block inside T5/T6/T7 before a single line of Wave C code ran. All 3 fixed
+  in a single docs-only commit; no code file touched; no algorithm/contract/lock changed.
+
+  - **Drift #1 (executable name):** PLAN.md used `python` as the CLI executable (4 occurrences
+    across T5/T6/T7 `<automated>` verify blocks + CP1-verify smoke command). Local env has only
+    `python3` at `/Library/Frameworks/Python.framework/Versions/3.13/bin/python3`; bare `python`
+    returns `command not found`. **Fixed:** `python scripts/master-report/` →
+    `python3 scripts/master-report/` (replace_all, 3 occurrences) + `python -c "from` →
+    `python3 -c "from` (1 occurrence). Total: 4 edits.
+
+  - **Drift #2 (test file path):** PLAN.md referenced `tests/test_compute_readiness.py` at the
+    repo root (9 occurrences across frontmatter, T7 Step 5, pre_flight checklist, post_flight
+    checklist, risks R-5, open_questions Q-5, success_criteria item 5). Actual path is
+    `scripts/master-report/tests/test_compute_readiness.py` (co-located with other master-report
+    tests under `scripts/master-report/tests/`). **Fixed:** replace_all
+    `tests/test_compute_readiness.py` → `scripts/master-report/tests/test_compute_readiness.py`.
+    Note: this ALSO corrected the `--ignore=` target in the pre_flight pytest command, since the
+    ignore path used the same wrong prefix.
+
+  - **Drift #3 (pytest test directory):** PLAN.md pre_flight checklist line 477 said
+    `pytest tests/ -x ...`. There is no `tests/` directory at repo root — the only Python test
+    suite lives at `scripts/master-report/tests/`. **Fixed:** `pytest tests/` →
+    `pytest scripts/master-report/tests/` (single Edit on line 477).
+
+  - **Classification — why this was semantic, not cosmetic:** Per feedback memory "Cosmetic vs
+    semantic drift", cosmetic drift (stale line numbers, dates, SHAs) does NOT block CP progress.
+    But executable names and file paths are SEMANTIC — they affect whether the automated verify
+    blocks inside each task actually run. Running `python scripts/...` returns `command not found`;
+    running `pytest tests/` returns `ERROR: file or directory not found`. Every smoke-run command
+    in PLAN.md would have failed, blocking T5/T6/T7 at step zero. Fixing before execution = one
+    docs commit. Fixing during execution = stop 4× (once per failed automated verify) mid-Wave-C.
+
+  - **Scope of fix:** Docs-only. PLAN.md frontmatter + body (4 python3 swaps + 10 test-path swaps
+    + 1 pytest-dir swap = 15 markdown edits total). CP-STATE.md event log (this entry).
+    ZERO code files touched. ZERO locks affected. ZERO Q-1..Q-5 rulings changed.
+    ZERO DD-1..DD-4 changes.
+
+  - **Verification after edits (grep sweep, 2026-04-24):**
+    - `grep -n "tests/test_compute_readiness.py" PLAN.md | grep -v "scripts/master-report/tests"` → 0
+    - `grep -n "pytest tests/" PLAN.md` → 0
+    - `grep -nE "(^|[^3a-zA-Z])python [a-z\\-]" PLAN.md` → 0 (no bare `python` executable calls)
+    - `grep -nc "python3" PLAN.md` → 4 ✓
+    - `grep -nc "scripts/master-report/tests/test_compute_readiness.py" PLAN.md` → 10 ✓
+
+  - **Compaction counter update (v2.2 single-window Option B):** this fix executed across 2
+    conversation windows (pre-compact drift-surfacing + post-compact drift-fix). Counter now
+    reflects reality: `compactions_within_cp: 1` (session-resume compact), `compactions_all_time: 2`.
+    Still well below soft-5 threshold.
+
+  - **Lock status unchanged:**
+    - Split=B callable-only lock: **HELD** (still releases at T6 wire-in).
+    - Byte-identity 421-469 lock vs `b1584f3`: **HELD** (still releases at T7 delete).
+
+  - **Next work:** commit this PLAN.md harmonization + CP-STATE.md event log (single commit:
+    `docs(hf-6c): CP1-post drift fix — PLAN.md paths + python3 executable corrections`) →
+    run pytest baseline with corrected paths → await user's "קדימה" → start T5.
 
 - 2026-04-23 — **CP1 OPEN — PLAN.md drafted by `gsd-planner`; all 5 open questions RESOLVED.**
   PLAN.md now at `.planning/phases/hf-6c/PLAN.md` (553+ lines, 3 tasks T5/T6/T7 + CP1-verify
