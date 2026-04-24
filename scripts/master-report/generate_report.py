@@ -704,6 +704,27 @@ def generate_html(S, report_date):
         <div>P(>=70%): <b>{sc['p70']}%</b></div><div>כיסוי: <b>{sc['cov']}%</b></div>
         <div>שאלות/יום: <b>{sc['qpd']}</b></div></div></div>\n'''
 
+    # Build ERI subtitle based on fit_quality (hf-6c T5 Step 2, DD-2 verbatim)
+    fq = r.get('fit_quality', 'unknown')
+    r2_val = r.get('r2')
+    r2_fmt = f"{r2_val:.2f}" if isinstance(r2_val, (int, float)) else "—"
+    if fq == 'calibrated':
+        subtitle_html = f'<div class="kpi-subtitle">כיול מוצלח · R²={r2_fmt}</div>'
+    elif fq == 'insufficient_history':
+        subtitle_html = f'<div class="kpi-subtitle fallback">היסטוריה קצרה · R²={r2_fmt}</div>'
+    elif fq == 'poor_fit':
+        subtitle_html = f'<div class="kpi-subtitle fallback">כיול חלש · R²={r2_fmt}</div>'
+    else:
+        subtitle_html = '<div class="kpi-subtitle fallback">כיול לא זמין · R²=—</div>'
+
+    eri_card = (
+        f'<div class="kpi-card">'
+        f'<div class="kpi-label">ERI</div>'
+        f'<div class="kpi-value" style="color:#00D4CC">{r["readiness"]}</div>'
+        f'{subtitle_html}'
+        f'</div>'
+    )
+
     # The actual HTML (abbreviated version of the full template)
     # In production, this would use Jinja2 template.html
     html = f"""<!DOCTYPE html>
@@ -723,6 +744,7 @@ body{{font-family:'Segoe UI',system-ui,sans-serif;background:#0a0e1a;color:#e0e0
 .kpi-grid{{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:24px}}
 .kpi-card{{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:18px;text-align:center}}
 .kpi-value{{font-size:2.2em;font-weight:bold;margin:4px 0}}.kpi-label{{color:#888;font-size:0.85em}}
+.kpi-subtitle{{font-size:11px;color:#9FB3C8;margin-top:4px;line-height:1.3}}.kpi-subtitle.fallback{{color:#FFB020}}
 .section{{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:20px;margin-bottom:20px}}
 .section h3{{color:#00D4CC;margin-bottom:12px}}
 table{{width:100%;border-collapse:collapse;font-size:0.85em}}
@@ -743,7 +765,7 @@ th{{color:#00D4CC;font-size:0.8em;text-transform:uppercase}}
 
 <div id="tab-overview" class="tab-content active">
 <div class="kpi-grid">
-<div class="kpi-card"><div class="kpi-label">ERI</div><div class="kpi-value" style="color:#00D4CC">{r['readiness']}</div></div>
+{eri_card}
 <div class="kpi-card"><div class="kpi-label">P(>=70%)</div><div class="kpi-value" style="color:#00D4CC">{mc['p70']}%</div></div>
 <div class="kpi-card"><div class="kpi-label">דיוק (כל הניסיונות)</div><div class="kpi-value" style="color:#FFB020">{r['hist_accuracy']}%</div></div>
 <div class="kpi-card"><div class="kpi-label">כיסוי</div><div class="kpi-value" style="color:#7C3AED">{b['coverage_pct']}%</div></div>

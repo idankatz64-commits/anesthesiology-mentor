@@ -251,6 +251,7 @@ def compute_readiness_calibrated(
             "undefined (HF.3 -- labeled raise, not silent)."
         )
 
+    r_squared = 0.0  # Default for fallback branches; overwritten on OLS path.
     if n_pairs < _MIN_PAIRS_FOR_CALIBRATION:
         weights: dict[str, float] = dict(V2_FALLBACK_WEIGHTS)
         fit_quality = "insufficient_history"
@@ -314,4 +315,5 @@ def compute_readiness_calibrated(
         "readiness": float(readiness),
         "weights": weights,
         "fit_quality": fit_quality,
+        "r2": float(r_squared),  # Q-1 resolution c, 2026-04-23 (hf-6c T5 Step 0)
     }

@@ -300,7 +300,7 @@ def test_returns_exact_dict_shape():
     result = compute_readiness_calibrated(history, components={})
 
     assert isinstance(result, dict)
-    assert set(result.keys()) == {"readiness", "weights", "fit_quality"}
+    assert set(result.keys()) == {"readiness", "weights", "fit_quality", "r2"}
 
     assert isinstance(result["readiness"], float)
     assert 0.0 <= result["readiness"] <= 100.0
