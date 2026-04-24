@@ -29,6 +29,8 @@ from pathlib import Path
 import numpy as np
 from scipy import stats as sp
 
+from eri_calibration import compute_readiness_calibrated  # hf-6c T6 wire-in
+
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -123,13 +125,14 @@ def fetch_data(supabase, user_id):
     else:
         topics_history = res.data
 
-    # Q5: Daily performance
+    # Q5: Daily performance + raw answer stream for calibrator (hf-6c T6 — REQ-HF6a-2)
     res = (supabase.table("answer_history")
-           .select("answered_at, is_correct")
+           .select("answered_at, is_correct, question_id, questions(topic)")
            .eq("user_id", user_id)
            .order("answered_at")
            .execute())
     daily = {}
+    answer_history: list[dict] = []
     for row in res.data:
         d = row["answered_at"][:10]
         if d not in daily:
@@ -137,6 +140,12 @@ def fetch_data(supabase, user_id):
         daily[d]["n"] += 1
         if row["is_correct"]:
             daily[d]["c"] += 1
+        answer_history.append({
+            "answered_at": row["answered_at"],
+            "is_correct": row["is_correct"],
+            "question_id": row["question_id"],
+            "topic": row["questions"]["topic"] if row.get("questions") else "Unknown",
+        })
     daily_list = [
         {"d": d.split("-", 1)[1].replace("-", "/"), "n": v["n"],
          "a": round(v["c"] / v["n"] * 100, 1)}
@@ -193,6 +202,7 @@ def fetch_data(supabase, user_id):
         "daily": daily_list,
         "hourly_utc": hourly_utc,
         "srs": srs_clean,
+        "answer_history": answer_history,  # hf-6c T6: raw stream for calibrator
     }
 
 
@@ -418,6 +428,60 @@ def compute_evpi(data):
     return results[:15]
 
 
+def _compute_sub_scores(data: dict, basics: dict) -> dict[str, float]:
+    """Per-component sub-scores for radar + terminal surface (hf-6c T6).
+
+    Verbatim extraction from legacy ``compute_readiness`` lines 421-468 (minus
+    the final readiness aggregation, which now comes from
+    ``compute_readiness_calibrated``). All 3 HF.3 ValueError raises preserved —
+    they fire BEFORE the calibrator call and are NOT caught by Option B (Option
+    B scope is the calibrator only; these raises remain as legacy invariants).
+    """
+    ua_total = sum(t["c"] + t["w"] for t in data["topics_user"])
+    ua_correct = sum(t["c"] for t in data["topics_user"])
+    if ua_total == 0:
+        raise ValueError(
+            "readiness: no user_answers attempts found (accuracy component is "
+            "undefined). The April 18 phantom 37.5 came from a hidden 50-fallback "
+            "at this exact branch. Refusing to compute readiness from nothing."
+        )
+    ua_accuracy = ua_correct / ua_total * 100
+    accuracy_score = min(ua_accuracy, 100)
+
+    coverage_frac = basics["coverage_pct"] / 100
+    coverage_score = min(100, coverage_frac / 0.6 * 100)
+
+    topics_db = data["topics_db"]
+    critical = [t for t in data["topics_user"]
+                if t["n"] >= 5 and topics_db.get(t["topic"], 0) >= 50]
+    if not critical:
+        raise ValueError(
+            "readiness: no critical topics (n>=5 AND db>=50) — critical_avg "
+            "cannot be computed. Hidden 50-fallback removed; user needs more "
+            "attempts on major-weight topics before readiness is meaningful."
+        )
+    critical_avg = sum(t["c"] / t["n"] * 100 for t in critical) / len(critical)
+    critical_score = min(critical_avg, 100)
+
+    daily_accs = [d["a"] for d in data["daily"] if d["n"] >= 5]
+    if len(daily_accs) < 3:
+        raise ValueError(
+            f"readiness: consistency needs >= 3 days with n>=5 attempts, got "
+            f"{len(daily_accs)}. Hidden 50-fallback removed to prevent phantom "
+            f"readiness scores like April 18's 37.5."
+        )
+    consistency_score = max(0, min(100, 100 - statistics.stdev(daily_accs) * 3))
+
+    return {
+        "hist_accuracy": round(ua_accuracy, 1),
+        "accuracy_score": round(accuracy_score, 1),
+        "coverage_score": round(coverage_score, 1),
+        "critical_avg": round(critical_avg, 1),
+        "critical_score": round(critical_score, 1),
+        "consistency_score": round(consistency_score, 1),
+    }
+
+
 def compute_readiness(data, basics, mc, bootstrap):
     ua_total = sum(t["c"] + t["w"] for t in data["topics_user"])
     ua_correct = sum(t["c"] for t in data["topics_user"])
@@ -567,7 +631,41 @@ def compute_all(data, days_left):
         has_history=has_history,
         days_left=days_left,
     )
-    readiness = compute_readiness(data, basics, mc, bootstrap)
+    # hf-6c T6: Calibrated ERI path with Option B exception policy.
+    # Sub-scores (for radar + terminal print) come from _compute_sub_scores.
+    # Overall readiness value comes from compute_readiness_calibrated (OLS on history).
+    sub_scores = _compute_sub_scores(data, basics)
+    components = {
+        "accuracy": sub_scores["accuracy_score"] / 100.0,
+        "coverage": sub_scores["coverage_score"] / 100.0,
+        "retention": sub_scores["hist_accuracy"] / 100.0,
+        "consistency": sub_scores["consistency_score"] / 100.0,
+    }
+    history = {
+        "total_db": data["total_db"],
+        "answer_history": data.get("answer_history", []),
+    }
+    try:
+        calibrated = compute_readiness_calibrated(history, components)
+        readiness = {
+            "readiness": round(calibrated["readiness"], 1),
+            "fit_quality": calibrated["fit_quality"],
+            "r2": round(calibrated["r2"], 2),
+            "weights": calibrated["weights"],
+            **sub_scores,
+        }
+    except ValueError as e:
+        # Option B (REQ-HF6c-3): HF.3 no-silent-fallback — log + label + sentinel.
+        token = str(e).split(":", 1)[0]
+        print(f"[hf-6c] ERI calibration caught ValueError token={token}: {e}", file=sys.stderr)
+        readiness = {
+            "readiness": "—",
+            "fit_quality": "unknown",
+            "r2": None,
+            "weights": {},
+            "_exception_token": token,
+            **sub_scores,
+        }
     hourly_il = convert_hourly_to_israel(data["hourly_utc"])
     print("  Computing marginal gains (this takes ~30s)...")
     marginal = compute_marginal_gains(data, days_left)
@@ -887,7 +985,10 @@ def main():
     # Print summary
     r = stats["readiness"]
     mc = stats["mc"]
-    print(f"\n  ERI:      {r['readiness']}/100")
+    if r["readiness"] == "—":
+        print(f"\n  ERI:      — (calibration fallback: {r.get('_exception_token', 'unknown')})")
+    else:
+        print(f"\n  ERI:      {r['readiness']}/100")
     print(f"  P(>=70%): {mc['p70']}%")
     print(f"  Accuracy: {r['hist_accuracy']}% (all attempts)")
     print(f"  Coverage: {stats['basics']['coverage_pct']}%")
