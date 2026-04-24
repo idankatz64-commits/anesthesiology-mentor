@@ -39,6 +39,7 @@ except ImportError:
 
 try:
     from supabase import create_client
+    from postgrest.exceptions import APIError
 except ImportError:
     print("ERROR: supabase-py not installed. Run: pip install supabase")
     sys.exit(1)
@@ -89,8 +90,9 @@ def fetch_data(supabase, user_id):
         topics_db[t] = topics_db.get(t, 0) + 1
 
     # Q3: User performance per topic (user_answers — final SRS state)
+    # Schema note: `wrong_count` does not exist; derive as answered_count - correct_count.
     res = (supabase.table("user_answers")
-           .select("question_id, correct_count, wrong_count, questions(topic)")
+           .select("question_id, correct_count, answered_count, questions(topic)")
            .eq("user_id", user_id)
            .execute())
     topics_user = {}
@@ -100,20 +102,26 @@ def fetch_data(supabase, user_id):
             topics_user[topic] = {"topic": topic, "n": 0, "c": 0, "w": 0}
         topics_user[topic]["n"] += 1
         topics_user[topic]["c"] += row["correct_count"]
-        topics_user[topic]["w"] += row["wrong_count"]
+        topics_user[topic]["w"] += row["answered_count"] - row["correct_count"]
 
     # Q4: Answer history per topic (all attempts — realistic accuracy)
-    res = (supabase.rpc("get_topic_history_stats", {"p_user_id": user_id})
-           .execute())
-    # Fallback: if RPC doesn't exist, query answer_history directly
-    if not res.data:
+    # Try RPC first; fall back to direct query if RPC missing (PGRST202) or empty.
+    try:
+        res = (supabase.rpc("get_topic_history_stats", {"p_user_id": user_id})
+               .execute())
+        rpc_data = res.data
+    except APIError:
+        rpc_data = None
+
+    if not rpc_data:
+        # Schema note: answer_history has `topic` column directly — no JOIN needed.
         res = (supabase.table("answer_history")
-               .select("is_correct, questions(topic)")
+               .select("is_correct, topic")
                .eq("user_id", user_id)
                .execute())
         topics_history = {}
         for row in res.data:
-            topic = row["questions"]["topic"] if row.get("questions") else "Unknown"
+            topic = row.get("topic") or "Unknown"
             if topic not in topics_history:
                 topics_history[topic] = {"topic": topic, "n": 0, "c": 0, "w": 0}
             topics_history[topic]["n"] += 1
@@ -123,11 +131,11 @@ def fetch_data(supabase, user_id):
                 topics_history[topic]["w"] += 1
         topics_history = list(topics_history.values())
     else:
-        topics_history = res.data
+        topics_history = rpc_data
 
     # Q5: Daily performance + raw answer stream for calibrator (hf-6c T6 — REQ-HF6a-2)
     res = (supabase.table("answer_history")
-           .select("answered_at, is_correct, question_id, questions(topic)")
+           .select("answered_at, is_correct, question_id, topic")
            .eq("user_id", user_id)
            .order("answered_at")
            .execute())
@@ -144,7 +152,7 @@ def fetch_data(supabase, user_id):
             "answered_at": row["answered_at"],
             "is_correct": row["is_correct"],
             "question_id": row["question_id"],
-            "topic": row["questions"]["topic"] if row.get("questions") else "Unknown",
+            "topic": row.get("topic") or "Unknown",
         })
     daily_list = [
         {"d": d.split("-", 1)[1].replace("-", "/"), "n": v["n"],
@@ -167,8 +175,9 @@ def fetch_data(supabase, user_id):
     ]
 
     # Q7: SRS data
+    # Schema note: column is `interval_days` (not `interval`).
     res = (supabase.table("spaced_repetition")
-           .select("confidence, next_review_date, interval")
+           .select("confidence, next_review_date, interval_days")
            .eq("user_id", user_id)
            .execute())
     today_str = date.today().isoformat()
@@ -182,8 +191,8 @@ def fetch_data(supabase, user_id):
         srs[conf]["total"] += 1
         if row.get("next_review_date") and row["next_review_date"] <= today_str:
             srs[conf]["due"] += 1
-        if row.get("interval"):
-            srs[conf]["intervals"].append(row["interval"])
+        if row.get("interval_days"):
+            srs[conf]["intervals"].append(row["interval_days"])
 
     srs_clean = {}
     for conf, data in srs.items():
