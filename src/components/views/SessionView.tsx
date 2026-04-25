@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { springGentle } from "@/lib/animations";
 import { useApp } from "@/contexts/AppContext";
 import { KEYS, type ConfidenceLevel } from "@/lib/types";
+import { evaluateSimulationOutcome } from "@/lib/simulationSubmit";
 import ReactMarkdown from "react-markdown";
 import {
   X,
@@ -419,18 +420,20 @@ export default function SessionView() {
     });
 
     const results = await Promise.allSettled(srsPromises);
-    const failed = results.filter(r => r.status === "rejected").length;
-    if (failed > 0) {
-      console.error(`handleSubmitSimulation: ${failed}/${srsPromises.length} SRS writes failed`, results);
+    const outcome = evaluateSimulationOutcome(results);
+    if (outcome.failedCount > 0) {
+      console.error(`handleSubmitSimulation: ${outcome.failedCount}/${outcome.totalCount} SRS writes failed`, results);
       toast({
         title: "שמירת SRS חלקית",
-        description: `${failed} מתוך ${srsPromises.length} שאלות לא נשמרו ל-SRS. מומלץ לפתוח שוב את השאלות הללו.`,
+        description: `${outcome.failedCount} מתוך ${outcome.totalCount} שאלות לא נשמרו ל-SRS. הסשן נשמר כדי שתוכל לנסות שוב.`,
         variant: "destructive",
       });
     }
 
     shouldAutoSaveRef.current = false;
-    clearSavedSession();
+    if (outcome.canClearSession) {
+      clearSavedSession();
+    }
     navigate("results");
   };
 

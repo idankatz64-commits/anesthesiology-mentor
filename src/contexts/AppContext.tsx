@@ -9,6 +9,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getIsraelToday, addDaysIsrael } from '@/lib/dateHelpers';
+import { upsertSpacedRepetitionRecord, type SrsUpsertPayload } from '@/lib/srsRepository';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface SavedSessionData {
@@ -459,7 +460,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const updateSpacedRepetition = useCallback(async (questionId: string, isCorrect: boolean, confidence: ConfidenceLevel, topic?: string) => {
     const userId = userIdRef.current;
-    if (!userId) return;
+    if (!userId) {
+      console.warn('updateSpacedRepetition called without userId — SRS update skipped');
+      return;
+    }
 
     // Fetch existing SM-2 state
     const { data: existing } = await supabase
@@ -495,7 +499,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const nextReviewDate = addDaysIsrael(getIsraelToday(), interval);
 
-    const { error } = await supabase.from('spaced_repetition').upsert({
+    const payload: SrsUpsertPayload = {
       user_id: userId,
       question_id: questionId,
       next_review_date: nextReviewDate,
@@ -505,14 +509,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       interval_days: interval,
       ease_factor: ease,
       repetitions: reps,
-    } as any, { onConflict: 'user_id,question_id' });
+    };
 
-    if (error) {
-      console.error('spaced_repetition upsert error:', error);
-      toast.error('שגיאה בשמירת נתוני חזרה מרווחת');
-    } else {
+    try {
+      await upsertSpacedRepetitionRecord(supabase as any, payload);
       // Keep local confidenceMap in sync
       setConfidenceMap(prev => ({ ...prev, [questionId]: confidence }));
+    } catch (error) {
+      console.error('spaced_repetition upsert error:', error);
+      toast.error('שגיאה בשמירת נתוני חזרה מרווחת');
+      throw error;
     }
     // answer_history insert is now handled by updateHistory — no duplicate here
   }, []);
