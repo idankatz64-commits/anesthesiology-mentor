@@ -443,7 +443,7 @@ export function selectSmartQuestions(
     const n = slots[topic] ?? 0;
     if (n <= 0) continue;
     const scored = byTopic[topic]
-      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) + Math.random() * 0.001 }))
+      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) }))
       .sort((a, b) => b.urgency - a.urgency);
     selected.push(...scored.slice(0, n).map(s => s.q));
   }
@@ -453,7 +453,7 @@ export function selectSmartQuestions(
     const usedIds = new Set(selected.map(q => q[KEYS.ID]));
     const leftover = pool
       .filter(q => !usedIds.has(q[KEYS.ID]))
-      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) + Math.random() * 0.001 }))
+      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) }))
       .sort((a, b) => b.urgency - a.urgency);
     selected.push(...leftover.slice(0, effectiveCount - selected.length).map(s => s.q));
   }
