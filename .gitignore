@@ -38,3 +38,6 @@ scripts/master-report/__pycache__/
 
 # Legacy v2 master report outputs (generated HTMLs, not source)
 scripts/master-report/_legacy_v2/*.html
+
+# Audit findings (kept locally, not in product)
+audit/

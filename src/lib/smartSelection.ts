@@ -1,5 +1,8 @@
 import type { Question, HistoryEntry } from '@/lib/types';
 import { KEYS } from '@/lib/types';
+import type { SrsRecord } from '@/lib/srsRepository';
+
+export type { SrsRecord };
 
 // ── Session size types ──────────────────────────────────────────────
 export type SessionSize = 'quick' | 'regular' | 'long' | 'simulation';
@@ -137,9 +140,10 @@ const PHASE_OVERRIDES: Record<Exclude<ExamPhase, 'early'>, { w2: number; w5: num
 };
 
 // ── Interfaces ──────────────────────────────────────────────────────
-export interface SrsRecord {
-  next_review_date: string;
-}
+// SrsRecord is re-exported from '@/lib/srsRepository' at the top of this file.
+// It now carries all 5 SM-2 fields (interval_days, ease_factor, repetitions,
+// next_review_date, confidence) plus last_correct, so SM-2 calculations have
+// the full context — not just next_review_date.
 
 export interface TopicStats {
   accuracy: number;       // 0-1
@@ -147,7 +151,7 @@ export interface TopicStats {
   recentWrongStreak: number; // count of consecutive wrongs in last 5 answers
 }
 
-interface ScoringParams {
+export interface ScoringParams {
   srsData: Record<string, SrsRecord>;
   history: Record<string, HistoryEntry>;
   topicStats: Record<string, TopicStats>;
@@ -160,13 +164,25 @@ function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
 }
 
+// ── Pure SRS urgency mapping: daysOverdue → urgency score ───────────
+// Contract: result ∈ [-1, 1].
+//   future scheduling → negative (suppressed): -1 at one year out, ~0 near today
+//   today / overdue   → positive (normalized 60d window): 0 at due, 1 at 60d+ late
+// Invariant order across the value space:
+//   far-future (-1) < near-future (<0) < new-question (0.5) < overdue (>0)
+// Without negative future scores, every future question collapses to 0 and
+// the tiny Math.random tiebreaker becomes the only ranking signal.
+export function srsUrgencyFromDaysOverdue(daysOverdue: number): number {
+  if (daysOverdue >= 0) return clamp01(daysOverdue / 60);
+  return Math.max(-1, daysOverdue / 365);
+}
+
 // ── SRS urgency for a single question ───────────────────────────────
 function computeSrsUrgency(q: Question, srsData: Record<string, SrsRecord>): number {
   const srs = srsData[q[KEYS.ID]];
-  if (!srs) return 0.5; // אין רשומת SRS → עדיפות בינונית
+  if (!srs) return 0.5; // אין רשומת SRS → עדיפות בינונית (between near-future and overdue)
   const daysOverdue = (Date.now() - new Date(srs.next_review_date).getTime()) / 86400000;
-  if (daysOverdue <= 0) return 0; // עוד לא הגיע תורה
-  return clamp01(daysOverdue / 60); // מנורמל: 60 יום = 1.0
+  return srsUrgencyFromDaysOverdue(daysOverdue);
 }
 
 // ── Topic-level scores (Stage 1 of two-stage selection) ──────────────
@@ -215,7 +231,7 @@ function computeTopicScores(
 }
 
 // ── Compute smart score for a single question ───────────────────────
-function computeSmartScore(q: Question, params: ScoringParams): number {
+export function computeSmartScore(q: Question, params: ScoringParams): number {
   const { srsData, topicStats, globalAccuracy, weights } = params;
   const qId = q[KEYS.ID];
   const topic = q[KEYS.TOPIC] || '';
@@ -249,8 +265,8 @@ function computeSmartScore(q: Question, params: ScoringParams): number {
   const daysUntilExam = (EXAM_DATE.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
   const examProximity = daysUntilExam < 60 ? clamp01(1 - daysUntilExam / 60) : 0;
 
-  // 6. yieldBoost
-  const yieldBoost = YIELD_TIER_MAP[topic] ?? 0;
+  // 6. yieldBoost (default 0.1 — aligned with Stage 1 at line 219)
+  const yieldBoost = YIELD_TIER_MAP[topic] ?? 0.1;
 
   const factors = [srsUrgency, topicWeakness, recencyGap, streakPenalty, examProximity, yieldBoost];
   let score = 0;
@@ -411,13 +427,23 @@ export function selectSmartQuestions(
   // ── STAGE 2: הקצה slots לנושאים (פרופורציונלי + תקרת 25%) ────────
   const slots = allocateSlots(topicScores, byTopic, effectiveCount);
 
-  // ── STAGE 3: בחר שאלות בתוך כל נושא לפי SRS urgency ──────────────
+  // ── STAGE 3: בחר שאלות בתוך כל נושא לפי כל 6 ה-factors ───────────
+  // Build params once and reuse for both per-topic scoring and gap-filling.
+  // computeSmartScore covers: srsUrgency, topicWeakness, recencyGap,
+  // streakPenalty, examProximity, yieldBoost (vs. just srsUrgency before).
+  const scoringParams: ScoringParams = {
+    srsData,
+    history,
+    topicStats,
+    globalAccuracy,
+    weights,
+  };
   const selected: Question[] = [];
   for (const topic of topics) {
     const n = slots[topic] ?? 0;
     if (n <= 0) continue;
     const scored = byTopic[topic]
-      .map(q => ({ q, urgency: computeSrsUrgency(q, srsData) + Math.random() * 0.001 }))
+      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) }))
       .sort((a, b) => b.urgency - a.urgency);
     selected.push(...scored.slice(0, n).map(s => s.q));
   }
@@ -427,7 +453,7 @@ export function selectSmartQuestions(
     const usedIds = new Set(selected.map(q => q[KEYS.ID]));
     const leftover = pool
       .filter(q => !usedIds.has(q[KEYS.ID]))
-      .map(q => ({ q, urgency: computeSrsUrgency(q, srsData) + Math.random() * 0.001 }))
+      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) }))
       .sort((a, b) => b.urgency - a.urgency);
     selected.push(...leftover.slice(0, effectiveCount - selected.length).map(s => s.q));
   }
