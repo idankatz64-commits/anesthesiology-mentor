@@ -164,13 +164,25 @@ function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
 }
 
+// ── Pure SRS urgency mapping: daysOverdue → urgency score ───────────
+// Contract: result ∈ [-1, 1].
+//   future scheduling → negative (suppressed): -1 at one year out, ~0 near today
+//   today / overdue   → positive (normalized 60d window): 0 at due, 1 at 60d+ late
+// Invariant order across the value space:
+//   far-future (-1) < near-future (<0) < new-question (0.5) < overdue (>0)
+// Without negative future scores, every future question collapses to 0 and
+// the tiny Math.random tiebreaker becomes the only ranking signal.
+export function srsUrgencyFromDaysOverdue(daysOverdue: number): number {
+  if (daysOverdue >= 0) return clamp01(daysOverdue / 60);
+  return Math.max(-1, daysOverdue / 365);
+}
+
 // ── SRS urgency for a single question ───────────────────────────────
 function computeSrsUrgency(q: Question, srsData: Record<string, SrsRecord>): number {
   const srs = srsData[q[KEYS.ID]];
-  if (!srs) return 0.5; // אין רשומת SRS → עדיפות בינונית
+  if (!srs) return 0.5; // אין רשומת SRS → עדיפות בינונית (between near-future and overdue)
   const daysOverdue = (Date.now() - new Date(srs.next_review_date).getTime()) / 86400000;
-  if (daysOverdue <= 0) return 0; // עוד לא הגיע תורה
-  return clamp01(daysOverdue / 60); // מנורמל: 60 יום = 1.0
+  return srsUrgencyFromDaysOverdue(daysOverdue);
 }
 
 // ── Topic-level scores (Stage 1 of two-stage selection) ──────────────
