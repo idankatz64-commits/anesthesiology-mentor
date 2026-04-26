@@ -151,7 +151,7 @@ export interface TopicStats {
   recentWrongStreak: number; // count of consecutive wrongs in last 5 answers
 }
 
-interface ScoringParams {
+export interface ScoringParams {
   srsData: Record<string, SrsRecord>;
   history: Record<string, HistoryEntry>;
   topicStats: Record<string, TopicStats>;
@@ -231,7 +231,7 @@ function computeTopicScores(
 }
 
 // ── Compute smart score for a single question ───────────────────────
-function computeSmartScore(q: Question, params: ScoringParams): number {
+export function computeSmartScore(q: Question, params: ScoringParams): number {
   const { srsData, topicStats, globalAccuracy, weights } = params;
   const qId = q[KEYS.ID];
   const topic = q[KEYS.TOPIC] || '';
@@ -265,8 +265,8 @@ function computeSmartScore(q: Question, params: ScoringParams): number {
   const daysUntilExam = (EXAM_DATE.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
   const examProximity = daysUntilExam < 60 ? clamp01(1 - daysUntilExam / 60) : 0;
 
-  // 6. yieldBoost
-  const yieldBoost = YIELD_TIER_MAP[topic] ?? 0;
+  // 6. yieldBoost (default 0.1 — aligned with Stage 1 at line 219)
+  const yieldBoost = YIELD_TIER_MAP[topic] ?? 0.1;
 
   const factors = [srsUrgency, topicWeakness, recencyGap, streakPenalty, examProximity, yieldBoost];
   let score = 0;
@@ -427,13 +427,23 @@ export function selectSmartQuestions(
   // ── STAGE 2: הקצה slots לנושאים (פרופורציונלי + תקרת 25%) ────────
   const slots = allocateSlots(topicScores, byTopic, effectiveCount);
 
-  // ── STAGE 3: בחר שאלות בתוך כל נושא לפי SRS urgency ──────────────
+  // ── STAGE 3: בחר שאלות בתוך כל נושא לפי כל 6 ה-factors ───────────
+  // Build params once and reuse for both per-topic scoring and gap-filling.
+  // computeSmartScore covers: srsUrgency, topicWeakness, recencyGap,
+  // streakPenalty, examProximity, yieldBoost (vs. just srsUrgency before).
+  const scoringParams: ScoringParams = {
+    srsData,
+    history,
+    topicStats,
+    globalAccuracy,
+    weights,
+  };
   const selected: Question[] = [];
   for (const topic of topics) {
     const n = slots[topic] ?? 0;
     if (n <= 0) continue;
     const scored = byTopic[topic]
-      .map(q => ({ q, urgency: computeSrsUrgency(q, srsData) + Math.random() * 0.001 }))
+      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) + Math.random() * 0.001 }))
       .sort((a, b) => b.urgency - a.urgency);
     selected.push(...scored.slice(0, n).map(s => s.q));
   }
@@ -443,7 +453,7 @@ export function selectSmartQuestions(
     const usedIds = new Set(selected.map(q => q[KEYS.ID]));
     const leftover = pool
       .filter(q => !usedIds.has(q[KEYS.ID]))
-      .map(q => ({ q, urgency: computeSrsUrgency(q, srsData) + Math.random() * 0.001 }))
+      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) + Math.random() * 0.001 }))
       .sort((a, b) => b.urgency - a.urgency);
     selected.push(...leftover.slice(0, effectiveCount - selected.length).map(s => s.q));
   }
