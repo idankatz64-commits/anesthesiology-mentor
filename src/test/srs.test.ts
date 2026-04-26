@@ -1,5 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
-import { upsertSpacedRepetitionRecord, type SrsUpsertPayload } from '@/lib/srsRepository';
+import {
+  upsertSpacedRepetitionRecord,
+  buildSrsRecordMap,
+  type SrsUpsertPayload,
+  type SrsRow,
+} from '@/lib/srsRepository';
 import { evaluateSimulationOutcome } from '@/lib/simulationSubmit';
 
 const samplePayload: SrsUpsertPayload = {
@@ -85,5 +90,108 @@ describe('evaluateSimulationOutcome', () => {
       totalCount: 120,
       canClearSession: false,
     });
+  });
+});
+
+describe('buildSrsRecordMap', () => {
+  it('returns an empty map when given no rows', () => {
+    expect(buildSrsRecordMap([])).toEqual({});
+  });
+
+  it('preserves all 5 SM-2 fields per row keyed by question_id', () => {
+    const rows: SrsRow[] = [
+      {
+        question_id: 'q-1',
+        next_review_date: '2026-05-02',
+        interval_days: 6,
+        ease_factor: 2.6,
+        repetitions: 2,
+        confidence: 'confident',
+        last_correct: true,
+      },
+      {
+        question_id: 'q-2',
+        next_review_date: '2026-04-27',
+        interval_days: 1,
+        ease_factor: 1.7,
+        repetitions: 0,
+        confidence: 'guessed',
+        last_correct: false,
+      },
+    ];
+
+    const map = buildSrsRecordMap(rows);
+
+    expect(map).toEqual({
+      'q-1': {
+        next_review_date: '2026-05-02',
+        interval_days: 6,
+        ease_factor: 2.6,
+        repetitions: 2,
+        confidence: 'confident',
+        last_correct: true,
+      },
+      'q-2': {
+        next_review_date: '2026-04-27',
+        interval_days: 1,
+        ease_factor: 1.7,
+        repetitions: 0,
+        confidence: 'guessed',
+        last_correct: false,
+      },
+    });
+  });
+
+  it('tolerates legacy rows with null confidence/last_correct without crashing', () => {
+    const rows: SrsRow[] = [
+      {
+        question_id: 'q-legacy',
+        next_review_date: '2026-04-30',
+        interval_days: 3,
+        ease_factor: 2.5,
+        repetitions: 1,
+        confidence: null,
+        last_correct: null,
+      },
+    ];
+
+    const map = buildSrsRecordMap(rows);
+
+    expect(map['q-legacy']).toEqual({
+      next_review_date: '2026-04-30',
+      interval_days: 3,
+      ease_factor: 2.5,
+      repetitions: 1,
+      confidence: null,
+      last_correct: null,
+    });
+  });
+
+  it('on duplicate question_id, the later row overwrites the earlier (stable last-write-wins)', () => {
+    const rows: SrsRow[] = [
+      {
+        question_id: 'q-dup',
+        next_review_date: '2026-04-26',
+        interval_days: 1,
+        ease_factor: 2.5,
+        repetitions: 0,
+        confidence: 'hesitant',
+        last_correct: true,
+      },
+      {
+        question_id: 'q-dup',
+        next_review_date: '2026-05-10',
+        interval_days: 14,
+        ease_factor: 2.8,
+        repetitions: 4,
+        confidence: 'confident',
+        last_correct: true,
+      },
+    ];
+
+    const map = buildSrsRecordMap(rows);
+
+    expect(map['q-dup'].interval_days).toBe(14);
+    expect(map['q-dup'].next_review_date).toBe('2026-05-10');
   });
 });

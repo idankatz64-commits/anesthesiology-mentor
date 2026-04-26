@@ -9,7 +9,13 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getIsraelToday, addDaysIsrael } from '@/lib/dateHelpers';
-import { upsertSpacedRepetitionRecord, type SrsUpsertPayload } from '@/lib/srsRepository';
+import {
+  upsertSpacedRepetitionRecord,
+  buildSrsRecordMap,
+  type SrsUpsertPayload,
+  type SrsRow,
+  type SrsRecord,
+} from '@/lib/srsRepository';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
 interface SavedSessionData {
@@ -77,7 +83,7 @@ interface AppContextType {
    // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
   getDueQuestions: () => Promise<Question[]>;
-  fetchSrsData: () => Promise<Record<string, { next_review_date: string }>>;
+  fetchSrsData: () => Promise<Record<string, SrsRecord>>;
 
   // Session persistence
   saveSessionToDb: (timerSeconds?: number, simTimerSeconds?: number) => Promise<void>;
@@ -852,19 +858,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     return matched;
   }, []);
 
-  const fetchSrsData = useCallback(async (): Promise<Record<string, { next_review_date: string }>> => {
+  const fetchSrsData = useCallback(async (): Promise<Record<string, SrsRecord>> => {
     const userId = userIdRef.current;
     if (!userId) return {};
 
-    const rows = await fetchAllRows<any>(() =>
-      supabase.from('spaced_repetition').select('question_id, next_review_date').eq('user_id', userId)
+    const rows = await fetchAllRows<SrsRow>(() =>
+      supabase
+        .from('spaced_repetition')
+        .select('question_id, next_review_date, interval_days, ease_factor, repetitions, confidence, last_correct')
+        .eq('user_id', userId)
     );
 
-    const map: Record<string, { next_review_date: string }> = {};
-    for (const r of rows) {
-      map[r.question_id] = { next_review_date: r.next_review_date };
-    }
-    return map;
+    return buildSrsRecordMap(rows);
   }, []);
 
 

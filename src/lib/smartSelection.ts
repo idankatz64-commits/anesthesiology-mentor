@@ -1,5 +1,8 @@
 import type { Question, HistoryEntry } from '@/lib/types';
 import { KEYS } from '@/lib/types';
+import type { SrsRecord } from '@/lib/srsRepository';
+
+export type { SrsRecord };
 
 // ── Session size types ──────────────────────────────────────────────
 export type SessionSize = 'quick' | 'regular' | 'long' | 'simulation';
@@ -137,9 +140,10 @@ const PHASE_OVERRIDES: Record<Exclude<ExamPhase, 'early'>, { w2: number; w5: num
 };
 
 // ── Interfaces ──────────────────────────────────────────────────────
-export interface SrsRecord {
-  next_review_date: string;
-}
+// SrsRecord is re-exported from '@/lib/srsRepository' at the top of this file.
+// It now carries all 5 SM-2 fields (interval_days, ease_factor, repetitions,
+// next_review_date, confidence) plus last_correct, so SM-2 calculations have
+// the full context — not just next_review_date.
 
 export interface TopicStats {
   accuracy: number;       // 0-1
