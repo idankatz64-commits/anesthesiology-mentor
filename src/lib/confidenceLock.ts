@@ -1,5 +1,6 @@
 /**
- * Bug A: prevent double-submit of a confidence selection on the same question.
+ * Synchronous per-question lock that prevents double-submit of a confidence
+ * selection.
  *
  * The race: `handleConfidenceSelect` calls `setConfidence(...)` (React state,
  * batched/async) and then fires `updateSpacedRepetition(...)` (immediate).

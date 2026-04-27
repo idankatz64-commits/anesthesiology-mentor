@@ -3,8 +3,8 @@
  * surface to a caller-supplied handler instead of becoming an
  * UnhandledPromiseRejection.
  *
- * Bug D: previously, `updateSpacedRepetition(...)` was called without
- * `await` and without `.catch()` from React event handlers, so any
+ * The hazard: `updateSpacedRepetition(...)` was historically called from
+ * React event handlers without `await` and without `.catch()`, so any
  * Supabase error was silently swallowed. The user clicked a confidence
  * button, saw no feedback, and assumed the SRS state was saved.
  *

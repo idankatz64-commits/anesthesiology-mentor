@@ -247,9 +247,19 @@ export default function SessionView() {
   quizLengthRef.current = quiz.length;
   const shouldAutoSaveRef = useRef(true);
 
-  // Bug A: keyed lock to prevent double-submit of confidence selection per
-  // question. See src/lib/confidenceLock.ts for why mutation is intentional.
+  // Per-question lock that prevents double-submit of a confidence selection.
+  // See src/lib/confidenceLock.ts for why the map is mutated in place rather
+  // than returned anew.
   const confidenceLockRef = useRef<ConfidenceLockMap>({});
+
+  // Synchronous guard against double-firing the end-of-quiz submit flow.
+  // handleNext (last question) and the simulation Submit button each kick off
+  // an awaited Promise.allSettled over every answered question — a second
+  // click before that promise resolves would re-fire all the SRS writes and
+  // double-count the user's answers. useRef updates synchronously so this
+  // catches the second click within the same event-loop tick (React state
+  // would not).
+  const isSubmittingRef = useRef<boolean>(false);
 
   const triggerAutoSave = useCallback(async () => {
     await saveSessionToDb(timerRef.current, simTimerRef.current);
@@ -355,9 +365,10 @@ export default function SessionView() {
 
   const handleConfidenceSelect = (level: ConfidenceLevel) => {
     if (mode !== "practice" || savedAns === null) return;
-    // Bug A: synchronously block double-submit. React's needsConfidence flip
-    // only takes effect on the next render — two clicks within the same tick
-    // would otherwise both pass the guard and fire updateSpacedRepetition.
+    // Synchronously block double-submit. React's needsConfidence flip only
+    // takes effect on the next render — two clicks within the same tick
+    // would otherwise both pass the guard above and fire two
+    // updateSpacedRepetition writes for the same question.
     if (!tryAcquireConfidenceLock(serialNumber, confidenceLockRef.current)) return;
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
@@ -383,12 +394,22 @@ export default function SessionView() {
       mainRef.current?.scrollTo(0, 0);
       return;
     }
-    // Bug B: exam mode must persist SRS for each answered question before
-    // navigating to review. handleSubmitExam handles shouldAutoSaveRef and
-    // clearSavedSession internally (gated on outcome.canClearSession), so we
-    // must NOT reset them here in the exam branch.
+    // End-of-quiz path. Exam mode must persist SRS for every answered
+    // question before navigating to review (handleSubmitExam owns
+    // shouldAutoSaveRef and clearSavedSession internally, gated on
+    // outcome.canClearSession — do NOT reset them here in the exam branch).
+    //
+    // The isSubmittingRef guard prevents a second click on "next" while the
+    // awaited Promise.allSettled is still in flight from re-firing every SRS
+    // write and double-counting answers.
     if (isExam) {
-      await handleSubmitExam();
+      if (isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+      try {
+        await handleSubmitExam();
+      } finally {
+        isSubmittingRef.current = false;
+      }
       navigate("review");
       return;
     }
@@ -442,7 +463,7 @@ export default function SessionView() {
     navigate("home");
   };
 
-  // Bug B: shared SRS-write loop for end-of-quiz modes (simulation + exam).
+  // Shared SRS-write loop for end-of-quiz modes (simulation + exam).
   // Confidence is derived from correctness via confidenceFromCorrectness
   // since these modes don't ask the user "how confident were you?".
   const processQuizAnswersForSrs = async (label: string) => {
@@ -479,16 +500,24 @@ export default function SessionView() {
   };
 
   const handleSubmitSimulation = async () => {
-    const outcome = await processQuizAnswersForSrs("handleSubmitSimulation");
-    shouldAutoSaveRef.current = false;
-    if (outcome.canClearSession) {
-      clearSavedSession();
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    try {
+      const outcome = await processQuizAnswersForSrs("handleSubmitSimulation");
+      shouldAutoSaveRef.current = false;
+      if (outcome.canClearSession) {
+        clearSavedSession();
+      }
+      navigate("results");
+    } finally {
+      isSubmittingRef.current = false;
     }
-    navigate("results");
   };
 
-  // Bug B: exam mode previously skipped SRS entirely. Mirror simulation flow
-  // but navigate to "review" instead of "results".
+  // Exam mode mirrors the simulation SRS loop, but navigation here belongs to
+  // the caller (handleNext) so it can decide between "review" and the
+  // continue-the-quiz path. The isSubmittingRef guard lives at the call site
+  // to keep navigation timing consistent across both modes.
   const handleSubmitExam = async () => {
     const outcome = await processQuizAnswersForSrs("handleSubmitExam");
     shouldAutoSaveRef.current = false;

@@ -576,26 +576,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Bug E: route through the same atomic RPC that updateHistory uses.
-    // Previously this function INSERTed into answer_history directly and
-    // never touched user_answers — local progress.history (incremented
-    // above) diverged from the DB, so after page reload answered_count
-    // silently rolled backward. The RPC updates user_answers atomically
-    // and the trg_sync_answer_history trigger inserts answer_history.
-    // The flagged_for_review=true flag is dropped (zero readers across
-    // frontend, edge functions, and DB objects — verified).
+    // Route through the same atomic RPC that updateHistory uses so
+    // user_answers stays in sync. The trg_sync_answer_history trigger
+    // populates answer_history automatically. The previous flagged_for_review
+    // flag is intentionally dropped (verified zero readers in frontend, edge
+    // functions, and DB objects).
     const { error: incError } = await supabase.rpc(
       'increment_user_answer',
       buildMarkForReviewIncrementArgs(userId, questionId, topic),
     );
 
+    setConfidenceMap(prev => ({ ...prev, [questionId]: 'guessed' }));
+
     if (incError) {
       console.error('markForReview: increment_user_answer RPC failed', incError);
-      toast.error('שמירת היסטוריית תשובה נכשלה — הסימון עצמו נשמר');
-      // Continue — SRS already saved, history is secondary
+      // SRS row was saved above — the question WILL come back tomorrow.
+      // Only the answered-count update failed, which is non-blocking. Surface
+      // a single toast that tells the user the SRS scheduling succeeded but
+      // the count update did not, instead of stacking a misleading success
+      // toast on top of the error.
+      toast.error('השאלה תחזור מחר 🔁 — אך עדכון ספירת התשובות נכשל');
+      return;
     }
 
-    setConfidenceMap(prev => ({ ...prev, [questionId]: 'guessed' }));
     toast.success('שאלה תחזור מחר לחזרה 🔁');
   }, []);
 
