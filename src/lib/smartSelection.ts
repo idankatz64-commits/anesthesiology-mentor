@@ -164,6 +164,30 @@ function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
 }
 
+// ── STAGE 0 TEMP — conditional debug logging (remove after Phase 6) ──
+// Silent by default. To enable in browser console:
+//   localStorage.setItem('__srs_debug__', '1')
+// To disable:
+//   localStorage.removeItem('__srs_debug__')
+function srsDebugEnabled(): boolean {
+  try {
+    return typeof window !== 'undefined'
+      && window.localStorage?.getItem('__srs_debug__') === '1';
+  } catch {
+    return false;
+  }
+}
+
+function srsDebugLog(label: string, payload: unknown): void {
+  if (!srsDebugEnabled()) return;
+  try {
+    // eslint-disable-next-line no-console
+    console.log(`[SRS-DEBUG] ${label}`, payload);
+  } catch {
+    /* no-op */
+  }
+}
+
 // ── Pure SRS urgency mapping: daysOverdue → urgency score ───────────
 // Contract: result ∈ [-1, 1].
 //   future scheduling → negative (suppressed): -1 at one year out, ~0 near today
@@ -391,11 +415,25 @@ export function selectSmartQuestions(
   history: Record<string, HistoryEntry>,
   allData: Question[]
 ): Question[] {
+  // STAGE 0 TEMP — log entry params
+  srsDebugLog('selectSmartQuestions:entry', {
+    poolSize: pool.length,
+    count,
+    sessionSize,
+    srsRecordCount: Object.keys(srsData).length,
+    historyEntryCount: Object.keys(history).length,
+    allDataSize: allData.length,
+  });
+
   if (pool.length === 0) return [];
 
   // Simulation mode: proportional distribution
   if (sessionSize === 'simulation') {
-    return selectSimulationQuestions(pool, count);
+    const simResult = selectSimulationQuestions(pool, count);
+    srsDebugLog('selectSmartQuestions:simulation-result', {
+      selectedIds: simResult.map(q => q[KEYS.ID]),
+    });
+    return simResult;
   }
 
   // Scored selection
@@ -426,6 +464,22 @@ export function selectSmartQuestions(
 
   // ── STAGE 2: הקצה slots לנושאים (פרופורציונלי + תקרת 25%) ────────
   const slots = allocateSlots(topicScores, byTopic, effectiveCount);
+
+  // STAGE 0 TEMP — log topic allocation
+  srsDebugLog('selectSmartQuestions:slots', {
+    effectiveCount,
+    topicCount: topics.length,
+    slots: Object.fromEntries(
+      Object.entries(slots)
+        .filter(([, n]) => n > 0)
+        .sort(([, a], [, b]) => b - a),
+    ),
+    topicScores: Object.fromEntries(
+      Object.entries(topicScores)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10),
+    ),
+  });
 
   // ── STAGE 3: בחר שאלות בתוך כל נושא לפי כל 6 ה-factors ───────────
   // Build params once and reuse for both per-topic scoring and gap-filling.
@@ -464,6 +518,17 @@ export function selectSmartQuestions(
     const j = Math.floor(Math.random() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
+
+  // STAGE 0 TEMP — log final selection
+  srsDebugLog('selectSmartQuestions:result', {
+    selectedCount: result.length,
+    selectedIds: result.map(q => q[KEYS.ID]),
+    topicBreakdown: result.reduce<Record<string, number>>((acc, q) => {
+      const t = q[KEYS.TOPIC] || '__other__';
+      acc[t] = (acc[t] || 0) + 1;
+      return acc;
+    }, {}),
+  });
 
   return result;
 }
