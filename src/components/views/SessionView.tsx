@@ -6,6 +6,7 @@ import { useApp } from "@/contexts/AppContext";
 import { KEYS, type ConfidenceLevel } from "@/lib/types";
 import { evaluateSimulationOutcome } from "@/lib/simulationSubmit";
 import { fireAndCatchSrs } from "@/lib/srsCallbacks";
+import { confidenceFromCorrectness } from "@/lib/srsConfidence";
 import ReactMarkdown from "react-markdown";
 import {
   X,
@@ -361,17 +362,26 @@ export default function SessionView() {
     );
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (index < quiz.length - 1) {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
-    } else {
-      shouldAutoSaveRef.current = false;
-      clearSavedSession();
-      if (isReviewMode) navigate("results");
-      else if (isSimulation) navigate("results");
-      else navigate("review");
+      return;
     }
+    // Bug B: exam mode must persist SRS for each answered question before
+    // navigating to review. handleSubmitExam handles shouldAutoSaveRef and
+    // clearSavedSession internally (gated on outcome.canClearSession), so we
+    // must NOT reset them here in the exam branch.
+    if (isExam) {
+      await handleSubmitExam();
+      navigate("review");
+      return;
+    }
+    shouldAutoSaveRef.current = false;
+    clearSavedSession();
+    if (isReviewMode) navigate("results");
+    else if (isSimulation) navigate("results");
+    else navigate("review");
   };
 
   const handlePrev = () => {
@@ -417,7 +427,10 @@ export default function SessionView() {
     navigate("home");
   };
 
-  const handleSubmitSimulation = async () => {
+  // Bug B: shared SRS-write loop for end-of-quiz modes (simulation + exam).
+  // Confidence is derived from correctness via confidenceFromCorrectness
+  // since these modes don't ask the user "how confident were you?".
+  const processQuizAnswersForSrs = async (label: string) => {
     const srsPromises: Promise<unknown>[] = [];
     quiz.forEach((q, i) => {
       const userAns = answers[i];
@@ -425,7 +438,14 @@ export default function SessionView() {
         const isCorrect = userAns === q[KEYS.CORRECT];
         updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
         srsPromises.push(
-          Promise.resolve(updateSpacedRepetition(q[KEYS.ID], isCorrect, "confident", q[KEYS.TOPIC]))
+          Promise.resolve(
+            updateSpacedRepetition(
+              q[KEYS.ID],
+              isCorrect,
+              confidenceFromCorrectness(isCorrect),
+              q[KEYS.TOPIC],
+            ),
+          ),
         );
       }
     });
@@ -433,19 +453,33 @@ export default function SessionView() {
     const results = await Promise.allSettled(srsPromises);
     const outcome = evaluateSimulationOutcome(results);
     if (outcome.failedCount > 0) {
-      console.error(`handleSubmitSimulation: ${outcome.failedCount}/${outcome.totalCount} SRS writes failed`, results);
+      console.error(`${label}: ${outcome.failedCount}/${outcome.totalCount} SRS writes failed`, results);
       toast({
         title: "שמירת SRS חלקית",
         description: `${outcome.failedCount} מתוך ${outcome.totalCount} שאלות לא נשמרו ל-SRS. הסשן נשמר כדי שתוכל לנסות שוב.`,
         variant: "destructive",
       });
     }
+    return outcome;
+  };
 
+  const handleSubmitSimulation = async () => {
+    const outcome = await processQuizAnswersForSrs("handleSubmitSimulation");
     shouldAutoSaveRef.current = false;
     if (outcome.canClearSession) {
       clearSavedSession();
     }
     navigate("results");
+  };
+
+  // Bug B: exam mode previously skipped SRS entirely. Mirror simulation flow
+  // but navigate to "review" instead of "results".
+  const handleSubmitExam = async () => {
+    const outcome = await processQuizAnswersForSrs("handleSubmitExam");
+    shouldAutoSaveRef.current = false;
+    if (outcome.canClearSession) {
+      clearSavedSession();
+    }
   };
 
   const handleAddTag = () => {
