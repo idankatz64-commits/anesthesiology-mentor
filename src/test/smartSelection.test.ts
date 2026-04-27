@@ -2,11 +2,14 @@ import { describe, it, expect } from 'vitest';
 import {
   srsUrgencyFromDaysOverdue,
   computeSmartScore,
+  YIELD_TIER_MAP,
+  SIMULATION_PROPORTIONS,
   type ScoringParams,
 } from '@/lib/smartSelection';
 import type { Question, HistoryEntry } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import type { SrsRecord } from '@/lib/srsRepository';
+import { DB_TOPICS_SET } from './fixtures/dbTopics';
 
 // Q3 fix: future-scheduled questions used to all collapse to urgency=0.
 // New contract: future returns negative (suppression), past returns 0..1.
@@ -198,5 +201,21 @@ describe('computeSmartScore — all 6 factors influence selection', () => {
     };
     // Expected: 0.5 * 0.5 (urgency) + 0.5 * 1.0 (yieldBoost) = 0.75
     expect(computeSmartScore(q, baseParams)).toBeCloseTo(0.75, 5);
+  });
+});
+
+// Bug C: every key in YIELD_TIER_MAP and SIMULATION_PROPORTIONS must match an
+// actual `topic` value in the questions table. Mismatches cause the topic-aware
+// Stage-1 selection to silently filter to ZERO matches, collapsing the
+// algorithm to non-topic-aware fallback (the SRS repetition root cause).
+describe('topic-name sync with DB (Bug C regression guard)', () => {
+  it('YIELD_TIER_MAP keys all exist in DB topics snapshot', () => {
+    const orphans = Object.keys(YIELD_TIER_MAP).filter((k) => !DB_TOPICS_SET.has(k));
+    expect(orphans, `Orphan YIELD_TIER_MAP keys (not in DB):\n  ${orphans.join('\n  ')}`).toEqual([]);
+  });
+
+  it('SIMULATION_PROPORTIONS keys all exist in DB topics snapshot', () => {
+    const orphans = Object.keys(SIMULATION_PROPORTIONS).filter((k) => !DB_TOPICS_SET.has(k));
+    expect(orphans, `Orphan SIMULATION_PROPORTIONS keys (not in DB):\n  ${orphans.join('\n  ')}`).toEqual([]);
   });
 });

@@ -5,6 +5,13 @@ import { springGentle } from "@/lib/animations";
 import { useApp } from "@/contexts/AppContext";
 import { KEYS, type ConfidenceLevel } from "@/lib/types";
 import { evaluateSimulationOutcome } from "@/lib/simulationSubmit";
+import { fireAndCatchSrs } from "@/lib/srsCallbacks";
+import { confidenceFromCorrectness } from "@/lib/srsConfidence";
+import {
+  tryAcquireConfidenceLock,
+  releaseConfidenceLock,
+  type ConfidenceLockMap,
+} from "@/lib/confidenceLock";
 import ReactMarkdown from "react-markdown";
 import {
   X,
@@ -240,6 +247,20 @@ export default function SessionView() {
   quizLengthRef.current = quiz.length;
   const shouldAutoSaveRef = useRef(true);
 
+  // Per-question lock that prevents double-submit of a confidence selection.
+  // See src/lib/confidenceLock.ts for why the map is mutated in place rather
+  // than returned anew.
+  const confidenceLockRef = useRef<ConfidenceLockMap>({});
+
+  // Synchronous guard against double-firing the end-of-quiz submit flow.
+  // handleNext (last question) and the simulation Submit button each kick off
+  // an awaited Promise.allSettled over every answered question — a second
+  // click before that promise resolves would re-fire all the SRS writes and
+  // double-count the user's answers. useRef updates synchronously so this
+  // catches the second click within the same event-loop tick (React state
+  // would not).
+  const isSubmittingRef = useRef<boolean>(false);
+
   const triggerAutoSave = useCallback(async () => {
     await saveSessionToDb(timerRef.current, simTimerRef.current);
     setAutoSaved(true);
@@ -344,23 +365,59 @@ export default function SessionView() {
 
   const handleConfidenceSelect = (level: ConfidenceLevel) => {
     if (mode !== "practice" || savedAns === null) return;
+    // Synchronously block double-submit. React's needsConfidence flip only
+    // takes effect on the next render — two clicks within the same tick
+    // would otherwise both pass the guard above and fire two
+    // updateSpacedRepetition writes for the same question.
+    if (!tryAcquireConfidenceLock(serialNumber, confidenceLockRef.current)) return;
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
     updateHistory(serialNumber, isCorrect, qData[KEYS.TOPIC]);
-    updateSpacedRepetition(serialNumber, isCorrect, level, qData[KEYS.TOPIC]);
+    fireAndCatchSrs(
+      updateSpacedRepetition(serialNumber, isCorrect, level, qData[KEYS.TOPIC]),
+      (err) => {
+        // Release the lock so the user can retry after a failed SRS write.
+        releaseConfidenceLock(serialNumber, confidenceLockRef.current);
+        console.error("SRS update failed:", err);
+        toast({
+          title: "שגיאה בשמירת SRS",
+          description: "הניסיון לא נשמר לחזרה מרווחת. נסה שוב או רענן את הדף.",
+          variant: "destructive",
+        });
+      },
+    );
   };
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (index < quiz.length - 1) {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
-    } else {
-      shouldAutoSaveRef.current = false;
-      clearSavedSession();
-      if (isReviewMode) navigate("results");
-      else if (isSimulation) navigate("results");
-      else navigate("review");
+      return;
     }
+    // End-of-quiz path. Exam mode must persist SRS for every answered
+    // question before navigating to review (handleSubmitExam owns
+    // shouldAutoSaveRef and clearSavedSession internally, gated on
+    // outcome.canClearSession — do NOT reset them here in the exam branch).
+    //
+    // The isSubmittingRef guard prevents a second click on "next" while the
+    // awaited Promise.allSettled is still in flight from re-firing every SRS
+    // write and double-counting answers.
+    if (isExam) {
+      if (isSubmittingRef.current) return;
+      isSubmittingRef.current = true;
+      try {
+        await handleSubmitExam();
+      } finally {
+        isSubmittingRef.current = false;
+      }
+      navigate("review");
+      return;
+    }
+    shouldAutoSaveRef.current = false;
+    clearSavedSession();
+    if (isReviewMode) navigate("results");
+    else if (isSimulation) navigate("results");
+    else navigate("review");
   };
 
   const handlePrev = () => {
@@ -406,7 +463,10 @@ export default function SessionView() {
     navigate("home");
   };
 
-  const handleSubmitSimulation = async () => {
+  // Shared SRS-write loop for end-of-quiz modes (simulation + exam).
+  // Confidence is derived from correctness via confidenceFromCorrectness
+  // since these modes don't ask the user "how confident were you?".
+  const processQuizAnswersForSrs = async (label: string) => {
     const srsPromises: Promise<unknown>[] = [];
     quiz.forEach((q, i) => {
       const userAns = answers[i];
@@ -414,7 +474,14 @@ export default function SessionView() {
         const isCorrect = userAns === q[KEYS.CORRECT];
         updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
         srsPromises.push(
-          Promise.resolve(updateSpacedRepetition(q[KEYS.ID], isCorrect, "confident", q[KEYS.TOPIC]))
+          Promise.resolve(
+            updateSpacedRepetition(
+              q[KEYS.ID],
+              isCorrect,
+              confidenceFromCorrectness(isCorrect),
+              q[KEYS.TOPIC],
+            ),
+          ),
         );
       }
     });
@@ -422,19 +489,41 @@ export default function SessionView() {
     const results = await Promise.allSettled(srsPromises);
     const outcome = evaluateSimulationOutcome(results);
     if (outcome.failedCount > 0) {
-      console.error(`handleSubmitSimulation: ${outcome.failedCount}/${outcome.totalCount} SRS writes failed`, results);
+      console.error(`${label}: ${outcome.failedCount}/${outcome.totalCount} SRS writes failed`, results);
       toast({
         title: "שמירת SRS חלקית",
         description: `${outcome.failedCount} מתוך ${outcome.totalCount} שאלות לא נשמרו ל-SRS. הסשן נשמר כדי שתוכל לנסות שוב.`,
         variant: "destructive",
       });
     }
+    return outcome;
+  };
 
+  const handleSubmitSimulation = async () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    try {
+      const outcome = await processQuizAnswersForSrs("handleSubmitSimulation");
+      shouldAutoSaveRef.current = false;
+      if (outcome.canClearSession) {
+        clearSavedSession();
+      }
+      navigate("results");
+    } finally {
+      isSubmittingRef.current = false;
+    }
+  };
+
+  // Exam mode mirrors the simulation SRS loop, but navigation here belongs to
+  // the caller (handleNext) so it can decide between "review" and the
+  // continue-the-quiz path. The isSubmittingRef guard lives at the call site
+  // to keep navigation timing consistent across both modes.
+  const handleSubmitExam = async () => {
+    const outcome = await processQuizAnswersForSrs("handleSubmitExam");
     shouldAutoSaveRef.current = false;
     if (outcome.canClearSession) {
       clearSavedSession();
     }
-    navigate("results");
   };
 
   const handleAddTag = () => {

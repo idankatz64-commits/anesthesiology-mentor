@@ -9,6 +9,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getIsraelToday, addDaysIsrael } from '@/lib/dateHelpers';
+import { buildMarkForReviewIncrementArgs } from '@/lib/markForReviewParams';
 import {
   upsertSpacedRepetitionRecord,
   buildSrsRecordMap,
@@ -575,23 +576,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Direct insert into answer_history with flagged_for_review=true
-    const { error: historyError } = await supabase.from('answer_history').insert({
-      user_id: userId,
-      question_id: questionId,
-      topic: topic ?? null,
-      is_correct: false,
-      flagged_for_review: true,
-      answered_at: new Date().toISOString(),
-    } as any);
-
-    if (historyError) {
-      console.error('markForReview: answer_history insert failed', historyError);
-      toast.error('שמירת היסטוריית תשובה נכשלה — הסימון עצמו נשמר');
-      // Continue — SRS already saved, history is secondary
-    }
+    // Route through the same atomic RPC that updateHistory uses so
+    // user_answers stays in sync. The trg_sync_answer_history trigger
+    // populates answer_history automatically. The previous flagged_for_review
+    // flag is intentionally dropped (verified zero readers in frontend, edge
+    // functions, and DB objects).
+    const { error: incError } = await supabase.rpc(
+      'increment_user_answer',
+      buildMarkForReviewIncrementArgs(userId, questionId, topic),
+    );
 
     setConfidenceMap(prev => ({ ...prev, [questionId]: 'guessed' }));
+
+    if (incError) {
+      console.error('markForReview: increment_user_answer RPC failed', incError);
+      // SRS row was saved above — the question WILL come back tomorrow.
+      // Only the answered-count update failed, which is non-blocking. Surface
+      // a single toast that tells the user the SRS scheduling succeeded but
+      // the count update did not, instead of stacking a misleading success
+      // toast on top of the error.
+      toast.error('השאלה תחזור מחר 🔁 — אך עדכון ספירת התשובות נכשל');
+      return;
+    }
+
     toast.success('שאלה תחזור מחר לחזרה 🔁');
   }, []);
 

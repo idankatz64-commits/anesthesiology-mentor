@@ -15,54 +15,54 @@ export const SESSION_SIZE_CONFIG: Record<SessionSize, { count: number; label: st
 };
 
 // ── Yield Tier Map ──────────────────────────────────────────────────
-const YIELD_TIER_MAP: Record<string, number> = {
-  // Tier 1 (1.0)
+export const YIELD_TIER_MAP: Record<string, number> = {
+  // Tier 1 (1.0) — keys MUST match `topic` values in DB; see src/test/fixtures/dbTopics.ts
   'Cardiac Physiology': 1.0,
-  'Respiratory Physiology': 1.0,
-  'Perioperative Acid-Base Balance': 1.0,
-  'Gastrointestinal and Hepatic Physiology': 1.0,
+  'Respiratory Physiology and Pathophysiology': 1.0,
+  'Perioperative Acid–Base Balance': 1.0,
+  'Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations': 1.0,
   'Local Anesthetics': 1.0,
-  'Renal Pathophysiology': 1.0,
+  'Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury': 1.0,
   'Neuromuscular Monitoring': 1.0,
-  'Renal Anatomy and Physiology': 1.0,
-  'Chronic Pain Management': 1.0,
-  'Inhaled Anesthetic Uptake and Metabolism': 1.0,
+  'Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function': 1.0,
+  'Management of the Patient with Chronic Pain': 1.0,
+  'Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity': 1.0,
   'Respiratory Monitoring': 1.0,
   'Anesthesia for Bariatric Surgery': 1.0,
   'Anesthesia for Obstetrics': 1.0,
   'Basic Principles of Pharmacology': 1.0,
   'Neuromuscular Physiology and Pharmacology': 1.0,
-  'Airway Management': 1.0,
-  'Peripheral Nerve Blocks': 1.0,
+  'Airway Management in the Adult': 1.0,
+  'Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia': 1.0,
   'Geriatric Anesthesia': 1.0,
   'Critical Care Anesthesiology': 1.0,
 
   // Tier 2 (0.6)
   'Anesthesia for Trauma': 0.6,
-  'PACU': 0.6,
+  'The Postanesthesia Care Unit': 0.6,
   'Pediatric Anesthesia': 0.6,
   'Perioperative Fluid and Electrolyte Therapy': 0.6,
   'Intravenous Anesthetics': 0.6,
   'Cardiovascular Monitoring': 0.6,
-  'Neuromuscular Blocking Drugs': 0.6,
-  'Cerebral Physiology': 0.6,
-  'Coagulation': 0.6,
-  'Neurologic Surgery': 0.6,
-  'Spinal Epidural and Caudal Anesthesia': 0.6,
-  'Transfusion Therapy': 0.6,
+  'Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)': 0.6,
+  'Cerebral Physiology and the Effects of Anesthetic Drugs': 0.6,
+  'Patient Blood Management: Coagulation': 0.6,
+  'Anesthesia for Neurologic Surgery and Neurointerventions': 0.6,
+  'Spinal, Epidural, and Caudal Anesthesia': 0.6,
+  'Patient Blood Management: Transfusion Therapy': 0.6,
   'Opioids': 0.6,
-  'Concurrent Diseases': 0.6,
+  'Anesthetic Implications of Concurrent Diseases': 0.6,
   'Preoperative Evaluation': 0.6,
   'Acute Postoperative Pain': 0.6,
   'Inhaled Anesthetic Delivery Systems': 0.6,
-  'Perioperative Echocardiography': 0.6,
+  'Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)': 0.6,
 
   // Tier 3 (0.2)
-  'Thoracic Surgery': 0.2,
+  'Anesthesia for Thoracic Surgery': 0.2,
   'Neurophysiologic Monitoring': 0.2,
-  'Patient Positioning': 0.2,
-  'Vascular Surgery': 0.2,
-  'Orthopedic Surgery': 0.2,
+  'Patient Positioning and Associated Risks': 0.2,
+  'Anesthesia for Vascular Surgery': 0.2,
+  'Anesthesia for Orthopedic Surgery': 0.2,
 };
 
 // ── Weight profiles per session size ────────────────────────────────
@@ -74,49 +74,50 @@ const WEIGHT_PROFILES: Record<Exclude<SessionSize, 'simulation'>, number[]> = {
 };
 
 // ── Exam simulation topic proportions (avg_q from real exam data) ───
-const SIMULATION_PROPORTIONS: Record<string, number> = {
+export const SIMULATION_PROPORTIONS: Record<string, number> = {
+  // keys MUST match `topic` values in DB; see src/test/fixtures/dbTopics.ts
   'Cardiac Physiology': 6,
-  'Respiratory Physiology': 5,
+  'Respiratory Physiology and Pathophysiology': 5,
   'Basic Principles of Pharmacology': 5,
-  'Airway Management': 5,
+  'Airway Management in the Adult': 5,
   'Local Anesthetics': 4,
   'Neuromuscular Physiology and Pharmacology': 4,
   'Anesthesia for Obstetrics': 4,
-  'Perioperative Acid-Base Balance': 4,
-  'Inhaled Anesthetic Uptake and Metabolism': 3,
-  'Renal Anatomy and Physiology': 3,
-  'Gastrointestinal and Hepatic Physiology': 3,
-  'Chronic Pain Management': 3,
-  'Peripheral Nerve Blocks': 3,
+  'Perioperative Acid–Base Balance': 4,
+  'Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity': 3,
+  'Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function': 3,
+  'Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations': 3,
+  'Management of the Patient with Chronic Pain': 3,
+  'Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia': 3,
   'Pediatric Anesthesia': 3,
   'Critical Care Anesthesiology': 3,
   'Preoperative Evaluation': 3,
   'Cardiovascular Monitoring': 3,
   'Intravenous Anesthetics': 3,
   'Opioids': 3,
-  'Spinal Epidural and Caudal Anesthesia': 3,
-  'Neuromuscular Blocking Drugs': 2,
+  'Spinal, Epidural, and Caudal Anesthesia': 3,
+  'Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)': 2,
   'Neuromuscular Monitoring': 2,
   'Respiratory Monitoring': 2,
-  'Renal Pathophysiology': 2,
-  'Coagulation': 2,
-  'Transfusion Therapy': 2,
-  'Concurrent Diseases': 2,
+  'Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury': 2,
+  'Patient Blood Management: Coagulation': 2,
+  'Patient Blood Management: Transfusion Therapy': 2,
+  'Anesthetic Implications of Concurrent Diseases': 2,
   'Anesthesia for Trauma': 2,
-  'PACU': 2,
+  'The Postanesthesia Care Unit': 2,
   'Geriatric Anesthesia': 2,
   'Anesthesia for Bariatric Surgery': 2,
   'Perioperative Fluid and Electrolyte Therapy': 2,
-  'Cerebral Physiology': 2,
+  'Cerebral Physiology and the Effects of Anesthetic Drugs': 2,
   'Acute Postoperative Pain': 2,
   'Inhaled Anesthetic Delivery Systems': 2,
-  'Perioperative Echocardiography': 1,
-  'Thoracic Surgery': 1,
+  'Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)': 1,
+  'Anesthesia for Thoracic Surgery': 1,
   'Neurophysiologic Monitoring': 1,
-  'Patient Positioning': 1,
-  'Vascular Surgery': 1,
-  'Orthopedic Surgery': 1,
-  'Neurologic Surgery': 1,
+  'Patient Positioning and Associated Risks': 1,
+  'Anesthesia for Vascular Surgery': 1,
+  'Anesthesia for Orthopedic Surgery': 1,
+  'Anesthesia for Neurologic Surgery and Neurointerventions': 1,
 };
 
 // ── Hardcoded exam date ─────────────────────────────────────────────
@@ -162,6 +163,30 @@ export interface ScoringParams {
 // ── clamp helper ────────────────────────────────────────────────────
 function clamp01(v: number): number {
   return Math.max(0, Math.min(1, v));
+}
+
+// ── STAGE 0 TEMP — conditional debug logging (remove after Phase 6) ──
+// Silent by default. To enable in browser console:
+//   localStorage.setItem('__srs_debug__', '1')
+// To disable:
+//   localStorage.removeItem('__srs_debug__')
+function srsDebugEnabled(): boolean {
+  try {
+    return typeof window !== 'undefined'
+      && window.localStorage?.getItem('__srs_debug__') === '1';
+  } catch {
+    return false;
+  }
+}
+
+function srsDebugLog(label: string, payload: unknown): void {
+  if (!srsDebugEnabled()) return;
+  try {
+    // eslint-disable-next-line no-console
+    console.log(`[SRS-DEBUG] ${label}`, payload);
+  } catch {
+    /* no-op */
+  }
 }
 
 // ── Pure SRS urgency mapping: daysOverdue → urgency score ───────────
@@ -391,11 +416,25 @@ export function selectSmartQuestions(
   history: Record<string, HistoryEntry>,
   allData: Question[]
 ): Question[] {
+  // STAGE 0 TEMP — log entry params
+  srsDebugLog('selectSmartQuestions:entry', {
+    poolSize: pool.length,
+    count,
+    sessionSize,
+    srsRecordCount: Object.keys(srsData).length,
+    historyEntryCount: Object.keys(history).length,
+    allDataSize: allData.length,
+  });
+
   if (pool.length === 0) return [];
 
   // Simulation mode: proportional distribution
   if (sessionSize === 'simulation') {
-    return selectSimulationQuestions(pool, count);
+    const simResult = selectSimulationQuestions(pool, count);
+    srsDebugLog('selectSmartQuestions:simulation-result', {
+      selectedIds: simResult.map(q => q[KEYS.ID]),
+    });
+    return simResult;
   }
 
   // Scored selection
@@ -426,6 +465,22 @@ export function selectSmartQuestions(
 
   // ── STAGE 2: הקצה slots לנושאים (פרופורציונלי + תקרת 25%) ────────
   const slots = allocateSlots(topicScores, byTopic, effectiveCount);
+
+  // STAGE 0 TEMP — log topic allocation
+  srsDebugLog('selectSmartQuestions:slots', {
+    effectiveCount,
+    topicCount: topics.length,
+    slots: Object.fromEntries(
+      Object.entries(slots)
+        .filter(([, n]) => n > 0)
+        .sort(([, a], [, b]) => b - a),
+    ),
+    topicScores: Object.fromEntries(
+      Object.entries(topicScores)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 10),
+    ),
+  });
 
   // ── STAGE 3: בחר שאלות בתוך כל נושא לפי כל 6 ה-factors ───────────
   // Build params once and reuse for both per-topic scoring and gap-filling.
@@ -464,6 +519,17 @@ export function selectSmartQuestions(
     const j = Math.floor(Math.random() * (i + 1));
     [result[i], result[j]] = [result[j], result[i]];
   }
+
+  // STAGE 0 TEMP — log final selection
+  srsDebugLog('selectSmartQuestions:result', {
+    selectedCount: result.length,
+    selectedIds: result.map(q => q[KEYS.ID]),
+    topicBreakdown: result.reduce<Record<string, number>>((acc, q) => {
+      const t = q[KEYS.TOPIC] || '__other__';
+      acc[t] = (acc[t] || 0) + 1;
+      return acc;
+    }, {}),
+  });
 
   return result;
 }
