@@ -9,6 +9,7 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getIsraelToday, addDaysIsrael } from '@/lib/dateHelpers';
+import { buildMarkForReviewIncrementArgs } from '@/lib/markForReviewParams';
 import {
   upsertSpacedRepetitionRecord,
   buildSrsRecordMap,
@@ -575,18 +576,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Direct insert into answer_history with flagged_for_review=true
-    const { error: historyError } = await supabase.from('answer_history').insert({
-      user_id: userId,
-      question_id: questionId,
-      topic: topic ?? null,
-      is_correct: false,
-      flagged_for_review: true,
-      answered_at: new Date().toISOString(),
-    } as any);
+    // Bug E: route through the same atomic RPC that updateHistory uses.
+    // Previously this function INSERTed into answer_history directly and
+    // never touched user_answers — local progress.history (incremented
+    // above) diverged from the DB, so after page reload answered_count
+    // silently rolled backward. The RPC updates user_answers atomically
+    // and the trg_sync_answer_history trigger inserts answer_history.
+    // The flagged_for_review=true flag is dropped (zero readers across
+    // frontend, edge functions, and DB objects — verified).
+    const { error: incError } = await supabase.rpc(
+      'increment_user_answer',
+      buildMarkForReviewIncrementArgs(userId, questionId, topic),
+    );
 
-    if (historyError) {
-      console.error('markForReview: answer_history insert failed', historyError);
+    if (incError) {
+      console.error('markForReview: increment_user_answer RPC failed', incError);
       toast.error('שמירת היסטוריית תשובה נכשלה — הסימון עצמו נשמר');
       // Continue — SRS already saved, history is secondary
     }
