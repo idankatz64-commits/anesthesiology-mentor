@@ -5,6 +5,7 @@ import { springGentle } from "@/lib/animations";
 import { useApp } from "@/contexts/AppContext";
 import { KEYS, type ConfidenceLevel } from "@/lib/types";
 import { evaluateSimulationOutcome } from "@/lib/simulationSubmit";
+import { fireAndCatchSrs } from "@/lib/srsCallbacks";
 import ReactMarkdown from "react-markdown";
 import {
   X,
@@ -347,7 +348,17 @@ export default function SessionView() {
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
     updateHistory(serialNumber, isCorrect, qData[KEYS.TOPIC]);
-    updateSpacedRepetition(serialNumber, isCorrect, level, qData[KEYS.TOPIC]);
+    fireAndCatchSrs(
+      updateSpacedRepetition(serialNumber, isCorrect, level, qData[KEYS.TOPIC]),
+      (err) => {
+        console.error("SRS update failed:", err);
+        toast({
+          title: "שגיאה בשמירת SRS",
+          description: "הניסיון לא נשמר לחזרה מרווחת. נסה שוב או רענן את הדף.",
+          variant: "destructive",
+        });
+      },
+    );
   };
 
   const handleNext = () => {
