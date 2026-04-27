@@ -7,6 +7,11 @@ import { KEYS, type ConfidenceLevel } from "@/lib/types";
 import { evaluateSimulationOutcome } from "@/lib/simulationSubmit";
 import { fireAndCatchSrs } from "@/lib/srsCallbacks";
 import { confidenceFromCorrectness } from "@/lib/srsConfidence";
+import {
+  tryAcquireConfidenceLock,
+  releaseConfidenceLock,
+  type ConfidenceLockMap,
+} from "@/lib/confidenceLock";
 import ReactMarkdown from "react-markdown";
 import {
   X,
@@ -242,6 +247,10 @@ export default function SessionView() {
   quizLengthRef.current = quiz.length;
   const shouldAutoSaveRef = useRef(true);
 
+  // Bug A: keyed lock to prevent double-submit of confidence selection per
+  // question. See src/lib/confidenceLock.ts for why mutation is intentional.
+  const confidenceLockRef = useRef<ConfidenceLockMap>({});
+
   const triggerAutoSave = useCallback(async () => {
     await saveSessionToDb(timerRef.current, simTimerRef.current);
     setAutoSaved(true);
@@ -346,12 +355,18 @@ export default function SessionView() {
 
   const handleConfidenceSelect = (level: ConfidenceLevel) => {
     if (mode !== "practice" || savedAns === null) return;
+    // Bug A: synchronously block double-submit. React's needsConfidence flip
+    // only takes effect on the next render — two clicks within the same tick
+    // would otherwise both pass the guard and fire updateSpacedRepetition.
+    if (!tryAcquireConfidenceLock(serialNumber, confidenceLockRef.current)) return;
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
     updateHistory(serialNumber, isCorrect, qData[KEYS.TOPIC]);
     fireAndCatchSrs(
       updateSpacedRepetition(serialNumber, isCorrect, level, qData[KEYS.TOPIC]),
       (err) => {
+        // Release the lock so the user can retry after a failed SRS write.
+        releaseConfidenceLock(serialNumber, confidenceLockRef.current);
         console.error("SRS update failed:", err);
         toast({
           title: "שגיאה בשמירת SRS",
