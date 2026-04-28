@@ -438,6 +438,16 @@ export function selectSmartQuestions(
   const nowMs = Date.now();
   const filteredPool = filterCandidatePool(pool, history, srsData, nowMs);
   const workingPool = filteredPool.length > 0 ? filteredPool : pool;
+  if (filteredPool.length === 0 && pool.length > 0) {
+    // Ungated alarm: defensive fallback fired. srsDebugLog above is gated on
+    // srsDebugEnabled() and won't surface this in production — keep an
+    // ungated warn so the silent-fallback case is observable in the wild.
+    console.warn('[SRS] pre-filter emptied a non-empty pool — falling back to unfiltered pool', {
+      poolSize: pool.length,
+      historyEntries: Object.keys(history).length,
+      srsRecords: Object.keys(srsData).length,
+    });
+  }
   srsDebugLog('selectSmartQuestions:pre-filter', {
     poolSize: pool.length,
     filteredSize: filteredPool.length,
@@ -520,7 +530,10 @@ export function selectSmartQuestions(
     const scored = byTopic[topic]
       .map(q => ({
         item: q,
-        isNew: !history[q[KEYS.ID]],
+        // Treat zero-answered history rows as "new" too — guards against a
+        // legacy/zombie row state where a row exists but the user never
+        // actually answered the question.
+        isNew: !history[q[KEYS.ID]] || history[q[KEYS.ID]].answered === 0,
         score: computeSmartScore(q, scoringParams),
       }))
       .sort((a, b) => b.score - a.score);
@@ -536,7 +549,7 @@ export function selectSmartQuestions(
       .filter(q => !usedIds.has(q[KEYS.ID]))
       .map(q => ({
         item: q,
-        isNew: !history[q[KEYS.ID]],
+        isNew: !history[q[KEYS.ID]] || history[q[KEYS.ID]].answered === 0,
         score: computeSmartScore(q, scoringParams),
       }))
       .sort((a, b) => b.score - a.score);
