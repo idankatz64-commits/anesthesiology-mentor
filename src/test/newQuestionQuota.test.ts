@@ -88,6 +88,14 @@ describe('newQuestionQuota', () => {
     expect(newCount).toBe(2);
   });
 
+  it('reserves 1 slot for new when n=1 and new pool is non-empty', () => {
+    // ceil(1 * 0.30) = ceil(0.30) = 1 → newSlots=1, seenSlots=0
+    const scored = [cand('seen1', false, 10), cand('new1', true, 5)];
+    const result = pickWithNewQuota(scored, 1);
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe('new1');
+  });
+
   it('handles quotaRatio of 0 (no new quota)', () => {
     const scored = [
       cand('seen1', false, 10),
