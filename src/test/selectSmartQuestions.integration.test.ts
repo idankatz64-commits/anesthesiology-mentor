@@ -3,6 +3,7 @@ import { selectSmartQuestions } from '@/lib/smartSelection';
 import type { Question, HistoryEntry } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import type { SrsRecord } from '@/lib/srsRepository';
+import { NEW_QUESTION_QUOTA_RATIO } from '@/lib/newQuestionQuota';
 
 // Frozen NOW for deterministic Date.now() and date math.
 const NOW = new Date('2026-04-27T12:00:00Z').getTime();
@@ -79,8 +80,12 @@ describe('selectSmartQuestions integration (PR #3 v2 fixes)', () => {
 
     const result = selectSmartQuestions(pool, 40, 'regular', srsData, history, pool);
 
-    expect(result.find(x => x.id === 'Q6C275F')).toBeUndefined();
+    // Length-and-membership pair: length guards against vacuous truth
+    // (a 0-length result would also satisfy `not.toContain`).
     expect(result).toHaveLength(40);
+    expect(result.map(x => x.id)).not.toContain('Q6C275F');
+    // No in-session duplicates — the literal failure mode of the bug.
+    expect(new Set(result.map(r => r.id)).size).toBe(result.length);
   });
 
   it('honours 24h cool-down: question answered 23h ago is excluded', () => {
@@ -123,7 +128,15 @@ describe('selectSmartQuestions integration (PR #3 v2 fixes)', () => {
   });
 
   it('30% new-question quota: result contains at least 30% never-answered questions when both pools have enough', () => {
-    // 50 seen + 50 new in same topic. Slots reserve 30% for new.
+    // 50 seen + 50 new in single topic ('Cardiac Physiology').
+    // Hamilton 25% cap forces a two-stage selection inside selectSmartQuestions:
+    //   - Stage 3 gives the topic ceil(40 * 0.25) = 10 slots → ≥3 new
+    //   - Gap-fill takes the remaining 30 slots → ≥9 new
+    //   - Total minimum new: 12
+    // Without the quota, top-N-by-score with this fixture would land 0 new
+    // (seen are wrong+old → high topicWeakness, so they outscore unscored new),
+    // so any value ≥ 1 here proves the quota fired. Asserting the actual
+    // minimum (12) tightens the contract.
     const seen = Array.from({ length: 50 }, (_, i) => q(`seen-${i}`));
     const fresh = Array.from({ length: 50 }, (_, i) => q(`new-${i}`));
     const pool = [...seen, ...fresh];
@@ -132,8 +145,9 @@ describe('selectSmartQuestions integration (PR #3 v2 fixes)', () => {
     const result = selectSmartQuestions(pool, 40, 'regular', {}, history, pool);
 
     const newCount = result.filter(r => r.id.startsWith('new-')).length;
-    // ceil(40 * 0.30) = 12 — single topic gets all 40 slots and applies the quota.
-    expect(newCount).toBeGreaterThanOrEqual(12);
+    const expectedMin = Math.ceil(10 * NEW_QUESTION_QUOTA_RATIO) + Math.ceil(30 * NEW_QUESTION_QUOTA_RATIO);
+    expect(newCount).toBeGreaterThanOrEqual(expectedMin);
+    expect(result).toHaveLength(40);
   });
 
   it('Hamilton 25% topic cap is preserved (no single topic gets more than 10/40 slots)', () => {
@@ -156,6 +170,8 @@ describe('selectSmartQuestions integration (PR #3 v2 fixes)', () => {
       // 25% of 40 = 10
       expect(n, `topic ${topic} exceeded 25% cap`).toBeLessThanOrEqual(10);
     }
+    // No in-session duplicates across the multi-topic, multi-stage selection.
+    expect(new Set(result.map(r => r.id)).size).toBe(result.length);
   });
 
   it('defensive fallback: returns full session when pre-filter empties the pool', () => {
@@ -164,10 +180,23 @@ describe('selectSmartQuestions integration (PR #3 v2 fixes)', () => {
     const history = Object.fromEntries(pool.map(p => hist(p.id, 1)));
     const srsData = Object.fromEntries(pool.map(p => srs(p.id, 30)));
 
-    const result = selectSmartQuestions(pool, 5, 'regular', srsData, history, pool);
+    // Spy on the production observability hook — if it ever stops firing
+    // (e.g., the alarm `console.warn` is removed), silent prod degradation
+    // becomes invisible. Pinning the spy ensures the fallback stays observable.
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    try {
+      const result = selectSmartQuestions(pool, 5, 'regular', srsData, history, pool);
 
-    // Filter empties → fallback to unfiltered → return all 5.
-    expect(result).toHaveLength(5);
+      // Filter empties → fallback to unfiltered → return all 5.
+      expect(result).toHaveLength(5);
+      // The alarm fired with the [SRS] prefix.
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('[SRS] pre-filter emptied'),
+        expect.objectContaining({ poolSize: 5 }),
+      );
+    } finally {
+      warnSpy.mockRestore();
+    }
   });
 
   it('returns empty array for empty pool', () => {
