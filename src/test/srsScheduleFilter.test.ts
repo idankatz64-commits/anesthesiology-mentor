@@ -66,4 +66,22 @@ describe('srsScheduleFilter', () => {
     const srs = { q1: rec('not-a-date') };
     expect(isFutureScheduled('q1', srs, NOW)).toBe(false);
   });
+
+  // Defensive branch: SrsRecord types next_review_date as `string`, but
+  // production rows can drift (legacy nullables, empty writes). The
+  // `!record.next_review_date` short-circuit at srsScheduleFilter.ts:24 is
+  // distinct from the Date.parse NaN guard at line 27 — empty string never
+  // reaches Date.parse. Pin both branches so a refactor that collapses them
+  // can't silently change behavior.
+  it('returns false when next_review_date is empty string (defensive)', () => {
+    const srs = { q1: rec('') };
+    expect(isFutureScheduled('q1', srs, NOW)).toBe(false);
+  });
+
+  it('returns false when next_review_date is null (defensive — type drift)', () => {
+    // Cast: the type says `string`, but real DB rows have produced null.
+    // Defensive code by definition handles type-system violations.
+    const srs = { q1: { ...rec('placeholder'), next_review_date: null as unknown as string } };
+    expect(isFutureScheduled('q1', srs, NOW)).toBe(false);
+  });
 });

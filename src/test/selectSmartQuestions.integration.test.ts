@@ -150,6 +150,59 @@ describe('selectSmartQuestions integration (PR #3 v2 fixes)', () => {
     expect(result).toHaveLength(40);
   });
 
+  it('Hamilton 25% cap × new-question quota interact: each topic still satisfies ≥30% new', () => {
+    // The two existing topic-aware tests cover Hamilton and quota in isolation:
+    //   - "Hamilton 25% topic cap is preserved" uses 4 topics, 0 history (all new)
+    //   - "30% new-question quota" uses 1 topic, 50 seen + 50 new
+    // Neither exercises both simultaneously. This test forces them to interact:
+    // 4 topics × (10 seen-but-cooled-down + 10 never-seen). Hamilton allocates
+    // ≤10 slots per topic (25% of 40). Within each topic's bucket, the quota
+    // must still reserve ≥30% for new — so per topic: ≥3 new of ≤10 picked.
+    // Failure mode this catches: a regression where the quota only fires at
+    // the global level and leaves individual Hamilton buckets all-seen.
+    const topics = ['Topic A', 'Topic B', 'Topic C', 'Topic D'];
+    const pool: Question[] = [];
+    for (const topic of topics) {
+      for (let i = 0; i < 10; i++) {
+        pool.push(q(`${topic}-seen-${i}`, topic));
+      }
+      for (let i = 0; i < 10; i++) {
+        pool.push(q(`${topic}-new-${i}`, topic));
+      }
+    }
+    // Seen questions answered 30 days ago — well outside 24h cool-down.
+    const history = Object.fromEntries(
+      pool.filter(p => p.id.includes('-seen-')).map(p => hist(p.id, 30 * 24)),
+    );
+
+    const result = selectSmartQuestions(pool, 40, 'regular', {}, history, pool);
+
+    expect(result).toHaveLength(40);
+    expect(new Set(result.map(r => r.id)).size).toBe(result.length);
+
+    // Per-topic invariant: ≥30% new in every topic that received any slots.
+    // Skip topics that got 0 slots (vacuously satisfied; not the regression
+    // we're guarding against).
+    const byTopicStats: Record<string, { picked: number; newCount: number }> = {};
+    for (const r of result) {
+      const topic = r[KEYS.TOPIC] || '__other__';
+      const stats = byTopicStats[topic] ?? { picked: 0, newCount: 0 };
+      stats.picked += 1;
+      if (r.id.includes('-new-')) stats.newCount += 1;
+      byTopicStats[topic] = stats;
+    }
+    for (const [topic, { picked, newCount }] of Object.entries(byTopicStats)) {
+      if (picked === 0) continue;
+      const expectedMinNew = Math.ceil(picked * NEW_QUESTION_QUOTA_RATIO);
+      expect(
+        newCount,
+        `topic ${topic} got ${picked} slots but only ${newCount} new (expected ≥${expectedMinNew})`,
+      ).toBeGreaterThanOrEqual(expectedMinNew);
+      // Hamilton 25% cap still holds at the same time (10 slots = 25% of 40).
+      expect(picked, `topic ${topic} exceeded 25% cap`).toBeLessThanOrEqual(10);
+    }
+  });
+
   it('Hamilton 25% topic cap is preserved (no single topic gets more than 10/40 slots)', () => {
     const topics = ['Topic A', 'Topic B', 'Topic C', 'Topic D'];
     const pool: Question[] = [];
