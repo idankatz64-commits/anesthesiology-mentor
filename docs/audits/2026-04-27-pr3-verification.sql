@@ -6,6 +6,18 @@
 -- READ-ONLY: every statement is SELECT. No INSERT / UPDATE / DELETE / DDL.
 -- Safe to run against production.
 --
+-- ROLE REQUIREMENT: must run with the service-role key (Supabase MCP's
+-- default). RLS is bypassed — all four queries aggregate across ALL users.
+-- If accidentally run with the anon/authenticated key, every query returns
+-- 0 rows regardless of actual data — that looks like a clean pass but is a
+-- silent failure. Sanity check: SELECT count(*) FROM answer_history;
+-- should return a non-zero number before trusting any pass result.
+--
+-- OUTPUT WARNING: results include user_id UUIDs for every active user.
+-- Treat output as private admin data — do NOT paste raw rows into Slack,
+-- email, or any non-admin channel. Aggregate counts and pct_new values
+-- are safe to share; raw user_id values are not.
+--
 -- Schema notes (verified against supabase/migrations/ on 2026-04-28):
 --   answer_history(user_id uuid, question_id text, topic text,
 --                  is_correct bool, answered_at timestamptz)
@@ -55,6 +67,13 @@ LIMIT 20;
 -- filter should prevent this — such questions should have been excluded
 -- from the candidate pool.
 --
+-- CAVEAT: sr.next_review_date is the CURRENT schedule, not the schedule
+-- at answer time. SM-2 updates it after every answer, so a row here can
+-- mean either: (a) the bug recurred (was due 100d out, served anyway), OR
+-- (b) the answer pushed next_review_date out and the gap is now > 7d in
+-- retrospect. To disambiguate, sort by days_in_future DESC and inspect
+-- the top rows — large gaps (≫ 30d) almost certainly mean (a).
+--
 -- Pass criterion:   0 rows.
 -- Fail signal  :    rows with days_in_future > 7  →  filter is bypassed.
 SELECT
@@ -103,6 +122,11 @@ ORDER BY ah.answered_at DESC;
 -- the session bucket. The new 30% quota should push this materially
 -- above pre-fix levels.
 --
+-- IMPORTANT: run with a statement timeout to bound the worst case (the
+-- correlated NOT EXISTS scales as session_count × session_size):
+--   SET statement_timeout = '30s';
+-- then run the query; reset with RESET statement_timeout; afterwards.
+--
 -- Pass criterion:   pct_new ≥ 25 across most rows (target 30, allow
 --                   variance — small users with mostly-seen pools may sit
 --                   below).
@@ -111,35 +135,49 @@ WITH session_starts AS (
   SELECT
     user_id,
     DATE_TRUNC('hour', answered_at) AS session_hour,
-    ARRAY_AGG(question_id)          AS qids
+    ARRAY_AGG(question_id)          AS qids,
+    COUNT(*)                        AS session_size
   FROM answer_history
   WHERE answered_at >= NOW() - INTERVAL '7 days'
   GROUP BY user_id, DATE_TRUNC('hour', answered_at)
   HAVING COUNT(*) >= 20  -- only sessions with ≥ 20 questions
+),
+-- Unnest the per-session arrays so we can evaluate "never seen before"
+-- per question. Without this the COUNT(*) FILTER aggregates over one row
+-- per session (always 0 or 1), not per question — yielding nonsense.
+unnested AS (
+  SELECT
+    ss.user_id,
+    ss.session_hour,
+    ss.session_size,
+    q.question_id
+  FROM session_starts ss
+  CROSS JOIN LATERAL UNNEST(ss.qids) AS q(question_id)
 )
 SELECT
-  ss.user_id,
-  ss.session_hour,
-  ARRAY_LENGTH(ss.qids, 1) AS session_size,
+  u.user_id,
+  u.session_hour,
+  u.session_size,
   COUNT(*) FILTER (
     WHERE NOT EXISTS (
       SELECT 1 FROM answer_history prior
-      WHERE prior.user_id     = ss.user_id
-        AND prior.question_id = ANY(ss.qids)
-        AND prior.answered_at < ss.session_hour
+      WHERE prior.user_id     = u.user_id
+        AND prior.question_id = u.question_id
+        AND prior.answered_at < u.session_hour
     )
   ) AS never_seen_before,
   ROUND(
     100.0 * COUNT(*) FILTER (
       WHERE NOT EXISTS (
         SELECT 1 FROM answer_history prior
-        WHERE prior.user_id     = ss.user_id
-          AND prior.question_id = ANY(ss.qids)
-          AND prior.answered_at < ss.session_hour
+        WHERE prior.user_id     = u.user_id
+          AND prior.question_id = u.question_id
+          AND prior.answered_at < u.session_hour
       )
-    ) / NULLIF(ARRAY_LENGTH(ss.qids, 1), 0),
+    ) / NULLIF(u.session_size, 0),
     1
   ) AS pct_new
-FROM session_starts ss
-ORDER BY session_hour DESC
+FROM unnested u
+GROUP BY u.user_id, u.session_hour, u.session_size
+ORDER BY u.session_hour DESC
 LIMIT 20;
