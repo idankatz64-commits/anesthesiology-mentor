@@ -1,6 +1,8 @@
 import type { Question, HistoryEntry } from '@/lib/types';
 import { KEYS } from '@/lib/types';
 import type { SrsRecord } from '@/lib/srsRepository';
+import { filterCandidatePool } from '@/lib/srsPoolFilter';
+import { pickWithNewQuota } from '@/lib/newQuestionQuota';
 
 export type { SrsRecord };
 
@@ -428,9 +430,34 @@ export function selectSmartQuestions(
 
   if (pool.length === 0) return [];
 
+  // ── PRE-FILTER: cool-down + future-schedule (PR #3 v2) ──────────────
+  // Hard filters that prevent question repetition. Applies BEFORE the
+  // simulation branch so simulation mode also benefits.
+  // Defensive fallback: if the filter empties the pool entirely, fall back
+  // to the unfiltered pool to guarantee we always return a session.
+  const nowMs = Date.now();
+  const filteredPool = filterCandidatePool(pool, history, srsData, nowMs);
+  const workingPool = filteredPool.length > 0 ? filteredPool : pool;
+  if (filteredPool.length === 0 && pool.length > 0) {
+    // Ungated alarm: defensive fallback fired. srsDebugLog above is gated on
+    // srsDebugEnabled() and won't surface this in production — keep an
+    // ungated warn so the silent-fallback case is observable in the wild.
+    console.warn('[SRS] pre-filter emptied a non-empty pool — falling back to unfiltered pool', {
+      poolSize: pool.length,
+      historyEntries: Object.keys(history).length,
+      srsRecords: Object.keys(srsData).length,
+    });
+  }
+  srsDebugLog('selectSmartQuestions:pre-filter', {
+    poolSize: pool.length,
+    filteredSize: filteredPool.length,
+    fellBack: filteredPool.length === 0,
+    workingSize: workingPool.length,
+  });
+
   // Simulation mode: proportional distribution
   if (sessionSize === 'simulation') {
-    const simResult = selectSimulationQuestions(pool, count);
+    const simResult = selectSimulationQuestions(workingPool, count);
     srsDebugLog('selectSmartQuestions:simulation-result', {
       selectedIds: simResult.map(q => q[KEYS.ID]),
     });
@@ -449,12 +476,12 @@ export function selectSmartQuestions(
     weights[4] = overrides.w5; // examProximity
   }
 
-  // לא יותר ממה שיש בpool בפועל
-  const effectiveCount = Math.min(count, pool.length);
+  // לא יותר ממה שיש ב-workingPool בפועל (post-filter)
+  const effectiveCount = Math.min(count, workingPool.length);
 
   // ── STAGE 1: קבץ לפי נושא + חשב ציון לכל נושא ───────────────────
   const byTopic: Record<string, Question[]> = {};
-  for (const q of pool) {
+  for (const q of workingPool) {
     const topic = q[KEYS.TOPIC] || '__other__';
     if (!byTopic[topic]) byTopic[topic] = [];
     byTopic[topic].push(q);
@@ -493,24 +520,40 @@ export function selectSmartQuestions(
     globalAccuracy,
     weights,
   };
+  // Per-topic selection with 30% new-question quota (PR #3 v2 fix C).
+  // Quota is applied PER TOPIC, not globally — this preserves the Hamilton
+  // 25% topic cap from Stage 2.
   const selected: Question[] = [];
   for (const topic of topics) {
     const n = slots[topic] ?? 0;
     if (n <= 0) continue;
     const scored = byTopic[topic]
-      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) }))
-      .sort((a, b) => b.urgency - a.urgency);
-    selected.push(...scored.slice(0, n).map(s => s.q));
+      .map(q => ({
+        item: q,
+        // Treat zero-answered history rows as "new" too — guards against a
+        // legacy/zombie row state where a row exists but the user never
+        // actually answered the question.
+        isNew: !history[q[KEYS.ID]] || history[q[KEYS.ID]].answered === 0,
+        score: computeSmartScore(q, scoringParams),
+      }))
+      .sort((a, b) => b.score - a.score);
+    selected.push(...pickWithNewQuota(scored, n));
   }
 
   // ── מלא gaps: אם pool קטן מדי ב-slot מסוים, קח מהשאר ────────────
+  // Use workingPool (post-filter) and apply 30% new-question quota here too,
+  // so even fallback selections respect the quota.
   if (selected.length < effectiveCount) {
     const usedIds = new Set(selected.map(q => q[KEYS.ID]));
-    const leftover = pool
+    const leftover = workingPool
       .filter(q => !usedIds.has(q[KEYS.ID]))
-      .map(q => ({ q, urgency: computeSmartScore(q, scoringParams) }))
-      .sort((a, b) => b.urgency - a.urgency);
-    selected.push(...leftover.slice(0, effectiveCount - selected.length).map(s => s.q));
+      .map(q => ({
+        item: q,
+        isNew: !history[q[KEYS.ID]] || history[q[KEYS.ID]].answered === 0,
+        score: computeSmartScore(q, scoringParams),
+      }))
+      .sort((a, b) => b.score - a.score);
+    selected.push(...pickWithNewQuota(leftover, effectiveCount - selected.length));
   }
 
   // Shuffle the final selection so presentation order isn't predictable
