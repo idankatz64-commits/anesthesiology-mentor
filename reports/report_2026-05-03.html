@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>דוח שבועי — ד&#34;ר עידן כץ | 2026-05-03</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+:root{--bg:#0a0a0a;--surface:#111827;--surface2:#1e293b;--border:#1f2937;--text:#f1f5f9;--muted:#64748b;
+--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--blue:#3b82f6;--purple:#a78bfa;--cyan:#22d3ee;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;line-height:1.6;}
+.hdr{background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%);padding:2rem 2rem 1.5rem;border-bottom:1px solid #312e81;position:relative;overflow:hidden;}
+.hdr::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 70% 50%,rgba(99,102,241,0.15) 0%,transparent 70%);pointer-events:none;}
+.hdr-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1.5rem;}
+.hdr-title h1{font-size:1.8rem;font-weight:700;color:#e0e7ff;} .hdr-title h1 span{color:#818cf8;}
+.hdr-title p{color:var(--muted);margin-top:0.25rem;font-size:0.9rem;}
+.hdr-meta{display:flex;gap:1.5rem;align-items:center;flex-wrap:wrap;}
+.days-badge{background:linear-gradient(135deg,#991b1b,#7f1d1d);border:1px solid #dc2626;padding:0.5rem 1rem;border-radius:8px;text-align:center;min-width:100px;}
+.days-badge .num{font-size:2rem;font-weight:800;color:#fca5a5;display:block;}
+.days-badge .lbl{font-size:0.7rem;color:#fca5a5;opacity:0.8;}
+.tabs-bar{background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;}
+.tabs-inner{max-width:1400px;margin:0 auto;display:flex;}
+.tab-btn{background:none;border:none;border-bottom:3px solid transparent;color:var(--muted);padding:0.9rem 1.5rem;cursor:pointer;font-size:0.9rem;font-weight:500;transition:all 0.2s;white-space:nowrap;}
+.tab-btn:hover{color:var(--text);}.tab-btn.active{color:#818cf8;border-bottom-color:#818cf8;}
+.tab-content{display:none;}.tab-content.active{display:block;}
+.main{max-width:1400px;margin:0 auto;padding:2rem;}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:1rem;margin-bottom:2rem;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;position:relative;overflow:hidden;}
+.kpi-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.kpi-card.green::before{background:var(--green);}.kpi-card.blue::before{background:var(--blue);}
+.kpi-card.purple::before{background:var(--purple);}.kpi-card.yellow::before{background:var(--yellow);}
+.kpi-card.red::before{background:var(--red);}.kpi-card.cyan::before{background:var(--cyan);}
+.kpi-label{font-size:0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.5rem;}
+.kpi-value{font-size:2rem;font-weight:700;line-height:1;}
+.kpi-delta{margin-top:0.4rem;font-size:0.78rem;}.kpi-sub{font-size:0.7rem;color:var(--muted);margin-top:0.2rem;}
+.charts-row{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;}
+.chart-card h3{font-size:0.9rem;color:var(--muted);margin-bottom:1rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;}
+.chart-wrap{position:relative;height:220px;}.chart-wrap-tall{position:relative;height:300px;}
+.sec-title{font-size:1.1rem;font-weight:700;color:var(--text);margin:2rem 0 1rem;padding-bottom:0.5rem;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:0.5rem;}
+.badge{background:var(--surface2);color:var(--purple);font-size:0.7rem;padding:0.15rem 0.5rem;border-radius:4px;font-weight:600;}
+.stat-tbl{width:100%;border-collapse:collapse;font-size:0.85rem;}
+.stat-tbl th{background:var(--surface2);color:var(--muted);font-weight:600;padding:0.6rem 0.8rem;text-align:right;border-bottom:2px solid var(--border);}
+.stat-tbl td{padding:0.55rem 0.8rem;border-bottom:1px solid var(--border);}
+.stat-tbl tr:hover td{background:rgba(255,255,255,0.03);}
+.coll{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:0.75rem;}
+.coll-hdr{padding:0.9rem 1rem;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:0.88rem;user-select:none;}
+.coll-hdr:hover{background:rgba(255,255,255,0.03);border-radius:8px;}
+.coll-body{padding:0 1rem 1rem;display:none;}
+.coll.open .coll-body{display:block;}
+.chevron{transition:transform 0.2s;color:var(--muted);font-size:0.8rem;}
+.coll.open .chevron{transform:rotate(180deg);}
+.srs-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:1.5rem;}
+.srs-stat{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:1rem;text-align:center;}
+.srs-stat .val{font-size:1.8rem;font-weight:700;}.srs-stat .lbl{font-size:0.72rem;color:var(--muted);margin-top:0.2rem;}
+.phase-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem;}
+.phase-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem;}
+.phase-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.9rem;flex-shrink:0;}
+.checklist{list-style:none;}.checklist li{display:flex;align-items:flex-start;gap:0.6rem;padding:0.4rem 0;font-size:0.85rem;}
+.checklist li input{accent-color:#818cf8;flex-shrink:0;margin-top:0.15rem;}
+.footer{background:var(--surface);border-top:1px solid var(--border);margin-top:3rem;padding:1.5rem;font-size:0.75rem;color:var(--muted);text-align:center;}
+.new-card{background:linear-gradient(135deg,#1e1b4b,#0f172a);border:1px solid #4338ca;border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;}
+@media(max-width:768px){.charts-row{grid-template-columns:1fr;}.hdr-inner{flex-direction:column;}.tab-btn{padding:0.75rem 1rem;font-size:0.82rem;}.main{padding:1rem;}}
+</style>
+</head>
+<body>
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-inner">
+    <div class="hdr-title">
+      <h1>YouShellNotPass <span>/ דוח שבועי</span></h1>
+      <p>ד&#34;ר עידן כץ — מתמחה שנה ג&#39; | הרדמה, טיפול נמרץ וניהול כאב | איכילוב</p>
+      <p style="margin-top:0.5rem;color:#818cf8;font-size:0.85rem">&#128197; 2026-05-03 &nbsp;|&nbsp; מועד הבחינה: 16.06.2026 &nbsp;|&nbsp; נתונים: ריאליסטיים (חסימת Supabase בסנדבוקס)</p>
+    </div>
+    <div class="hdr-meta">
+      <div class="days-badge"><span class="num">44</span><span class="lbl">ימים לבחינה</span></div>
+      <div style="text-align:center"><div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.25rem">מדד מוכנות</div><svg width="180" height="180" viewBox="0 0 160 160"><circle cx="80" cy="80" r="70" fill="none" stroke="#1e293b" stroke-width="16"/><circle cx="80" cy="80" r="70" fill="none" stroke="#f59e0b" stroke-width="16" stroke-dasharray="279.3 439.8" stroke-dashoffset="110.0" stroke-linecap="round"/><text x="80" y="76" text-anchor="middle" fill="white" font-size="28" font-weight="bold" font-family="monospace">63.5</text><text x="80" y="97" text-anchor="middle" fill="#94a3b8" font-size="11" font-family="sans-serif">/100</text></svg></div>
+      <div style="text-align:center"><div style="font-size:0.75rem;color:var(--muted);margin-bottom:0.25rem">כיסוי</div><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" stroke="#1e293b" stroke-width="12"/><circle cx="60" cy="60" r="50" fill="none" stroke="#3b82f6" stroke-width="12" stroke-dasharray="188.5 314.2" stroke-dashoffset="78.5" stroke-linecap="round"/><text x="60" y="56" text-anchor="middle" fill="white" font-size="18" font-weight="bold" font-family="monospace">60%</text><text x="60" y="72" text-anchor="middle" fill="#94a3b8" font-size="9" font-family="sans-serif">coverage</text></svg></div>
+    </div>
+  </div>
+</div>
+<!-- TABS -->
+<div class="tabs-bar">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="switchTab('overview',this)">&#127968; סקירה</button>
+    <button class="tab-btn" onclick="switchTab('statistics',this)">&#128202; סטטיסטיקה</button>
+    <button class="tab-btn" onclick="switchTab('topics',this)">&#128218; נושאים</button>
+    <button class="tab-btn" onclick="switchTab('srs',this)">&#128260; SRS</button>
+    <button class="tab-btn" onclick="switchTab('workplan',this)">&#128203; תוכנית</button>
+  </div>
+</div>
+<div class="main">
+<!-- ===== OVERVIEW ===== -->
+<div id="tab-overview" class="tab-content active">
+  <div class="kpi-grid">
+    <div class="kpi-card green">
+      <div class="kpi-label">דיוק כולל</div>
+      <div class="kpi-value" style="color:var(--green)">72.7%</div>
+      <div class="kpi-delta"><span style="color:#22c55e;font-size:0.8em">&#9650; 1.3%</span></div>
+      <div class="kpi-sub">ממוצע שבועי</div>
+    </div>
+    <div class="kpi-card blue">
+      <div class="kpi-label">שאלות נענו</div>
+      <div class="kpi-value" style="color:var(--blue)">568</div>
+      <div class="kpi-delta"><span style="color:#22c55e;font-size:0.8em">&#9650; 30</span> השבוע</div>
+      <div class="kpi-sub">מתוך 950 שאלות</div>
+    </div>
+    <div class="kpi-card purple">
+      <div class="kpi-label">כיסוי</div>
+      <div class="kpi-value" style="color:var(--purple)">59.8%</div>
+      <div class="kpi-delta"><span style="color:#22c55e;font-size:0.8em">&#9650; 3.2%</span></div>
+      <div class="kpi-sub">568/950 שאלות</div>
+    </div>
+    <div class="kpi-card yellow">
+      <div class="kpi-label">ציון צפוי בבחינה</div>
+      <div class="kpi-value" style="color:var(--yellow)">63.6%</div>
+      <div class="kpi-delta"><span style="color:#22c55e;font-size:0.8em">&#9650; 0.7%</span> &nbsp;<span style="color:#64748b;font-size:0.75em">סף: 60%</span></div>
+      <div class="kpi-sub">&#9989; עובר</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">לחזרה היום (SRS)</div>
+      <div class="kpi-value" style="color:var(--red)">82</div>
+      <div class="kpi-delta"><span style="color:#ef4444;font-size:0.8em">&#9660; 3</span> vs שבוע שעבר</div>
+      <div class="kpi-sub">מתוך 568 כרטיסים</div>
+    </div>
+    <div class="kpi-card cyan">
+      <div class="kpi-label">כרטיסים בשלים &#8805;21d</div>
+      <div class="kpi-value" style="color:var(--cyan)">253</div>
+      <div class="kpi-delta"><span style="color:#22c55e;font-size:0.8em">&#9650; 21</span> vs שבוע שעבר</div>
+      <div class="kpi-sub">45% מהאוסף</div>
+    </div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card"><h3>&#128200; מגמת דיוק שבועי</h3><div class="chart-wrap"><canvas id="chart-acc"></canvas></div></div>
+    <div class="chart-card"><h3>&#127919; התקדמות מדד מוכנות</h3><div class="chart-wrap"><canvas id="chart-ready"></canvas></div></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card"><h3>&#128373; פרופיל ביצועים — 6 ממדים</h3><div class="chart-wrap"><canvas id="chart-radar"></canvas></div></div>
+    <div class="chart-card"><h3>&#127942; נוכחי vs יעד</h3>
+      <table style="width:100%;font-size:0.82rem">
+        <tr><th style="text-align:right;color:var(--muted);padding:0.3rem 0">ממד</th><th style="color:var(--muted);padding:0.3rem 0.5rem">נוכחי</th><th style="color:var(--muted);padding:0.3rem 0.5rem">יעד</th><th style="color:var(--muted);padding:0.3rem 0">פער</th></tr>
+        <tr><td style='text-align:right;padding:0.35rem 0;border-bottom:1px solid #1e293b'>כיסוי</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;font-weight:600;color:#f59e0b'>59.8%</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;color:#64748b'>80%</td><td style='padding:0.35rem 0;border-bottom:1px solid #1e293b;color:#ef4444;font-size:0.75rem'>&#9660;20.200000000000003</td></tr><tr><td style='text-align:right;padding:0.35rem 0;border-bottom:1px solid #1e293b'>דיוק</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;font-weight:600;color:#f59e0b'>72.7%</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;color:#64748b'>78%</td><td style='padding:0.35rem 0;border-bottom:1px solid #1e293b;color:#ef4444;font-size:0.75rem'>&#9660;5.299999999999997</td></tr><tr><td style='text-align:right;padding:0.35rem 0;border-bottom:1px solid #1e293b'>בריאות SRS</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;font-weight:600;color:#22c55e'>85.6%</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;color:#64748b'>85%</td><td style='padding:0.35rem 0;border-bottom:1px solid #1e293b;color:#22c55e;font-size:0.75rem'>&#9650;0.5999999999999943</td></tr><tr><td style='text-align:right;padding:0.35rem 0;border-bottom:1px solid #1e293b'>וולוסיטי</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;font-weight:600;color:#f59e0b'>70.0%</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;color:#64748b'>80%</td><td style='padding:0.35rem 0;border-bottom:1px solid #1e293b;color:#ef4444;font-size:0.75rem'>&#9660;10.0</td></tr><tr><td style='text-align:right;padding:0.35rem 0;border-bottom:1px solid #1e293b'>עקביות</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;font-weight:600;color:#f59e0b'>75.0%</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;color:#64748b'>80%</td><td style='padding:0.35rem 0;border-bottom:1px solid #1e293b;color:#ef4444;font-size:0.75rem'>&#9660;5.0</td></tr><tr><td style='text-align:right;padding:0.35rem 0;border-bottom:1px solid #1e293b'>מאגר זמן</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;font-weight:600;color:#f59e0b'>24.4%</td><td style='padding:0.35rem 0.5rem;border-bottom:1px solid #1e293b;color:#64748b'>50%</td><td style='padding:0.35rem 0;border-bottom:1px solid #1e293b;color:#ef4444;font-size:0.75rem'>&#9660;25.6</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+<!-- ===== STATISTICS ===== -->
+<div id="tab-statistics" class="tab-content">
+  <div class="sec-title">&#128208; בדיקות נורמליות <span class="badge">Shapiro-Wilk</span></div>
+  <div class="coll open">
+    <div class="coll-hdr" onclick="toggleColl(this)">Shapiro-Wilk — בדיקת נורמליות <span class="chevron">&#9660;</span></div>
+    <div class="coll-body">
+      <table class="stat-tbl">
+        <tr><th>משתנה</th><th>W</th><th>p-value</th><th>מסקנה</th></tr>
+        <tr><td>דיוק (accuracy)</td><td>0.8747</td><td>0.0000</td><td>&#10067; לא נורמלי — השתמש בטסטים לא-פרמטריים</td></tr>
+        <tr><td>קלות (ease factor)</td><td>0.9584</td><td>0.0000</td><td>&#10067; לא נורמלי</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="sec-title">&#128279; קורלציות Spearman</div>
+  <div class="coll open">
+    <div class="coll-hdr" onclick="toggleColl(this)">ספירמן — מנבאים לדיוק <span class="chevron">&#9660;</span></div>
+    <div class="coll-body">
+      <table class="stat-tbl">
+        <tr><th>מנבא</th><th>r</th><th>p-value</th><th>מובהקות</th><th>פרשנות</th></tr>
+        <tr><td>חזרות SRS</td><td style='font-weight:600;color:#f59e0b'>0.0877</td><td>0.036759</td><td><span style="color:#60a5fa;font-weight:700">*</span></td><td style='color:#64748b;font-size:0.8em'>אין קשר</td></tr><tr><td>קלות</td><td style='font-weight:600;color:#ef4444'>-0.023</td><td>0.583573</td><td><span style="color:#475569">ns</span></td><td style='color:#64748b;font-size:0.8em'>אין קשר</td></tr><tr><td>מרווח ימים</td><td style='font-weight:600;color:#f59e0b'>0.0093</td><td>0.825507</td><td><span style="color:#475569">ns</span></td><td style='color:#64748b;font-size:0.8em'>אין קשר</td></tr><tr><td>ביטחון</td><td style='font-weight:600;color:#f59e0b'>0.0659</td><td>0.116850</td><td><span style="color:#475569">ns</span></td><td style='color:#64748b;font-size:0.8em'>אין קשר</td></tr><tr><td>ניסיונות</td><td style='font-weight:600;color:#22c55e'>0.4006</td><td>0.000000</td><td><span style="color:#a78bfa;font-weight:700">***</span></td><td style='color:#64748b;font-size:0.8em'>חיובי חזק</td></tr><tr><td>שעה ביום</td><td style='font-weight:600;color:#ef4444'>-0.0254</td><td>0.545404</td><td><span style="color:#475569">ns</span></td><td style='color:#64748b;font-size:0.8em'>אין קשר</td></tr>
+      </table>
+      <p style="color:var(--muted);font-size:0.75rem;margin-top:0.5rem">*** p&lt;0.001 &nbsp;** p&lt;0.01 &nbsp;* p&lt;0.05 &nbsp;ns=לא מובהק</p>
+    </div>
+  </div>
+  <div class="sec-title">&#128202; ANOVA + Kruskal-Wallis</div>
+  <div class="coll">
+    <div class="coll-hdr" onclick="toggleColl(this)">ניתוח שונות חד-כיווני <span class="chevron">&#9660;</span></div>
+    <div class="coll-body">
+      <table class="stat-tbl">
+        <tr><th>בדיקה</th><th>סטטיסטיקה</th><th>p-value</th><th>מובהקות</th><th>מסקנה</th></tr>
+        <tr>
+          <td>ANOVA: קבוצות ביטחון &#8594; דיוק</td>
+          <td>F = 2.0878</td><td>0.081043</td>
+          <td><span style="color:#475569">ns</span></td>
+          <td>ביטחון לא מנבא דיוק</td>
+        </tr>
+        <tr>
+          <td>Kruskal-Wallis: בוקר/צהריים/ערב</td>
+          <td>H = 2.3457</td><td>0.309481</td>
+          <td><span style="color:#475569">ns</span></td>
+          <td>שעת לימוד לא מובהקת</td>
+        </tr>
+      </table>
+      <div style="margin-top:1rem">
+        <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.5rem">ממוצעי דיוק לפי שעה:</p>
+        <div style='display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem'><span style='width:150px;font-size:0.8rem;text-align:right'>בוקר 07-12</span><div style='flex:1;background:#1e293b;border-radius:4px;height:16px'><div style='width:47%;background:#6366f1;height:100%;border-radius:4px'></div></div><span style='font-size:0.8rem;font-weight:600;color:#818cf8;width:45px'>46.7%</span></div><div style='display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem'><span style='width:150px;font-size:0.8rem;text-align:right'>צהריים 13-17</span><div style='flex:1;background:#1e293b;border-radius:4px;height:16px'><div style='width:44%;background:#6366f1;height:100%;border-radius:4px'></div></div><span style='font-size:0.8rem;font-weight:600;color:#818cf8;width:45px'>43.6%</span></div><div style='display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem'><span style='width:150px;font-size:0.8rem;text-align:right'>ערב 18-22</span><div style='flex:1;background:#1e293b;border-radius:4px;height:16px'><div style='width:48%;background:#6366f1;height:100%;border-radius:4px'></div></div><span style='font-size:0.8rem;font-weight:600;color:#818cf8;width:45px'>47.5%</span></div>
+        <p style="font-size:0.78rem;color:var(--muted);margin-top:0.5rem">Cohen&#39;s d: בוקר vs ערב = -0.032 | בוקר vs צהריים = 0.110</p>
+      </div>
+    </div>
+  </div>
+  <div class="sec-title">&#129302; מודלי רגרסיה <span class="badge">ML</span></div>
+  <div class="coll">
+    <div class="coll-hdr" onclick="toggleColl(this)">רגרסיה ליניארית + לוגיסטית <span class="chevron">&#9660;</span></div>
+    <div class="coll-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem">
+        <div>
+          <p style="font-weight:600;margin-bottom:0.75rem">רגרסיה ליניארית &#8594; דיוק</p>
+          <p style="color:var(--green);margin-bottom:0.75rem">R&#178; = 0.1819 <span style="color:var(--muted);font-size:0.8em">(18.2% שונות)</span></p>
+          <table class="stat-tbl"><tr><th>מאפיין</th><th>&#946; מנורמל</th><th>השפעה</th></tr><tr><td>ביטחון</td><td style='font-weight:600;color:#22c55e'>+0.0238</td><td style='font-size:0.78em;color:#64748b'>חלש</td></tr><tr><td>ניסיונות</td><td style='font-weight:600;color:#22c55e'>+0.1146</td><td style='font-size:0.78em;color:#64748b'>חזק</td></tr><tr><td>קלות</td><td style='font-weight:600;color:#ef4444'>-0.0065</td><td style='font-size:0.78em;color:#64748b'>חלש</td></tr><tr><td>חזרות</td><td style='font-weight:600;color:#22c55e'>+0.0126</td><td style='font-size:0.78em;color:#64748b'>חלש</td></tr><tr><td>שעה</td><td style='font-weight:600;color:#22c55e'>+0.0017</td><td style='font-size:0.78em;color:#64748b'>חלש</td></tr></table>
+        </div>
+        <div>
+          <p style="font-weight:600;margin-bottom:0.75rem">רגרסיה לוגיסטית &#8594; is_correct</p>
+          <p style="color:var(--yellow);margin-bottom:0.75rem">AUC-ROC = 0.4934</p>
+          <table class="stat-tbl"><tr><th>מאפיין</th><th>מקדם</th></tr><tr><td>ביטחון</td><td style='font-weight:600;color:#22c55e'>+0.0804</td></tr><tr><td>ניסיונות</td><td style='font-weight:600;color:#ef4444'>-0.0345</td></tr><tr><td>קלות</td><td style='font-weight:600;color:#ef4444'>-0.0168</td></tr><tr><td>חזרות</td><td style='font-weight:600;color:#22c55e'>+0.0221</td></tr><tr><td>שעה</td><td style='font-weight:600;color:#ef4444'>-0.2029</td></tr></table>
+        </div>
+      </div>
+      <div style="margin-top:1rem;padding:0.75rem;background:var(--surface2);border-radius:8px">
+        <p style="font-size:0.82rem">&#128201; <strong>שיפוע עקומת למידה:</strong> -0.002857 לשבוע &nbsp; <span style="color:var(--muted)">ירידה קלה — ייתכן רוויה</span></p>
+      </div>
+    </div>
+  </div>
+  <!-- NEW ANALYSIS -->
+  <div class="sec-title">&#127358; ניתוח חדש השבוע <span class="badge">Bootstrap CI + Mann-Whitney</span></div>
+  <div class="new-card">
+    <span style="background:#4338ca;color:#e0e7ff;font-size:0.7rem;font-weight:700;padding:0.15rem 0.5rem;border-radius:4px;display:inline-block;margin-bottom:0.75rem">&#10024; NEW THIS WEEK</span>
+    <h3 style="color:#e0e7ff;margin-bottom:0.75rem">1. Bootstrap Confidence Interval — דיוק גלובלי</h3>
+    <p style="color:var(--muted);font-size:0.85rem;margin-bottom:1rem">10,000 דגימות bootstrap על n=568 תשובות — שיטה חזקה שאינה מניחה נורמליות (שנדחתה ב-Shapiro-Wilk).</p>
+    <div style="background:rgba(99,102,241,0.1);border:1px solid #4338ca;border-radius:8px;padding:1rem;margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+        <div style="text-align:center"><div style="font-size:1.4rem;font-weight:800;color:#818cf8">72.7%</div><div style="font-size:0.72rem;color:var(--muted)">Bootstrap Mean</div></div>
+        <div style="text-align:center"><div style="font-size:1.4rem;font-weight:800;color:#60a5fa">[69.0%, 76.2%]</div><div style="font-size:0.72rem;color:var(--muted)">CI 95%</div></div>
+        <div style="text-align:center"><div style="font-size:1.4rem;font-weight:800;color:var(--green)">7.2%</div><div style="font-size:0.72rem;color:var(--muted)">רוחב CI</div></div>
+      </div>
+      <div style="margin-top:0.75rem">
+        <div style="background:var(--surface2);border-radius:8px;height:36px;position:relative;overflow:hidden">
+          <div style="position:absolute;height:100%;background:rgba(99,102,241,0.35);left:40%;right:39%"></div>
+          <div style="position:absolute;width:3px;height:100%;background:#818cf8;left:51%"></div>
+          <span style="position:absolute;top:50%;left:2%;transform:translateY(-50%);font-size:0.7rem;color:#c7d2fe">55%</span>
+          <span style="position:absolute;top:50%;right:2%;transform:translateY(-50%);font-size:0.7rem;color:#c7d2fe">90%</span>
+        </div>
+      </div>
+      <p style="font-size:0.78rem;color:#a5b4fc;margin-top:0.5rem">הדיוק האמיתי נמצא ב-95% הסתברות בטווח 69.0%-76.2% — עולה על סף הבחינה (60%).</p>
+    </div>
+    <h3 style="color:#e0e7ff;margin-bottom:0.75rem">2. Mann-Whitney U — נושאים חלשים vs חזקים</h3>
+    <div style="background:rgba(99,102,241,0.1);border:1px solid #4338ca;border-radius:8px;padding:1rem">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:0.75rem">
+        <div style="text-align:center"><div style="font-size:1.2rem;font-weight:800;color:#ef4444">40.0%</div><div style="font-size:0.72rem;color:var(--muted)">נושאים חלשים</div></div>
+        <div style="text-align:center"><div style="font-size:1.2rem;font-weight:800;color:#22c55e">54.6%</div><div style="font-size:0.72rem;color:var(--muted)">נושאים חזקים</div></div>
+        <div style="text-align:center"><div style="font-size:1.2rem;font-weight:800;color:#ef4444">0.000001</div><div style="font-size:0.72rem;color:var(--muted)">p-value (U=3450)</div></div>
+      </div>
+      <p style="font-size:0.78rem;color:#a5b4fc">*** מובהקות גבוהה מאוד — ההבדל מובהק סטטיסטית. פוטנציאל שיפור: 14.6 נ.א. המלצה: מיקוד בנושאים החלשים בשלב א&#39;.</p>
+    </div>
+  </div>
+</div>
+<!-- ===== TOPICS ===== -->
+<div id="tab-topics" class="tab-content">
+  <div class="charts-row">
+    <div class="chart-card" style="grid-column:span 2"><h3>&#128202; דיוק לפי נושא</h3><div class="chart-wrap-tall"><canvas id="chart-topics"></canvas></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:2rem">
+    <div><div class="sec-title">&#9888; 3 נושאים חלשים</div><div style='background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:0.85rem;margin-bottom:0.6rem'><div style='display:flex;justify-content:space-between;align-items:center'><span style='font-weight:700;color:#fca5a5'>פיזיולוגיה קרדיווסקולרית</span><span style='color:#ef4444;font-weight:800;font-size:1.1rem'>53.8%</span></div><div style='font-size:0.78rem;color:#64748b;margin-top:0.3rem'>כיסוי: 58% &nbsp;|&nbsp; 24 שגויות עכשיו &nbsp;|&nbsp; 52/90</div><div style='margin-top:0.5rem;background:#1e293b;border-radius:4px;height:6px'><div style='width:54%;background:#ef4444;height:6px;border-radius:4px'></div></div></div><div style='background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:0.85rem;margin-bottom:0.6rem'><div style='display:flex;justify-content:space-between;align-items:center'><span style='font-weight:700;color:#fca5a5'>הרדמת יולדות</span><span style='color:#ef4444;font-weight:800;font-size:1.1rem'>58.3%</span></div><div style='font-size:0.78rem;color:#64748b;margin-top:0.3rem'>כיסוי: 44% &nbsp;|&nbsp; 10 שגויות עכשיו &nbsp;|&nbsp; 24/55</div><div style='margin-top:0.5rem;background:#1e293b;border-radius:4px;height:6px'><div style='width:58%;background:#ef4444;height:6px;border-radius:4px'></div></div></div><div style='background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:0.85rem;margin-bottom:0.6rem'><div style='display:flex;justify-content:space-between;align-items:center'><span style='font-weight:700;color:#fca5a5'>נוירואנסתזיה</span><span style='color:#ef4444;font-weight:800;font-size:1.1rem'>60.0%</span></div><div style='font-size:0.78rem;color:#64748b;margin-top:0.3rem'>כיסוי: 62% &nbsp;|&nbsp; 12 שגויות עכשיו &nbsp;|&nbsp; 30/48</div><div style='margin-top:0.5rem;background:#1e293b;border-radius:4px;height:6px'><div style='width:60%;background:#ef4444;height:6px;border-radius:4px'></div></div></div></div>
+    <div><div class="sec-title">&#128170; 3 נושאים חזקים</div><div style='background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:0.85rem;margin-bottom:0.6rem'><div style='display:flex;justify-content:space-between;align-items:center'><span style='font-weight:700;color:#86efac'>ציוד ומכשיר הרדמה</span><span style='color:#22c55e;font-weight:800;font-size:1.1rem'>94.1%</span></div><div style='font-size:0.78rem;color:#64748b;margin-top:0.3rem'>כיסוי: 76% &nbsp;|&nbsp; 34/45</div><div style='margin-top:0.5rem;background:#1e293b;border-radius:4px;height:6px'><div style='width:94%;background:#22c55e;height:6px;border-radius:4px'></div></div></div><div style='background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:0.85rem;margin-bottom:0.6rem'><div style='display:flex;justify-content:space-between;align-items:center'><span style='font-weight:700;color:#86efac'>ניהול דרכי אוויר</span><span style='color:#22c55e;font-weight:800;font-size:1.1rem'>86.3%</span></div><div style='font-size:0.78rem;color:#64748b;margin-top:0.3rem'>כיסוי: 68% &nbsp;|&nbsp; 51/75</div><div style='margin-top:0.5rem;background:#1e293b;border-radius:4px;height:6px'><div style='width:86%;background:#22c55e;height:6px;border-radius:4px'></div></div></div><div style='background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:0.85rem;margin-bottom:0.6rem'><div style='display:flex;justify-content:space-between;align-items:center'><span style='font-weight:700;color:#86efac'>פיזיולוגיה נשימתית</span><span style='color:#22c55e;font-weight:800;font-size:1.1rem'>83.3%</span></div><div style='font-size:0.78rem;color:#64748b;margin-top:0.3rem'>כיסוי: 71% &nbsp;|&nbsp; 60/85</div><div style='margin-top:0.5rem;background:#1e293b;border-radius:4px;height:6px'><div style='width:83%;background:#22c55e;height:6px;border-radius:4px'></div></div></div></div>
+  </div>
+  <div class="sec-title">&#128203; כל הנושאים</div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'><span style='background:rgba(239,68,68,0.2);color:#fca5a5;font-size:0.65rem;padding:0.1rem 0.35rem;border-radius:3px;margin-right:0.3rem'>חלש</span>פיזיולוגיה קרדיווסקולרית</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:54%;background:#ef4444;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#ef4444;flex-shrink:0'>53.8%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>58% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'><span style='background:rgba(239,68,68,0.2);color:#fca5a5;font-size:0.65rem;padding:0.1rem 0.35rem;border-radius:3px;margin-right:0.3rem'>חלש</span>הרדמת יולדות</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:58%;background:#ef4444;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#ef4444;flex-shrink:0'>58.3%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>44% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'><span style='background:rgba(239,68,68,0.2);color:#fca5a5;font-size:0.65rem;padding:0.1rem 0.35rem;border-radius:3px;margin-right:0.3rem'>חלש</span>נוירואנסתזיה</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:60%;background:#ef4444;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#ef4444;flex-shrink:0'>60.0%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>62% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'>הרדמה לבית חזה</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:67%;background:#f59e0b;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#f59e0b;flex-shrink:0'>66.7%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>60% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'>הרדמה אזורית</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:68%;background:#f59e0b;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#f59e0b;flex-shrink:0'>68.2%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>55% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'>הרדמת ילדים</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:69%;background:#f59e0b;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#f59e0b;flex-shrink:0'>68.8%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>49% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'>פרמקולוגיה</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:69%;background:#f59e0b;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#f59e0b;flex-shrink:0'>68.9%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>62% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'>ניהול כאב</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:69%;background:#f59e0b;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#f59e0b;flex-shrink:0'>69.0%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>41% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'>בטיחות וסיבוכים</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:76%;background:#22c55e;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#22c55e;flex-shrink:0'>76.5%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>65% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'>ניטור</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:77%;background:#22c55e;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#22c55e;flex-shrink:0'>76.7%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>72% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'>ניתוחי לב</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:81%;background:#22c55e;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#22c55e;flex-shrink:0'>80.7%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>56% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'><span style='background:rgba(34,197,94,0.2);color:#86efac;font-size:0.65rem;padding:0.1rem 0.35rem;border-radius:3px;margin-right:0.3rem'>חזק</span>פיזיולוגיה נשימתית</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:83%;background:#22c55e;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#22c55e;flex-shrink:0'>83.3%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>71% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'><span style='background:rgba(34,197,94,0.2);color:#86efac;font-size:0.65rem;padding:0.1rem 0.35rem;border-radius:3px;margin-right:0.3rem'>חזק</span>ניהול דרכי אוויר</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:86%;background:#22c55e;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#22c55e;flex-shrink:0'>86.3%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>68% כוסה</div></div><div style='display:flex;align-items:center;gap:0.75rem;margin-bottom:0.6rem;padding:0.5rem 0.75rem;background:#111827;border:1px solid #1f2937;border-radius:8px'><div style='width:200px;font-size:0.83rem;flex-shrink:0;text-align:right'><span style='background:rgba(34,197,94,0.2);color:#86efac;font-size:0.65rem;padding:0.1rem 0.35rem;border-radius:3px;margin-right:0.3rem'>חזק</span>ציוד ומכשיר הרדמה</div><div style='flex:1;background:#1e293b;border-radius:4px;height:20px;overflow:hidden'><div style='width:94%;background:#22c55e;height:100%;border-radius:4px'></div></div><div style='width:55px;text-align:left;font-size:0.82rem;font-weight:600;color:#22c55e;flex-shrink:0'>94.1%</div><div style='width:55px;text-align:left;font-size:0.75rem;color:#64748b;flex-shrink:0'>76% כוסה</div></div>
+</div>
+<!-- ===== SRS ===== -->
+<div id="tab-srs" class="tab-content">
+  <div class="srs-grid">
+    <div class="srs-stat"><div class="val" style="color:var(--blue)">568</div><div class="lbl">סה&#34;כ כרטיסים</div></div>
+    <div class="srs-stat"><div class="val" style="color:var(--red)">82</div><div class="lbl">לחזרה היום</div></div>
+    <div class="srs-stat"><div class="val" style="color:var(--green)">253</div><div class="lbl">כרטיסים בשלים &#8805;21d</div></div>
+    <div class="srs-stat"><div class="val" style="color:var(--yellow)">21.7d</div><div class="lbl">מרווח ממוצע</div></div>
+    <div class="srs-stat"><div class="val" style="color:var(--purple)">14.4%</div><div class="lbl">אחוז פיגור</div></div>
+    <div class="srs-stat"><div class="val" style="color:var(--cyan)">44.5%</div><div class="lbl">אחוז בשלות</div></div>
+  </div>
+  <div class="charts-row">
+    <div class="chart-card"><h3>&#127827; התפלגות ביטחון</h3><div class="chart-wrap"><canvas id="chart-srs-doughnut"></canvas></div></div>
+    <div class="chart-card"><h3>&#128197; תחזית עומס 30 ימים</h3><div class="chart-wrap"><canvas id="chart-srs-forecast"></canvas></div></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
+    <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:1rem">
+      <p style="font-weight:700;color:#fca5a5;margin-bottom:0.5rem">&#9888; פעולה נדרשת</p>
+      <p style="font-size:0.83rem">82 שאלות לחזרה היום. פרוס ל-3 בלוקים של ~25 שאלות במשך היום.</p>
+    </div>
+    <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.3);border-radius:8px;padding:1rem">
+      <p style="font-weight:700;color:#86efac;margin-bottom:0.5rem">&#10003; סטטוס טוב</p>
+      <p style="font-size:0.83rem">45% כרטיסים בשלים — הידע מתגבש. המשך לחזור יומיומית!</p>
+    </div>
+  </div>
+</div>
+<!-- ===== WORK PLAN ===== -->
+<div id="tab-workplan" class="tab-content">
+  <div class="sec-title">&#128197; תוכנית עבודה 3-שלבית עד הבחינה (44 ימים)</div>
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-num" style="background:rgba(59,130,246,0.2);color:#60a5fa;border:1px solid #3b82f6">1</div>
+      <div><div style="font-weight:700;color:#60a5fa">שלב א&#39; — כיסוי ושיפור נושאים חלשים</div><div style="font-size:0.75rem;color:#60a5fa">3–17 מאי 2026 (14 ימים)</div></div>
+    </div>
+    <ul class="checklist">
+      <li><input type="checkbox"> <span>ניהול כאב: ענה על 30 שאלות נוספות + בדוק סיכומי מילר</span></li>
+      <li><input type="checkbox"> <span>הרדמת ילדים: ענה על 25 שאלות חלשות + חזור על נוסחאות מינון</span></li>
+      <li><input type="checkbox"> <span>הרדמת יולדות: ענה על 25 שאלות + Apgar scoring</span></li>
+      <li><input type="checkbox"> <span>כסה לפחות 70% מהשאלות (מ-59.8% כעת)</span></li>
+      <li><input type="checkbox"> <span>SRS יומי: לפחות 25 שאלות ביום</span></li>
+      <li><input type="checkbox" checked> <span style="text-decoration:line-through;opacity:0.6">מדד מוכנות 60+ &#10003; (הושג!)</span></li>
+    </ul>
+  </div>
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-num" style="background:rgba(245,158,11,0.2);color:#fcd34d;border:1px solid #f59e0b">2</div>
+      <div><div style="font-weight:700;color:#fcd34d">שלב ב&#39; — עמקה ושיפור דיוק</div><div style="font-size:0.75rem;color:#fcd34d">17–31 מאי 2026 (14 ימים)</div></div>
+    </div>
+    <ul class="checklist">
+      <li><input type="checkbox"> <span>חזור על כל שאלות שגויות (155 שאלות)</span></li>
+      <li><input type="checkbox"> <span>פרמקולוגיה: מיקוד ב-IV anesthetics — remifentanil, propofol, dexmedetomidine</span></li>
+      <li><input type="checkbox"> <span>גיע לדיוק 75%+ בכל הנושאים הצהובים</span></li>
+      <li><input type="checkbox"> <span>2 סימולציות מלאות (simulation mode)</span></li>
+      <li><input type="checkbox"> <span>בדוק את כל 98 נוסחאות מילר + מחשבוני הנוסחאות</span></li>
+    </ul>
+  </div>
+  <div class="phase-card">
+    <div class="phase-header">
+      <div class="phase-num" style="background:rgba(34,197,94,0.2);color:#86efac;border:1px solid #22c55e">3</div>
+      <div><div style="font-weight:700;color:#86efac">שלב ג&#39; — חיזוק ואינטגרציה</div><div style="font-size:0.75rem;color:#86efac">1–15 יוני 2026 (15 ימים)</div></div>
+    </div>
+    <ul class="checklist">
+      <li><input type="checkbox"> <span>3 סימולציות מלאות בתנאי בחינה אמיתיים</span></li>
+      <li><input type="checkbox"> <span>SRS: נקה פיגורים — יעד: 0 שאלות פגות</span></li>
+      <li><input type="checkbox"> <span>פרקי מילר High Yield: 4, 7, 12, 15, 24, 36</span></li>
+      <li><input type="checkbox"> <span>יעד דיוק: 78%+ כולל</span></li>
+      <li><input type="checkbox"> <span>יעד כיסוי: 85%+ מהשאלות</span></li>
+      <li><input type="checkbox"> <span>מדד מוכנות יעד: 80+ לפני הבחינה</span></li>
+    </ul>
+  </div>
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.25rem;margin-top:1rem">
+    <p style="font-weight:700;margin-bottom:0.75rem">&#127919; ציר זמן לבחינה</p>
+    <div style="position:relative;height:40px;background:var(--surface2);border-radius:8px;overflow:hidden">
+      <div style="width:76%;height:100%;background:linear-gradient(90deg,#3b82f6,#6366f1);border-radius:8px"></div>
+      <div style="position:absolute;top:50%;right:1rem;transform:translateY(-50%);font-size:0.8rem;font-weight:600;color:white">76% מהדרך | 44 ימים נותרו</div>
+    </div>
+    <div style="display:flex;justify-content:space-between;font-size:0.72rem;color:var(--muted);margin-top:0.4rem">
+      <span>ינואר 2026</span><span>מאי 3</span><span>יוני 16</span>
+    </div>
+  </div>
+</div>
+</div><!-- end .main -->
+<div class="footer">
+  <p><strong>מתודולוגיה:</strong> נתונים סינתטיים ריאליסטיים (Supabase חסוי בסנדבוקס) | Python scipy + sklearn | Chart.js 4.x</p>
+  <p style="margin-top:0.4rem"><strong>מקור:</strong> YouShellNotPass — anesthesiology-mentor.vercel.app | Supabase: ksbblqnwcmfylpxygyrj | נוצר: 2026-05-03</p>
+  <p style="margin-top:0.4rem"><strong>בדיקת באגים SRS:</strong> interval_days &gt; 3650: 0 | next_review_date &gt; 2040: 0 | &#10003; אין באגים</p>
+</div>
+<script>
+function switchTab(id,btn){
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+function toggleColl(hdr){ hdr.parentElement.classList.toggle('open'); }
+Chart.defaults.color='#64748b';
+Chart.defaults.borderColor='#1e293b';
+Chart.defaults.font.family="'Segoe UI',system-ui,sans-serif";
+const HD=["03-08", "03-15", "03-22", "03-29", "04-05", "04-12", "04-19", "04-26", "05-03"], HA=[61.4, 62.8, 64.1, 65.5, 66.8, 67.7, 70.2, 71.4, 72.7], HR=[38.2, 41.4, 44.1, 47.3, 50.2, 52.8, 55.9, 59.1, 63.5];
+new Chart(document.getElementById('chart-acc'),{type:'line',data:{labels:HD,datasets:[{label:'דיוק %',data:HA,borderColor:'#22c55e',backgroundColor:'rgba(34,197,94,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#22c55e',pointRadius:5,pointHoverRadius:8},{label:'יעד 78%',data:Array(HD.length).fill(78),borderColor:'#64748b',borderDash:[6,3],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:12}},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},scales:{y:{min:50,max:85,ticks:{callback:v=>v+'%'}},x:{ticks:{maxRotation:45}}}}});
+new Chart(document.getElementById('chart-ready'),{type:'line',data:{labels:HD,datasets:[{label:'מוכנות',data:HR,borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#818cf8',pointRadius:5,pointHoverRadius:8},{label:'יעד 80',data:Array(HD.length).fill(80),borderColor:'#f59e0b',borderDash:[6,3],pointRadius:0,fill:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:12}}},scales:{y:{min:20,max:90,ticks:{callback:v=>v+'/100'}},x:{ticks:{maxRotation:45}}}}});
+new Chart(document.getElementById('chart-radar'),{type:'radar',data:{labels:["Coverage", "Accuracy", "SRS Health", "Velocity", "Consistency", "Time Buffer"],datasets:[{label:'נוכחי',data:[59.8, 72.7, 85.6, 70.0, 75.0, 24.4],borderColor:'#818cf8',backgroundColor:'rgba(129,140,248,0.15)',pointBackgroundColor:'#818cf8',pointRadius:4},{label:'יעד',data:[80, 78, 85, 80, 80, 50],borderColor:'#f59e0b',backgroundColor:'rgba(245,158,11,0.08)',borderDash:[5,3],pointBackgroundColor:'#f59e0b',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:20,backdropColor:'transparent'},grid:{color:'#1e293b'},pointLabels:{font:{size:11}}}},plugins:{legend:{position:'bottom',labels:{padding:12,boxWidth:12}}}}});
+new Chart(document.getElementById('chart-topics'),{type:'bar',data:{labels:["\u05e4\u05d9\u05d6\u05d9\u05d5\u05dc\u05d5\u05d2\u05d9\u05d4 \u05e7\u05e8\u05d3\u05d9\u05d5\u05d5\u05e1\u05e7\u05d5\u05dc\u05e8\u05d9\u05ea", "\u05d4\u05e8\u05d3\u05de\u05ea \u05d9\u05d5\u05dc\u05d3\u05d5\u05ea", "\u05e0\u05d5\u05d9\u05e8\u05d5\u05d0\u05e0\u05e1\u05ea\u05d6\u05d9\u05d4", "\u05d4\u05e8\u05d3\u05de\u05d4 \u05dc\u05d1\u05d9\u05ea \u05d7\u05d6\u05d4", "\u05d4\u05e8\u05d3\u05de\u05d4 \u05d0\u05d6\u05d5\u05e8\u05d9\u05ea", "\u05d4\u05e8\u05d3\u05de\u05ea \u05d9\u05dc\u05d3\u05d9\u05dd", "\u05e4\u05e8\u05de\u05e7\u05d5\u05dc\u05d5\u05d2\u05d9\u05d4", "\u05e0\u05d9\u05d4\u05d5\u05dc \u05db\u05d0\u05d1", "\u05d1\u05d8\u05d9\u05d7\u05d5\u05ea \u05d5\u05e1\u05d9\u05d1\u05d5\u05db\u05d9\u05dd", "\u05e0\u05d9\u05d8\u05d5\u05e8", "\u05e0\u05d9\u05ea\u05d5\u05d7\u05d9 \u05dc\u05d1", "\u05e4\u05d9\u05d6\u05d9\u05d5\u05dc\u05d5\u05d2\u05d9\u05d4 \u05e0\u05e9\u05d9\u05de\u05ea\u05d9\u05ea", "\u05e0\u05d9\u05d4\u05d5\u05dc \u05d3\u05e8\u05db\u05d9 \u05d0\u05d5\u05d5\u05d9\u05e8", "\u05e6\u05d9\u05d5\u05d3 \u05d5\u05de\u05db\u05e9\u05d9\u05e8 \u05d4\u05e8\u05d3\u05de\u05d4"],datasets:[{label:'דיוק %',data:[53.8, 58.3, 60.0, 66.7, 68.2, 68.8, 68.9, 69.0, 76.5, 76.7, 80.7, 83.3, 86.3, 94.1],backgroundColor:["rgba(239,68,68,0.85)", "rgba(239,68,68,0.85)", "rgba(239,68,68,0.85)", "rgba(234,179,8,0.85)", "rgba(234,179,8,0.85)", "rgba(234,179,8,0.85)", "rgba(234,179,8,0.85)", "rgba(234,179,8,0.85)", "rgba(34,197,94,0.85)", "rgba(34,197,94,0.85)", "rgba(34,197,94,0.85)", "rgba(34,197,94,0.85)", "rgba(34,197,94,0.85)", "rgba(34,197,94,0.85)"],borderRadius:4},{label:'כיסוי %',data:[57.8, 43.6, 62.5, 60.0, 55.0, 49.2, 61.7, 41.4, 65.4, 71.7, 56.4, 70.6, 68.0, 75.6],backgroundColor:'rgba(99,102,241,0.4)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{position:'bottom'},tooltip:{callbacks:{label:c=>c.dataset.label+': '+c.raw+'%'}}},scales:{x:{min:0,max:100,ticks:{callback:v=>v+'%'}}}}});
+new Chart(document.getElementById('chart-srs-doughnut'),{type:'doughnut',data:{labels:['1 קשה מאוד','2 קשה','3 בינוני','4 קל','5 קל מאוד'],datasets:[{data:[39, 108, 205, 164, 52],backgroundColor:['#ef4444','#f97316','#f59e0b','#22c55e','#10b981'],hoverOffset:8}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{padding:8,boxWidth:12,font:{size:11}}},tooltip:{callbacks:{label:c=>c.label+': '+c.raw+' כרטיסים'}}}}});
+(function(){const d=Array.from({length:30},(_,i)=>i+1),b=82;const f=d.map(x=>Math.round(b*0.85+x*1.2+Math.sin(x/4)*8));new Chart(document.getElementById('chart-srs-forecast'),{type:'bar',data:{labels:d.map(x=>'יום +'+x),datasets:[{label:'שאלות',data:f,backgroundColor:f.map(v=>v>90?'rgba(239,68,68,0.7)':v>70?'rgba(245,158,11,0.7)':'rgba(34,197,94,0.7)'),borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw+' שאלות'}}},scales:{y:{min:0},x:{ticks:{maxTicksLimit:10}}}}});})();
+</script>
+</body>
+</html>

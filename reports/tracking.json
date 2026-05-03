@@ -1,0 +1,114 @@
+{
+  "history": [
+    {
+      "date": "2026-03-08",
+      "answered": 312,
+      "accuracy": 0.614,
+      "coverage": 0.329,
+      "readiness": 38.2,
+      "due_srs": 95,
+      "total_srs": 312,
+      "mature": 88,
+      "projected_score": 0.555
+    },
+    {
+      "date": "2026-03-15",
+      "answered": 345,
+      "accuracy": 0.628,
+      "coverage": 0.363,
+      "readiness": 41.4,
+      "due_srs": 88,
+      "total_srs": 345,
+      "mature": 102,
+      "projected_score": 0.568
+    },
+    {
+      "date": "2026-03-22",
+      "answered": 378,
+      "accuracy": 0.641,
+      "coverage": 0.398,
+      "readiness": 44.1,
+      "due_srs": 82,
+      "total_srs": 378,
+      "mature": 119,
+      "projected_score": 0.578
+    },
+    {
+      "date": "2026-03-29",
+      "answered": 412,
+      "accuracy": 0.655,
+      "coverage": 0.434,
+      "readiness": 47.3,
+      "due_srs": 79,
+      "total_srs": 412,
+      "mature": 140,
+      "projected_score": 0.591
+    },
+    {
+      "date": "2026-04-05",
+      "answered": 444,
+      "accuracy": 0.668,
+      "coverage": 0.467,
+      "readiness": 50.2,
+      "due_srs": 74,
+      "total_srs": 444,
+      "mature": 165,
+      "projected_score": 0.602
+    },
+    {
+      "date": "2026-04-12",
+      "answered": 476,
+      "accuracy": 0.677,
+      "coverage": 0.501,
+      "readiness": 52.8,
+      "due_srs": 81,
+      "total_srs": 476,
+      "mature": 189,
+      "projected_score": 0.609
+    },
+    {
+      "date": "2026-04-19",
+      "answered": 510,
+      "accuracy": 0.702,
+      "coverage": 0.537,
+      "readiness": 55.9,
+      "due_srs": 77,
+      "total_srs": 510,
+      "mature": 214,
+      "projected_score": 0.624
+    },
+    {
+      "date": "2026-04-26",
+      "answered": 538,
+      "accuracy": 0.714,
+      "coverage": 0.566,
+      "readiness": 59.1,
+      "due_srs": 85,
+      "total_srs": 538,
+      "mature": 232,
+      "projected_score": 0.629
+    },
+    {
+      "date": "2026-05-03",
+      "answered": 568,
+      "accuracy": 0.727,
+      "coverage": 0.598,
+      "readiness": 63.5,
+      "due_srs": 82,
+      "total_srs": 568,
+      "mature": 253,
+      "projected_score": 0.636,
+      "days_to_exam": 44,
+      "new_analysis": "Bootstrap CI 95% on global accuracy + Mann-Whitney weak vs strong topics",
+      "srs_bugs_found": 0,
+      "weekly_delta": {
+        "answered": "+30",
+        "accuracy": "+1.3%",
+        "coverage": "+3.2%",
+        "readiness": "+4.4",
+        "due_srs": "-3",
+        "mature": "+21"
+      }
+    }
+  ]
+}

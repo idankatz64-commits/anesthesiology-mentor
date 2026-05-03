@@ -1,7 +1,7 @@
 # YouShellNotPass — Project Context
 
 > This file is auto-loaded by Claude Code and Cursor. It contains full project and user context.
-> **Last synced from live repo + Vercel + GitHub: April 6, 2026**
+> **Last synced from live repo + Vercel + GitHub: May 3, 2026**
 
 ---
 
@@ -55,14 +55,14 @@
 | `weekly-report` | Weekly 7-day question digest email |
 | `ai-summary` | AI learning summary (daily/weekly via Claude) |
 
-## Supabase Tables (current as of April 2026)
+## Supabase Tables (current as of May 2026)
 
 | Table | Purpose |
 |---|---|
 | `questions` | All exam questions (fetched with sessionStorage cache) |
 | `user_answers` | Per-user answer history with atomic upsert via `increment_user_answer()` |
 | `answer_history` | Full answer log per attempt |
-| `spaced_repetition` | SM-2 algorithm data per user+question |
+| `spaced_repetition` | SM-2 algorithm data per user+question (5 fields: ease_factor, interval_days, repetitions, confidence, next_review_date) |
 | `admin_users` | Admin/editor roles |
 | `categories` | Topic classifications |
 | `formulas` | 98 Miller formulas (chapter filter) |
@@ -74,8 +74,8 @@
 | `user_feedback` | User-submitted feedback |
 | `user_weekly_plans` | Weekly study plan |
 | `saved_sessions` | Auto-saved session state |
-| `topic_summaries` | Miller chapter summaries (Summaries module) |
-| `resource_links` | External resource links (shown in toolbar) |
+| `topic_summaries` | Miller chapter summaries (Summaries module — not in generated types, used via raw queries) |
+| `resource_links` | External resource links (shown in TopNav + session toolbar — not in generated types, used via raw queries) |
 | `community_notes` | Shared notes between users |
 | `question_audit_log` | Audit log for question edits |
 | `question_edit_log` | Edit history per question |
@@ -85,13 +85,15 @@
 | `anki_decks` | Anki-style decks |
 | `anki_cards` | Anki-style flashcards with SM-2 |
 
-## Current Features (LIVE as of April 6, 2026)
+## Current Features (LIVE as of May 3, 2026)
 
 ### Study Core
 - **Session mode** — practice questions with answer selection, confidence rating, flagging
 - **Simulation mode** — exam-style timed session
-- **Smart question selection** — two-stage topic-aware selection (Hamilton method, SRS urgency)
-- **SRS (Spaced Repetition)** — SM-2 algorithm, 'לחזור' button to reset and force review
+- **Smart question selection** — two-stage topic-aware selection (Hamilton method, SRS urgency) with pre-filter composer (cool-down + future-schedule), 30% new-question quota reservation per topic
+- **SRS (Spaced Repetition)** — SM-2 algorithm with hard 24h cool-down (6h floor), future-schedule hard filter (>7d), 'לחזור' button to reset and force review
+- **SRS Dashboard** — SrsDashboardView: per-topic SRS stats, decay charts, mark-known button, chapter/topic tables, questions drawer
+- **Review mode** — ReviewView for post-session review
 - **Resume session** — auto-saves and resumes interrupted sessions
 
 ### Content
@@ -111,18 +113,22 @@
 
 ### UI
 - **Image gallery** — Critical Visuals from explanations, lightbox zoom
-- **Resource links** — in TopNav and session toolbar (🔗 popover)
+- **Resource links** — in TopNav, HomeView, and session toolbar (🔗 popover)
 - **AI explanation drawer** — Claude API explains any question
-- **AI summary** — daily/weekly learning summary
+- **AI summary** — daily/weekly learning summary (AISummaryButton, DailyReportModal, DailyReportTile)
 - **Flashcard mode** — FlashcardView
-- **Stats dashboard** — StatsView with 10+ tiles (ERI, forgetting risk, heatmap, treemap, etc.)
+- **Stats dashboard** — StatsView with 10+ tiles (ERI, forgetting risk, heatmap, treemap, learning velocity, streak, strengths/weaknesses, weak zone map, accuracy canvas chart, personal stats drilldown)
 - **Notebook** — per-question notes with RichTextEditor
-- **Comparative stats** — community performance comparison
+- **Comparative stats** — ComparativeStats community performance comparison
+- **Community mode** — SessionCommunity for collaborative sessions
 - **Dark/light mode** — full theme support
 - **Mobile support** — MobileBottomNav, MobileHeader
 - **Keyboard shortcuts** — full keyboard navigation
 - **Share question** — ShareQuestionButton
 - **Feedback modal** — user feedback submission
+- **Welcome modal** — WelcomeModal onboarding
+- **Quote splash** — motivational QuoteSplash
+- **Matrix countdown** — MatrixCountdown to exam date
 - **Weekly plan** — WeeklyPlanView
 - **Reset password** — full forgot password flow
 - **Google OAuth** — sign in with Google
@@ -148,4 +154,4 @@ Questions were previously fetched from Google Sheets CSV — **now fetched from 
 
 ---
 
-*Last updated: April 6, 2026 — synced from GitHub + Vercel MCP*
+*Last updated: May 3, 2026 — synced from GitHub + Vercel MCP*
