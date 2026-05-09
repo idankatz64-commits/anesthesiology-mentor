@@ -3,32 +3,46 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://anesthesiology-mentor.vercel.app",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 // ── Squid Game HTML template ────────────────────────────────────────────────
 
+// HTML-escape ANY string before injecting into the template. Prevents XSS
+// via topic/chapter/option values that could otherwise contain <script>,
+// <img onerror=...>, or attribute-breaking quotes (B3 HIGH finding).
+function escapeHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildHTML(questions: Record<string, unknown>[], generatedAt: string, daysBack: number): string {
   const count = questions.length;
 
-  const rows = questions.map((q, i) => {
-    const topic = String(q.topic || "—");
-    const chapter = q.chapter ? `פרק ${q.chapter}` : "—";
-    const question = String(q.question || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const explanation = String(q.explanation || "").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-    const correct = String(q.correct || "").toUpperCase();
-    const options = ["A", "B", "C", "D"].map((letter) => {
-      const val = String((q as Record<string, unknown>)[letter.toLowerCase()] || "").replace(/</g, "&lt;");
-      const isCorrect = letter === correct;
-      return `<div class="option ${isCorrect ? "correct" : ""}">
+  const rows = questions
+    .map((q, i) => {
+      const topic = escapeHtml(String(q.topic || "—"));
+      const chapter = q.chapter ? `פרק ${escapeHtml(String(q.chapter))}` : "—";
+      const question = escapeHtml(String(q.question || ""));
+      const explanation = escapeHtml(String(q.explanation || ""));
+      const correct = String(q.correct || "").toUpperCase();
+      const options = ["A", "B", "C", "D"]
+        .map((letter) => {
+          const val = escapeHtml(String((q as Record<string, unknown>)[letter.toLowerCase()] || ""));
+          const isCorrect = letter === correct;
+          return `<div class="option ${isCorrect ? "correct" : ""}">
         <span class="opt-label">${letter}</span>
         <span class="opt-text">${val}</span>
         ${isCorrect ? '<span class="badge-correct">✓ נכון</span>' : ""}
       </div>`;
-    }).join("");
+        })
+        .join("");
 
-    return `
+      return `
     <div class="question-card" data-index="${i + 1}">
       <div class="card-header">
         <div class="q-number">
@@ -42,12 +56,17 @@ function buildHTML(questions: Record<string, unknown>[], generatedAt: string, da
       </div>
       <div class="question-text">${question}</div>
       <div class="options">${options}</div>
-      ${explanation ? `<details class="explanation">
+      ${
+        explanation
+          ? `<details class="explanation">
         <summary><span class="shape square"></span> הסבר</summary>
         <div class="explanation-body">${explanation}</div>
-      </details>` : ""}
+      </details>`
+          : ""
+      }
     </div>`;
-  }).join("\n");
+    })
+    .join("\n");
 
   return `<!DOCTYPE html>
 <html lang="he" dir="rtl">
@@ -325,11 +344,23 @@ ${rows}
 
 function toCSV(rows: Record<string, unknown>[]): string {
   if (rows.length === 0) return "";
-  const headers = ["id", "question", "a", "b", "c", "d", "correct", "explanation", "topic", "chapter", "year", "source"];
+  const headers = [
+    "id",
+    "question",
+    "a",
+    "b",
+    "c",
+    "d",
+    "correct",
+    "explanation",
+    "topic",
+    "chapter",
+    "year",
+    "source",
+  ];
   const escape = (v: unknown) => {
     const s = v == null ? "" : String(v);
-    return s.includes(",") || s.includes('"') || s.includes("\n")
-      ? `"${s.replace(/"/g, '""')}"` : s;
+    return s.includes(",") || s.includes('"') || s.includes("\n") ? `"${s.replace(/"/g, '""')}"` : s;
   };
   return "\uFEFF" + [headers.join(","), ...rows.map((r) => headers.map((h) => escape(r[h])).join(","))].join("\n");
 }
@@ -349,13 +380,14 @@ serve(async (req) => {
       });
     }
 
-    const supabaseUser = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabaseUser = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseUser.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
@@ -363,11 +395,7 @@ serve(async (req) => {
       });
     }
 
-    const { data: adminRow } = await supabaseUser
-      .from("admin_users")
-      .select("id")
-      .eq("id", user.id)
-      .maybeSingle();
+    const { data: adminRow } = await supabaseUser.from("admin_users").select("id").eq("id", user.id).maybeSingle();
 
     if (!adminRow) {
       return new Response(JSON.stringify({ error: "Forbidden: admin only" }), {
@@ -377,10 +405,7 @@ serve(async (req) => {
     }
 
     // ── Service-role client (for full data access) ───────────────────────────
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     const body = await req.json().catch(() => ({}));
     // Cap daysBack to [1, 30] to prevent unbounded history dump
@@ -401,10 +426,10 @@ serve(async (req) => {
     const questionIds = [...new Set((auditRows || []).map((r) => r.question_id))];
 
     if (questionIds.length === 0) {
-      return new Response(
-        JSON.stringify({ message: `אין שאלות עם הסברים חדשים ב-${daysBack} הימים האחרונים` }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ message: `אין שאלות עם הסברים חדשים ב-${daysBack} הימים האחרונים` }), {
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Fetch full question data
@@ -418,7 +443,9 @@ serve(async (req) => {
 
     const generatedAt = new Date().toLocaleDateString("he-IL", {
       timeZone: "Asia/Jerusalem",
-      day: "numeric", month: "long", year: "numeric"
+      day: "numeric",
+      month: "long",
+      year: "numeric",
     });
 
     if (format === "csv") {
@@ -440,11 +467,10 @@ serve(async (req) => {
         "Content-Type": "text/html; charset=utf-8",
       },
     });
-
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
