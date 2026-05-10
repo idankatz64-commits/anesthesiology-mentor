@@ -137,6 +137,11 @@
 - **CSV export** — strips `<img>` HTML before export
 - **Daily CSV email** — automated daily export
 
+### Security (recent patches — May 2026)
+- **XSS hardening** — B3 HIGH findings closed (input sanitization)
+- **Storage security** — bucket listing + upload restrictions enforced
+- **Optimistic UI rollback** — Supabase write failures revert local state (B5)
+
 ## Communication Rules
 
 - **Always ask clarifying questions** before starting. Better 100 questions than a bad result.
@@ -154,4 +159,4 @@ Questions were previously fetched from Google Sheets CSV — **now fetched from 
 
 ---
 
-*Last updated: May 3, 2026 — synced from GitHub + Vercel MCP*
+*Last updated: May 10, 2026 — synced from GitHub + Vercel MCP*
