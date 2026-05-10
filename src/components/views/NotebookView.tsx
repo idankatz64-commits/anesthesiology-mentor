@@ -182,7 +182,7 @@ export default function NotebookView() {
         ))}
 
       <Dialog open={!!selectedQuestionId} onOpenChange={(open) => !open && setSelectedQuestionId(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto" dir="rtl">
           {selectedQuestion && (
             <>
               <DialogHeader>
