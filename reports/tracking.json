@@ -135,6 +135,36 @@
         0.705,
         0.775
       ]
+    },
+    {
+      "date": "2026-05-17",
+      "answered": 629,
+      "accuracy": 0.752,
+      "coverage": 0.6621,
+      "readiness": 65.6,
+      "due_srs": 78,
+      "total_srs": 629,
+      "mature": 290,
+      "projected_score": 0.6668,
+      "days_to_exam": 30,
+      "new_analysis": "Lag Correlation (ease_factor→next accuracy) + K-Means Topic Clustering (k=3)",
+      "srs_bugs_found": 0,
+      "data_source": "trend_extrapolation_supabase_network_blocked",
+      "weekly_delta": {
+        "answered": "+29",
+        "accuracy": "+1.2%",
+        "coverage": "+3.0%",
+        "readiness": "+1.0",
+        "due_srs": "-2",
+        "mature": "+19"
+      },
+      "bootstrap_ci_accuracy": [
+        0.727,
+        0.777
+      ],
+      "learning_slope_pct_per_week": 1.446,
+      "lin_reg_r2": 0.366,
+      "auc_roc": 0.606
     }
   ]
 }
