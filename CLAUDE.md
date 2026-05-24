@@ -1,7 +1,7 @@
 # YouShellNotPass — Project Context
 
 > This file is auto-loaded by Claude Code and Cursor. It contains full project and user context.
-> **Last synced from live repo + Vercel + GitHub: May 17, 2026**
+> **Last synced from live repo + Vercel + GitHub: May 24, 2026**
 
 ---
 
@@ -85,7 +85,7 @@
 | `anki_decks` | Anki-style decks |
 | `anki_cards` | Anki-style flashcards with SM-2 |
 
-## Current Features (LIVE as of May 17, 2026)
+## Current Features (LIVE as of May 24, 2026)
 
 ### Study Core
 - **Session mode** — practice questions with answer selection, confidence rating, flagging
@@ -159,4 +159,4 @@ Questions were previously fetched from Google Sheets CSV — **now fetched from 
 
 ---
 
-*Last updated: May 17, 2026 — synced from GitHub + Vercel MCP*
+*Last updated: May 24, 2026 — synced from GitHub + Vercel MCP*
