@@ -12,6 +12,7 @@ import {
   releaseConfidenceLock,
   type ConfidenceLockMap,
 } from "@/lib/confidenceLock";
+import { createInFlightGuard } from "@/lib/inFlightGuard";
 import ReactMarkdown from "react-markdown";
 import {
   X,
@@ -261,19 +262,28 @@ export default function SessionView() {
   // would not).
   const isSubmittingRef = useRef<boolean>(false);
 
-  const triggerAutoSave = useCallback(async () => {
-    await saveSessionToDb(timerRef.current, simTimerRef.current);
-    setAutoSaved(true);
-    setTimeout(() => setAutoSaved(false), 2500);
-  }, [saveSessionToDb]);
+  // Wrapped with createInFlightGuard to prevent stacking when Supabase is slow:
+  // the 60s interval below would otherwise fire fresh saves while a previous
+  // one is still pending, which is what triggered the 2026-05-24 Burst Disk I/O
+  // outage. The guard skips overlapping calls; a try/finally inside the helper
+  // releases the lock even if saveSessionToDb throws.
+  const triggerAutoSave = useMemo(
+    () =>
+      createInFlightGuard(async () => {
+        await saveSessionToDb(timerRef.current, simTimerRef.current);
+        setAutoSaved(true);
+        setTimeout(() => setAutoSaved(false), 2500);
+      }),
+    [saveSessionToDb],
+  );
 
   useEffect(() => {
     return () => {
       if (shouldAutoSaveRef.current && quizLengthRef.current > 0) {
-        saveSessionToDb(timerRef.current, simTimerRef.current);
+        triggerAutoSave();
       }
     };
-  }, [saveSessionToDb]);
+  }, [triggerAutoSave]);
 
   // Memoize to avoid calling splitSections(explanationDraft) 3x per render
   const explanationDraftSections = useMemo(() => splitSections(explanationDraft), [explanationDraft]);
