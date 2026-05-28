@@ -1,7 +1,7 @@
 # YouShellNotPass — Project Context
 
 > This file is auto-loaded by Claude Code and Cursor. It contains full project and user context.
-> **Last synced from live repo + Vercel + GitHub: May 24, 2026**
+> **Last synced from live repo + Vercel + GitHub: May 28, 2026**
 
 ---
 
@@ -94,7 +94,7 @@
 - **SRS (Spaced Repetition)** — SM-2 algorithm with hard 24h cool-down (6h floor), future-schedule hard filter (>7d), 'לחזור' button to reset and force review
 - **SRS Dashboard** — SrsDashboardView: per-topic SRS stats, decay charts, mark-known button, chapter/topic tables, questions drawer
 - **Review mode** — ReviewView for post-session review
-- **Resume session** — auto-saves and resumes interrupted sessions
+- **Resume session** — auto-saves and resumes interrupted sessions (in-flight overlap guard via `createInFlightGuard`)
 
 ### Content
 - **Formulas** — 98 Miller formulas, chapter filter, descriptions
@@ -159,4 +159,4 @@ Questions were previously fetched from Google Sheets CSV — **now fetched from 
 
 ---
 
-*Last updated: May 24, 2026 — synced from GitHub + Vercel MCP*
+*Last updated: May 28, 2026 — synced from GitHub + Vercel MCP*

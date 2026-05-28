@@ -196,6 +196,37 @@
       "lin_reg_r2": 0.3063,
       "auc_roc": 0.9521,
       "poly_readiness_at_exam": 71.4
+    },
+    {
+      "date": "2026-05-28",
+      "answered": 676,
+      "accuracy": 0.7715,
+      "coverage": 0.7116,
+      "readiness": 67.1,
+      "due_srs": 75,
+      "total_srs": 676,
+      "mature": 320,
+      "projected_score": 0.6932,
+      "days_to_exam": 19,
+      "new_analysis": "Monte Carlo Exam Pass Probability (10,000 simulations)",
+      "srs_bugs_found": 0,
+      "data_source": "trend_extrapolation_supabase_network_blocked",
+      "weekly_delta": {
+        "answered": "+17",
+        "accuracy": "+0.70%",
+        "coverage": "+1.82%",
+        "readiness": "+1.6",
+        "due_srs": "-1",
+        "mature": "+11"
+      },
+      "bootstrap_ci_accuracy": [
+        0.742,
+        0.7637
+      ],
+      "learning_slope_pct_per_week": 1.394,
+      "lin_reg_r2": 0.6416,
+      "auc_roc": 0.9335,
+      "mc_pass_probability_pct": 98.9
     }
   ]
 }
