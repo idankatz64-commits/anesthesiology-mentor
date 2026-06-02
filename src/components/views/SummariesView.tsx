@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Loader2, BookOpen, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Loader2, BookOpen, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface TopicSummary {
   id: string;
@@ -11,6 +11,19 @@ interface TopicSummary {
   drive_url: string | null;
 }
 
+// Defense-in-depth: only embed iframes from trusted Google hosts, so a
+// malicious embed_url reaching the admin-managed topic_summaries table
+// cannot load arbitrary (e.g. script-bearing) content in the app frame.
+const ALLOWED_EMBED_HOSTS = ["docs.google.com", "drive.google.com"];
+function isAllowedEmbedUrl(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return u.protocol === "https:" && ALLOWED_EMBED_HOSTS.includes(u.hostname);
+  } catch {
+    return false;
+  }
+}
+
 export default function SummariesView() {
   const [summaries, setSummaries] = useState<TopicSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -18,16 +31,16 @@ export default function SummariesView() {
 
   useEffect(() => {
     supabase
-      .from('topic_summaries')
-      .select('id, topic_key, title, embed_url, drive_url')
-      .order('title', { ascending: true })
+      .from("topic_summaries")
+      .select("id, topic_key, title, embed_url, drive_url")
+      .order("title", { ascending: true })
       .then(({ data, error }) => {
         if (!error) setSummaries(data ?? []);
         setLoading(false);
       });
   }, []);
 
-  const toggle = (id: string) => setOpenId(prev => (prev === id ? null : id));
+  const toggle = (id: string) => setOpenId((prev) => (prev === id ? null : id));
 
   if (loading) {
     return (
@@ -55,7 +68,7 @@ export default function SummariesView() {
       </div>
 
       <div className="space-y-3">
-        {summaries.map(summary => (
+        {summaries.map((summary) => (
           <div key={summary.id} className="glass-card rounded-xl border border-border overflow-hidden">
             <button
               onClick={() => toggle(summary.id)}
@@ -76,17 +89,18 @@ export default function SummariesView() {
                     href={summary.drive_url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={e => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                     className="p-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 transition"
                     title="פתח ב-Google Drive"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
                 )}
-                {openId === summary.id
-                  ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                  : <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                }
+                {openId === summary.id ? (
+                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                ) : (
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                )}
               </div>
             </button>
 
@@ -94,18 +108,21 @@ export default function SummariesView() {
               {openId === summary.id && (
                 <motion.div
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
+                  animate={{ height: "auto", opacity: 1 }}
                   exit={{ height: 0, opacity: 0 }}
-                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
                   className="overflow-hidden"
                 >
-                  {summary.embed_url ? (
+                  {summary.embed_url && isAllowedEmbedUrl(summary.embed_url) ? (
                     <div className="border-t border-border">
                       <iframe
                         src={summary.embed_url}
                         className="w-full"
-                        style={{ height: '600px' }}
+                        style={{ height: "600px" }}
                         title={summary.title}
+                        sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
                         allow="autoplay"
                         frameBorder="0"
                       />
