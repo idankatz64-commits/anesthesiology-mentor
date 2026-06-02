@@ -14,20 +14,23 @@ serve(async (req) => {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader?.startsWith("Bearer ")) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabaseUser = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const supabaseUser = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
 
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseUser.auth.getUser();
     if (authError || !user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -35,17 +38,22 @@ serve(async (req) => {
     const hours = period === "week" ? 168 : 24;
     const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    const supabaseAdmin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
     // 1. Fetch answered questions in period
-    const { data: historyRows } = await supabaseAdmin
+    const { data: historyRows, error: historyError } = await supabaseAdmin
       .from("answer_history")
       .select("question_id, topic, is_correct")
       .eq("user_id", user.id)
       .gte("answered_at", since);
+
+    if (historyError) {
+      console.error("ai-summary: answer_history query failed", historyError);
+      return new Response(JSON.stringify({ error: "שגיאה בטעינת ההיסטוריה" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     if (!historyRows || historyRows.length === 0) {
       return new Response(JSON.stringify({ text: "לא נמצאו שאלות שנענו בתקופה זו." }), {
@@ -57,10 +65,18 @@ serve(async (req) => {
     const questionIds = [...new Set(historyRows.map((r: any) => r.question_id))].slice(0, 80);
 
     // 3. Fetch question text + explanation
-    const { data: questions } = await supabaseAdmin
+    const { data: questions, error: questionsError } = await supabaseAdmin
       .from("questions")
-      .select("id, question_text, correct_answer, explanation, topic")
+      .select("id, question, explanation, topic")
       .in("id", questionIds);
+
+    if (questionsError) {
+      console.error("ai-summary: questions query failed", questionsError);
+      return new Response(JSON.stringify({ error: "שגיאה בטעינת השאלות" }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const questionMap = new Map((questions || []).map((q: any) => [q.id, q]));
 
@@ -75,12 +91,12 @@ serve(async (req) => {
       const q = questionMap.get(row.question_id);
       if (!q) continue;
 
-      const explanation = q.explanation?.replace(/<[^>]*>/g, '').trim(); // strip HTML
+      const explanation = q.explanation?.replace(/<[^>]*>/g, "").trim(); // strip HTML
       if (explanation && explanation.length > 20 && topicMap[topic].explanations.length < 6) {
         topicMap[topic].explanations.push(explanation.slice(0, 400));
       }
       if (!row.is_correct && topicMap[topic].missed.length < 3) {
-        topicMap[topic].missed.push(q.question_text?.slice(0, 100) || "");
+        topicMap[topic].missed.push(q.question?.slice(0, 100) || "");
       }
     }
 
@@ -92,9 +108,7 @@ serve(async (req) => {
       .slice(0, 8) // max 8 topics
       .map(([topic, s]) => {
         const expText = s.explanations.join("\n---\n");
-        const missedText = s.missed.length > 0
-          ? `\nשאלות שנכשל בהן:\n${s.missed.map(m => `- ${m}`).join("\n")}`
-          : "";
+        const missedText = s.missed.length > 0 ? `\nשאלות שנכשל בהן:\n${s.missed.map((m) => `- ${m}`).join("\n")}` : "";
         return `=== נושא: ${topic} ===\n${expText}${missedText}`;
       })
       .join("\n\n");
@@ -119,7 +133,8 @@ ${topicSections}
     const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
     if (!ANTHROPIC_API_KEY) {
       return new Response(JSON.stringify({ error: "API key not configured" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -140,7 +155,8 @@ ${topicSections}
     if (!response.ok) {
       console.error("Anthropic error:", response.status, await response.text());
       return new Response(JSON.stringify({ error: "שגיאה בשירות ה-AI" }), {
-        status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
@@ -150,11 +166,11 @@ ${topicSections}
     return new Response(JSON.stringify({ text, period }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-
   } catch (e) {
     console.error("ai-summary error:", e);
     return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
-      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });
