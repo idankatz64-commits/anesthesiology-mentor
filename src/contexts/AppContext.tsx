@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
 import { fetchQuestions, invalidateQuestionsCache } from "@/lib/csvService";
+import { shuffle } from "@/lib/shuffle";
 import {
   KEYS,
   WELCOME_KEY,
@@ -422,7 +423,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const startSession = useCallback((pool: Question[], count: number, mode: SessionState["mode"]) => {
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    const shuffled = shuffle(pool);
     const uid = userIdRef.current ?? "anon";
     const quiz = shuffled.slice(0, Math.min(pool.length, count)).map((q) => {
       const c = q[KEYS.CORRECT];

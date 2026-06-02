@@ -1,145 +1,146 @@
-import type { Question, HistoryEntry } from '@/lib/types';
-import { KEYS } from '@/lib/types';
-import type { SrsRecord } from '@/lib/srsRepository';
-import { filterCandidatePool } from '@/lib/srsPoolFilter';
-import { pickWithNewQuota } from '@/lib/newQuestionQuota';
+import type { Question, HistoryEntry } from "@/lib/types";
+import { KEYS } from "@/lib/types";
+import type { SrsRecord } from "@/lib/srsRepository";
+import { filterCandidatePool } from "@/lib/srsPoolFilter";
+import { pickWithNewQuota } from "@/lib/newQuestionQuota";
+import { shuffle } from "@/lib/shuffle";
 
 export type { SrsRecord };
 
 // ── Session size types ──────────────────────────────────────────────
-export type SessionSize = 'quick' | 'regular' | 'long' | 'simulation';
+export type SessionSize = "quick" | "regular" | "long" | "simulation";
 
 export const SESSION_SIZE_CONFIG: Record<SessionSize, { count: number; label: string; emoji: string; desc: string }> = {
-  quick:      { count: 15,  label: 'מהיר',   emoji: '⚡', desc: 'חזרה מרווחת + נקודות חולשה' },
-  regular:    { count: 40,  label: 'רגיל',   emoji: '📖', desc: 'מאוזן: SRS + נושאים חלשים + חדשות' },
-  long:       { count: 100, label: 'מעמיק',  emoji: '🔬', desc: 'תרגול עמוק על כל הנושאים' },
-  simulation: { count: 120, label: 'סימולציה', emoji: '🎯', desc: 'התפלגות כמו מבחן אמיתי (Miller\'s)' },
+  quick: { count: 15, label: "מהיר", emoji: "⚡", desc: "חזרה מרווחת + נקודות חולשה" },
+  regular: { count: 40, label: "רגיל", emoji: "📖", desc: "מאוזן: SRS + נושאים חלשים + חדשות" },
+  long: { count: 100, label: "מעמיק", emoji: "🔬", desc: "תרגול עמוק על כל הנושאים" },
+  simulation: { count: 120, label: "סימולציה", emoji: "🎯", desc: "התפלגות כמו מבחן אמיתי (Miller's)" },
 };
 
 // ── Yield Tier Map ──────────────────────────────────────────────────
 export const YIELD_TIER_MAP: Record<string, number> = {
   // Tier 1 (1.0) — keys MUST match `topic` values in DB; see src/test/fixtures/dbTopics.ts
-  'Cardiac Physiology': 1.0,
-  'Respiratory Physiology and Pathophysiology': 1.0,
-  'Perioperative Acid–Base Balance': 1.0,
-  'Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations': 1.0,
-  'Local Anesthetics': 1.0,
-  'Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury': 1.0,
-  'Neuromuscular Monitoring': 1.0,
-  'Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function': 1.0,
-  'Management of the Patient with Chronic Pain': 1.0,
-  'Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity': 1.0,
-  'Respiratory Monitoring': 1.0,
-  'Anesthesia for Bariatric Surgery': 1.0,
-  'Anesthesia for Obstetrics': 1.0,
-  'Basic Principles of Pharmacology': 1.0,
-  'Neuromuscular Physiology and Pharmacology': 1.0,
-  'Airway Management in the Adult': 1.0,
-  'Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia': 1.0,
-  'Geriatric Anesthesia': 1.0,
-  'Critical Care Anesthesiology': 1.0,
+  "Cardiac Physiology": 1.0,
+  "Respiratory Physiology and Pathophysiology": 1.0,
+  "Perioperative Acid–Base Balance": 1.0,
+  "Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations": 1.0,
+  "Local Anesthetics": 1.0,
+  "Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury": 1.0,
+  "Neuromuscular Monitoring": 1.0,
+  "Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function": 1.0,
+  "Management of the Patient with Chronic Pain": 1.0,
+  "Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity": 1.0,
+  "Respiratory Monitoring": 1.0,
+  "Anesthesia for Bariatric Surgery": 1.0,
+  "Anesthesia for Obstetrics": 1.0,
+  "Basic Principles of Pharmacology": 1.0,
+  "Neuromuscular Physiology and Pharmacology": 1.0,
+  "Airway Management in the Adult": 1.0,
+  "Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia": 1.0,
+  "Geriatric Anesthesia": 1.0,
+  "Critical Care Anesthesiology": 1.0,
 
   // Tier 2 (0.6)
-  'Anesthesia for Trauma': 0.6,
-  'The Postanesthesia Care Unit': 0.6,
-  'Pediatric Anesthesia': 0.6,
-  'Perioperative Fluid and Electrolyte Therapy': 0.6,
-  'Intravenous Anesthetics': 0.6,
-  'Cardiovascular Monitoring': 0.6,
-  'Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)': 0.6,
-  'Cerebral Physiology and the Effects of Anesthetic Drugs': 0.6,
-  'Patient Blood Management: Coagulation': 0.6,
-  'Anesthesia for Neurologic Surgery and Neurointerventions': 0.6,
-  'Spinal, Epidural, and Caudal Anesthesia': 0.6,
-  'Patient Blood Management: Transfusion Therapy': 0.6,
-  'Opioids': 0.6,
-  'Anesthetic Implications of Concurrent Diseases': 0.6,
-  'Preoperative Evaluation': 0.6,
-  'Acute Postoperative Pain': 0.6,
-  'Inhaled Anesthetic Delivery Systems': 0.6,
-  'Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)': 0.6,
+  "Anesthesia for Trauma": 0.6,
+  "The Postanesthesia Care Unit": 0.6,
+  "Pediatric Anesthesia": 0.6,
+  "Perioperative Fluid and Electrolyte Therapy": 0.6,
+  "Intravenous Anesthetics": 0.6,
+  "Cardiovascular Monitoring": 0.6,
+  "Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)": 0.6,
+  "Cerebral Physiology and the Effects of Anesthetic Drugs": 0.6,
+  "Patient Blood Management: Coagulation": 0.6,
+  "Anesthesia for Neurologic Surgery and Neurointerventions": 0.6,
+  "Spinal, Epidural, and Caudal Anesthesia": 0.6,
+  "Patient Blood Management: Transfusion Therapy": 0.6,
+  Opioids: 0.6,
+  "Anesthetic Implications of Concurrent Diseases": 0.6,
+  "Preoperative Evaluation": 0.6,
+  "Acute Postoperative Pain": 0.6,
+  "Inhaled Anesthetic Delivery Systems": 0.6,
+  "Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)": 0.6,
 
   // Tier 3 (0.2)
-  'Anesthesia for Thoracic Surgery': 0.2,
-  'Neurophysiologic Monitoring': 0.2,
-  'Patient Positioning and Associated Risks': 0.2,
-  'Anesthesia for Vascular Surgery': 0.2,
-  'Anesthesia for Orthopedic Surgery': 0.2,
+  "Anesthesia for Thoracic Surgery": 0.2,
+  "Neurophysiologic Monitoring": 0.2,
+  "Patient Positioning and Associated Risks": 0.2,
+  "Anesthesia for Vascular Surgery": 0.2,
+  "Anesthesia for Orthopedic Surgery": 0.2,
 };
 
 // ── Weight profiles per session size ────────────────────────────────
 // [srsUrgency, topicWeakness, recencyGap, streakPenalty, examProximity, yieldBoost]
-const WEIGHT_PROFILES: Record<Exclude<SessionSize, 'simulation'>, number[]> = {
-  quick:   [0.40, 0.30, 0.15, 0.05, 0.00, 0.10],
-  regular: [0.30, 0.25, 0.20, 0.10, 0.05, 0.10],
-  long:    [0.25, 0.25, 0.20, 0.10, 0.10, 0.10],
+const WEIGHT_PROFILES: Record<Exclude<SessionSize, "simulation">, number[]> = {
+  quick: [0.4, 0.3, 0.15, 0.05, 0.0, 0.1],
+  regular: [0.3, 0.25, 0.2, 0.1, 0.05, 0.1],
+  long: [0.25, 0.25, 0.2, 0.1, 0.1, 0.1],
 };
 
 // ── Exam simulation topic proportions (avg_q from real exam data) ───
 export const SIMULATION_PROPORTIONS: Record<string, number> = {
   // keys MUST match `topic` values in DB; see src/test/fixtures/dbTopics.ts
-  'Cardiac Physiology': 6,
-  'Respiratory Physiology and Pathophysiology': 5,
-  'Basic Principles of Pharmacology': 5,
-  'Airway Management in the Adult': 5,
-  'Local Anesthetics': 4,
-  'Neuromuscular Physiology and Pharmacology': 4,
-  'Anesthesia for Obstetrics': 4,
-  'Perioperative Acid–Base Balance': 4,
-  'Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity': 3,
-  'Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function': 3,
-  'Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations': 3,
-  'Management of the Patient with Chronic Pain': 3,
-  'Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia': 3,
-  'Pediatric Anesthesia': 3,
-  'Critical Care Anesthesiology': 3,
-  'Preoperative Evaluation': 3,
-  'Cardiovascular Monitoring': 3,
-  'Intravenous Anesthetics': 3,
-  'Opioids': 3,
-  'Spinal, Epidural, and Caudal Anesthesia': 3,
-  'Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)': 2,
-  'Neuromuscular Monitoring': 2,
-  'Respiratory Monitoring': 2,
-  'Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury': 2,
-  'Patient Blood Management: Coagulation': 2,
-  'Patient Blood Management: Transfusion Therapy': 2,
-  'Anesthetic Implications of Concurrent Diseases': 2,
-  'Anesthesia for Trauma': 2,
-  'The Postanesthesia Care Unit': 2,
-  'Geriatric Anesthesia': 2,
-  'Anesthesia for Bariatric Surgery': 2,
-  'Perioperative Fluid and Electrolyte Therapy': 2,
-  'Cerebral Physiology and the Effects of Anesthetic Drugs': 2,
-  'Acute Postoperative Pain': 2,
-  'Inhaled Anesthetic Delivery Systems': 2,
-  'Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)': 1,
-  'Anesthesia for Thoracic Surgery': 1,
-  'Neurophysiologic Monitoring': 1,
-  'Patient Positioning and Associated Risks': 1,
-  'Anesthesia for Vascular Surgery': 1,
-  'Anesthesia for Orthopedic Surgery': 1,
-  'Anesthesia for Neurologic Surgery and Neurointerventions': 1,
+  "Cardiac Physiology": 6,
+  "Respiratory Physiology and Pathophysiology": 5,
+  "Basic Principles of Pharmacology": 5,
+  "Airway Management in the Adult": 5,
+  "Local Anesthetics": 4,
+  "Neuromuscular Physiology and Pharmacology": 4,
+  "Anesthesia for Obstetrics": 4,
+  "Perioperative Acid–Base Balance": 4,
+  "Inhaled Anesthetic Uptake, Distribution, Metabolism and Toxicity": 3,
+  "Renal Anatomy, Physiology, Pharmacology, and Evaluation of Function": 3,
+  "Gastrointestinal and Hepatic Physiology, Pathophysiology, and Anesthetic Considerations": 3,
+  "Management of the Patient with Chronic Pain": 3,
+  "Peripheral Nerve Blocks and Ultrasound Guidance for Regional Anesthesia": 3,
+  "Pediatric Anesthesia": 3,
+  "Critical Care Anesthesiology": 3,
+  "Preoperative Evaluation": 3,
+  "Cardiovascular Monitoring": 3,
+  "Intravenous Anesthetics": 3,
+  Opioids: 3,
+  "Spinal, Epidural, and Caudal Anesthesia": 3,
+  "Pharmacology of Neuromuscular Blocking Drugs and Antagonists (Reversal Agents)": 2,
+  "Neuromuscular Monitoring": 2,
+  "Respiratory Monitoring": 2,
+  "Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury": 2,
+  "Patient Blood Management: Coagulation": 2,
+  "Patient Blood Management: Transfusion Therapy": 2,
+  "Anesthetic Implications of Concurrent Diseases": 2,
+  "Anesthesia for Trauma": 2,
+  "The Postanesthesia Care Unit": 2,
+  "Geriatric Anesthesia": 2,
+  "Anesthesia for Bariatric Surgery": 2,
+  "Perioperative Fluid and Electrolyte Therapy": 2,
+  "Cerebral Physiology and the Effects of Anesthetic Drugs": 2,
+  "Acute Postoperative Pain": 2,
+  "Inhaled Anesthetic Delivery Systems": 2,
+  "Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)": 1,
+  "Anesthesia for Thoracic Surgery": 1,
+  "Neurophysiologic Monitoring": 1,
+  "Patient Positioning and Associated Risks": 1,
+  "Anesthesia for Vascular Surgery": 1,
+  "Anesthesia for Orthopedic Surgery": 1,
+  "Anesthesia for Neurologic Surgery and Neurointerventions": 1,
 };
 
 // ── Hardcoded exam date ─────────────────────────────────────────────
-export const EXAM_DATE = new Date('2026-06-16T08:00:00');
+export const EXAM_DATE = new Date("2026-06-16T08:00:00");
 
 // ── Exam proximity phase ────────────────────────────────────────────
-export type ExamPhase = 'early' | 'approaching' | 'imminent';
+export type ExamPhase = "early" | "approaching" | "imminent";
 
 export function getExamProximityPhase(): ExamPhase {
   const daysLeft = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
-  if (daysLeft <= 0) return 'early';  // המבחן כבר עבר — חזרה למצב רגיל
-  if (daysLeft > 90) return 'early';
-  if (daysLeft > 30) return 'approaching';
-  return 'imminent';
+  if (daysLeft <= 0) return "early"; // המבחן כבר עבר — חזרה למצב רגיל
+  if (daysLeft > 90) return "early";
+  if (daysLeft > 30) return "approaching";
+  return "imminent";
 }
 
 // ── Phase-based weight overrides (W2=topicWeakness, W5=examProximity) ─
-const PHASE_OVERRIDES: Record<Exclude<ExamPhase, 'early'>, { w2: number; w5: number }> = {
-  approaching: { w2: 0.30, w5: 0.10 },
-  imminent:    { w2: 0.35, w5: 0.20 },
+const PHASE_OVERRIDES: Record<Exclude<ExamPhase, "early">, { w2: number; w5: number }> = {
+  approaching: { w2: 0.3, w5: 0.1 },
+  imminent: { w2: 0.35, w5: 0.2 },
 };
 
 // ── Interfaces ──────────────────────────────────────────────────────
@@ -149,7 +150,7 @@ const PHASE_OVERRIDES: Record<Exclude<ExamPhase, 'early'>, { w2: number; w5: num
 // the full context — not just next_review_date.
 
 export interface TopicStats {
-  accuracy: number;       // 0-1
+  accuracy: number; // 0-1
   lastAnsweredTs: number; // epoch ms, 0 if never
   recentWrongStreak: number; // count of consecutive wrongs in last 5 answers
 }
@@ -174,8 +175,7 @@ function clamp01(v: number): number {
 //   localStorage.removeItem('__srs_debug__')
 function srsDebugEnabled(): boolean {
   try {
-    return typeof window !== 'undefined'
-      && window.localStorage?.getItem('__srs_debug__') === '1';
+    return typeof window !== "undefined" && window.localStorage?.getItem("__srs_debug__") === "1";
   } catch {
     return false;
   }
@@ -261,7 +261,7 @@ function computeTopicScores(
 export function computeSmartScore(q: Question, params: ScoringParams): number {
   const { srsData, topicStats, globalAccuracy, weights } = params;
   const qId = q[KEYS.ID];
-  const topic = q[KEYS.TOPIC] || '';
+  const topic = q[KEYS.TOPIC] || "";
   const now = Date.now();
   const today = new Date();
 
@@ -272,7 +272,7 @@ export function computeSmartScore(q: Question, params: ScoringParams): number {
   const ts = topicStats[topic];
   let topicWeakness = 0.5; // default if no data
   if (ts && globalAccuracy > 0) {
-    topicWeakness = clamp01(1 - (ts.accuracy / globalAccuracy));
+    topicWeakness = clamp01(1 - ts.accuracy / globalAccuracy);
   }
 
   // 3. recencyGap
@@ -330,11 +330,7 @@ function allocateSlots(
   const slots: Record<string, number> = {};
   let allocated = 0;
   for (const t of topics) {
-    slots[t] = Math.min(
-      Math.floor(ideal[t]),
-      maxPerTopic,
-      byTopic[t].length,
-    );
+    slots[t] = Math.min(Math.floor(ideal[t]), maxPerTopic, byTopic[t].length);
     allocated += slots[t];
   }
 
@@ -342,10 +338,9 @@ function allocateSlots(
   // (Hamilton method — אלה שה"מגיע להם" הכי הרבה מהחלק האידיאלי)
   const remaining = count - allocated;
   const candidates = topics
-    .filter(t => slots[t] < Math.min(maxPerTopic, byTopic[t].length))
+    .filter((t) => slots[t] < Math.min(maxPerTopic, byTopic[t].length))
     .sort((a, b) => {
-      const fracDiff =
-        (ideal[b] - Math.floor(ideal[b])) - (ideal[a] - Math.floor(ideal[a]));
+      const fracDiff = ideal[b] - Math.floor(ideal[b]) - (ideal[a] - Math.floor(ideal[a]));
       return fracDiff !== 0 ? fracDiff : topicScores[b] - topicScores[a];
     });
 
@@ -359,7 +354,7 @@ function allocateSlots(
 // ── Compute topic stats from history ────────────────────────────────
 export function computeTopicStats(
   history: Record<string, HistoryEntry>,
-  data: Question[]
+  data: Question[],
 ): { topicStats: Record<string, TopicStats>; globalAccuracy: number } {
   const topicAgg: Record<string, { correct: number; answered: number; lastTs: number; recentResults: boolean[] }> = {};
   let globalCorrect = 0;
@@ -368,11 +363,11 @@ export function computeTopicStats(
   // Build a questionId → topic map
   const qTopicMap: Record<string, string> = {};
   for (const q of data) {
-    qTopicMap[q[KEYS.ID]] = q[KEYS.TOPIC] || '';
+    qTopicMap[q[KEYS.ID]] = q[KEYS.TOPIC] || "";
   }
 
   for (const [qId, h] of Object.entries(history)) {
-    const topic = qTopicMap[qId] || '';
+    const topic = qTopicMap[qId] || "";
     if (!topicAgg[topic]) {
       topicAgg[topic] = { correct: 0, answered: 0, lastTs: 0, recentResults: [] };
     }
@@ -382,7 +377,7 @@ export function computeTopicStats(
     agg.lastTs = Math.max(agg.lastTs, h.timestamp);
     // Track last result for streak calculation
     if (h.lastResult) {
-      agg.recentResults.push(h.lastResult === 'correct');
+      agg.recentResults.push(h.lastResult === "correct");
     }
     globalCorrect += h.correct;
     globalAnswered += h.answered;
@@ -416,10 +411,10 @@ export function selectSmartQuestions(
   sessionSize: SessionSize,
   srsData: Record<string, SrsRecord>,
   history: Record<string, HistoryEntry>,
-  allData: Question[]
+  allData: Question[],
 ): Question[] {
   // STAGE 0 TEMP — log entry params
-  srsDebugLog('selectSmartQuestions:entry', {
+  srsDebugLog("selectSmartQuestions:entry", {
     poolSize: pool.length,
     count,
     sessionSize,
@@ -442,13 +437,13 @@ export function selectSmartQuestions(
     // Ungated alarm: defensive fallback fired. srsDebugLog above is gated on
     // srsDebugEnabled() and won't surface this in production — keep an
     // ungated warn so the silent-fallback case is observable in the wild.
-    console.warn('[SRS] pre-filter emptied a non-empty pool — falling back to unfiltered pool', {
+    console.warn("[SRS] pre-filter emptied a non-empty pool — falling back to unfiltered pool", {
       poolSize: pool.length,
       historyEntries: Object.keys(history).length,
       srsRecords: Object.keys(srsData).length,
     });
   }
-  srsDebugLog('selectSmartQuestions:pre-filter', {
+  srsDebugLog("selectSmartQuestions:pre-filter", {
     poolSize: pool.length,
     filteredSize: filteredPool.length,
     fellBack: filteredPool.length === 0,
@@ -456,10 +451,10 @@ export function selectSmartQuestions(
   });
 
   // Simulation mode: proportional distribution
-  if (sessionSize === 'simulation') {
+  if (sessionSize === "simulation") {
     const simResult = selectSimulationQuestions(workingPool, count);
-    srsDebugLog('selectSmartQuestions:simulation-result', {
-      selectedIds: simResult.map(q => q[KEYS.ID]),
+    srsDebugLog("selectSmartQuestions:simulation-result", {
+      selectedIds: simResult.map((q) => q[KEYS.ID]),
     });
     return simResult;
   }
@@ -470,7 +465,7 @@ export function selectSmartQuestions(
 
   // Apply exam proximity phase overrides to W2 and W5
   const phase = getExamProximityPhase();
-  if (phase !== 'early') {
+  if (phase !== "early") {
     const overrides = PHASE_OVERRIDES[phase];
     weights[1] = overrides.w2; // topicWeakness
     weights[4] = overrides.w5; // examProximity
@@ -482,7 +477,7 @@ export function selectSmartQuestions(
   // ── STAGE 1: קבץ לפי נושא + חשב ציון לכל נושא ───────────────────
   const byTopic: Record<string, Question[]> = {};
   for (const q of workingPool) {
-    const topic = q[KEYS.TOPIC] || '__other__';
+    const topic = q[KEYS.TOPIC] || "__other__";
     if (!byTopic[topic]) byTopic[topic] = [];
     byTopic[topic].push(q);
   }
@@ -494,7 +489,7 @@ export function selectSmartQuestions(
   const slots = allocateSlots(topicScores, byTopic, effectiveCount);
 
   // STAGE 0 TEMP — log topic allocation
-  srsDebugLog('selectSmartQuestions:slots', {
+  srsDebugLog("selectSmartQuestions:slots", {
     effectiveCount,
     topicCount: topics.length,
     slots: Object.fromEntries(
@@ -528,7 +523,7 @@ export function selectSmartQuestions(
     const n = slots[topic] ?? 0;
     if (n <= 0) continue;
     const scored = byTopic[topic]
-      .map(q => ({
+      .map((q) => ({
         item: q,
         // Treat zero-answered history rows as "new" too — guards against a
         // legacy/zombie row state where a row exists but the user never
@@ -544,10 +539,10 @@ export function selectSmartQuestions(
   // Use workingPool (post-filter) and apply 30% new-question quota here too,
   // so even fallback selections respect the quota.
   if (selected.length < effectiveCount) {
-    const usedIds = new Set(selected.map(q => q[KEYS.ID]));
+    const usedIds = new Set(selected.map((q) => q[KEYS.ID]));
     const leftover = workingPool
-      .filter(q => !usedIds.has(q[KEYS.ID]))
-      .map(q => ({
+      .filter((q) => !usedIds.has(q[KEYS.ID]))
+      .map((q) => ({
         item: q,
         isNew: !history[q[KEYS.ID]] || history[q[KEYS.ID]].answered === 0,
         score: computeSmartScore(q, scoringParams),
@@ -564,11 +559,11 @@ export function selectSmartQuestions(
   }
 
   // STAGE 0 TEMP — log final selection
-  srsDebugLog('selectSmartQuestions:result', {
+  srsDebugLog("selectSmartQuestions:result", {
     selectedCount: result.length,
-    selectedIds: result.map(q => q[KEYS.ID]),
+    selectedIds: result.map((q) => q[KEYS.ID]),
     topicBreakdown: result.reduce<Record<string, number>>((acc, q) => {
-      const t = q[KEYS.TOPIC] || '__other__';
+      const t = q[KEYS.TOPIC] || "__other__";
       acc[t] = (acc[t] || 0) + 1;
       return acc;
     }, {}),
@@ -584,7 +579,7 @@ function selectSimulationQuestions(pool: Question[], count: number): Question[] 
   // Group pool by topic
   const byTopic: Record<string, Question[]> = {};
   for (const q of pool) {
-    const topic = q[KEYS.TOPIC] || '__other__';
+    const topic = q[KEYS.TOPIC] || "__other__";
     if (!byTopic[topic]) byTopic[topic] = [];
     byTopic[topic].push(q);
   }
@@ -596,7 +591,7 @@ function selectSimulationQuestions(pool: Question[], count: number): Question[] 
     const target = Math.round((proportion / totalProportion) * count);
     const available = byTopic[topic] || [];
     // Shuffle and take up to target
-    const shuffled = [...available].sort(() => Math.random() - 0.5);
+    const shuffled = shuffle(available);
     selected.push(...shuffled.slice(0, target));
     // Remove used questions
     delete byTopic[topic];
@@ -608,7 +603,7 @@ function selectSimulationQuestions(pool: Question[], count: number): Question[] 
     for (const qs of Object.values(byTopic)) {
       remaining.push(...qs);
     }
-    const shuffled = remaining.sort(() => Math.random() - 0.5);
+    const shuffled = shuffle(remaining);
     selected.push(...shuffled.slice(0, count - selected.length));
   }
 

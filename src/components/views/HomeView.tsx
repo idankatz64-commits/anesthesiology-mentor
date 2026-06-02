@@ -1,25 +1,40 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useApp } from '@/contexts/AppContext';
-import { KEYS, Question, UserProgress } from '@/lib/types';
-import { TrendingUp } from 'lucide-react';
+import { useState, useMemo, useEffect } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { KEYS, Question, UserProgress } from "@/lib/types";
+import { TrendingUp } from "lucide-react";
 import {
-  Sparkles, Timer, RefreshCcw, Heart, BookOpen, Cpu,
-  Layers, SlidersHorizontal, AlertCircle,
-  Play, X, AlertTriangle, ClipboardList, Info, ChevronDown,
-  FolderOpen, FileText, Link as LinkIcon, ExternalLink,
-} from 'lucide-react';
-import jigsawImg from '@/assets/jigsaw.png';
-import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
-import { StatCard } from '@/components/stats/StatCard';
-import { getExamProximityPhase, EXAM_DATE } from '@/lib/smartSelection';
-import MatrixCountdown from '@/components/MatrixCountdown';
-import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
-import HomeTopicHeatmap from '@/components/stats/HomeTopicHeatmap';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import DailyReportModal from '@/components/DailyReportModal';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
-import { useDueCount } from '@/components/srs/useDueCount';
+  Sparkles,
+  Timer,
+  RefreshCcw,
+  Heart,
+  BookOpen,
+  Cpu,
+  Layers,
+  SlidersHorizontal,
+  AlertCircle,
+  Play,
+  X,
+  AlertTriangle,
+  ClipboardList,
+  Info,
+  ChevronDown,
+  FolderOpen,
+  FileText,
+  Link as LinkIcon,
+  ExternalLink,
+} from "lucide-react";
+import jigsawImg from "@/assets/jigsaw.png";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
+import { StatCard } from "@/components/stats/StatCard";
+import { getExamProximityPhase, EXAM_DATE, selectSmartQuestions } from "@/lib/smartSelection";
+import MatrixCountdown from "@/components/MatrixCountdown";
+import HomeStatsSummary from "@/components/stats/HomeStatsSummary";
+import HomeTopicHeatmap from "@/components/stats/HomeTopicHeatmap";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import DailyReportModal from "@/components/DailyReportModal";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { useDueCount } from "@/components/srs/useDueCount";
 
 const containerVariant = {
   hidden: {},
@@ -28,7 +43,7 @@ const containerVariant = {
 
 const cardVariant = {
   hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 250, damping: 25, mass: 0.8 } },
+  visible: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 250, damping: 25, mass: 0.8 } },
 };
 
 /* ── Animated Icon Wrappers ── */
@@ -38,8 +53,10 @@ function PulseIcon({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       animate={reduced ? {} : { scale: [1, 1.12, 1], opacity: [0.85, 1, 0.85] }}
-      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-    >{children}</motion.div>
+      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -48,8 +65,10 @@ function SpinIcon({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       animate={reduced ? {} : { rotate: 360 }}
-      transition={{ duration: 10, repeat: Infinity, ease: 'linear' }}
-    >{children}</motion.div>
+      transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -59,8 +78,10 @@ function RotateIcon({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       animate={reduced ? {} : { rotate: [0, -12, 0, 12, 0] }}
-      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-    >{children}</motion.div>
+      transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -70,8 +91,10 @@ function FlipIcon({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       animate={reduced ? {} : { y: [0, -5, 0] }}
-      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-    >{children}</motion.div>
+      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -80,8 +103,10 @@ function BounceIcon({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       animate={reduced ? {} : { y: [0, -4, 0] }}
-      transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-    >{children}</motion.div>
+      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -91,7 +116,9 @@ function ShakeIcon({ children }: { children: React.ReactNode }) {
     <motion.div
       animate={reduced ? {} : { x: [0, -2, 2, -2, 0] }}
       transition={{ duration: 0.5, repeat: Infinity, repeatDelay: 4 }}
-    >{children}</motion.div>
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -101,7 +128,9 @@ function BeatIcon({ children }: { children: React.ReactNode }) {
     <motion.div
       animate={reduced ? {} : { scale: [1, 1.15, 1, 1.08, 1] }}
       transition={{ duration: 1.4, repeat: Infinity, repeatDelay: 2.5 }}
-    >{children}</motion.div>
+    >
+      {children}
+    </motion.div>
   );
 }
 
@@ -110,26 +139,33 @@ function BlinkIcon({ children }: { children: React.ReactNode }) {
   return (
     <motion.div
       animate={reduced ? {} : { opacity: [1, 0.4, 1] }}
-      transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
-    >{children}</motion.div>
+      transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+    >
+      {children}
+    </motion.div>
   );
 }
 
 /* ── Param Tooltips ── */
 const PARAM_TOOLTIPS: Record<string, string> = {
-  srsUrgency: 'כמה דחוף לחזור על השאלה לפי אלגוריתם SRS — ערך גבוה = איחור גדול מתאריך החזרה',
-  topicWeakness: 'חולשה בנושא — ההפרש בין אחוז הדיוק שלך בנושא לדיוק הכללי',
-  recencyGap: 'כמה ימים עברו מאז תרגלת את הנושא הזה',
-  streakPenalty: 'עונש על רצף טעויות — אם טעית ברציפות בשאלה, הציון עולה',
-  examProximity: 'קרבה לתאריך הבחינה — ככל שהמבחן קרוב יותר, הדגש על נושאים חלשים עולה',
-  yieldBoost: 'חשיבות הנושא — Tier 1 (1.0), Tier 2 (0.6), Tier 3 (0.2)',
+  srsUrgency: "כמה דחוף לחזור על השאלה לפי אלגוריתם SRS — ערך גבוה = איחור גדול מתאריך החזרה",
+  topicWeakness: "חולשה בנושא — ההפרש בין אחוז הדיוק שלך בנושא לדיוק הכללי",
+  recencyGap: "כמה ימים עברו מאז תרגלת את הנושא הזה",
+  streakPenalty: "עונש על רצף טעויות — אם טעית ברציפות בשאלה, הציון עולה",
+  examProximity: "קרבה לתאריך הבחינה — ככל שהמבחן קרוב יותר, הדגש על נושאים חלשים עולה",
+  yieldBoost: "חשיבות הנושא — Tier 1 (1.0), Tier 2 (0.6), Tier 3 (0.2)",
 };
 
 function FormulaParam({ name }: { name: string }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <button type="button" className="text-primary cursor-help underline decoration-dotted underline-offset-2 bg-transparent border-none p-0 font-mono text-xs inline">{name}</button>
+        <button
+          type="button"
+          className="text-primary cursor-help underline decoration-dotted underline-offset-2 bg-transparent border-none p-0 font-mono text-xs inline"
+        >
+          {name}
+        </button>
       </TooltipTrigger>
       <TooltipContent side="top" className="max-w-xs text-xs" dir="rtl">
         <p>{PARAM_TOOLTIPS[name]}</p>
@@ -140,10 +176,20 @@ function FormulaParam({ name }: { name: string }) {
 
 /* ── Focus Card (larger, decorative) ── */
 function FocusCard({
-  icon, title, description, onClick, accentColor, disabled, badge,
+  icon,
+  title,
+  description,
+  onClick,
+  accentColor,
+  disabled,
+  badge,
 }: {
-  icon: React.ReactNode; title: string; description: string;
-  onClick: () => void; accentColor: string; disabled?: boolean;
+  icon: React.ReactNode;
+  title: string;
+  description: string;
+  onClick: () => void;
+  accentColor: string;
+  disabled?: boolean;
   badge?: number;
 }) {
   return (
@@ -151,8 +197,8 @@ function FocusCard({
       variants={cardVariant}
       whileTap={{ scale: 0.97 }}
       onClick={disabled ? undefined : onClick}
-      className={`glass-tile relative overflow-hidden p-6 cursor-pointer group ${disabled ? 'opacity-60 pointer-events-none' : ''}`}
-      style={{ willChange: 'transform', borderColor: accentColor + '33' }}
+      className={`glass-tile relative overflow-hidden p-6 cursor-pointer group ${disabled ? "opacity-60 pointer-events-none" : ""}`}
+      style={{ willChange: "transform", borderColor: accentColor + "33" }}
     >
       {badge !== undefined && badge > 0 && (
         <span className="absolute top-3 left-3 rounded-full bg-red-500 text-white text-xs font-bold px-2 py-0.5 z-10 shadow-md">
@@ -167,7 +213,7 @@ function FocusCard({
       <div className="relative">
         <div
           className="w-14 h-14 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform"
-          style={{ background: accentColor + '22', color: accentColor }}
+          style={{ background: accentColor + "22", color: accentColor }}
         >
           {icon}
         </div>
@@ -180,8 +226,11 @@ function FocusCard({
 
 /* ── Resource Links Section ── */
 interface ResourceLink {
-  id: string; title: string; description: string | null;
-  url: string; category: string;
+  id: string;
+  title: string;
+  description: string | null;
+  url: string;
+  category: string;
 }
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -196,11 +245,13 @@ function ResourceLinksSection() {
 
   useEffect(() => {
     supabase
-      .from('resource_links')
-      .select('id, title, description, url, category')
-      .eq('is_active', true)
-      .order('sort_order', { ascending: true })
-      .then(({ data }) => { if (data?.length) setLinks(data); });
+      .from("resource_links")
+      .select("id, title, description, url, category")
+      .eq("is_active", true)
+      .order("sort_order", { ascending: true })
+      .then(({ data }) => {
+        if (data?.length) setLinks(data);
+      });
   }, []);
 
   if (links.length === 0) return null;
@@ -209,7 +260,7 @@ function ResourceLinksSection() {
     <div className="space-y-3">
       <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-widest">קישורים ומשאבים</h3>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-        {links.map(link => (
+        {links.map((link) => (
           <a
             key={link.id}
             href={link.url}
@@ -222,9 +273,7 @@ function ResourceLinksSection() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-sm text-foreground truncate">{link.title}</p>
-              {link.description && (
-                <p className="text-xs text-muted-foreground truncate">{link.description}</p>
-              )}
+              {link.description && <p className="text-xs text-muted-foreground truncate">{link.description}</p>}
             </div>
             <ExternalLink className="w-3.5 h-3.5 text-muted-foreground shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
           </a>
@@ -236,9 +285,14 @@ function ResourceLinksSection() {
 
 /* ── Small Card ── */
 function SmallCard({
-  icon, title, subtitle, onClick,
+  icon,
+  title,
+  subtitle,
+  onClick,
 }: {
-  icon: React.ReactNode; title: string; subtitle: React.ReactNode;
+  icon: React.ReactNode;
+  title: string;
+  subtitle: React.ReactNode;
   onClick: () => void;
 }) {
   return (
@@ -247,7 +301,7 @@ function SmallCard({
       whileTap={{ scale: 0.97 }}
       onClick={onClick}
       className="glass-tile p-4 cursor-pointer group"
-      style={{ willChange: 'transform' }}
+      style={{ willChange: "transform" }}
     >
       <div className="flex items-start gap-3">
         <div className="w-10 h-10 bg-primary/15 text-primary rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
@@ -274,23 +328,32 @@ interface LastSessionResults {
 
 /* ── Session Panel (always visible) ── */
 function SessionPanel({
-  savedSessionInfo, loadingSavedSession, resuming, onResume, onClear,
+  savedSessionInfo,
+  loadingSavedSession,
+  resuming,
+  onResume,
+  onClear,
 }: {
-  savedSessionInfo: any; loadingSavedSession: boolean; resuming: boolean;
-  onResume: () => void; onClear: () => void;
-  progress: UserProgress; data: Question[];
+  savedSessionInfo: any;
+  loadingSavedSession: boolean;
+  resuming: boolean;
+  onResume: () => void;
+  onClear: () => void;
+  progress: UserProgress;
+  data: Question[];
 }) {
   const lastSession = useMemo<LastSessionResults | null>(() => {
     try {
-      const raw = localStorage.getItem('last_session_results');
+      const raw = localStorage.getItem("last_session_results");
       return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }, []);
 
   const hasSaved = !loadingSavedSession && savedSessionInfo;
 
-  const modeLabel = (m: string) =>
-    m === 'simulation' ? 'סימולציה' : m === 'exam' ? 'בחינה' : 'תרגול';
+  const modeLabel = (m: string) => (m === "simulation" ? "סימולציה" : m === "exam" ? "בחינה" : "תרגול");
 
   const timeAgo = (ts: number) => {
     const diff = Date.now() - ts;
@@ -313,11 +376,11 @@ function SessionPanel({
               <div>
                 <span className="font-bold text-foreground text-sm">יש לך סשן שמור!</span>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  {modeLabel(savedSessionInfo.mode)}{' '}
-                  — שאלה {savedSessionInfo.index + 1} מתוך {savedSessionInfo.questionIds.length}
+                  {modeLabel(savedSessionInfo.mode)} — שאלה {savedSessionInfo.index + 1} מתוך{" "}
+                  {savedSessionInfo.questionIds.length}
                 </p>
                 <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-                  נשמר ב-{new Date(savedSessionInfo.createdAt).toLocaleDateString('he-IL')}
+                  נשמר ב-{new Date(savedSessionInfo.createdAt).toLocaleDateString("he-IL")}
                 </p>
               </div>
             </div>
@@ -328,7 +391,7 @@ function SessionPanel({
                 className="bg-primary text-primary-foreground px-4 py-2 rounded-xl font-bold text-sm hover:opacity-90 transition flex items-center gap-2 shadow-lg disabled:opacity-50 flex-1 justify-center"
               >
                 <Play className="w-4 h-4" />
-                {resuming ? 'טוען...' : 'המשך סשן'}
+                {resuming ? "טוען..." : "המשך סשן"}
               </button>
               <button
                 onClick={onClear}
@@ -343,20 +406,33 @@ function SessionPanel({
       ) : lastSession ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{lastSession.pct >= 80 ? '🏆' : lastSession.pct >= 60 ? '💪' : '📚'}</span>
+            <span className="text-lg">{lastSession.pct >= 80 ? "🏆" : lastSession.pct >= 60 ? "💪" : "📚"}</span>
             <span className="text-xs font-semibold text-muted-foreground">סשן אחרון</span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-foreground tabular-nums">{lastSession.score}/{lastSession.total}</span>
-            <span className={`text-sm font-bold tabular-nums ${
-              lastSession.pct >= 70 ? 'text-success' : lastSession.pct >= 50 ? 'text-warning' : 'text-destructive'
-            }`}>({lastSession.pct}%)</span>
+            <span className="text-2xl font-bold text-foreground tabular-nums">
+              {lastSession.score}/{lastSession.total}
+            </span>
+            <span
+              className={`text-sm font-bold tabular-nums ${
+                lastSession.pct >= 70 ? "text-success" : lastSession.pct >= 50 ? "text-warning" : "text-destructive"
+              }`}
+            >
+              ({lastSession.pct}%)
+            </span>
           </div>
           {/* Progress bar */}
           <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
             <motion.div
               className="h-full rounded-full"
-              style={{ backgroundColor: lastSession.pct >= 70 ? 'hsl(var(--success))' : lastSession.pct >= 50 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))' }}
+              style={{
+                backgroundColor:
+                  lastSession.pct >= 70
+                    ? "hsl(var(--success))"
+                    : lastSession.pct >= 50
+                      ? "hsl(var(--primary))"
+                      : "hsl(var(--destructive))",
+              }}
               initial={{ width: 0 }}
               animate={{ width: `${lastSession.pct}%` }}
               transition={{ duration: 0.8, delay: 0.3 }}
@@ -369,8 +445,13 @@ function SessionPanel({
           </div>
           {lastSession.topics.length > 0 && (
             <div className="flex flex-wrap gap-1">
-              {lastSession.topics.map(t => (
-                <span key={t} className="text-[10px] bg-muted/30 text-muted-foreground px-2 py-0.5 rounded-full truncate max-w-[140px]">{t}</span>
+              {lastSession.topics.map((t) => (
+                <span
+                  key={t}
+                  className="text-[10px] bg-muted/30 text-muted-foreground px-2 py-0.5 rounded-full truncate max-w-[140px]"
+                >
+                  {t}
+                </span>
               ))}
             </div>
           )}
@@ -386,7 +467,18 @@ function SessionPanel({
 
 /* ── Main Component ── */
 export default function HomeView() {
-  const { data, progress, navigate, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
+  const {
+    data,
+    progress,
+    navigate,
+    startSession,
+    getDueQuestions,
+    savedSessionInfo,
+    resumeSessionFromDb,
+    clearSavedSession,
+    loadingSavedSession,
+    fetchSrsData,
+  } = useApp();
   const [loadingDue, setLoadingDue] = useState(false);
   const [resuming, setResuming] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -395,74 +487,40 @@ export default function HomeView() {
 
   const examPhase = useMemo(() => getExamProximityPhase(), []);
   const [phaseDismissed, setPhaseDismissed] = useState(() => {
-    const stored = localStorage.getItem('exam_phase_banner_dismissed_v1');
+    const stored = localStorage.getItem("exam_phase_banner_dismissed_v1");
     return stored === examPhase;
   });
-  const showExamBadge = examPhase !== 'early' && !phaseDismissed;
+  const showExamBadge = examPhase !== "early" && !phaseDismissed;
   const dismissExamBadge = () => {
-    localStorage.setItem('exam_phase_banner_dismissed_v1', examPhase);
+    localStorage.setItem("exam_phase_banner_dismissed_v1", examPhase);
     setPhaseDismissed(true);
   };
 
   let mistakes = 0;
-  Object.values(progress.history).forEach(h => { if (h.lastResult === 'wrong') mistakes++; });
+  Object.values(progress.history).forEach((h) => {
+    if (h.lastResult === "wrong") mistakes++;
+  });
   const notesCount = Object.keys(progress.notes).length;
   const favsCount = progress.favorites.length;
 
-  const withExp = data.filter(q => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
+  const withExp = data.filter((q) => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
 
-  const handleSmartPractice = () => {
+  const handleSmartPractice = async () => {
     if (!data.length) return;
-    const topicStats: Record<string, { correct: number; total: number }> = {};
-    Object.entries(progress.history).forEach(([id, h]) => {
-      const q = data.find(x => x[KEYS.ID] === id);
-      if (q && q[KEYS.TOPIC]) {
-        if (!topicStats[q[KEYS.TOPIC]]) topicStats[q[KEYS.TOPIC]] = { correct: 0, total: 0 };
-        topicStats[q[KEYS.TOPIC]].total += h.answered;
-        topicStats[q[KEYS.TOPIC]].correct += h.correct;
-      }
-    });
-
-    let weightedPool: { q: typeof data[0]; weight: number }[] = [];
-    const mistakeQs = data.filter(q => progress.history[q[KEYS.ID]]?.lastResult === 'wrong');
-    mistakeQs.forEach(q => weightedPool.push({ q, weight: 10 }));
-
-    const others = data.filter(q => progress.history[q[KEYS.ID]]?.lastResult !== 'wrong');
-    others.forEach(q => {
-      let weight = 1;
-      const topic = q[KEYS.TOPIC];
-      if (topicStats[topic]) {
-        const acc = topicStats[topic].correct / topicStats[topic].total;
-        if (acc < 0.5) weight = 3;
-        else if (acc < 0.8) weight = 1.5;
-      } else {
-        weight = 2;
-      }
-      weightedPool.push({ q, weight });
-    });
-
-    const selected: typeof data = [];
-    for (let i = 0; i < 15 && weightedPool.length > 0; i++) {
-      const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0);
-      let random = Math.random() * totalWeight;
-      for (let j = 0; j < weightedPool.length; j++) {
-        random -= weightedPool[j].weight;
-        if (random <= 0) {
-          selected.push(weightedPool[j].q);
-          weightedPool.splice(j, 1);
-          break;
-        }
-      }
-    }
-
+    // Route through the same smart engine SetupView uses, so the home-screen
+    // "smart practice" entry also gets the cool-down + future-schedule de-dup.
+    // Previously this path used a weighted-random pick with NO de-dup, which
+    // re-served just-answered questions (the "repeats" bug). 'quick' = 15.
+    const srsData = await fetchSrsData();
+    const selected = selectSmartQuestions(data, 15, "quick", srsData, progress.history, data);
     if (selected.length === 0) return;
-    startSession(selected, selected.length, 'practice');
+    startSession(selected, selected.length, "practice");
   };
 
   const handleSimulation = () => {
     if (!data.length) return;
-    startSession(data, 120, 'simulation');
+    startSession(data, 120, "simulation");
   };
 
   const handleSpacedRepetition = async () => {
@@ -470,14 +528,14 @@ export default function HomeView() {
     try {
       const due = await getDueQuestions();
       if (due.length === 0) {
-        toast.info('אין שאלות לחזרה היום ✨', {
-          description: 'כל החזרות מעודכנות. אפשר לעבור לשאלות חדשות.',
-          action: { label: 'תרגול חכם', onClick: () => handleSmartPractice() },
+        toast.info("אין שאלות לחזרה היום ✨", {
+          description: "כל החזרות מעודכנות. אפשר לעבור לשאלות חדשות.",
+          action: { label: "תרגול חכם", onClick: () => handleSmartPractice() },
           duration: 6000,
         });
         return;
       }
-      startSession(due, Math.min(due.length, 30), 'practice');
+      startSession(due, Math.min(due.length, 30), "practice");
     } finally {
       setLoadingDue(false);
     }
@@ -496,16 +554,16 @@ export default function HomeView() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
             className={`rounded-xl border px-5 py-3 flex items-center justify-between gap-3 ${
-              examPhase === 'imminent'
-                ? 'bg-destructive/10 border-destructive/30 text-destructive'
-                : 'bg-warning/10 border-warning/30 text-warning'
+              examPhase === "imminent"
+                ? "bg-destructive/10 border-destructive/30 text-destructive"
+                : "bg-warning/10 border-warning/30 text-warning"
             }`}
           >
             <div className="flex items-center gap-2 text-sm font-medium">
               <AlertTriangle className="w-4 h-4 shrink-0" />
-              {examPhase === 'imminent'
-                ? 'מצב בחינה — עדיפות מקסימלית לנושאים חלשים'
-                : 'מצב התקרבות לבחינה — דגש על נושאים חלשים'}
+              {examPhase === "imminent"
+                ? "מצב בחינה — עדיפות מקסימלית לנושאים חלשים"
+                : "מצב התקרבות לבחינה — דגש על נושאים חלשים"}
             </div>
             <button onClick={dismissExamBadge} className="p-1 rounded hover:bg-foreground/10 transition shrink-0">
               <X className="w-3.5 h-3.5" />
@@ -543,9 +601,25 @@ export default function HomeView() {
 
         {/* DB Status */}
         <div className="grid grid-cols-3 gap-3">
-          <StatCard variant="deep" label='סה"כ שאלות' value={<span className="text-xl font-bold matrix-text">{data.length}</span>} />
-          <StatCard variant="deep" label="כוללות הסבר" color="text-success" labelColor="text-success/70" value={<span className="text-xl font-bold text-success matrix-text">{withExp}</span>} />
-          <StatCard variant="deep" label="ללא הסבר" color="text-warning" labelColor="text-warning/70" value={<span className="text-xl font-bold text-warning matrix-text">{withoutExp}</span>} />
+          <StatCard
+            variant="deep"
+            label='סה"כ שאלות'
+            value={<span className="text-xl font-bold matrix-text">{data.length}</span>}
+          />
+          <StatCard
+            variant="deep"
+            label="כוללות הסבר"
+            color="text-success"
+            labelColor="text-success/70"
+            value={<span className="text-xl font-bold text-success matrix-text">{withExp}</span>}
+          />
+          <StatCard
+            variant="deep"
+            label="ללא הסבר"
+            color="text-warning"
+            labelColor="text-warning/70"
+            value={<span className="text-xl font-bold text-warning matrix-text">{withoutExp}</span>}
+          />
         </div>
       </div>
 
@@ -560,7 +634,7 @@ export default function HomeView() {
             alt="Jigsaw"
             className="w-10 h-10 object-contain drop-shadow-[0_0_12px_rgba(220,38,38,0.7)]"
             animate={{ scale: [1, 1.08, 1] }}
-            transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', repeatDelay: 3 }}
+            transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut", repeatDelay: 3 }}
           />
         </div>
       </header>
@@ -573,7 +647,11 @@ export default function HomeView() {
         animate="visible"
       >
         <FocusCard
-          icon={<PulseIcon><Sparkles className="w-7 h-7" /></PulseIcon>}
+          icon={
+            <PulseIcon>
+              <Sparkles className="w-7 h-7" />
+            </PulseIcon>
+          }
           title="Smart Practice"
           description="אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה."
           onClick={handleSmartPractice}
@@ -581,7 +659,11 @@ export default function HomeView() {
         />
         <div className="relative">
           <FocusCard
-            icon={<RotateIcon><RefreshCcw className="w-7 h-7" /></RotateIcon>}
+            icon={
+              <RotateIcon>
+                <RefreshCcw className="w-7 h-7" />
+              </RotateIcon>
+            }
             title="חזרה מרווחת"
             description="שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS."
             onClick={handleSpacedRepetition}
@@ -590,14 +672,21 @@ export default function HomeView() {
             badge={dueCount}
           />
           <button
-            onClick={(e) => { e.stopPropagation(); navigate('srs-dashboard'); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate("srs-dashboard");
+            }}
             className="absolute bottom-2 right-3 text-xs text-muted-foreground hover:text-foreground underline z-10"
           >
             📊 לוח SRS המלא
           </button>
         </div>
         <FocusCard
-          icon={<SpinIcon><Timer className="w-7 h-7" /></SpinIcon>}
+          icon={
+            <SpinIcon>
+              <Timer className="w-7 h-7" />
+            </SpinIcon>
+          }
           title="מבחן סימולציה"
           description="120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי."
           onClick={handleSimulation}
@@ -613,40 +702,72 @@ export default function HomeView() {
         animate="visible"
       >
         <SmallCard
-          icon={<FlipIcon><Layers className="w-5 h-5" /></FlipIcon>}
+          icon={
+            <FlipIcon>
+              <Layers className="w-5 h-5" />
+            </FlipIcon>
+          }
           title="תרגול כרטיסיות"
           subtitle="כרטיסיות Anki – שאלה ותשובה"
-          onClick={() => navigate('flashcards')}
+          onClick={() => navigate("flashcards")}
         />
         <SmallCard
-          icon={<BounceIcon><SlidersHorizontal className="w-5 h-5" /></BounceIcon>}
+          icon={
+            <BounceIcon>
+              <SlidersHorizontal className="w-5 h-5" />
+            </BounceIcon>
+          }
           title="תרגול מותאם"
           subtitle="בחר נושאים ומספר שאלות ידנית"
-          onClick={() => navigate('setup-practice')}
+          onClick={() => navigate("setup-practice")}
         />
         <SmallCard
-          icon={<ShakeIcon><AlertCircle className="w-5 h-5" /></ShakeIcon>}
+          icon={
+            <ShakeIcon>
+              <AlertCircle className="w-5 h-5" />
+            </ShakeIcon>
+          }
           title="חזרה על טעויות"
-          subtitle={<><span className="text-primary font-medium">{mistakes}</span> טעויות פתוחות</>}
-          onClick={() => navigate('setup-practice')}
+          subtitle={
+            <>
+              <span className="text-primary font-medium">{mistakes}</span> טעויות פתוחות
+            </>
+          }
+          onClick={() => navigate("setup-practice")}
         />
         <SmallCard
-          icon={<BeatIcon><Heart className="w-5 h-5" /></BeatIcon>}
+          icon={
+            <BeatIcon>
+              <Heart className="w-5 h-5" />
+            </BeatIcon>
+          }
           title="מועדפים"
-          subtitle={<><span className="text-primary font-medium">{favsCount}</span> שאלות שסימנת</>}
-          onClick={() => navigate('setup-practice')}
+          subtitle={
+            <>
+              <span className="text-primary font-medium">{favsCount}</span> שאלות שסימנת
+            </>
+          }
+          onClick={() => navigate("setup-practice")}
         />
         <SmallCard
           icon={<BookOpen className="w-5 h-5" />}
           title="המחברת שלי"
-          subtitle={<><span className="text-primary font-medium">{notesCount}</span> הערות</>}
-          onClick={() => navigate('notebook')}
+          subtitle={
+            <>
+              <span className="text-primary font-medium">{notesCount}</span> הערות
+            </>
+          }
+          onClick={() => navigate("notebook")}
         />
         <SmallCard
-          icon={<BlinkIcon><Cpu className="w-5 h-5" /></BlinkIcon>}
+          icon={
+            <BlinkIcon>
+              <Cpu className="w-5 h-5" />
+            </BlinkIcon>
+          }
           title="איך נבחרות השאלות?"
           subtitle="הצצה לאלגוריתם הניקוד"
-          onClick={() => setAlgoOpen(o => !o)}
+          onClick={() => setAlgoOpen((o) => !o)}
         />
       </motion.div>
 
@@ -656,17 +777,24 @@ export default function HomeView() {
           {algoOpen && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
+              animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
               className="overflow-hidden"
             >
               <div className="deep-tile p-6 space-y-5 text-sm text-muted-foreground leading-relaxed" dir="rtl">
-                <p className="text-foreground font-medium">
-                  כל שאלה מקבלת ציון חכם לפי הנוסחה:
-                </p>
-                <div className="bg-muted/30 rounded-lg px-4 py-3 text-xs font-mono text-foreground/80 overflow-x-auto" dir="ltr">
-                  smartScore = W1×<FormulaParam name="srsUrgency" /> + W2×<FormulaParam name="topicWeakness" /> + W3×<FormulaParam name="recencyGap" /> + W4×<FormulaParam name="streakPenalty" /> + W5×<FormulaParam name="examProximity" /> + W6×<FormulaParam name="yieldBoost" />
+                <p className="text-foreground font-medium">כל שאלה מקבלת ציון חכם לפי הנוסחה:</p>
+                <div
+                  className="bg-muted/30 rounded-lg px-4 py-3 text-xs font-mono text-foreground/80 overflow-x-auto"
+                  dir="ltr"
+                >
+                  smartScore = W1×
+                  <FormulaParam name="srsUrgency" /> + W2×
+                  <FormulaParam name="topicWeakness" /> + W3×
+                  <FormulaParam name="recencyGap" /> + W4×
+                  <FormulaParam name="streakPenalty" /> + W5×
+                  <FormulaParam name="examProximity" /> + W6×
+                  <FormulaParam name="yieldBoost" />
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
