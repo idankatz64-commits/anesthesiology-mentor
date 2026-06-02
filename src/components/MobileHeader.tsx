@@ -1,22 +1,20 @@
-import { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
-import { Heart, Moon, Sun, Menu, X, MessageSquareWarning } from 'lucide-react';
-import { type ViewId } from '@/lib/types';
-import FeedbackModal from './FeedbackModal';
-import { motion, AnimatePresence } from 'framer-motion';
-import { springGentle } from '@/lib/animations';
+import { useState } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { Heart, Moon, Sun, Menu, X } from "lucide-react";
+import { type ViewId } from "@/lib/types";
+import { motion, AnimatePresence } from "framer-motion";
+import { springGentle } from "@/lib/animations";
 
 const mobileNav: { id: ViewId; label: string; emoji: string }[] = [
-  { id: 'home', label: 'ראשי', emoji: '🏠' },
-  { id: 'setup-practice', label: 'תרגול', emoji: '📖' },
-  { id: 'setup-exam', label: 'בחינה', emoji: '⏱️' },
-  { id: 'stats', label: 'סטטיסטיקה', emoji: '📊' },
-  { id: 'notebook', label: 'המחברת שלי', emoji: '📝' },
+  { id: "home", label: "ראשי", emoji: "🏠" },
+  { id: "setup-practice", label: "תרגול", emoji: "📖" },
+  { id: "setup-exam", label: "בחינה", emoji: "⏱️" },
+  { id: "stats", label: "סטטיסטיקה", emoji: "📊" },
+  { id: "notebook", label: "המחברת שלי", emoji: "📝" },
 ];
 
 export default function MobileHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { isDark, toggleTheme, navigate } = useApp();
 
   return (
@@ -56,34 +54,30 @@ export default function MobileHeader() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={springGentle}
-              style={{ willChange: 'transform' }}
-              onClick={e => e.stopPropagation()}
+              style={{ willChange: "transform" }}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-end mb-4">
                 <button onClick={() => setMenuOpen(false)} className="text-muted-foreground p-2">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              {mobileNav.map(item => (
+              {mobileNav.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => { navigate(item.id); setMenuOpen(false); }}
+                  onClick={() => {
+                    navigate(item.id);
+                    setMenuOpen(false);
+                  }}
                   className="w-full text-right p-4 font-medium border-b border-border text-foreground hover:bg-muted hover:text-primary transition rounded-lg"
                 >
                   {item.emoji} {item.label}
                 </button>
               ))}
-              <button
-                onClick={() => { setFeedbackOpen(true); setMenuOpen(false); }}
-                className="w-full text-right p-4 font-medium border-b border-border text-primary hover:bg-muted transition rounded-lg flex items-center gap-2 justify-end"
-              >
-                דווח על טעות / פידבק <MessageSquareWarning className="w-4 h-4" />
-              </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </>
   );
 }

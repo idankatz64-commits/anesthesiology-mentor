@@ -1,46 +1,58 @@
-import { AppProvider, useApp } from '@/contexts/AppContext';
-import Sidebar from '@/components/Sidebar';
-import MobileHeader from '@/components/MobileHeader';
-import MobileBottomNav from '@/components/MobileBottomNav';
-import TopNav from '@/components/TopNav';
-import WelcomeModal from '@/components/WelcomeModal';
-import QuoteSplash from '@/components/QuoteSplash';
-import HomeView from '@/components/views/HomeView';
-import SetupView from '@/components/views/SetupView';
-import SessionView from '@/components/views/SessionView';
-import ReviewView from '@/components/views/ReviewView';
-import ResultsView from '@/components/views/ResultsView';
-import StatsView from '@/components/views/StatsView';
-import NotebookView from '@/components/views/NotebookView';
-import FlashcardView from '@/components/views/FlashcardView';
-import AdminView from '@/components/views/AdminView';
-import FormulaSheetView from '@/components/views/FormulaSheetView';
-import SummariesView from '@/components/views/SummariesView';
-import MillerGuideView from '@/components/views/MillerGuideView';
-import { SrsDashboardView } from '@/components/views/SrsDashboardView';
-import { motion, AnimatePresence } from 'framer-motion';
-import { slideFromRight } from '@/lib/animations';
+import { AppProvider, useApp } from "@/contexts/AppContext";
+import Sidebar from "@/components/Sidebar";
+import MobileHeader from "@/components/MobileHeader";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import TopNav from "@/components/TopNav";
+import WelcomeModal from "@/components/WelcomeModal";
+import QuoteSplash from "@/components/QuoteSplash";
+import HomeView from "@/components/views/HomeView";
+import SetupView from "@/components/views/SetupView";
+import SessionView from "@/components/views/SessionView";
+import ReviewView from "@/components/views/ReviewView";
+import ResultsView from "@/components/views/ResultsView";
+import StatsView from "@/components/views/StatsView";
+import NotebookView from "@/components/views/NotebookView";
+import FlashcardView from "@/components/views/FlashcardView";
+import FormulaSheetView from "@/components/views/FormulaSheetView";
+import SummariesView from "@/components/views/SummariesView";
+import MillerGuideView from "@/components/views/MillerGuideView";
+import { SrsDashboardView } from "@/components/views/SrsDashboardView";
+import { motion, AnimatePresence } from "framer-motion";
+import { slideFromRight } from "@/lib/animations";
 
 function AppContent() {
   const { currentView, loading } = useApp();
 
   const renderView = () => {
     switch (currentView) {
-      case 'home': return <HomeView />;
-      case 'setup-practice': return <SetupView mode="practice" />;
-      case 'setup-exam': return <SetupView mode="exam" />;
-      case 'session': return <SessionView />;
-      case 'review': return <ReviewView />;
-      case 'results': return <ResultsView />;
-      case 'stats': return <StatsView />;
-      case 'notebook': return <NotebookView />;
-      case 'flashcards': return <FlashcardView />;
-      case 'admin': return <AdminView />;
-      case 'formula-sheet': return <FormulaSheetView />;
-      case 'summaries': return <SummariesView />;
-      case 'miller-guide': return <MillerGuideView />;
-      case 'srs-dashboard': return <SrsDashboardView />;
-      default: return <HomeView />;
+      case "home":
+        return <HomeView />;
+      case "setup-practice":
+        return <SetupView mode="practice" />;
+      case "setup-exam":
+        return <SetupView mode="exam" />;
+      case "session":
+        return <SessionView />;
+      case "review":
+        return <ReviewView />;
+      case "results":
+        return <ResultsView />;
+      case "stats":
+        return <StatsView />;
+      case "notebook":
+        return <NotebookView />;
+      case "flashcards":
+        return <FlashcardView />;
+      case "formula-sheet":
+        return <FormulaSheetView />;
+      case "summaries":
+        return <SummariesView />;
+      case "miller-guide":
+        return <MillerGuideView />;
+      case "srs-dashboard":
+        return <SrsDashboardView />;
+      default:
+        return <HomeView />;
     }
   };
 
@@ -78,7 +90,7 @@ function AppContent() {
               exit={slideFromRight.exit}
               transition={slideFromRight.transition}
               className="w-full px-4"
-              style={{ willChange: 'transform', minHeight: '60vh' }}
+              style={{ willChange: "transform", minHeight: "60vh" }}
             >
               {renderView()}
             </motion.div>
