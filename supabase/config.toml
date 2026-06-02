@@ -1,7 +1,7 @@
 project_id = "ksbblqnwcmfylpxygyrj"
 
 [functions.matot-report]
-verify_jwt = false
+verify_jwt = true
 
 [functions.sync-questions]
 verify_jwt = false
