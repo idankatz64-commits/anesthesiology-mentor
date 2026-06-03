@@ -371,6 +371,62 @@ export default function SessionView() {
     return () => clearInterval(interval);
   }, [isSimulation]);
 
+  // Keyboard shortcuts — single stable listener via a ref, declared ABOVE the early return
+  // so the hook call order is identical on every render (Rules of Hooks). The ref is
+  // populated below once quiz data exists; onKey no-ops until then.
+  const kbStateRef = useRef<any>(null);
+  useEffect(() => {
+    const ANSWER_KEYS: Record<string, string> = { "1": "A", "2": "B", "3": "C", "4": "D" };
+    const CONFIDENCE_KEYS: Record<string, ConfidenceLevel> = {
+      "1": "confident",
+      "2": "hesitant",
+      "3": "guessed",
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      const s = kbStateRef.current;
+      if (!s) return;
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+      if (s.editingExplanation || s.editingQuestion || s.editingCorrectAnswer) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const key = e.key;
+
+      if (s.needsConfidence && key in CONFIDENCE_KEYS) {
+        e.preventDefault();
+        s.handleConfidenceSelect(CONFIDENCE_KEYS[key]);
+        return;
+      }
+
+      if (key in ANSWER_KEYS && !s.isPracticeRevealed && !s.isReviewMode) {
+        e.preventDefault();
+        s.handleAnswer(ANSWER_KEYS[key]);
+        return;
+      }
+
+      const canGoNext = s.isReviewMode || s.isPracticeRevealed || s.isExam || s.isSimulation;
+      if ((key === "ArrowRight" || key === " " || key === "Enter") && canGoNext) {
+        e.preventDefault();
+        s.handleNext();
+        return;
+      }
+      if (key === "ArrowLeft") {
+        e.preventDefault();
+        s.handlePrev();
+        return;
+      }
+
+      if (key === "f" || key === "F") {
+        e.preventDefault();
+        s.toggleFavorite(s.serialNumber);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []); // mounted once — always reads latest state via kbStateRef
+
   if (!quiz.length) return null;
 
   const qData = quiz[index];
@@ -575,23 +631,8 @@ export default function SessionView() {
     setTagInput("");
   };
 
-  // Keyboard shortcuts — single stable listener via ref to avoid re-attaching every render
-  const kbStateRef = useRef({
-    needsConfidence,
-    isPracticeRevealed,
-    isReviewMode,
-    isExam,
-    isSimulation,
-    editingExplanation,
-    editingQuestion,
-    editingCorrectAnswer,
-    serialNumber,
-    handleConfidenceSelect,
-    handleAnswer,
-    handleNext,
-    handlePrev,
-    toggleFavorite,
-  });
+  // Keep the keyboard-shortcut ref fresh each render; the listener (hoisted above the
+  // early return) always reads the latest via kbStateRef.current.
   kbStateRef.current = {
     needsConfidence,
     isPracticeRevealed,
@@ -608,57 +649,6 @@ export default function SessionView() {
     handlePrev,
     toggleFavorite,
   };
-
-  useEffect(() => {
-    const ANSWER_KEYS: Record<string, string> = { "1": "A", "2": "B", "3": "C", "4": "D" };
-    const CONFIDENCE_KEYS: Record<string, ConfidenceLevel> = {
-      "1": "confident",
-      "2": "hesitant",
-      "3": "guessed",
-    };
-
-    const onKey = (e: KeyboardEvent) => {
-      const s = kbStateRef.current;
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
-      if (s.editingExplanation || s.editingQuestion || s.editingCorrectAnswer) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-      const key = e.key;
-
-      if (s.needsConfidence && key in CONFIDENCE_KEYS) {
-        e.preventDefault();
-        s.handleConfidenceSelect(CONFIDENCE_KEYS[key]);
-        return;
-      }
-
-      if (key in ANSWER_KEYS && !s.isPracticeRevealed && !s.isReviewMode) {
-        e.preventDefault();
-        s.handleAnswer(ANSWER_KEYS[key]);
-        return;
-      }
-
-      const canGoNext = s.isReviewMode || s.isPracticeRevealed || s.isExam || s.isSimulation;
-      if ((key === "ArrowRight" || key === " " || key === "Enter") && canGoNext) {
-        e.preventDefault();
-        s.handleNext();
-        return;
-      }
-      if (key === "ArrowLeft") {
-        e.preventDefault();
-        s.handlePrev();
-        return;
-      }
-
-      if (key === "f" || key === "F") {
-        e.preventDefault();
-        s.toggleFavorite(s.serialNumber);
-      }
-    };
-
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []); // mounted once — always reads latest state via kbStateRef
 
   const formatTime = (s: number) =>
     `${Math.floor(s / 60)
