@@ -40,3 +40,10 @@ scripts/master-report/_legacy_v2/*.html
 
 # Audit findings (kept locally, not in product)
 audit/
+
+# Top-level generated report artifacts (outputs, not source; tracked weekly reports use report_*.html / tracking.json)
+reports/master_report_*.html
+reports/master_stats_*.json
+
+# Playwright test output
+test-results/
