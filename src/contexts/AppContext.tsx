@@ -14,6 +14,7 @@ import {
   type ImportResult,
 } from "@/lib/types";
 import { sanitizeImport } from "@/lib/importValidation";
+import { computeNextSrsState, type SrsState } from "@/lib/sm2";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getIsraelToday, addDaysIsrael } from "@/lib/dateHelpers";
@@ -542,29 +543,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         .eq("question_id", questionId)
         .maybeSingle();
 
-      let interval = (existing as any)?.interval_days ?? 1;
-      let ease = (existing as any)?.ease_factor ?? 2.5;
-      let reps = (existing as any)?.repetitions ?? 0;
-
-      if (!isCorrect || confidence === "guessed") {
-        interval = 1;
-        ease = Math.max(1.3, ease - 0.2);
-        reps = 0;
-      } else if (confidence === "hesitant") {
-        // SM-2 ramp with penalty: guesses/hesitations come back sooner
-        if (reps === 0) interval = 1;
-        else if (reps === 1) interval = 3;
-        else interval = Math.max(1, Math.min(365, Math.round(interval * 1.2)));
-        ease = Math.max(1.3, ease - 0.05);
-        reps++;
-      } else {
-        // Confident: standard SM-2 progression (1 → 6 → prev×ease)
-        if (reps === 0) interval = 1;
-        else if (reps === 1) interval = 6;
-        else interval = Math.max(1, Math.min(365, Math.round(interval * ease)));
-        ease = Math.min(4.0, ease + 0.1);
-        reps++;
-      }
+      const {
+        interval_days: interval,
+        ease_factor: ease,
+        repetitions: reps,
+      } = computeNextSrsState(existing as Partial<SrsState> | null, isCorrect, confidence);
 
       const nextReviewDate = addDaysIsrael(getIsraelToday(), interval);
 
@@ -620,16 +603,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       .eq("question_id", questionId)
       .maybeSingle();
 
-    const ease = Math.max(1.3, ((existing as any)?.ease_factor ?? 2.5) - 0.2);
-    const nextReviewDate = addDaysIsrael(getIsraelToday(), 1);
+    const resetState = computeNextSrsState(existing as Partial<SrsState> | null, false, "guessed");
+    const nextReviewDate = addDaysIsrael(getIsraelToday(), resetState.interval_days);
 
     const { error: srsError } = await supabase.from("spaced_repetition").upsert(
       {
         user_id: userId,
         question_id: questionId,
-        interval_days: 1,
-        ease_factor: ease,
-        repetitions: 0,
+        interval_days: resetState.interval_days,
+        ease_factor: resetState.ease_factor,
+        repetitions: resetState.repetitions,
         next_review_date: nextReviewDate,
         confidence: "guessed",
         last_correct: false,
