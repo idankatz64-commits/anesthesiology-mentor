@@ -56,6 +56,8 @@ export type UserProgress = {
   tags: Record<string, string[]>;
 };
 
+export type ImportResult = { ok: boolean; failures: string[] };
+
 export type SessionMode = "practice" | "exam" | "review" | "simulation";
 
 export type ConfidenceLevel = "confident" | "hesitant" | "guessed";

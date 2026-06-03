@@ -11,7 +11,9 @@ import {
   type ViewId,
   type HistoryEntry,
   type ConfidenceLevel,
+  type ImportResult,
 } from "@/lib/types";
+import { sanitizeImport } from "@/lib/importValidation";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getIsraelToday, addDaysIsrael } from "@/lib/dateHelpers";
@@ -74,7 +76,7 @@ interface AppContextType {
   addTag: (id: string, tag: string) => void;
   removeTag: (id: string, tag: string) => void;
   resetAllData: () => void;
-  importData: (data: UserProgress) => void;
+  importData: (data: UserProgress) => Promise<ImportResult>;
 
   // Multi-select
   toggleMultiSelect: (type: keyof MultiSelectState, value: string) => void;
@@ -824,20 +826,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const importData = useCallback(async (imported: UserProgress) => {
+  const importData = useCallback(async (imported: UserProgress): Promise<ImportResult> => {
+    const clean = sanitizeImport(imported);
     const newProgress = {
       ...defaultProgress,
-      ...imported,
-      ratings: imported.ratings || {},
-      tags: imported.tags || {},
+      ...clean,
     };
     setProgress(newProgress);
 
     const userId = userIdRef.current;
-    if (!userId) return;
+    if (!userId) return { ok: true, failures: [] };
 
-    // Batch write to Supabase
-    // History -> user_answers
+    const failures: string[] = [];
+
+    // Batch write to Supabase. History -> user_answers (chunked in 500s)
     const answerRows = Object.entries(newProgress.history).map(([qid, h]) => ({
       user_id: userId,
       question_id: qid,
@@ -847,19 +849,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       ever_wrong: h.everWrong,
       updated_at: new Date(h.timestamp).toISOString(),
     }));
-    if (answerRows.length) {
-      // Batch in chunks of 500
-      for (let i = 0; i < answerRows.length; i += 500) {
-        await supabase
-          .from("user_answers")
-          .upsert(answerRows.slice(i, i + 500) as any, { onConflict: "user_id,question_id" });
-      }
+    for (let i = 0; i < answerRows.length; i += 500) {
+      const { error } = await supabase
+        .from("user_answers")
+        .upsert(answerRows.slice(i, i + 500) as any, { onConflict: "user_id,question_id" });
+      if (error) failures.push(`user_answers: ${error.message}`);
     }
 
     // Favorites
     if (newProgress.favorites.length) {
       const favRows = newProgress.favorites.map((qid) => ({ user_id: userId, question_id: qid }));
-      await supabase.from("user_favorites").upsert(favRows as any, { onConflict: "user_id,question_id" });
+      const { error } = await supabase
+        .from("user_favorites")
+        .upsert(favRows as any, { onConflict: "user_id,question_id" });
+      if (error) failures.push(`user_favorites: ${error.message}`);
     }
 
     // Notes
@@ -871,7 +874,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         note_text: text,
         updated_at: new Date().toISOString(),
       }));
-      await supabase.from("user_notes").upsert(noteRows as any, { onConflict: "user_id,question_id" });
+      const { error } = await supabase
+        .from("user_notes")
+        .upsert(noteRows as any, { onConflict: "user_id,question_id" });
+      if (error) failures.push(`user_notes: ${error.message}`);
     }
 
     // Ratings
@@ -883,7 +889,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         rating,
         updated_at: new Date().toISOString(),
       }));
-      await supabase.from("user_ratings").upsert(ratingRows as any, { onConflict: "user_id,question_id" });
+      const { error } = await supabase
+        .from("user_ratings")
+        .upsert(ratingRows as any, { onConflict: "user_id,question_id" });
+      if (error) failures.push(`user_ratings: ${error.message}`);
     }
 
     // Tags
@@ -892,8 +901,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tags.forEach((tag) => tagRows.push({ user_id: userId, question_id: qid, tag }));
     });
     if (tagRows.length) {
-      await supabase.from("user_tags").upsert(tagRows as any, { onConflict: "user_id,question_id,tag" });
+      const { error } = await supabase
+        .from("user_tags")
+        .upsert(tagRows as any, { onConflict: "user_id,question_id,tag" });
+      if (error) failures.push(`user_tags: ${error.message}`);
     }
+
+    return { ok: failures.length === 0, failures };
   }, []);
 
   const toggleMultiSelect = useCallback((type: keyof MultiSelectState, value: string) => {
