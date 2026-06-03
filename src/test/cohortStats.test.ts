@@ -14,6 +14,8 @@ const mk = (over: Partial<CohortResident>): CohortResident => ({
   streakDays: 0,
   lastActive: "היום",
   signal: "steady",
+  tasksCompleted: 0,
+  tasksTotal: 0,
   ...over,
 });
 
