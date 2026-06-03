@@ -1,26 +1,31 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { toast } from 'sonner';
-import { Loader2, Save, Trash2, Upload, FileUp, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
-import Papa from 'papaparse';
-
-/* ── helpers ── */
-
-function hashId(str: string): string {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-  return Math.abs(h).toString(16).substring(0, 6).toUpperCase();
-}
+import { useState, useEffect, useCallback, useRef } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Loader2, Save, Trash2, Upload, FileUp, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+import Papa from "papaparse";
+import { hashId } from "@/lib/questionId";
+import { mapImportRow, dedupeById } from "@/lib/importMapping";
 
 const EMPTY_FORM = {
-  question: '', a: '', b: '', c: '', d: '',
-  correct: 'A', explanation: '', topic: '',
-  year: '', source: '', kind: '', miller: '',
-  chapter: 0, media_type: '', media_link: '',
+  question: "",
+  a: "",
+  b: "",
+  c: "",
+  d: "",
+  correct: "A",
+  explanation: "",
+  topic: "",
+  year: "",
+  source: "",
+  kind: "",
+  miller: "",
+  chapter: 0,
+  media_type: "",
+  media_link: "",
 };
 
 /* ═══════════════════════════════════════════════ */
@@ -31,36 +36,47 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
 
-  const set = (key: string, value: string | number) =>
-    setForm(f => ({ ...f, [key]: value }));
+  const set = (key: string, value: string | number) => setForm((f) => ({ ...f, [key]: value }));
 
   const handleSave = async () => {
-    if (!form.question.trim()) { toast.error('יש להזין טקסט שאלה'); return; }
-    if (!form.correct) { toast.error('יש לבחור תשובה נכונה'); return; }
+    if (!form.question.trim()) {
+      toast.error("יש להזין טקסט שאלה");
+      return;
+    }
+    if (!form.correct) {
+      toast.error("יש לבחור תשובה נכונה");
+      return;
+    }
     setSaving(true);
     try {
       const id = hashId(form.question);
-      const { error } = await supabase.from('questions').upsert({
-        id,
-        question: form.question,
-        a: form.a, b: form.b, c: form.c, d: form.d,
-        correct: form.correct,
-        explanation: form.explanation,
-        topic: form.topic || null,
-        year: form.year || null,
-        source: form.source || null,
-        kind: form.kind || null,
-        miller: form.miller || null,
-        chapter: form.chapter || 0,
-        media_type: form.media_type || null,
-        media_link: form.media_link || null,
-        manually_edited: true,
-      }, { onConflict: 'id' });
+      const { error } = await supabase.from("questions").upsert(
+        {
+          id,
+          question: form.question,
+          a: form.a,
+          b: form.b,
+          c: form.c,
+          d: form.d,
+          correct: form.correct,
+          explanation: form.explanation,
+          topic: form.topic || null,
+          year: form.year || null,
+          source: form.source || null,
+          kind: form.kind || null,
+          miller: form.miller || null,
+          chapter: form.chapter || 0,
+          media_type: form.media_type || null,
+          media_link: form.media_link || null,
+          manually_edited: true,
+        },
+        { onConflict: "id" },
+      );
       if (error) throw error;
-      toast.success('השאלה נוצרה בהצלחה (ID: ' + id + ')');
+      toast.success("השאלה נוצרה בהצלחה (ID: " + id + ")");
       setForm({ ...EMPTY_FORM });
     } catch (err: any) {
-      toast.error('שגיאה: ' + err.message);
+      toast.error("שגיאה: " + err.message);
     } finally {
       setSaving(false);
     }
@@ -76,15 +92,20 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
       {/* Question text */}
       <div>
         <label className="text-sm font-medium text-foreground mb-1 block">שאלה *</label>
-        <Textarea rows={3} value={form.question} onChange={e => set('question', e.target.value)} placeholder="הקלד את טקסט השאלה..." />
+        <Textarea
+          rows={3}
+          value={form.question}
+          onChange={(e) => set("question", e.target.value)}
+          placeholder="הקלד את טקסט השאלה..."
+        />
       </div>
 
       {/* Options */}
       <div className="grid grid-cols-2 gap-3">
-        {(['a', 'b', 'c', 'd'] as const).map(opt => (
+        {(["a", "b", "c", "d"] as const).map((opt) => (
           <div key={opt}>
             <label className="text-sm font-medium text-foreground mb-1 block">תשובה {opt.toUpperCase()}</label>
-            <Input value={(form as any)[opt]} onChange={e => set(opt, e.target.value)} />
+            <Input value={(form as any)[opt]} onChange={(e) => set(opt, e.target.value)} />
           </div>
         ))}
       </div>
@@ -93,26 +114,38 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
       <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">תשובה נכונה *</label>
-          <Select value={form.correct} onValueChange={v => set('correct', v)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select value={form.correct} onValueChange={(v) => set("correct", v)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
-              {['A', 'B', 'C', 'D'].map(v => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+              {["A", "B", "C", "D"].map((v) => (
+                <SelectItem key={v} value={v}>
+                  {v}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">נושא</label>
-          <Select value={form.topic || '__none__'} onValueChange={v => set('topic', v === '__none__' ? '' : v)}>
-            <SelectTrigger><SelectValue placeholder="בחר נושא" /></SelectTrigger>
+          <Select value={form.topic || "__none__"} onValueChange={(v) => set("topic", v === "__none__" ? "" : v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="בחר נושא" />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">— ללא —</SelectItem>
-              {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {categories.map((c) => (
+                <SelectItem key={c} value={c}>
+                  {c}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">שנה</label>
-          <Input value={form.year} onChange={e => set('year', e.target.value)} placeholder="2025" />
+          <Input value={form.year} onChange={(e) => set("year", e.target.value)} placeholder="2025" />
         </div>
       </div>
 
@@ -120,22 +153,22 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
       <div className="grid grid-cols-3 gap-3">
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">מקור</label>
-          <Input value={form.source} onChange={e => set('source', e.target.value)} />
+          <Input value={form.source} onChange={(e) => set("source", e.target.value)} />
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">סוג</label>
-          <Input value={form.kind} onChange={e => set('kind', e.target.value)} />
+          <Input value={form.kind} onChange={(e) => set("kind", e.target.value)} />
         </div>
         <div>
           <label className="text-sm font-medium text-foreground mb-1 block">Miller</label>
-          <Input value={form.miller} onChange={e => set('miller', e.target.value)} />
+          <Input value={form.miller} onChange={(e) => set("miller", e.target.value)} />
         </div>
       </div>
 
       {/* Explanation */}
       <div>
         <label className="text-sm font-medium text-foreground mb-1 block">הסבר</label>
-        <Textarea rows={3} value={form.explanation} onChange={e => set('explanation', e.target.value)} />
+        <Textarea rows={3} value={form.explanation} onChange={(e) => set("explanation", e.target.value)} />
       </div>
 
       {/* Actions */}
@@ -156,7 +189,11 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
 /*  Section 2 – Bulk Import via CSV               */
 /* ═══════════════════════════════════════════════ */
 
-interface ImportResult { inserted: number; failed: number; errors: string[] }
+interface ImportResult {
+  inserted: number;
+  failed: number;
+  errors: string[];
+}
 
 function BulkCsvImport() {
   const fileRef = useRef<HTMLInputElement>(null);
@@ -178,18 +215,21 @@ function BulkCsvImport() {
       skipEmptyLines: true,
       complete: (results) => {
         const rows = results.data as Record<string, string>[];
-        if (rows.length === 0) { toast.error('קובץ CSV ריק'); return; }
+        if (rows.length === 0) {
+          toast.error("קובץ CSV ריק");
+          return;
+        }
 
         // Validate required columns exist
-        const cols = Object.keys(rows[0]).map(c => c.trim().toLowerCase());
-        const hasQuestion = cols.some(c => ['question', 'questiontext'].includes(c));
-        const hasCorrect = cols.some(c => ['correct', 'correctanswer'].includes(c));
+        const cols = Object.keys(rows[0]).map((c) => c.trim().toLowerCase());
+        const hasQuestion = cols.some((c) => ["question", "questiontext"].includes(c));
+        const hasCorrect = cols.some((c) => ["correct", "correctanswer"].includes(c));
         const missing: string[] = [];
-        if (!hasQuestion) missing.push('question / QuestionText');
-        if (!hasCorrect) missing.push('correct / CorrectAnswer');
+        if (!hasQuestion) missing.push("question / QuestionText");
+        if (!hasCorrect) missing.push("correct / CorrectAnswer");
 
         if (missing.length > 0) {
-          toast.error(`עמודות חובה חסרות: ${missing.join(', ')}`);
+          toast.error(`עמודות חובה חסרות: ${missing.join(", ")}`);
           setValidationErrors(missing);
           setHeaders(Object.keys(rows[0]));
           setParsedRows([]);
@@ -201,47 +241,28 @@ function BulkCsvImport() {
         setParsedRows(rows);
         toast.success(`נטענו ${rows.length} שורות מהקובץ`);
       },
-      error: (err) => { toast.error('שגיאה בקריאת CSV: ' + err.message); },
+      error: (err) => {
+        toast.error("שגיאה בקריאת CSV: " + err.message);
+      },
     });
   };
 
   const COL_MAP: Record<string, string> = {
-    question: 'question', a: 'a', b: 'b', c: 'c', d: 'd',
-    correct: 'correct', explanation: 'explanation', topic: 'topic',
-    year: 'year', source: 'source', kind: 'kind', miller: 'miller',
-    chapter: 'chapter', media_type: 'media_type', media_link: 'media_link',
-  };
-
-  const mapRow = (row: Record<string, string>) => {
-    const lowerRow: Record<string, string> = {};
-    for (const [k, v] of Object.entries(row)) lowerRow[k.trim().toLowerCase()] = (v || '').trim();
-
-    const q = lowerRow['question'] || lowerRow['questiontext'] || '';
-    if (!q) return null;
-
-    let id = lowerRow['id'] || lowerRow['serial_question_number#'] || lowerRow['serial'] || hashId(q);
-    const correct = (lowerRow['correct'] || lowerRow['correctanswer'] || '').toUpperCase();
-
-    return {
-      id: String(id).trim(),
-      question: q,
-      a: lowerRow['a'] || lowerRow['optiona'] || '',
-      b: lowerRow['b'] || lowerRow['optionb'] || '',
-      c: lowerRow['c'] || lowerRow['optionc'] || '',
-      d: lowerRow['d'] || lowerRow['optiond'] || '',
-      correct: correct || 'A',
-      explanation: lowerRow['explanation'] || lowerRow['explanation_correct'] || '',
-      topic: lowerRow['topic'] || lowerRow['topic_main'] || '',
-      year: lowerRow['year'] || '',
-      ref_id: lowerRow['ref_id'] || lowerRow['questionid'] || lowerRow['question_id'] || '',
-      source: lowerRow['source'] || lowerRow['institution'] || '',
-      kind: lowerRow['kind'] || lowerRow['type'] || '',
-      miller: lowerRow['miller'] || lowerRow['miller_page'] || '',
-      chapter: lowerRow['chapter'] || lowerRow['topic_num'] || '',
-      media_type: lowerRow['media_type'] || lowerRow['mediakind'] || '',
-      media_link: lowerRow['media_link'] || lowerRow['medialink'] || '',
-      manually_edited: true,
-    };
+    question: "question",
+    a: "a",
+    b: "b",
+    c: "c",
+    d: "d",
+    correct: "correct",
+    explanation: "explanation",
+    topic: "topic",
+    year: "year",
+    source: "source",
+    kind: "kind",
+    miller: "miller",
+    chapter: "chapter",
+    media_type: "media_type",
+    media_link: "media_link",
   };
 
   const handleImport = async () => {
@@ -254,25 +275,29 @@ function BulkCsvImport() {
     try {
       const mapped = parsedRows
         .map((row, i) => {
-          const m = mapRow(row);
-          if (!m) { errors.push(`שורה ${i + 2}: חסר טקסט שאלה`); failed++; return null; }
+          const m = mapImportRow(row);
+          if (!m) {
+            errors.push(`שורה ${i + 2}: חסר טקסט שאלה`);
+            failed++;
+            return null;
+          }
           return m;
         })
         .filter(Boolean) as Record<string, any>[];
 
-      // Deduplicate by id
-      const seen = new Set<string>();
-      const unique = mapped.filter(q => {
-        if (seen.has(q.id)) { return false; }
-        seen.add(q.id);
-        return true;
-      });
+      // Deduplicate by id (keep first occurrence)
+      const unique = dedupeById(mapped as { id: string }[]);
 
       // Upsert in batches
       const batchSize = 200;
       for (let i = 0; i < unique.length; i += batchSize) {
-        const batch = unique.slice(i, i + batchSize) as { id: string; question: string; correct: string; [k: string]: any }[];
-        const { error } = await supabase.from('questions').upsert(batch, { onConflict: 'id' });
+        const batch = unique.slice(i, i + batchSize) as {
+          id: string;
+          question: string;
+          correct: string;
+          [k: string]: any;
+        }[];
+        const { error } = await supabase.from("questions").upsert(batch, { onConflict: "id" });
         if (error) {
           errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
           failed += batch.length;
@@ -285,7 +310,7 @@ function BulkCsvImport() {
       if (failed === 0) toast.success(`יובאו ${inserted} שאלות בהצלחה`);
       else toast.warning(`יובאו ${inserted}, נכשלו ${failed}`);
     } catch (err: any) {
-      toast.error('שגיאה בייבוא: ' + err.message);
+      toast.error("שגיאה בייבוא: " + err.message);
       setResult({ inserted, failed: failed + 1, errors: [...errors, err.message] });
     } finally {
       setImporting(false);
@@ -298,7 +323,7 @@ function BulkCsvImport() {
     setFileName(null);
     setResult(null);
     setValidationErrors([]);
-    if (fileRef.current) fileRef.current.value = '';
+    if (fileRef.current) fileRef.current.value = "";
   };
 
   const previewRows = parsedRows.slice(0, 5);
@@ -316,7 +341,7 @@ function BulkCsvImport() {
         <input ref={fileRef} type="file" accept=".csv" onChange={handleFile} className="hidden" />
         <Button variant="outline" onClick={() => fileRef.current?.click()} className="gap-2">
           <Upload className="w-4 h-4" />
-          {fileName || 'בחר קובץ CSV'}
+          {fileName || "בחר קובץ CSV"}
         </Button>
         {parsedRows.length > 0 && (
           <span className="text-sm text-muted-foreground">{parsedRows.length} שורות נטענו</span>
@@ -332,8 +357,13 @@ function BulkCsvImport() {
       {parsedRows.length > 0 && (
         <div className="bg-muted/30 rounded-lg p-3 text-xs text-muted-foreground">
           <p className="font-semibold mb-1">מיפוי עמודות אוטומטי:</p>
-          <p>question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type, media_link</p>
-          <p className="mt-1">נתמכים גם: QuestionText, OptionA-D, CorrectAnswer, Topic_MAIN, institution, Miller_Page</p>
+          <p>
+            question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type,
+            media_link
+          </p>
+          <p className="mt-1">
+            נתמכים גם: QuestionText, OptionA-D, CorrectAnswer, Topic_MAIN, institution, Miller_Page
+          </p>
         </div>
       )}
 
@@ -345,9 +375,11 @@ function BulkCsvImport() {
             <span>עמודות חובה חסרות בקובץ:</span>
           </div>
           <ul className="list-disc list-inside text-xs text-destructive space-y-1 mr-6">
-            {validationErrors.map((e, i) => <li key={i}>{e}</li>)}
+            {validationErrors.map((e, i) => (
+              <li key={i}>{e}</li>
+            ))}
           </ul>
-          <p className="text-xs text-muted-foreground">עמודות שנמצאו: {headers.join(', ')}</p>
+          <p className="text-xs text-muted-foreground">עמודות שנמצאו: {headers.join(", ")}</p>
         </div>
       )}
 
@@ -358,8 +390,13 @@ function BulkCsvImport() {
             <thead>
               <tr className="bg-muted/50 border-b border-border">
                 <th className="px-3 py-2 text-left font-semibold text-muted-foreground">#</th>
-                {previewHeaders.map(h => (
-                  <th key={h} className="px-3 py-2 text-left font-semibold text-muted-foreground max-w-[150px] truncate">{h}</th>
+                {previewHeaders.map((h) => (
+                  <th
+                    key={h}
+                    className="px-3 py-2 text-left font-semibold text-muted-foreground max-w-[150px] truncate"
+                  >
+                    {h}
+                  </th>
                 ))}
                 {headers.length > 8 && (
                   <th className="px-3 py-2 text-left text-muted-foreground">+{headers.length - 8}</th>
@@ -370,8 +407,10 @@ function BulkCsvImport() {
               {previewRows.map((row, i) => (
                 <tr key={i} className="border-b border-border/50 hover:bg-muted/20">
                   <td className="px-3 py-2 text-muted-foreground">{i + 1}</td>
-                  {previewHeaders.map(h => (
-                    <td key={h} className="px-3 py-2 max-w-[150px] truncate text-foreground">{row[h] || ''}</td>
+                  {previewHeaders.map((h) => (
+                    <td key={h} className="px-3 py-2 max-w-[150px] truncate text-foreground">
+                      {row[h] || ""}
+                    </td>
                   ))}
                   {headers.length > 8 && <td className="px-3 py-2 text-muted-foreground">…</td>}
                 </tr>
@@ -419,7 +458,9 @@ function BulkCsvImport() {
               ))}
             </div>
           )}
-          <Button variant="outline" size="sm" onClick={reset}>ייבא קובץ נוסף</Button>
+          <Button variant="outline" size="sm" onClick={reset}>
+            ייבא קובץ נוסף
+          </Button>
         </div>
       )}
     </div>
@@ -435,11 +476,11 @@ export default function ImportQuestionsTab() {
 
   useEffect(() => {
     supabase
-      .from('categories')
-      .select('topic_main')
-      .order('topic_num', { ascending: true })
+      .from("categories")
+      .select("topic_main")
+      .order("topic_num", { ascending: true })
       .then(({ data }) => {
-        if (data) setCategories(data.map(r => r.topic_main).filter(Boolean));
+        if (data) setCategories(data.map((r) => r.topic_main).filter(Boolean));
       });
   }, []);
 
