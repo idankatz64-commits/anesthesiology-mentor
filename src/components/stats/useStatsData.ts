@@ -1,19 +1,20 @@
-import { useMemo, useState, useEffect } from 'react';
-import { useApp } from '@/contexts/AppContext';
-import { KEYS } from '@/lib/types';
-import { supabase } from '@/integrations/supabase/client';
-import { getChapterDisplay } from '@/data/millerChapters';
+import { useMemo, useState, useEffect } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { KEYS } from "@/lib/types";
+import { supabase } from "@/integrations/supabase/client";
+import { getChapterDisplay } from "@/data/millerChapters";
 
 // Paginate past the 1000-row default limit
-async function fetchAllRows<T>(
-  buildQuery: () => any
-): Promise<T[]> {
+async function fetchAllRows<T>(buildQuery: () => any): Promise<T[]> {
   const PAGE = 1000;
   let allData: T[] = [];
   let from = 0;
   while (true) {
     const { data, error } = await buildQuery().range(from, from + PAGE - 1);
-    if (error) { console.error('fetchAllRows error', error); break; }
+    if (error) {
+      console.error("fetchAllRows error", error);
+      break;
+    }
     if (!data || data.length === 0) break;
     allData = allData.concat(data as T[]);
     if (data.length < PAGE) break;
@@ -30,15 +31,15 @@ export type TopicStat = {
   wrong: number;
   accuracy: number;
   smartScore: number;
-  trend: 'up' | 'down' | 'neutral';
+  trend: "up" | "down" | "neutral";
 };
 
 export type DailyData = { date: string; count: number; correct: number; rate: number };
 
 export type WeakZone = {
-  deadZone: string[];      // wrong 3+ times
+  deadZone: string[]; // wrong 3+ times
   studiedNotLearned: string[]; // <50% accuracy
-  mastered: string[];      // >=50% accuracy
+  mastered: string[]; // >=50% accuracy
 };
 
 export type ForgettingRisk = {
@@ -49,11 +50,11 @@ export type ForgettingRisk = {
 };
 
 export function calcSmartScore(answered: number, accuracy: number): number {
-  return Math.round(((answered / (answered + 10)) * accuracy) + ((10 / (answered + 10)) * 50));
+  return Math.round((answered / (answered + 10)) * accuracy + (10 / (answered + 10)) * 50);
 }
 
 function toIsraelDateStr(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 }
 
 export function linearRegression(data: { x: number; y: number }[]) {
@@ -101,9 +102,9 @@ export function useStatsData() {
       totalAttempts: history.reduce((sum, h) => sum + (h.answered ?? 0), 0),
       uniqueQuestions: history.length,
       totalErrors: history.reduce((sum, h) => sum + ((h.answered ?? 0) - (h.correct ?? 0)), 0),
-      corrected: history.filter(h => h.everWrong && h.lastResult === 'correct').length,
-      uncorrected: history.filter(h => h.everWrong && h.lastResult === 'wrong').length,
-      repeatedErrors: history.filter(h => ((h.answered ?? 0) - (h.correct ?? 0)) > 1).length,
+      corrected: history.filter((h) => h.everWrong && h.lastResult === "correct").length,
+      uncorrected: history.filter((h) => h.everWrong && h.lastResult === "wrong").length,
+      repeatedErrors: history.filter((h) => (h.answered ?? 0) - (h.correct ?? 0) > 1).length,
     };
   }, [progress.history]);
 
@@ -111,9 +112,9 @@ export function useStatsData() {
   const repeatedErrorsByTopic = useMemo<Record<string, number>>(() => {
     const errByTopic: Record<string, number> = {};
     Object.entries(progress.history || {}).forEach(([id, h]) => {
-      if ((h.answered - h.correct) > 1) {
-        const q = data.find(x => x[KEYS.ID] === id);
-        const t = q?.[KEYS.TOPIC] || 'ללא נושא';
+      if (h.answered - h.correct > 1) {
+        const q = data.find((x) => x[KEYS.ID] === id);
+        const t = q?.[KEYS.TOPIC] || "ללא נושא";
         errByTopic[t] = (errByTopic[t] || 0) + 1;
       }
     });
@@ -123,33 +124,35 @@ export function useStatsData() {
   // Fetch 90-day daily data + spaced repetition + detailedAnswers from Supabase
   useEffect(() => {
     const fetchData = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       if (!session?.user) return;
 
       const endDate = new Date();
       const startDate = new Date();
       startDate.setDate(endDate.getDate() - 89);
-      const startStr = startDate.toISOString().split('T')[0];
+      const startStr = startDate.toISOString().split("T")[0];
 
       const [answersData, srData, detailedData] = await Promise.all([
         fetchAllRows<any>(() =>
           supabase
-            .from('answer_history')
-            .select('answered_at, is_correct, topic')
-            .eq('user_id', session.user.id)
-            .gte('answered_at', startStr + 'T00:00:00Z')
+            .from("answer_history")
+            .select("answered_at, is_correct, topic")
+            .eq("user_id", session.user.id)
+            .gte("answered_at", startStr + "T00:00:00Z"),
         ),
         fetchAllRows<any>(() =>
           supabase
-            .from('spaced_repetition')
-            .select('question_id, next_review_date, last_correct, updated_at, confidence')
-            .eq('user_id', session.user.id)
+            .from("spaced_repetition")
+            .select("question_id, next_review_date, last_correct, updated_at, confidence")
+            .eq("user_id", session.user.id),
         ),
         fetchAllRows<any>(() =>
           supabase
-            .from('user_answers')
-            .select('question_id, topic, answered_count, correct_count, is_correct, ever_wrong')
-            .eq('user_id', session.user.id)
+            .from("user_answers")
+            .select("question_id, topic, answered_count, correct_count, is_correct, ever_wrong")
+            .eq("user_id", session.user.id),
         ),
       ]);
 
@@ -169,9 +172,11 @@ export function useStatsData() {
       });
       setDailyData90(
         Object.entries(buckets).map(([date, v]) => ({
-          date, count: v.count, correct: v.correct,
+          date,
+          count: v.count,
+          correct: v.correct,
           rate: v.count > 0 ? Math.round((v.correct / v.count) * 100) : 0,
-        }))
+        })),
       );
 
       setSpacedRep(srData);
@@ -185,26 +190,28 @@ export function useStatsData() {
 
   // Core stats
   const stats = useMemo(() => {
-    let totalUnique = 0, correctUnique = 0, totalAttempts = 0;
+    let totalUnique = 0,
+      correctUnique = 0,
+      totalAttempts = 0;
     const topicMap: Record<string, { totalAnswered: number; correct: number; wrong: number; answered: number }> = {};
     const topicDbCount: Record<string, number> = {};
 
-    data.forEach(q => {
-      const t = q[KEYS.TOPIC] || 'Uncategorized';
+    data.forEach((q) => {
+      const t = q[KEYS.TOPIC] || "Uncategorized";
       topicDbCount[t] = (topicDbCount[t] || 0) + 1;
     });
 
     Object.entries(progress.history).forEach(([id, h]) => {
       totalUnique++;
-      if (h.lastResult === 'correct') correctUnique++;
+      if (h.lastResult === "correct") correctUnique++;
       totalAttempts += h.answered;
-      const q = data.find(x => x[KEYS.ID] === id);
+      const q = data.find((x) => x[KEYS.ID] === id);
       if (q) {
-        const t = q[KEYS.TOPIC] || 'Uncategorized';
+        const t = q[KEYS.TOPIC] || "Uncategorized";
         if (!topicMap[t]) topicMap[t] = { totalAnswered: 0, correct: 0, wrong: 0, answered: 0 };
         topicMap[t].totalAnswered++;
         topicMap[t].answered += h.answered;
-        if (h.lastResult === 'correct') topicMap[t].correct++;
+        if (h.lastResult === "correct") topicMap[t].correct++;
         else topicMap[t].wrong++;
       }
     });
@@ -212,7 +219,7 @@ export function useStatsData() {
     const accuracy = totalUnique > 0 ? Math.round((correctUnique / totalUnique) * 100) : 0;
     const coverage = data.length > 0 ? Math.round((totalUnique / data.length) * 100) : 0;
 
-    const topicData: TopicStat[] = Object.keys(topicDbCount).map(topic => {
+    const topicData: TopicStat[] = Object.keys(topicDbCount).map((topic) => {
       const s = topicMap[topic] || { totalAnswered: 0, correct: 0, wrong: 0, answered: 0 };
       const acc = s.totalAnswered > 0 ? Math.round((s.correct / s.totalAnswered) * 100) : 0;
       return {
@@ -223,7 +230,7 @@ export function useStatsData() {
         wrong: s.wrong,
         accuracy: acc,
         smartScore: calcSmartScore(s.totalAnswered, acc),
-        trend: 'neutral' as const,
+        trend: "neutral" as const,
       };
     });
 
@@ -238,7 +245,7 @@ export function useStatsData() {
       const d = new Date(today);
       d.setDate(d.getDate() - i);
       const key = toIsraelDateStr(d);
-      const dayData = dailyData30.find(dd => dd.date === key);
+      const dayData = dailyData30.find((dd) => dd.date === key);
       if (dayData && dayData.count > 0) count++;
       else if (i > 0) break; // Allow today to be empty
     }
@@ -250,16 +257,13 @@ export function useStatsData() {
     const { accuracy, coverage, topicData } = stats;
     const sorted = [...topicData].sort((a, b) => a.smartScore - b.smartScore);
     const bottom10 = sorted.slice(0, Math.min(10, sorted.length));
-    const criticalAvg = bottom10.length > 0
-      ? Math.round(bottom10.reduce((s, t) => s + t.smartScore, 0) / bottom10.length)
-      : 50;
+    const criticalAvg =
+      bottom10.length > 0 ? Math.round(bottom10.reduce((s, t) => s + t.smartScore, 0) / bottom10.length) : 50;
 
-    const activeDays14 = dailyData14.filter(d => d.count > 0).length;
+    const activeDays14 = dailyData14.filter((d) => d.count > 0).length;
     const consistency = Math.round((activeDays14 / 14) * 100);
 
-    const eriValue = Math.round(
-      accuracy * 0.25 + coverage * 0.25 + criticalAvg * 0.30 + consistency * 0.20
-    );
+    const eriValue = Math.round(accuracy * 0.25 + coverage * 0.25 + criticalAvg * 0.3 + consistency * 0.2);
 
     return {
       value: Math.min(100, Math.max(0, eriValue)),
@@ -271,16 +275,16 @@ export function useStatsData() {
   }, [stats, dailyData14]);
 
   // Accuracy trend
-  const accuracyTrend = useMemo<'up' | 'down' | 'neutral'>(() => {
-    if (dailyData14.length < 14) return 'neutral';
-    const recent = dailyData14.slice(7).filter(d => d.count > 0);
-    const older = dailyData14.slice(0, 7).filter(d => d.count > 0);
-    if (recent.length === 0 || older.length === 0) return 'neutral';
+  const accuracyTrend = useMemo<"up" | "down" | "neutral">(() => {
+    if (dailyData14.length < 14) return "neutral";
+    const recent = dailyData14.slice(7).filter((d) => d.count > 0);
+    const older = dailyData14.slice(0, 7).filter((d) => d.count > 0);
+    if (recent.length === 0 || older.length === 0) return "neutral";
     const recentAvg = recent.reduce((s, d) => s + d.rate, 0) / recent.length;
     const olderAvg = older.reduce((s, d) => s + d.rate, 0) / older.length;
-    if (recentAvg > olderAvg + 3) return 'up';
-    if (recentAvg < olderAvg - 3) return 'down';
-    return 'neutral';
+    if (recentAvg > olderAvg + 3) return "up";
+    if (recentAvg < olderAvg - 3) return "down";
+    return "neutral";
   }, [dailyData14]);
 
   // Weak zones
@@ -292,7 +296,7 @@ export function useStatsData() {
     Object.entries(progress.history).forEach(([id, h]) => {
       const wrongCount = h.answered - h.correct;
       if (wrongCount >= 3) deadZone.push(id);
-      else if (h.answered > 0 && (h.correct / h.answered) < 0.5) studiedNotLearned.push(id);
+      else if (h.answered > 0 && h.correct / h.answered < 0.5) studiedNotLearned.push(id);
       else if (h.answered > 0) mastered.push(id);
     });
 
@@ -304,14 +308,14 @@ export function useStatsData() {
     const topicLastAttempt: Record<string, { lastDate: Date; correct: number; total: number }> = {};
 
     Object.entries(progress.history).forEach(([id, h]) => {
-      const q = data.find(x => x[KEYS.ID] === id);
+      const q = data.find((x) => x[KEYS.ID] === id);
       if (!q) return;
-      const t = q[KEYS.TOPIC] || 'Uncategorized';
+      const t = q[KEYS.TOPIC] || "Uncategorized";
       const d = new Date(h.timestamp);
       if (!topicLastAttempt[t]) topicLastAttempt[t] = { lastDate: d, correct: 0, total: 0 };
       if (d > topicLastAttempt[t].lastDate) topicLastAttempt[t].lastDate = d;
       topicLastAttempt[t].total++;
-      topicLastAttempt[t].correct += h.correct > 0 ? 1 : 0;
+      topicLastAttempt[t].correct += h.lastResult === "correct" ? 1 : 0;
     });
 
     const now = new Date();
@@ -322,7 +326,7 @@ export function useStatsData() {
         const risk = (daysSince / 7) * (1 - accuracy);
         return { topic, risk: Math.round(risk * 100) / 100, daysSince, accuracy: Math.round(accuracy * 100) };
       })
-      .filter(r => r.risk > 0)
+      .filter((r) => r.risk > 0)
       .sort((a, b) => b.risk - a.risk);
   }, [progress, data]);
 
@@ -331,13 +335,13 @@ export function useStatsData() {
     const chapterTotal: Record<number, number> = {};
     const chapterAnswered: Record<number, number> = {};
 
-    data.forEach(q => {
+    data.forEach((q) => {
       const ch = q[KEYS.CHAPTER] || 0;
       chapterTotal[ch] = (chapterTotal[ch] || 0) + 1;
     });
 
     Object.entries(progress.history).forEach(([id]) => {
-      const q = data.find(x => x[KEYS.ID] === id);
+      const q = data.find((x) => x[KEYS.ID] === id);
       if (q) {
         const ch = q[KEYS.CHAPTER] || 0;
         chapterAnswered[ch] = (chapterAnswered[ch] || 0) + 1;
@@ -347,7 +351,7 @@ export function useStatsData() {
     return Object.keys(chapterTotal)
       .map(Number)
       .sort((a, b) => a - b)
-      .map(ch => ({
+      .map((ch) => ({
         chapter: ch,
         chapterName: getChapterDisplay(ch),
         total: chapterTotal[ch],
@@ -358,11 +362,11 @@ export function useStatsData() {
 
   // Trend data with regression line
   const trendData14 = useMemo(() => {
-    const activeDays = dailyData14.filter(d => d.count > 0);
-    if (activeDays.length < 2) return dailyData14.map(d => ({ ...d, trend: undefined as number | undefined }));
+    const activeDays = dailyData14.filter((d) => d.count > 0);
+    if (activeDays.length < 2) return dailyData14.map((d) => ({ ...d, trend: undefined as number | undefined }));
     const points = activeDays.map((d) => ({ x: dailyData14.indexOf(d), y: d.rate }));
     const reg = linearRegression(points);
-    if (!reg) return dailyData14.map(d => ({ ...d, trend: undefined as number | undefined }));
+    if (!reg) return dailyData14.map((d) => ({ ...d, trend: undefined as number | undefined }));
     return dailyData14.map((d, i) => ({
       ...d,
       trend: Math.max(0, Math.min(100, Math.round(reg.intercept + reg.slope * i))),
@@ -370,11 +374,11 @@ export function useStatsData() {
   }, [dailyData14]);
 
   const trendData30 = useMemo(() => {
-    const activeDays = dailyData30.filter(d => d.count > 0);
-    if (activeDays.length < 2) return dailyData30.map(d => ({ ...d, trend: undefined as number | undefined }));
+    const activeDays = dailyData30.filter((d) => d.count > 0);
+    if (activeDays.length < 2) return dailyData30.map((d) => ({ ...d, trend: undefined as number | undefined }));
     const points = activeDays.map((d) => ({ x: dailyData30.indexOf(d), y: d.rate }));
     const reg = linearRegression(points);
-    if (!reg) return dailyData30.map(d => ({ ...d, trend: undefined as number | undefined }));
+    if (!reg) return dailyData30.map((d) => ({ ...d, trend: undefined as number | undefined }));
     return dailyData30.map((d, i) => ({
       ...d,
       trend: Math.max(0, Math.min(100, Math.round(reg.intercept + reg.slope * i))),

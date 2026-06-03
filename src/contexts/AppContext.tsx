@@ -55,7 +55,7 @@ interface AppContextType {
   isAdmin: boolean;
   isEditor: boolean;
 
-  navigate: (view: ViewId, param?: string | null) => void;
+  navigate: (view: ViewId) => void;
   toggleTheme: () => void;
   closeWelcome: () => void;
 

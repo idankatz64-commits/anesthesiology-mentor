@@ -1,10 +1,10 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { motivationalQuotes } from '@/data/motivationalQuotes';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { motivationalQuotes } from "@/data/motivationalQuotes";
 
-const SESSION_KEY = 'quoteShownThisSession';
+const SESSION_KEY = "quoteShownThisSession";
 
 export default function QuoteSplash() {
-  const [phase, setPhase] = useState<'hidden' | 'entering' | 'visible' | 'glitching' | 'gone'>('hidden');
+  const [phase, setPhase] = useState<"hidden" | "entering" | "visible" | "glitching" | "gone">("hidden");
   const [barStarted, setBarStarted] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
   const [quote] = useState(() => {
@@ -14,24 +14,31 @@ export default function QuoteSplash() {
 
   useEffect(() => {
     if (!quote) return;
-    sessionStorage.setItem(SESSION_KEY, '1');
-    requestAnimationFrame(() => {
-      setPhase('entering');
+    sessionStorage.setItem(SESSION_KEY, "1");
+    let raf2 = 0;
+    let barTimer: ReturnType<typeof setTimeout>;
+    const raf1 = requestAnimationFrame(() => {
+      setPhase("entering");
       // After a frame at opacity 0, transition to visible (opacity 1)
-      requestAnimationFrame(() => setPhase('visible'));
-      setTimeout(() => setBarStarted(true), 50);
+      raf2 = requestAnimationFrame(() => setPhase("visible"));
+      barTimer = setTimeout(() => setBarStarted(true), 50);
     });
     timerRef.current = setTimeout(() => dismiss(), 10000);
-    return () => clearTimeout(timerRef.current);
+    return () => {
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      clearTimeout(barTimer);
+      clearTimeout(timerRef.current);
+    };
   }, [quote]);
 
   const dismiss = useCallback(() => {
     clearTimeout(timerRef.current);
-    setPhase('glitching');
-    setTimeout(() => setPhase('gone'), 800);
+    setPhase("glitching");
+    setTimeout(() => setPhase("gone"), 800);
   }, []);
 
-  if (!quote || phase === 'hidden' || phase === 'gone') return null;
+  if (!quote || phase === "hidden" || phase === "gone") return null;
 
   return (
     <>
@@ -51,29 +58,28 @@ export default function QuoteSplash() {
       <div
         className="fixed inset-0 z-[100] flex items-center justify-center cursor-pointer"
         style={{
-          opacity: phase === 'entering' ? 0 : phase === 'visible' ? 1 : undefined,
-          transition: phase === 'entering' || phase === 'visible' ? 'opacity 0.5s ease-out' : undefined,
-          animation: phase === 'glitching' ? 'glitchExit 0.8s ease-out forwards' : undefined,
+          opacity: phase === "entering" ? 0 : phase === "visible" ? 1 : undefined,
+          transition: phase === "entering" || phase === "visible" ? "opacity 0.5s ease-out" : undefined,
+          animation: phase === "glitching" ? "glitchExit 0.8s ease-out forwards" : undefined,
         }}
         onClick={dismiss}
         aria-label="Motivational quote, click to dismiss"
         role="button"
         tabIndex={0}
-        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') dismiss(); }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") dismiss();
+        }}
       >
         <div className="absolute inset-0" style={{ background: quote.gradient }} />
 
         <div className="relative z-10 max-w-2xl mx-auto px-6 text-center">
           <p
             className="text-2xl md:text-4xl font-bold text-white leading-snug mb-6"
-            style={{ textShadow: '0 2px 12px rgba(0,0,0,0.7)' }}
+            style={{ textShadow: "0 2px 12px rgba(0,0,0,0.7)" }}
           >
             "{quote.quote}"
           </p>
-          <p
-            className="text-sm md:text-base text-white/80 italic"
-            style={{ textShadow: '0 1px 6px rgba(0,0,0,0.5)' }}
-          >
+          <p className="text-sm md:text-base text-white/80 italic" style={{ textShadow: "0 1px 6px rgba(0,0,0,0.5)" }}>
             — {quote.character}
           </p>
         </div>
@@ -87,8 +93,8 @@ export default function QuoteSplash() {
           <div
             className="h-full bg-white/40"
             style={{
-              width: barStarted ? '0%' : '100%',
-              transition: barStarted ? 'width 10s linear' : 'none',
+              width: barStarted ? "0%" : "100%",
+              transition: barStarted ? "width 10s linear" : "none",
             }}
           />
         </div>
