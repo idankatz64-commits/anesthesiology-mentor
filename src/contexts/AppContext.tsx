@@ -15,6 +15,7 @@ import {
 } from "@/lib/types";
 import { sanitizeImport } from "@/lib/importValidation";
 import { computeNextSrsState, type SrsState } from "@/lib/sm2";
+import { rebuildResumedQuiz } from "@/lib/resumeSession";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { getIsraelToday, addDaysIsrael } from "@/lib/dateHelpers";
@@ -1070,23 +1071,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
     const questionMap = new Map(dataRef.current.map((q) => [q[KEYS.ID], q]));
 
-    // בנה map של תשובות וconfidence לפי ID (לא לפי index).
-    // כך, אם שאלה נמחקה מה-DB מאז השמירה, שאר התשובות לא יחרגו ממיקומן.
-    const savedIds = savedSessionInfo.questionIds;
-    const answersById: Record<string, string | null> = {};
-    const confidenceById: Record<string, string | null> = {};
-    savedIds.forEach((id, i) => {
-      answersById[id] = savedSessionInfo.answers[i] ?? null;
-      confidenceById[id] = savedSessionInfo.confidence[i] ?? null;
-    });
-
-    const quiz = savedIds.map((id) => questionMap.get(id)).filter((q): q is Question => !!q);
+    // Rebuild by question ID (not array index) so a question deleted from the
+    // DB since the save does not shift the remaining answers out of position.
+    const { quiz, answers, confidence, validIndex } = rebuildResumedQuiz(savedSessionInfo, questionMap);
 
     if (quiz.length === 0) return false;
-
-    const answers = quiz.map((q) => answersById[q[KEYS.ID]] ?? null);
-    const confidence = quiz.map((q) => (confidenceById[q[KEYS.ID]] ?? null) as any);
-    const validIndex = Math.min(savedSessionInfo.index, quiz.length - 1);
 
     setSession({
       quiz,
