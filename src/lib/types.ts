@@ -102,4 +102,5 @@ export type ViewId =
   | "formula-sheet"
   | "summaries"
   | "miller-guide"
-  | "srs-dashboard";
+  | "srs-dashboard"
+  | "cohort-overview";
