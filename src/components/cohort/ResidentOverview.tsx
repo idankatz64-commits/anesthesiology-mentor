@@ -1,7 +1,7 @@
 import { CheckCircle2, Clock, AlertCircle, Sparkles } from "lucide-react";
 import type { ResidentDetailData } from "@/lib/cohortDetail";
-import { accuracyColor } from "@/lib/cohortStats";
-import ResidentTopicsCard from "./ResidentTopicsCard";
+import ResidentTrendChart from "./ResidentTrendChart";
+import ResidentTopicTreemap from "./ResidentTopicTreemap";
 import ResidentNotesCard from "./ResidentNotesCard";
 
 const taskIcon = { done: CheckCircle2, pending: Clock, overdue: AlertCircle } as const;
@@ -25,58 +25,35 @@ export default function ResidentOverview({ detail, residentId }: Props) {
         <p className="text-xs text-foreground/80 leading-relaxed">{detail.aiSummary}</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-        {/* Tasks + quiz scores */}
-        <div className="flex flex-col gap-3">
-          <div className="glass-tile rounded-xl p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">Task Adherence</h3>
-            <div className="flex flex-col gap-1.5">
-              {detail.tasks.map((t) => {
-                const Icon = taskIcon[t.status];
-                return (
-                  <div key={t.id} className="flex items-center gap-2.5 text-xs">
-                    <Icon className={`w-3.5 h-3.5 shrink-0 ${taskColor[t.status]}`} />
-                    <span
-                      className={`flex-1 ${t.status === "done" ? "text-muted-foreground line-through" : "text-foreground"}`}
-                    >
-                      {t.title}
-                    </span>
-                    <span
-                      className={`text-[10px] ${t.status === "overdue" ? "text-warning" : "text-muted-foreground"}`}
-                    >
-                      {t.due}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
+      {/* Accuracy trend — the headline signal (improvement over time) */}
+      <ResidentTrendChart quizzes={detail.quizzes} />
 
-          <div className="glass-tile rounded-xl p-4">
-            <h3 className="text-sm font-bold text-foreground mb-3">Quiz Scores</h3>
-            <div className="flex flex-col gap-2">
-              {detail.quizzes.map((q) => (
-                <div key={q.id} className="flex items-center gap-3 text-xs">
-                  <span className="text-foreground/80 flex-1">
-                    {q.title} <span className="text-muted-foreground">· {q.date}</span>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        {/* Task adherence */}
+        <div className="glass-tile rounded-xl p-4">
+          <h3 className="text-sm font-bold text-foreground mb-3">Task Adherence</h3>
+          <div className="flex flex-col gap-1.5">
+            {detail.tasks.map((t) => {
+              const Icon = taskIcon[t.status];
+              return (
+                <div key={t.id} className="flex items-center gap-2.5 text-xs">
+                  <Icon className={`w-3.5 h-3.5 shrink-0 ${taskColor[t.status]}`} />
+                  <span
+                    className={`flex-1 ${t.status === "done" ? "text-muted-foreground line-through" : "text-foreground"}`}
+                  >
+                    {t.title}
                   </span>
-                  <span className="font-bold tabular-nums" style={{ color: accuracyColor(q.score) }}>
-                    {q.score}%
+                  <span className={`text-[10px] ${t.status === "overdue" ? "text-warning" : "text-muted-foreground"}`}>
+                    {t.due}
                   </span>
-                  <div className="w-20 h-1.5 rounded-full bg-muted/20 overflow-hidden">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ backgroundColor: accuracyColor(q.score), width: `${q.score}%` }}
-                    />
-                  </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Topic performance + chapter drill-down */}
-        <ResidentTopicsCard topics={detail.topics} />
+        {/* Topic performance — treemap + Miller chapter drill-down */}
+        <ResidentTopicTreemap topics={detail.topics} />
       </div>
 
       {/* Manager notes */}

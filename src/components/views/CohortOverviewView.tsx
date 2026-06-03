@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Users, LayoutGrid, Table2 } from "lucide-react";
+import { Users, LayoutGrid, Table2, ChevronDown } from "lucide-react";
 import ResidentTileGrid from "@/components/cohort/ResidentTileGrid";
 import ResidentDetail from "@/components/cohort/ResidentDetail";
 import CohortKpiRow from "@/components/cohort/CohortKpiRow";
@@ -21,6 +21,7 @@ type ViewMode = "residents" | "cohort";
 export default function CohortOverviewView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("residents");
+  const [showWeakSpots, setShowWeakSpots] = useState(false);
   const selected = COHORT_RESIDENTS.find((r) => r.id === selectedId) || null;
   const kpis = computeCohortKpis(COHORT_RESIDENTS);
 
@@ -69,9 +70,21 @@ export default function CohortOverviewView() {
         ) : viewMode === "cohort" ? (
           <div className="flex flex-col gap-3">
             <CohortKpiRow kpis={kpis} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 items-start">
-              <CohortTable residents={COHORT_RESIDENTS} onResidentClick={setSelectedId} />
-              <CohortTopicHeatmap topics={COHORT_TOPICS} />
+            <CohortTable residents={COHORT_RESIDENTS} onResidentClick={setSelectedId} />
+            {/* Cohort-level topic strength — de-emphasized, collapsed by default */}
+            <div>
+              <button
+                onClick={() => setShowWeakSpots((s) => !s)}
+                className="flex items-center gap-1.5 text-[11px] text-muted-foreground hover:text-foreground transition-colors px-1"
+              >
+                <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showWeakSpots ? "rotate-180" : ""}`} />
+                Cohort weak spots (optional)
+              </button>
+              {showWeakSpots && (
+                <div className="mt-2">
+                  <CohortTopicHeatmap topics={COHORT_TOPICS} />
+                </div>
+              )}
             </div>
           </div>
         ) : (

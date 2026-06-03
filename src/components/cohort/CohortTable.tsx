@@ -1,25 +1,6 @@
 import type { CohortResident } from "@/data/cohortMockData";
 import { accuracyColor } from "@/lib/cohortStats";
-
-/** SVG trend arrow — same directional-arrow pattern used by TopicPerformanceTable. */
-function TrendArrow({ points }: { points: number[] }) {
-  if (points.length < 2) return <span className="text-muted-foreground text-xs">—</span>;
-  const delta = points[points.length - 1] - points[0];
-  const color = delta > 3 ? "#00e676" : delta < -3 ? "#ff1744" : "#888";
-  const rotation = delta > 3 ? -45 : delta < -3 ? 45 : 0;
-  return (
-    <svg width={16} height={16} viewBox="0 0 16 16" style={{ transform: `rotate(${rotation}deg)` }}>
-      <path
-        d="M3 8h10M9 4l4 4-4 4"
-        fill="none"
-        stroke={color}
-        strokeWidth={2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
+import Sparkline from "./Sparkline";
 
 const signalMeta: Record<CohortResident["signal"], { label: string; cls: string }> = {
   active: { label: "On track", cls: "bg-success/15 text-success" },
@@ -73,7 +54,7 @@ export default function CohortTable({ residents, onResidentClick }: Props) {
                 </td>
                 <td className="px-2 py-2.5">
                   <div className="flex justify-center">
-                    <TrendArrow points={r.trend} />
+                    <Sparkline points={r.trend} />
                   </div>
                 </td>
                 <td className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">{r.questionsPerWeek}</td>
