@@ -7,11 +7,7 @@ import { KEYS, type ConfidenceLevel } from "@/lib/types";
 import { evaluateSimulationOutcome } from "@/lib/simulationSubmit";
 import { fireAndCatchSrs } from "@/lib/srsCallbacks";
 import { confidenceFromCorrectness } from "@/lib/srsConfidence";
-import {
-  tryAcquireConfidenceLock,
-  releaseConfidenceLock,
-  type ConfidenceLockMap,
-} from "@/lib/confidenceLock";
+import { tryAcquireConfidenceLock, releaseConfidenceLock, type ConfidenceLockMap } from "@/lib/confidenceLock";
 import { createInFlightGuard } from "@/lib/inFlightGuard";
 import ReactMarkdown from "react-markdown";
 import {
@@ -65,21 +61,21 @@ function isHtmlContent(text: string): boolean {
 /** Extract img srcs + captions from HTML and return clean HTML without <img> tags */
 function extractImages(html: string): { cleanHtml: string; srcs: { src: string; caption?: string }[] } {
   const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-  const imgs = Array.from(doc.querySelectorAll('img'));
+  const doc = parser.parseFromString(html, "text/html");
+  const imgs = Array.from(doc.querySelectorAll("img"));
   const srcs = imgs
-    .map(img => ({
-      src: img.getAttribute('src') ?? '',
-      caption: img.getAttribute('alt') || img.getAttribute('title') || undefined,
+    .map((img) => ({
+      src: img.getAttribute("src") ?? "",
+      caption: img.getAttribute("alt") || img.getAttribute("title") || undefined,
     }))
-    .filter(item => Boolean(item.src));
-  imgs.forEach(img => img.remove());
+    .filter((item) => Boolean(item.src));
+  imgs.forEach((img) => img.remove());
   return { cleanHtml: doc.body.innerHTML, srcs };
 }
 
 /** Smart renderer: HTML content via dangerouslySetInnerHTML, plain text via ExplanationRenderer */
 function SmartContent({ text, inheritSize = false }: { text: string; inheritSize?: boolean }) {
-  const sizeClass = inheritSize ? '' : 'text-base prose prose-sm';
+  const sizeClass = inheritSize ? "" : "text-base prose prose-sm";
 
   if (isHtmlContent(text)) {
     const { cleanHtml, srcs } = extractImages(DOMPurify.sanitize(text));
@@ -95,7 +91,10 @@ function SmartContent({ text, inheritSize = false }: { text: string; inheritSize
     );
   }
   return (
-    <div className={`markdown-content bidi-text ${inheritSize ? '' : 'text-base'}`} style={{ lineHeight: inheritSize ? undefined : 1.8 }}>
+    <div
+      className={`markdown-content bidi-text ${inheritSize ? "" : "text-base"}`}
+      style={{ lineHeight: inheritSize ? undefined : 1.8 }}
+    >
       <ExplanationRenderer text={text} />
     </div>
   );
@@ -130,24 +129,60 @@ function ExplanationRenderer({ text }: { text: string }) {
 
 /** Anesthesia instrument icons per section */
 const ANESTHESIA_ICONS = [
-  Stethoscope,   // Laryngoscope (closest match)
-  Syringe,       // Propofol
-  Pill,          // Ketamine
-  Activity,      // Monitor
-  Droplets,      // Blood bags
-  Lightbulb,     // Endotracheal tube (fallback)
+  Stethoscope, // Laryngoscope (closest match)
+  Syringe, // Propofol
+  Pill, // Ketamine
+  Activity, // Monitor
+  Droplets, // Blood bags
+  Lightbulb, // Endotracheal tube (fallback)
 ];
 
-const SECTION_GRADIENTS = ['orange', 'blue', 'violet', 'gold', 'cyan', 'rose'] as const;
+const SECTION_GRADIENTS = ["orange", "blue", "violet", "gold", "cyan", "rose"] as const;
 
 /** Transformers-inspired metallic color palette for split sections */
 const SECTION_COLORS = [
-  { border: "border-amber-500/30 border-t-amber-400/40", header: "bg-gradient-to-b from-amber-500/25 via-amber-400/10 to-transparent", glow: "shadow-lg shadow-amber-500/10", accent: "from-amber-500/50 to-amber-300/20", iconBg: "bg-gradient-to-br from-amber-400/25 via-amber-500/15 to-amber-700/20 border-amber-400/30" },
-  { border: "border-sky-500/30 border-t-sky-400/40", header: "bg-gradient-to-b from-sky-500/25 via-sky-400/10 to-transparent", glow: "shadow-lg shadow-sky-500/10", accent: "from-sky-500/50 to-sky-300/20", iconBg: "bg-gradient-to-br from-sky-400/25 via-sky-500/15 to-sky-700/20 border-sky-400/30" },
-  { border: "border-violet-500/30 border-t-violet-400/40", header: "bg-gradient-to-b from-violet-600/25 via-violet-400/10 to-transparent", glow: "shadow-lg shadow-violet-500/10", accent: "from-violet-500/50 to-violet-300/20", iconBg: "bg-gradient-to-br from-violet-500/25 via-violet-500/15 to-violet-800/20 border-violet-400/30" },
-  { border: "border-cyan-500/30 border-t-cyan-400/40", header: "bg-gradient-to-b from-cyan-500/25 via-cyan-400/10 to-transparent", glow: "shadow-lg shadow-cyan-500/10", accent: "from-cyan-500/50 to-cyan-300/20", iconBg: "bg-gradient-to-br from-cyan-400/25 via-cyan-500/15 to-cyan-700/20 border-cyan-400/30" },
-  { border: "border-rose-500/30 border-t-rose-400/40", header: "bg-gradient-to-b from-rose-600/25 via-rose-400/10 to-transparent", glow: "shadow-lg shadow-rose-500/10", accent: "from-rose-500/50 to-rose-300/20", iconBg: "bg-gradient-to-br from-rose-500/25 via-rose-500/15 to-rose-800/20 border-rose-400/30" },
-  { border: "border-red-600/30 border-t-red-400/40", header: "bg-gradient-to-b from-red-600/25 via-red-500/10 to-transparent", glow: "shadow-lg shadow-red-600/10", accent: "from-red-600/50 to-red-400/20", iconBg: "bg-gradient-to-br from-red-500/25 via-red-600/15 to-red-800/20 border-red-400/30" },
+  {
+    border: "border-amber-500/30 border-t-amber-400/40",
+    header: "bg-gradient-to-b from-amber-500/25 via-amber-400/10 to-transparent",
+    glow: "shadow-lg shadow-amber-500/10",
+    accent: "from-amber-500/50 to-amber-300/20",
+    iconBg: "bg-gradient-to-br from-amber-400/25 via-amber-500/15 to-amber-700/20 border-amber-400/30",
+  },
+  {
+    border: "border-sky-500/30 border-t-sky-400/40",
+    header: "bg-gradient-to-b from-sky-500/25 via-sky-400/10 to-transparent",
+    glow: "shadow-lg shadow-sky-500/10",
+    accent: "from-sky-500/50 to-sky-300/20",
+    iconBg: "bg-gradient-to-br from-sky-400/25 via-sky-500/15 to-sky-700/20 border-sky-400/30",
+  },
+  {
+    border: "border-violet-500/30 border-t-violet-400/40",
+    header: "bg-gradient-to-b from-violet-600/25 via-violet-400/10 to-transparent",
+    glow: "shadow-lg shadow-violet-500/10",
+    accent: "from-violet-500/50 to-violet-300/20",
+    iconBg: "bg-gradient-to-br from-violet-500/25 via-violet-500/15 to-violet-800/20 border-violet-400/30",
+  },
+  {
+    border: "border-cyan-500/30 border-t-cyan-400/40",
+    header: "bg-gradient-to-b from-cyan-500/25 via-cyan-400/10 to-transparent",
+    glow: "shadow-lg shadow-cyan-500/10",
+    accent: "from-cyan-500/50 to-cyan-300/20",
+    iconBg: "bg-gradient-to-br from-cyan-400/25 via-cyan-500/15 to-cyan-700/20 border-cyan-400/30",
+  },
+  {
+    border: "border-rose-500/30 border-t-rose-400/40",
+    header: "bg-gradient-to-b from-rose-600/25 via-rose-400/10 to-transparent",
+    glow: "shadow-lg shadow-rose-500/10",
+    accent: "from-rose-500/50 to-rose-300/20",
+    iconBg: "bg-gradient-to-br from-rose-500/25 via-rose-500/15 to-rose-800/20 border-rose-400/30",
+  },
+  {
+    border: "border-red-600/30 border-t-red-400/40",
+    header: "bg-gradient-to-b from-red-600/25 via-red-500/10 to-transparent",
+    glow: "shadow-lg shadow-red-600/10",
+    accent: "from-red-600/50 to-red-400/20",
+    iconBg: "bg-gradient-to-br from-red-500/25 via-red-600/15 to-red-800/20 border-red-400/30",
+  },
 ];
 
 /** Parse META_TITLES prefix from explanation field */
@@ -205,19 +240,25 @@ export default function SessionView() {
   const { toast } = useToast();
   const isAdmin = useIsAdmin();
 
-  const { quiz, index, mode, answers, confidence, flagged, skipped, resumedTimerSeconds, resumedSimTimerSeconds } = session;
+  const { quiz, index, mode, answers, confidence, flagged, skipped, resumedTimerSeconds, resumedSimTimerSeconds } =
+    session;
   const [showNote, setShowNote] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [timerSeconds, setTimerSeconds] = useState(resumedTimerSeconds ?? 0);
   const [simTimerSeconds, setSimTimerSeconds] = useState(resumedSimTimerSeconds ?? 3 * 60 * 60);
   const [calcOpen, setCalcOpen] = useState(false);
-  const [resourceLinks, setResourceLinks] = useState<{ id: string; title: string; url: string; category: string }[]>([]);
+  const [resourceLinks, setResourceLinks] = useState<{ id: string; title: string; url: string; category: string }[]>(
+    [],
+  );
 
   // Load resource links once
   useEffect(() => {
-    supabase.from('resource_links').select('id, title, url, category').then(({ data }) => {
-      if (data) setResourceLinks(data);
-    });
+    supabase
+      .from("resource_links")
+      .select("id, title, url, category")
+      .then(({ data }) => {
+        if (data) setResourceLinks(data);
+      });
   }, []);
   const [editingExplanation, setEditingExplanation] = useState(false);
   const [explanationDraft, setExplanationDraft] = useState("");
@@ -383,19 +424,16 @@ export default function SessionView() {
     setConfidence(index, level);
     const isCorrect = savedAns === correctAns;
     updateHistory(serialNumber, isCorrect, qData[KEYS.TOPIC]);
-    fireAndCatchSrs(
-      updateSpacedRepetition(serialNumber, isCorrect, level, qData[KEYS.TOPIC]),
-      (err) => {
-        // Release the lock so the user can retry after a failed SRS write.
-        releaseConfidenceLock(serialNumber, confidenceLockRef.current);
-        console.error("SRS update failed:", err);
-        toast({
-          title: "שגיאה בשמירת SRS",
-          description: "הניסיון לא נשמר לחזרה מרווחת. נסה שוב או רענן את הדף.",
-          variant: "destructive",
-        });
-      },
-    );
+    fireAndCatchSrs(updateSpacedRepetition(serialNumber, isCorrect, level, qData[KEYS.TOPIC]), (err) => {
+      // Release the lock so the user can retry after a failed SRS write.
+      releaseConfidenceLock(serialNumber, confidenceLockRef.current);
+      console.error("SRS update failed:", err);
+      toast({
+        title: "שגיאה בשמירת SRS",
+        description: "הניסיון לא נשמר לחזרה מרווחת. נסה שוב או רענן את הדף.",
+        variant: "destructive",
+      });
+    });
   };
 
   const handleNext = async () => {
@@ -485,12 +523,7 @@ export default function SessionView() {
         updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
         srsPromises.push(
           Promise.resolve(
-            updateSpacedRepetition(
-              q[KEYS.ID],
-              isCorrect,
-              confidenceFromCorrectness(isCorrect),
-              q[KEYS.TOPIC],
-            ),
+            updateSpacedRepetition(q[KEYS.ID], isCorrect, confidenceFromCorrectness(isCorrect), q[KEYS.TOPIC]),
           ),
         );
       }
@@ -544,20 +577,44 @@ export default function SessionView() {
 
   // Keyboard shortcuts — single stable listener via ref to avoid re-attaching every render
   const kbStateRef = useRef({
-    needsConfidence, isPracticeRevealed, isReviewMode, isExam, isSimulation,
-    editingExplanation, editingQuestion, editingCorrectAnswer, serialNumber,
-    handleConfidenceSelect, handleAnswer, handleNext, handlePrev, toggleFavorite,
+    needsConfidence,
+    isPracticeRevealed,
+    isReviewMode,
+    isExam,
+    isSimulation,
+    editingExplanation,
+    editingQuestion,
+    editingCorrectAnswer,
+    serialNumber,
+    handleConfidenceSelect,
+    handleAnswer,
+    handleNext,
+    handlePrev,
+    toggleFavorite,
   });
   kbStateRef.current = {
-    needsConfidence, isPracticeRevealed, isReviewMode, isExam, isSimulation,
-    editingExplanation, editingQuestion, editingCorrectAnswer, serialNumber,
-    handleConfidenceSelect, handleAnswer, handleNext, handlePrev, toggleFavorite,
+    needsConfidence,
+    isPracticeRevealed,
+    isReviewMode,
+    isExam,
+    isSimulation,
+    editingExplanation,
+    editingQuestion,
+    editingCorrectAnswer,
+    serialNumber,
+    handleConfidenceSelect,
+    handleAnswer,
+    handleNext,
+    handlePrev,
+    toggleFavorite,
   };
 
   useEffect(() => {
     const ANSWER_KEYS: Record<string, string> = { "1": "A", "2": "B", "3": "C", "4": "D" };
     const CONFIDENCE_KEYS: Record<string, ConfidenceLevel> = {
-      "1": "confident", "2": "hesitant", "3": "guessed",
+      "1": "confident",
+      "2": "hesitant",
+      "3": "guessed",
     };
 
     const onKey = (e: KeyboardEvent) => {
@@ -617,32 +674,28 @@ export default function SessionView() {
 
   const getOptionClasses = (opt: string) => {
     // Base: clean border-2, no glow, no backdrop-blur — Notion-style minimal
-    const base = "w-full text-right p-4 rounded-xl border-2 transition-all duration-150 relative flex items-center group ";
+    const base =
+      "w-full text-right p-4 rounded-xl border-2 transition-all duration-150 relative flex items-center group ";
 
     if (isSimulation) {
-      if (savedAns === opt)
-        return base + "border-primary bg-primary/8 text-foreground";
+      if (savedAns === opt) return base + "border-primary bg-primary/8 text-foreground";
       return base + "border-border bg-transparent hover:border-primary/50 hover:bg-primary/5";
     }
 
     if (isReviewMode) {
-      if (opt === correctAns)
-        return base + "border-success/60 bg-success/8 text-foreground";
+      if (opt === correctAns) return base + "border-success/60 bg-success/8 text-foreground";
       if (opt === savedAns && savedAns !== correctAns)
         return base + "border-destructive/50 bg-destructive/8 text-foreground";
       return base + "border-border/40 bg-transparent opacity-50";
     }
 
     if (isPracticeRevealed) {
-      if (opt === correctAns)
-        return base + "border-success/60 bg-success/8 text-foreground";
-      if (opt === savedAns)
-        return base + "border-destructive/50 bg-destructive/8 text-foreground";
+      if (opt === correctAns) return base + "border-success/60 bg-success/8 text-foreground";
+      if (opt === savedAns) return base + "border-destructive/50 bg-destructive/8 text-foreground";
       return base + "border-border/40 bg-transparent opacity-45";
     }
 
-    if (savedAns === opt)
-      return base + "border-primary bg-primary/8 text-foreground";
+    if (savedAns === opt) return base + "border-primary bg-primary/8 text-foreground";
     return base + "border-border bg-transparent hover:border-primary/50 hover:bg-primary/5";
   };
 
@@ -716,8 +769,13 @@ export default function SessionView() {
               </span>
             )}
             <ShareQuestionButton
-              questionText={qData[KEYS.QUESTION] ?? ''}
-              answers={{ A: qData[KEYS.A] ?? '', B: qData[KEYS.B] ?? '', C: qData[KEYS.C] ?? '', D: qData[KEYS.D] ?? '' }}
+              questionText={qData[KEYS.QUESTION] ?? ""}
+              answers={{
+                A: qData[KEYS.A] ?? "",
+                B: qData[KEYS.B] ?? "",
+                C: qData[KEYS.C] ?? "",
+                D: qData[KEYS.D] ?? "",
+              }}
               topic={qData[KEYS.TOPIC]}
               serialNumber={serialNumber}
             />
@@ -778,9 +836,11 @@ export default function SessionView() {
                   </button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-64 p-2 bg-card border-border">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide px-2 pb-1.5">קישורי לימוד</p>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide px-2 pb-1.5">
+                    קישורי לימוד
+                  </p>
                   <div className="space-y-1">
-                    {resourceLinks.map(link => (
+                    {resourceLinks.map((link) => (
                       <a
                         key={link.id}
                         href={link.url}
@@ -796,7 +856,10 @@ export default function SessionView() {
                 </PopoverContent>
               </Popover>
             )}
-            <button onClick={() => toggleFavorite(serialNumber)} className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition">
+            <button
+              onClick={() => toggleFavorite(serialNumber)}
+              className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-muted transition"
+            >
               <Star
                 className={`w-5 h-5 ${isFav ? "fill-warning text-warning" : "text-muted-foreground hover:text-warning"}`}
               />
@@ -878,7 +941,7 @@ export default function SessionView() {
               </div>
             ) : (
               <>
-              <div className="text-foreground text-xl md:text-2xl leading-snug font-bold flex-grow">
+                <div className="text-foreground text-xl md:text-2xl leading-snug font-bold flex-grow">
                   <SmartContent text={`${serialNumber} - ${qData[KEYS.QUESTION]}`} inheritSize />
                 </div>
                 {isEditor && (
@@ -904,8 +967,7 @@ export default function SessionView() {
           </div>
 
           {/* Non-URL media reference (text like "טבלה 17.3") — shown above options */}
-          {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" &&
-           !qData[KEYS.MEDIA_LINK].startsWith('http') && (
+          {qData[KEYS.MEDIA_LINK] && qData[KEYS.MEDIA_LINK] !== "nan" && !qData[KEYS.MEDIA_LINK].startsWith("http") && (
             <div className="mb-6">
               <a
                 href={qData[KEYS.MEDIA_LINK]}
@@ -984,13 +1046,16 @@ export default function SessionView() {
             </div>
           )}
 
-          {/* Mark for review — visible after answer is revealed */}
-          {(needsConfidence || isPracticeRevealed) && !isSimulation && !isReviewMode && (
+          {/* Mark for review — shown only as an alternative to picking a confidence
+              (i.e. before one is recorded). The || isPracticeRevealed branch was dropped:
+              once a confidence is set the answer is already counted via updateHistory, so a
+              second click here double-counted answered_count both locally and via the RPC. */}
+          {needsConfidence && !isSimulation && !isReviewMode && (
             <div className="mt-3 flex justify-center">
               <button
                 onClick={async () => {
                   await markForReview(serialNumber, qData[KEYS.TOPIC]);
-                  setConfidence(index, 'guessed');
+                  setConfidence(index, "guessed");
                 }}
                 className="flex items-center gap-2 text-sm text-muted-foreground border border-border rounded-xl px-4 py-2 hover:border-destructive/50 hover:text-destructive transition-colors"
               >
@@ -1085,9 +1150,15 @@ export default function SessionView() {
             {/* (1) Correct/Wrong indicator */}
             <div className="font-bold text-lg flex items-center gap-2 flex-wrap">
               {savedAns === correctAns ? (
-                <span className="text-success flex items-center gap-2">✅ יפה מאוד! — <span className="font-extrabold">{qData[KEYS[correctAns as keyof typeof KEYS]] || correctAns}</span></span>
+                <span className="text-success flex items-center gap-2">
+                  ✅ יפה מאוד! —{" "}
+                  <span className="font-extrabold">{qData[KEYS[correctAns as keyof typeof KEYS]] || correctAns}</span>
+                </span>
               ) : (
-                <span className="text-destructive flex items-center gap-2">❌ התשובה הנכונה היא: <span className="font-extrabold">{qData[KEYS[correctAns as keyof typeof KEYS]] || correctAns}</span></span>
+                <span className="text-destructive flex items-center gap-2">
+                  ❌ התשובה הנכונה היא:{" "}
+                  <span className="font-extrabold">{qData[KEYS[correctAns as keyof typeof KEYS]] || correctAns}</span>
+                </span>
               )}
               {isEditor && !editingCorrectAnswer && (
                 <button
@@ -1288,16 +1359,21 @@ export default function SessionView() {
                 {explanationSections.length === 1 ? (
                   /* ── Single section ── */
                   <div className="relative rounded-2xl overflow-hidden border border-black/20 bg-gradient-to-b from-card/80 via-card/60 to-card/40 backdrop-blur-sm shadow-[0_2px_8px_rgba(0,0,0,0.25),inset_0_1px_0_rgba(255,255,255,0.06)]">
-                     {/* Metallic Header */}
-                     <div className="relative bg-gradient-to-b from-red-600/25 via-red-500/10 to-transparent px-5 py-4">
-                       <div className="relative flex items-center gap-3">
-                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/25 via-red-600/15 to-red-800/20 border border-red-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center">
-                           <Stethoscope className="w-5 h-5 text-red-400 drop-shadow-sm" />
-                         </div>
-                         <div>
-                           <strong className="text-xl font-black text-foreground tracking-wide drop-shadow-sm" style={{ fontFamily: 'var(--font-sans)' }}>הסבר</strong>
-                           <div className="h-px mt-1 w-16 bg-gradient-to-r from-red-400/40 via-red-500/15 to-transparent" />
-                         </div>
+                    {/* Metallic Header */}
+                    <div className="relative bg-gradient-to-b from-red-600/25 via-red-500/10 to-transparent px-5 py-4">
+                      <div className="relative flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500/25 via-red-600/15 to-red-800/20 border border-red-400/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center">
+                          <Stethoscope className="w-5 h-5 text-red-400 drop-shadow-sm" />
+                        </div>
+                        <div>
+                          <strong
+                            className="text-xl font-black text-foreground tracking-wide drop-shadow-sm"
+                            style={{ fontFamily: "var(--font-sans)" }}
+                          >
+                            הסבר
+                          </strong>
+                          <div className="h-px mt-1 w-16 bg-gradient-to-r from-red-400/40 via-red-500/15 to-transparent" />
+                        </div>
                         {isEditor && (
                           <button
                             onClick={enterExplanationEdit}
@@ -1331,18 +1407,31 @@ export default function SessionView() {
                               isFullWidth ? "md:col-span-2" : ""
                             }`}
                           >
-                            {section.title && (() => {
-                              const IconComp = ANESTHESIA_ICONS[i % ANESTHESIA_ICONS.length];
-                              return (
-                                <div className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`} dir={isHebrew(section.title) ? "rtl" : "ltr"}>
-                                  <SquircleIcon icon={IconComp} gradient={SECTION_GRADIENTS[i % SECTION_GRADIENTS.length]} size="sm" />
-                                  <div>
-                                    <h4 className="font-black text-lg tracking-wide text-white [.light_&]:text-black" style={{ fontFamily: 'var(--font-sans)' }}>{section.title}</h4>
-                                    <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
+                            {section.title &&
+                              (() => {
+                                const IconComp = ANESTHESIA_ICONS[i % ANESTHESIA_ICONS.length];
+                                return (
+                                  <div
+                                    className={`relative flex items-center gap-3 px-5 py-3.5 ${color.header}`}
+                                    dir={isHebrew(section.title) ? "rtl" : "ltr"}
+                                  >
+                                    <SquircleIcon
+                                      icon={IconComp}
+                                      gradient={SECTION_GRADIENTS[i % SECTION_GRADIENTS.length]}
+                                      size="sm"
+                                    />
+                                    <div>
+                                      <h4
+                                        className="font-black text-lg tracking-wide text-white [.light_&]:text-black"
+                                        style={{ fontFamily: "var(--font-sans)" }}
+                                      >
+                                        {section.title}
+                                      </h4>
+                                      <div className="h-px mt-1 w-12 bg-gradient-to-r from-current/30 via-current/10 to-transparent" />
+                                    </div>
                                   </div>
-                                </div>
-                              );
-                            })()}
+                                );
+                              })()}
                             <div className={`p-5 ${isLast ? "bg-primary/5" : ""}`}>
                               <SmartContent text={section.content} />
                             </div>
