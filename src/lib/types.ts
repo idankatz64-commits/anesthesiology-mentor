@@ -1,7 +1,3 @@
-export const SHEET_URL =
-  "https://docs.google.com/spreadsheets/d/e/2PACX-1vRLqVYyyxd2HTiccI520BEhLE29HV0G6BVUkDyKnXNvCJ_c41WZBGJyfLcbGTeRGZr8k2-Uq0VukZg2/pub?gid=1958019419&single=true&output=csv";
-
-export const LS_KEY = "anesthesia_app_v5";
 export const WELCOME_KEY = "seen_welcome_v2";
 
 export const KEYS = {

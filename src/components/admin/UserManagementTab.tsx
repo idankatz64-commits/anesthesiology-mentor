@@ -1,12 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { toast } from 'sonner';
-import { Loader2, Plus, Trash2, Save, X, UserPlus } from 'lucide-react';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { toast } from "sonner";
+import { Loader2, Plus, Trash2, Save, X, UserPlus } from "lucide-react";
 
 interface AdminUser {
   id: string;
@@ -21,13 +37,13 @@ export default function UserManagementTab() {
 
   // Add user state
   const [showAdd, setShowAdd] = useState(false);
-  const [newEmail, setNewEmail] = useState('');
-  const [newRole, setNewRole] = useState('editor');
+  const [newEmail, setNewEmail] = useState("");
+  const [newRole, setNewRole] = useState("editor");
   const [adding, setAdding] = useState(false);
 
   // Edit role state
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editRole, setEditRole] = useState('');
+  const [editRole, setEditRole] = useState("");
   const [savingRole, setSavingRole] = useState(false);
 
   // Delete state
@@ -37,55 +53,56 @@ export default function UserManagementTab() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('admin_users')
-        .select('*')
-        .order('created_at', { ascending: true });
+      const { data, error } = await supabase.from("admin_users").select("*").order("created_at", { ascending: true });
       if (error) throw error;
       setUsers(data || []);
     } catch (err: any) {
-      toast.error('שגיאה בטעינת משתמשים: ' + err.message);
+      toast.error("שגיאה בטעינת משתמשים: " + err.message);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => { fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   const handleAdd = async () => {
-    if (!newEmail.trim()) { toast.error('יש להזין כתובת אימייל'); return; }
+    if (!newEmail.trim()) {
+      toast.error("יש להזין כתובת אימייל");
+      return;
+    }
     setAdding(true);
     try {
       // Look up user by email in auth - we need an edge function or just insert by email
       // Since admin_users.id is UUID referencing auth user, we need the user's ID
       // For now, we'll search for the user in auth via a workaround
       // Actually, looking at the table schema, id is the PK and email is required
-      // We need to find the auth user ID by email
-      const { data: { users: authUsers }, error: searchError } = await (supabase as any).auth.admin.listUsers();
-      
+      // (user lookup is handled by the admin-manage-users edge function below)
+
       // If admin API isn't available, try inserting with a generated UUID
       // The admin_users table just needs id + email + role
       // Let's use an edge function approach or just generate an ID
-      
+
       // Simple approach: generate a UUID placeholder - but this won't match auth.uid()
       // Better: use the edge function to look up user
-      
+
       // For now, let's try to find user via RPC or direct approach
       // Actually since the RLS check uses auth.uid() = id, the id MUST match the auth user's ID
       // We'll need to handle this differently - let admin add by email and resolve later
-      
-      const { error } = await supabase.functions.invoke('admin-manage-users', {
-        body: { action: 'add', email: newEmail.trim(), role: newRole }
+
+      const { error } = await supabase.functions.invoke("admin-manage-users", {
+        body: { action: "add", email: newEmail.trim(), role: newRole },
       });
 
       if (error) throw error;
-      toast.success('המשתמש נוסף בהצלחה');
+      toast.success("המשתמש נוסף בהצלחה");
       setShowAdd(false);
-      setNewEmail('');
-      setNewRole('editor');
+      setNewEmail("");
+      setNewRole("editor");
       fetchUsers();
     } catch (err: any) {
-      toast.error('שגיאה בהוספת משתמש: ' + err.message);
+      toast.error("שגיאה בהוספת משתמש: " + err.message);
     } finally {
       setAdding(false);
     }
@@ -94,16 +111,13 @@ export default function UserManagementTab() {
   const handleRoleChange = async (userId: string) => {
     setSavingRole(true);
     try {
-      const { error } = await supabase
-        .from('admin_users')
-        .update({ role: editRole })
-        .eq('id', userId);
+      const { error } = await supabase.from("admin_users").update({ role: editRole }).eq("id", userId);
       if (error) throw error;
-      toast.success('התפקיד עודכן בהצלחה');
+      toast.success("התפקיד עודכן בהצלחה");
       setEditingId(null);
       fetchUsers();
     } catch (err: any) {
-      toast.error('שגיאה בעדכון תפקיד: ' + err.message);
+      toast.error("שגיאה בעדכון תפקיד: " + err.message);
     } finally {
       setSavingRole(false);
     }
@@ -113,25 +127,24 @@ export default function UserManagementTab() {
     if (!deleteUser) return;
     setDeleting(true);
     try {
-      const { error } = await supabase
-        .from('admin_users')
-        .delete()
-        .eq('id', deleteUser.id);
+      const { error } = await supabase.from("admin_users").delete().eq("id", deleteUser.id);
       if (error) throw error;
-      toast.success('המשתמש הוסר בהצלחה');
+      toast.success("המשתמש הוסר בהצלחה");
       setDeleteUser(null);
       fetchUsers();
     } catch (err: any) {
-      toast.error('שגיאה במחיקת משתמש: ' + err.message);
+      toast.error("שגיאה במחיקת משתמש: " + err.message);
     } finally {
       setDeleting(false);
     }
   };
 
   const formatDate = (d: string | null) => {
-    if (!d) return '—';
-    return new Date(d).toLocaleDateString('he-IL', {
-      day: 'numeric', month: 'short', year: 'numeric',
+    if (!d) return "—";
+    return new Date(d).toLocaleDateString("he-IL", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
   };
 
@@ -190,25 +203,31 @@ export default function UserManagementTab() {
                             </SelectContent>
                           </Select>
                           <Button
-                            variant="ghost" size="icon" className="h-7 w-7"
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
                             onClick={() => handleRoleChange(user.id)}
                             disabled={savingRole}
                           >
-                            {savingRole ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5 text-primary" />}
+                            {savingRole ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <Save className="w-3.5 h-3.5 text-primary" />
+                            )}
                           </Button>
-                          <Button
-                            variant="ghost" size="icon" className="h-7 w-7"
-                            onClick={() => setEditingId(null)}
-                          >
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditingId(null)}>
                             <X className="w-3.5 h-3.5" />
                           </Button>
                         </div>
                       ) : (
                         <button
-                          onClick={() => { setEditingId(user.id); setEditRole(user.role || 'editor'); }}
+                          onClick={() => {
+                            setEditingId(user.id);
+                            setEditRole(user.role || "editor");
+                          }}
                           className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
                         >
-                          {user.role || 'editor'}
+                          {user.role || "editor"}
                         </button>
                       )}
                     </td>
@@ -216,7 +235,8 @@ export default function UserManagementTab() {
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center">
                         <Button
-                          variant="ghost" size="icon"
+                          variant="ghost"
+                          size="icon"
                           className="h-8 w-8 text-destructive hover:text-destructive"
                           onClick={() => setDeleteUser(user)}
                         >
@@ -252,7 +272,9 @@ export default function UserManagementTab() {
             <div>
               <label className="text-sm font-medium text-foreground mb-1 block">תפקיד</label>
               <Select value={newRole} onValueChange={setNewRole}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="admin">Admin</SelectItem>
                   <SelectItem value="editor">Editor</SelectItem>
@@ -283,7 +305,11 @@ export default function UserManagementTab() {
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2 sm:gap-0">
             <AlertDialogCancel>ביטול</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               {deleting ? <Loader2 className="w-4 h-4 ml-1 animate-spin" /> : <Trash2 className="w-4 h-4 ml-1" />}
               הסר
             </AlertDialogAction>
