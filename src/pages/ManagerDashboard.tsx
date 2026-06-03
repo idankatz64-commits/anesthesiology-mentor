@@ -13,10 +13,13 @@ import CohortOverviewView from "@/components/views/CohortOverviewView";
  */
 export default function ManagerDashboard() {
   const { loading, isAdmin } = useAdminGuard();
+  // DX-04: scoped design-direction switch (?theme=graphite | default midnight)
+  const themeClass =
+    new URLSearchParams(window.location.search).get("theme") === "graphite" ? "theme-graphite" : "theme-midnight";
 
   if (loading || !isAdmin) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className={`${themeClass} min-h-screen bg-background flex items-center justify-center`}>
         <Loader2 className="w-8 h-8 text-primary animate-spin" />
       </div>
     );
@@ -24,7 +27,7 @@ export default function ManagerDashboard() {
 
   return (
     <motion.div
-      className="theme-midnight min-h-screen bg-background bg-grid-pattern"
+      className={`${themeClass} min-h-screen bg-background bg-grid-pattern`}
       dir="ltr"
       initial={fadeUp.initial}
       animate={fadeUp.animate}

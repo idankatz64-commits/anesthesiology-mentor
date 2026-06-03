@@ -633,3 +633,86 @@
 .bg-brand-mark {
   background-image: linear-gradient(135deg, #4ade80, #059669); /* portal green */
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   GRAPHITE — Apple-inspired scoped manager-dashboard theme (DX-04 alt)
+   Extracted from apple.com/macbook-pro (computed tokens, 2026-06-03):
+   pure-black canvas, off-white #F5F5F7 text, Apple grey #86868B for
+   secondary, ONE Apple-blue #2997FF accent, hairline borders, SF Pro
+   (native + free on Apple devices) -> Inter fallback. Restraint over glow.
+   Applied ONLY under .theme-graphite; the resident app stays untouched.
+   ════════════════════════════════════════════════════════════════════ */
+.theme-graphite {
+  --background: 0 0% 0%; /* #000 Apple black canvas         */
+  --foreground: 240 11% 96%; /* #F5F5F7 off-white           */
+  --card: 240 3% 12%; /* #1D1D1F elevated surface           */
+  --card-foreground: 240 11% 96%;
+  --popover: 240 3% 12%;
+  --popover-foreground: 240 11% 96%;
+
+  --primary: 209 100% 58%; /* #2997FF Apple blue            */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 240 2% 9%; /* #161617                        */
+  --secondary-foreground: 240 11% 96%;
+  --muted: 240 3% 12%;
+  --muted-foreground: 240 2% 54%; /* #86868B Apple grey      */
+  --accent: 240 3% 21%; /* #333336 hover surface            */
+  --accent-foreground: 240 11% 96%;
+
+  --success: 135 64% 50%; /* #30D158 Apple green            */
+  --success-foreground: 0 0% 0%;
+  --warning: 50 100% 52%; /* #FFD60A Apple yellow           */
+  --warning-foreground: 0 0% 0%;
+  --info: 209 100% 58%; /* Apple blue                       */
+  --info-foreground: 0 0% 100%;
+  --destructive: 3 100% 61%; /* #FF453A Apple red           */
+  --destructive-foreground: 0 0% 100%;
+
+  --border: 240 3% 21%; /* #333336 hairline                 */
+  --input: 240 3% 21%;
+  --ring: 209 100% 58%;
+  --radius: 1rem; /* Apple-generous corners                 */
+
+  --glow-primary: 0 0 0 1px hsl(209 100% 58% / 0.35); /* ring, not glow */
+
+  /* SF Pro is native + free on Apple devices; Inter fallback elsewhere */
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font-data: var(--font-display);
+
+  font-family: var(--font-display);
+  letter-spacing: -0.011em; /* Apple's subtle tight tracking */
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* numbers stay in the sans, tabular (Apple uses tabular SF, not mono) */
+.theme-graphite .tabular-nums {
+  font-feature-settings: "tnum";
+  letter-spacing: -0.015em;
+}
+
+/* tighter tracking on headings — Apple's display signature */
+.theme-graphite h1,
+.theme-graphite h2,
+.theme-graphite h3 {
+  letter-spacing: -0.02em;
+}
+
+/* Apple cards: solid, hairline border, flat — no glow */
+.theme-graphite .glass-tile {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow: none;
+}
+.theme-graphite .glass-tile:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--muted-foreground) / 0.45);
+  box-shadow: 0 12px 34px -14px hsl(0 0% 0% / 0.85);
+}
+
+/* monochrome + a single blue accent — peak Apple */
+.theme-graphite .bg-avatar-gradient,
+.theme-graphite .bg-brand-mark {
+  background-image: linear-gradient(135deg, #2997ff, #0071e3);
+}
