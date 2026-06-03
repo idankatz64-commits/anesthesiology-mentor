@@ -5,21 +5,15 @@ import type { CohortKpis } from "@/lib/cohortStats";
 /** Cohort-level KPI tiles — mirrors the StatsView "row 1" glass-tile pattern. */
 export default function CohortKpiRow({ kpis }: { kpis: CohortKpis }) {
   const cards = [
-    { label: "מתמחים פעילים", value: kpis.activeResidents, suffix: "", color: "text-primary", icon: Users },
-    { label: "כיסוי מאגר ממוצע", value: kpis.avgCoverage, suffix: "%", color: "text-foreground", icon: BookOpen },
-    { label: "דיוק קבוצתי", value: kpis.avgAccuracy, suffix: "%", color: "text-success", icon: Target },
-    {
-      label: "שאלות/שבוע (ממוצע)",
-      value: kpis.avgQuestionsPerWeek,
-      suffix: "",
-      color: "text-foreground",
-      icon: Activity,
-    },
-    { label: "כדאי לשים לב", value: kpis.attentionCount, suffix: "", color: "text-warning", icon: Eye },
+    { label: "Residents", value: kpis.activeResidents, suffix: "", color: "text-primary", icon: Users },
+    { label: "Avg Coverage", value: kpis.avgCoverage, suffix: "%", color: "text-foreground", icon: BookOpen },
+    { label: "Cohort Accuracy", value: kpis.avgAccuracy, suffix: "%", color: "text-success", icon: Target },
+    { label: "Avg Q/week", value: kpis.avgQuestionsPerWeek, suffix: "", color: "text-foreground", icon: Activity },
+    { label: "Watch", value: kpis.attentionCount, suffix: "", color: "text-warning", icon: Eye },
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3" dir="rtl">
+    <div className="grid grid-cols-2 sm:grid-cols-5 gap-3" dir="ltr">
       {cards.map((c) => (
         <div key={c.label} className="glass-tile rounded-xl p-3 text-center">
           <div className="flex items-center justify-center mb-1">

@@ -22,9 +22,9 @@ function TrendArrow({ points }: { points: number[] }) {
 }
 
 const signalMeta: Record<CohortResident["signal"], { label: string; cls: string }> = {
-  active: { label: "פעיל", cls: "bg-success/15 text-success" },
-  steady: { label: "יציב", cls: "bg-muted/40 text-muted-foreground" },
-  attention: { label: "פחות פעיל השבוע", cls: "bg-warning/15 text-warning" },
+  active: { label: "On track", cls: "bg-success/15 text-success" },
+  steady: { label: "Steady", cls: "bg-muted/40 text-muted-foreground" },
+  attention: { label: "Needs attention", cls: "bg-warning/15 text-warning" },
 };
 
 interface Props {
@@ -34,23 +34,23 @@ interface Props {
 
 export default function CohortTable({ residents, onResidentClick }: Props) {
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden" dir="rtl">
+    <div className="rounded-xl border border-border bg-card overflow-hidden" dir="ltr">
       <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-        <h3 className="text-sm font-bold text-foreground">מתמחי המחזור</h3>
-        <span className="text-[11px] text-muted-foreground">{residents.length} מתמחים</span>
+        <h3 className="text-sm font-bold text-foreground">Cohort Residents</h3>
+        <span className="text-[11px] text-muted-foreground">{residents.length} residents</span>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
             <tr className="text-[11px] text-muted-foreground border-b border-border/60">
-              <th className="text-right font-medium px-4 py-2">מתמחה</th>
-              <th className="text-center font-medium px-2 py-2">שלב</th>
-              <th className="text-center font-medium px-2 py-2">כיסוי</th>
-              <th className="text-center font-medium px-2 py-2">דיוק</th>
-              <th className="text-center font-medium px-2 py-2">מגמה</th>
-              <th className="text-center font-medium px-2 py-2">שאלות/שבוע</th>
-              <th className="text-center font-medium px-2 py-2">פעיל</th>
-              <th className="text-center font-medium px-2 py-2">סטטוס</th>
+              <th className="text-left font-medium px-4 py-2">Resident</th>
+              <th className="text-center font-medium px-2 py-2">Stage</th>
+              <th className="text-center font-medium px-2 py-2">Coverage</th>
+              <th className="text-center font-medium px-2 py-2">Accuracy</th>
+              <th className="text-center font-medium px-2 py-2">Trend</th>
+              <th className="text-center font-medium px-2 py-2">Q/week</th>
+              <th className="text-center font-medium px-2 py-2">Active</th>
+              <th className="text-center font-medium px-2 py-2">Status</th>
             </tr>
           </thead>
           <tbody>

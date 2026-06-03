@@ -9,9 +9,11 @@ export default function CohortTopicHeatmap({ topics }: { topics: CohortTopic[] }
   const sorted = [...topics].sort((a, b) => a.avgAccuracy - b.avgAccuracy);
 
   return (
-    <div className="glass-tile rounded-xl p-4 h-full" dir="rtl">
-      <h3 className="text-sm font-bold text-foreground">חוזק המחזור לפי נושא</h3>
-      <p className="text-[11px] text-muted-foreground mb-3">איפה כל המחזור חלש → מועמדים לשיעור־מערך</p>
+    <div className="glass-tile rounded-xl p-4 h-full" dir="ltr">
+      <h3 className="text-sm font-bold text-foreground">Cohort Strength by Topic</h3>
+      <p className="text-[11px] text-muted-foreground mb-3">
+        Where the whole cohort is weakest → candidates for a department teaching session
+      </p>
       <div className="grid grid-cols-1 gap-1.5">
         {sorted.map((t) => (
           <div
