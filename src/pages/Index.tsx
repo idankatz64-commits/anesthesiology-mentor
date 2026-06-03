@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
@@ -5,20 +6,27 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import TopNav from "@/components/TopNav";
 import WelcomeModal from "@/components/WelcomeModal";
 import QuoteSplash from "@/components/QuoteSplash";
-import HomeView from "@/components/views/HomeView";
-import SetupView from "@/components/views/SetupView";
-import SessionView from "@/components/views/SessionView";
-import ReviewView from "@/components/views/ReviewView";
-import ResultsView from "@/components/views/ResultsView";
-import StatsView from "@/components/views/StatsView";
-import NotebookView from "@/components/views/NotebookView";
-import FlashcardView from "@/components/views/FlashcardView";
-import FormulaSheetView from "@/components/views/FormulaSheetView";
-import SummariesView from "@/components/views/SummariesView";
-import MillerGuideView from "@/components/views/MillerGuideView";
-import { SrsDashboardView } from "@/components/views/SrsDashboardView";
 import { motion, AnimatePresence } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { slideFromRight } from "@/lib/animations";
+
+// Code-split each view into its own chunk — loaded on demand.
+const HomeView = lazy(() => import("@/components/views/HomeView"));
+const SetupView = lazy(() => import("@/components/views/SetupView"));
+const SessionView = lazy(() => import("@/components/views/SessionView"));
+const ReviewView = lazy(() => import("@/components/views/ReviewView"));
+const ResultsView = lazy(() => import("@/components/views/ResultsView"));
+const StatsView = lazy(() => import("@/components/views/StatsView"));
+const NotebookView = lazy(() => import("@/components/views/NotebookView"));
+const FlashcardView = lazy(() => import("@/components/views/FlashcardView"));
+const FormulaSheetView = lazy(() => import("@/components/views/FormulaSheetView"));
+const SummariesView = lazy(() => import("@/components/views/SummariesView"));
+const MillerGuideView = lazy(() => import("@/components/views/MillerGuideView"));
+const SrsDashboardView = lazy(() =>
+  import("@/components/views/SrsDashboardView").then((m) => ({
+    default: m.SrsDashboardView,
+  })),
+);
 
 function AppContent() {
   const { currentView, loading } = useApp();
@@ -92,7 +100,15 @@ function AppContent() {
               className="w-full px-4"
               style={{ willChange: "transform", minHeight: "60vh" }}
             >
-              {renderView()}
+              <Suspense
+                fallback={
+                  <div className="flex items-center justify-center py-20">
+                    <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                  </div>
+                }
+              >
+                {renderView()}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </main>
