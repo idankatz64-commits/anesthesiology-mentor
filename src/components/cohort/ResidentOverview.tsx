@@ -1,7 +1,8 @@
 import { CheckCircle2, Clock, AlertCircle, Sparkles } from "lucide-react";
 import type { ResidentDetailData } from "@/lib/cohortDetail";
+import type { CohortResident } from "@/data/cohortMockData";
 import ResidentTrendChart from "./ResidentTrendChart";
-import ResidentTopicTreemap from "./ResidentTopicTreemap";
+import ResidentTopics from "./ResidentTopics";
 import ResidentNotesCard from "./ResidentNotesCard";
 
 const taskIcon = { done: CheckCircle2, pending: Clock, overdue: AlertCircle } as const;
@@ -9,10 +10,10 @@ const taskColor = { done: "text-success", pending: "text-muted-foreground", over
 
 interface Props {
   detail: ResidentDetailData;
-  residentId: string;
+  resident: CohortResident;
 }
 
-export default function ResidentOverview({ detail, residentId }: Props) {
+export default function ResidentOverview({ detail, resident }: Props) {
   return (
     <div className="flex flex-col gap-3">
       {/* AI verbal summary */}
@@ -26,7 +27,7 @@ export default function ResidentOverview({ detail, residentId }: Props) {
       </div>
 
       {/* Accuracy trend — the headline signal (improvement over time) */}
-      <ResidentTrendChart quizzes={detail.quizzes} />
+      <ResidentTrendChart resident={resident} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         {/* Task adherence */}
@@ -52,12 +53,12 @@ export default function ResidentOverview({ detail, residentId }: Props) {
           </div>
         </div>
 
-        {/* Topic performance — treemap + Miller chapter drill-down */}
-        <ResidentTopicTreemap topics={detail.topics} />
+        {/* Topic performance — treemap / table toggle + Miller chapter drill-down */}
+        <ResidentTopics topics={detail.topics} />
       </div>
 
       {/* Manager notes */}
-      <ResidentNotesCard residentId={residentId} />
+      <ResidentNotesCard residentId={resident.id} />
     </div>
   );
 }

@@ -23,6 +23,11 @@ export interface QuizScore {
   date: string;
   score: number;
 }
+export type TrendRange = "week" | "month" | "year" | "all";
+export interface TrendPoint {
+  label: string;
+  score: number;
+}
 export interface PlanRotation {
   id: string;
   name: string;
@@ -95,15 +100,61 @@ function buildQuizzes(r: CohortResident): QuizScore[] {
   }));
 }
 
+const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+// Per-range shape: number of points, how far back the arc starts (vs current),
+// and the x-axis label for each point.
+const RANGE_META: Record<TrendRange, { n: number; span: number; label: (i: number) => string }> = {
+  week: { n: 7, span: 6, label: (i) => WEEKDAYS[i] ?? `D${i + 1}` },
+  month: { n: 5, span: 14, label: (i) => `Wk ${i + 1}` },
+  year: { n: 12, span: 30, label: (i) => MONTHS[i] ?? `M${i + 1}` },
+  all: { n: 18, span: 44, label: (i) => `M${i + 1}` },
+};
+
+/**
+ * Deterministic per-resident accuracy time-series for a given range.
+ * Longer ranges show a bigger improvement (or decline) arc; the final point
+ * always equals the resident's current accuracy. Pure + seeded (no Date/random),
+ * so the demo is stable across reloads and unit-testable.
+ */
+export function getResidentTrendSeries(r: CohortResident, range: TrendRange): TrendPoint[] {
+  const m = RANGE_META[range];
+  const end = r.accuracy;
+  const declining = r.trend[r.trend.length - 1] < r.trend[0];
+  const dir = declining ? -1 : 1;
+  const start = Math.max(28, Math.min(98, end - dir * m.span));
+  return Array.from({ length: m.n }, (_, i) => {
+    if (i === m.n - 1) return { label: m.label(i), score: end };
+    const t = i / (m.n - 1);
+    const base = start + (end - start) * t;
+    const noise = (seededUnit(`${r.id}:${range}:${i}`) - 0.5) * 2 * 3.5;
+    return { label: m.label(i), score: Math.max(28, Math.min(98, Math.round(base + noise))) };
+  });
+}
+
+/** Net accuracy change across the resident's recent trend (used to flag up/down). */
+export function trendDelta(r: CohortResident): number {
+  return r.trend[r.trend.length - 1] - r.trend[0];
+}
+
 function buildSummary(r: CohortResident, top: TopicStat, weak: TopicStat): string {
   const tier = r.accuracy >= 80 ? "top quartile" : r.accuracy >= 65 ? "mid-cohort range" : "developing range";
   const streak = r.streakDays > 0 ? `, ${r.streakDays}-day streak` : "";
+  const delta = trendDelta(r);
+  // Lead with the trend direction — the signal the manager cares about most.
+  const trendLead =
+    delta > 2
+      ? `📈 Trending UP — accuracy climbed ${delta} pts recently. `
+      : delta < -2
+        ? `📉 Trending DOWN — accuracy slipped ${Math.abs(delta)} pts recently; worth a look. `
+        : `➡️ Holding steady recently. `;
   const closing =
     r.signal === "attention"
       ? "Activity dipped this week — a brief check-in is suggested."
       : "On track for the Stage-1 timeline.";
   return (
-    `${r.initials} is performing in the ${tier} (${r.accuracy}% overall accuracy, ${r.coverage}% bank coverage). ` +
+    `${trendLead}${r.initials} is performing in the ${tier} (${r.accuracy}% overall accuracy, ${r.coverage}% bank coverage). ` +
     `Strongest in ${top.topic} (${top.accuracy}%); would benefit from focused review of ${weak.topic} (${weak.accuracy}%). ` +
     `Engagement: ${r.questionsPerWeek} questions/week${streak}. ${closing}`
   );
