@@ -72,7 +72,11 @@ export default function ResidentDetail({ resident, onBack }: Props) {
         ))}
       </div>
 
-      {tab === "overview" ? <ResidentOverview detail={detail} resident={r} /> : <ResidentPlanTab plan={detail.plan} />}
+      {tab === "overview" ? (
+        <ResidentOverview detail={detail} resident={r} />
+      ) : (
+        <ResidentPlanTab plan={detail.plan} residentId={r.id} />
+      )}
     </div>
   );
 }
