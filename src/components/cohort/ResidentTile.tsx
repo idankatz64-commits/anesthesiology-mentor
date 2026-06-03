@@ -16,10 +16,7 @@ export default function ResidentTile({ resident, onClick }: { resident: CohortRe
     >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0"
-            style={{ background: "linear-gradient(135deg,#3b82f6,#4f46e5)" }}
-          >
+          <div className="w-9 h-9 rounded-full flex items-center justify-center text-[11px] font-bold text-white shrink-0 bg-avatar-gradient">
             {r.initials}
           </div>
           <div>

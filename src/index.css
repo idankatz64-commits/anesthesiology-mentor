@@ -1,10 +1,13 @@
-@import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap');
+@import url("https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700;800;900&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Open+Sans&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Crimson+Text&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Space+Mono&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap");
 @import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap");
+/* DX-04 · direction B (Midnight Data) — manager-dashboard theme fonts */
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -13,19 +16,19 @@
 @layer base {
   :root {
     /* ── Pure dark — aligned with design reference (#121212 / #1c1c1c) ── */
-    --background: 0 0% 7%;           /* #121212 */
-    --foreground: 220 15% 88%;       /* off-white with warm tint */
+    --background: 0 0% 7%; /* #121212 */
+    --foreground: 220 15% 88%; /* off-white with warm tint */
 
-    --card: 0 0% 11%;                /* #1c1c1c */
+    --card: 0 0% 11%; /* #1c1c1c */
     --card-foreground: 220 15% 88%;
 
     --popover: 0 0% 11%;
     --popover-foreground: 220 15% 88%;
 
-    --primary: 38 94% 50%;           /* #f59f0a amber — matches design exactly */
-    --primary-foreground: 0 0% 8%;   /* dark text on amber buttons (design pattern) */
+    --primary: 38 94% 50%; /* #f59f0a amber — matches design exactly */
+    --primary-foreground: 0 0% 8%; /* dark text on amber buttons (design pattern) */
 
-    --secondary: 0 0% 14%;           /* #242424 */
+    --secondary: 0 0% 14%; /* #242424 */
     --secondary-foreground: 0 0% 75%;
 
     --muted: 0 0% 14%;
@@ -37,7 +40,7 @@
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 18%;              /* #2d2d2d */
+    --border: 0 0% 18%; /* #2d2d2d */
     --input: 0 0% 14%;
     --ring: 38 94% 50%;
 
@@ -72,7 +75,7 @@
     --glow-matrix: 0 0 20px hsl(38 94% 50% / 0.25);
     --glow-feature: 0 0 20px hsl(38 94% 50% / 0.3);
 
-    --sidebar-background: 0 0% 11%;  /* #1c1c1c — surface-dark, same as card */
+    --sidebar-background: 0 0% 11%; /* #1c1c1c — surface-dark, same as card */
     --sidebar-foreground: 0 0% 45%;
     --sidebar-border: 0 0% 16%;
     --sidebar-primary: 38 94% 50%;
@@ -166,47 +169,85 @@
   }
 
   html {
-    font-family: 'Heebo', sans-serif;
+    font-family: "Heebo", sans-serif;
   }
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Heebo', sans-serif;
-    transition: background-color 0.3s, color 0.3s;
+    font-family: "Heebo", sans-serif;
+    transition:
+      background-color 0.3s,
+      color 0.3s;
   }
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: hsl(var(--primary) / 0.2); border-radius: 4px; }
-::-webkit-scrollbar-thumb:hover { background: hsl(var(--primary) / 0.4); }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--primary) / 0.2);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--primary) / 0.4);
+}
 
 /* Animations */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes starPop {
-  0% { transform: scale(1); }
-  50% { transform: scale(1.4); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.4);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 @keyframes glowPulse {
-  0%, 100% { box-shadow: var(--glow-primary); }
-  50% { box-shadow: 0 0 30px hsl(var(--primary) / 0.5); }
+  0%,
+  100% {
+    box-shadow: var(--glow-primary);
+  }
+  50% {
+    box-shadow: 0 0 30px hsl(var(--primary) / 0.5);
+  }
 }
 
 @keyframes borderShimmer {
-  0% { background-position: 0% 50%; }
-  100% { background-position: 200% 50%; }
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 200% 50%;
+  }
 }
 
 @keyframes gridFade {
-  0%, 100% { opacity: 0.03; }
-  50% { opacity: 0.06; }
+  0%,
+  100% {
+    opacity: 0.03;
+  }
+  50% {
+    opacity: 0.06;
+  }
 }
 
 .fade-in {
@@ -238,12 +279,16 @@
 .glass-tile:hover {
   transform: translateY(-3px);
   border-color: hsl(var(--primary) / 0.2);
-  box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.4), 0 0 20px hsl(var(--primary) / 0.06);
+  box-shadow:
+    0 8px 32px -4px rgba(0, 0, 0, 0.4),
+    0 0 20px hsl(var(--primary) / 0.06);
 }
 .light .glass-tile {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.04);
 }
 .light .glass-tile:hover {
   border-color: hsl(var(--primary) / 0.3);
@@ -295,8 +340,8 @@
 /* Background grid pattern */
 .bg-grid-pattern {
   background-image:
-    linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
   background-size: 40px 40px;
 }
 
@@ -313,9 +358,15 @@
   @apply font-bold mb-3 mt-4;
 }
 
-.markdown-content h1 { @apply text-xl; }
-.markdown-content h2 { @apply text-lg; }
-.markdown-content h3 { @apply text-base; }
+.markdown-content h1 {
+  @apply text-xl;
+}
+.markdown-content h2 {
+  @apply text-lg;
+}
+.markdown-content h3 {
+  @apply text-base;
+}
 
 .markdown-content strong {
   @apply font-bold;
@@ -326,8 +377,12 @@
   @apply list-inside my-2 space-y-1;
 }
 
-.markdown-content ul { @apply list-disc; }
-.markdown-content ol { @apply list-decimal; }
+.markdown-content ul {
+  @apply list-disc;
+}
+.markdown-content ol {
+  @apply list-decimal;
+}
 
 .markdown-content blockquote {
   @apply border-r-4 border-border pr-4 my-3 text-muted-foreground bg-muted/50 p-3 rounded-lg;
@@ -376,7 +431,7 @@
   overflow: hidden;
 }
 .card-accent-top::before {
-  content: '';
+  content: "";
   position: absolute;
   top: 0;
   left: 0;
@@ -391,30 +446,68 @@
 }
 
 /* TipTap editor list fixes */
-.ProseMirror ul { list-style-type: disc; padding-left: 1.5rem; }
-.ProseMirror ol { list-style-type: decimal; padding-left: 1.5rem; }
+.ProseMirror ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+}
+.ProseMirror ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+}
 .ProseMirror[dir="rtl"] ul,
-.ProseMirror[dir="rtl"] ol { padding-left: 0; padding-right: 1.5rem; }
-.ProseMirror li { display: list-item; }
-.ProseMirror li > p { display: inline; margin: 0; }
-.ProseMirror ul ul { list-style-type: circle; }
-.ProseMirror ul ul ul { list-style-type: square; }
+.ProseMirror[dir="rtl"] ol {
+  padding-left: 0;
+  padding-right: 1.5rem;
+}
+.ProseMirror li {
+  display: list-item;
+}
+.ProseMirror li > p {
+  display: inline;
+  margin: 0;
+}
+.ProseMirror ul ul {
+  list-style-type: circle;
+}
+.ProseMirror ul ul ul {
+  list-style-type: square;
+}
 
 /* Rendered rich-text content (display mode) */
-.rich-content ul { list-style-type: disc; padding-right: 1.5rem; }
-.rich-content ol { list-style-type: decimal; padding-right: 1.5rem; }
-.rich-content li { display: list-item; }
-.rich-content li > p { display: inline; margin: 0; }
-.rich-content ul ul { list-style-type: circle; }
-.rich-content ul ul ul { list-style-type: square; }
+.rich-content ul {
+  list-style-type: disc;
+  padding-right: 1.5rem;
+}
+.rich-content ol {
+  list-style-type: decimal;
+  padding-right: 1.5rem;
+}
+.rich-content li {
+  display: list-item;
+}
+.rich-content li > p {
+  display: inline;
+  margin: 0;
+}
+.rich-content ul ul {
+  list-style-type: circle;
+}
+.rich-content ul ul ul {
+  list-style-type: square;
+}
 
 /* Pulsing border for forgetting risk */
 .animate-pulse-border {
   animation: pulse-border 2s ease-in-out infinite;
 }
 @keyframes pulse-border {
-  0%, 100% { border-color: rgba(249, 115, 22, 0.1); }
-  50% { border-color: rgba(249, 115, 22, 0.4); }
+  0%,
+  100% {
+    border-color: rgba(249, 115, 22, 0.1);
+  }
+  50% {
+    border-color: rgba(249, 115, 22, 0.4);
+  }
 }
 
 /* ─── Deep Tile: unified card surface ─── */
@@ -440,9 +533,103 @@
 .light .deep-tile {
   background: hsl(var(--card));
   border: 1px solid hsl(var(--border));
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.04);
 }
 .light .deep-tile:hover {
   border-color: hsl(var(--primary) / 0.3);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08), 0 0 0 1px hsl(var(--primary) / 0.1);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.08),
+    0 0 0 1px hsl(var(--primary) / 0.1);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   B · MIDNIGHT DATA — scoped manager-dashboard theme (DX-04)
+   Applied ONLY under `.theme-midnight` (the /manager route wrapper).
+   Redefines the shadcn semantic tokens to a navy data-dashboard palette,
+   so every semantic class (bg-card, text-foreground, text-primary, …)
+   re-themes automatically inside the scope. The resident app — which
+   lives OUTSIDE this wrapper — is left completely untouched.
+   Palette source: design-directions.html (direction B, approved 2026-06-03).
+   ════════════════════════════════════════════════════════════════════ */
+.theme-midnight {
+  /* surfaces */
+  --background: 220 49% 8%; /* #0B1220 navy page    */
+  --foreground: 214 32% 91%; /* #E2E8F0 slate-200   */
+  --card: 221 43% 13%; /* #131C30 elevated card    */
+  --card-foreground: 214 32% 91%;
+  --popover: 221 43% 13%;
+  --popover-foreground: 214 32% 91%;
+
+  /* structural accent = blue */
+  --primary: 217 91% 60%; /* #3B82F6 blue-500       */
+  --primary-foreground: 210 40% 98%; /* near-white  */
+
+  /* neutral surfaces */
+  --secondary: 217 33% 17%; /* #1E293B slate-800     */
+  --secondary-foreground: 214 32% 91%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 65%; /* #94A3B8 slate-400 */
+  --accent: 217 33% 17%; /* shadcn hover surface      */
+  --accent-foreground: 214 32% 91%;
+
+  /* status accents */
+  --success: 158 64% 52%; /* #34D399 emerald-400     */
+  --success-foreground: 220 49% 8%;
+  --warning: 43 96% 56%; /* #FBBF24 amber-400        */
+  --warning-foreground: 220 49% 8%;
+  --info: 188 86% 53%; /* #22D3EE cyan-400           */
+  --info-foreground: 220 49% 8%;
+  --destructive: 0 84% 60%; /* #EF4444 red-500       */
+  --destructive-foreground: 210 40% 98%;
+
+  /* lines + focus */
+  --border: 221 36% 22%; /* #24314C                  */
+  --input: 221 36% 22%;
+  --ring: 217 91% 60%;
+  --radius: 0.75rem;
+
+  /* glow: blue (replaces the app's amber glow) */
+  --glow-primary: 0 0 22px hsl(217 91% 60% / 0.18);
+
+  /* typography: Plus Jakarta Sans display + IBM Plex Mono for data */
+  --font-display: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "JetBrains Mono", monospace;
+
+  font-family: var(--font-display);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* every stat value already carries `tabular-nums` → render those in mono */
+.theme-midnight .tabular-nums {
+  font-family: var(--font-data);
+  font-feature-settings: "tnum";
+  letter-spacing: -0.01em;
+}
+
+/* manager cards = solid elevated navy (matches B), not frosted glass */
+.theme-midnight .glass-tile {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  box-shadow:
+    inset 0 1px 0 0 hsl(214 32% 91% / 0.04),
+    0 6px 22px -8px hsl(0 0% 0% / 0.55);
+}
+.theme-midnight .glass-tile:hover {
+  transform: translateY(-2px);
+  border-color: hsl(var(--primary) / 0.45);
+  box-shadow:
+    inset 0 1px 0 0 hsl(214 32% 91% / 0.06),
+    0 10px 30px -8px hsl(0 0% 0% / 0.65),
+    var(--glow-primary);
+}
+
+/* tokenized brand gradients — keeps raw hex out of the components */
+.bg-avatar-gradient {
+  background-image: linear-gradient(135deg, #3b82f6, #22d3ee); /* B blue → cyan */
+}
+.bg-brand-mark {
+  background-image: linear-gradient(135deg, #4ade80, #059669); /* portal green */
 }

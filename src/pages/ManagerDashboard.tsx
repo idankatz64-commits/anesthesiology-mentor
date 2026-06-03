@@ -24,7 +24,7 @@ export default function ManagerDashboard() {
 
   return (
     <motion.div
-      className="min-h-screen bg-background bg-grid-pattern"
+      className="theme-midnight min-h-screen bg-background bg-grid-pattern"
       dir="ltr"
       initial={fadeUp.initial}
       animate={fadeUp.animate}
@@ -34,10 +34,7 @@ export default function ManagerDashboard() {
       {/* Top bar */}
       <header className="h-14 border-b border-border flex items-center justify-between px-6 sticky top-0 bg-background/80 backdrop-blur-md z-10">
         <div className="flex items-center gap-2.5">
-          <div
-            className="w-8 h-8 rounded-xl flex items-center justify-center"
-            style={{ background: "linear-gradient(135deg,#4ade80,#059669)" }}
-          >
+          <div className="w-8 h-8 rounded-xl flex items-center justify-center bg-brand-mark">
             <Users className="w-4 h-4 text-white" />
           </div>
           <span className="text-sm font-bold text-foreground">YouShellNotPass · Manager Portal</span>

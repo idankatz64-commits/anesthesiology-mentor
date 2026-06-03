@@ -38,10 +38,7 @@ export default function ResidentDetail({ resident, onBack }: Props) {
           >
             <ArrowLeft className="w-4 h-4" /> Back
           </button>
-          <div
-            className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0"
-            style={{ background: "linear-gradient(135deg,#3b82f6,#4f46e5)" }}
-          >
+          <div className="w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold text-white shrink-0 bg-avatar-gradient">
             {r.initials}
           </div>
           <div>
