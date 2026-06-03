@@ -27,7 +27,6 @@ const SrsDashboardView = lazy(() =>
     default: m.SrsDashboardView,
   })),
 );
-const CohortOverviewView = lazy(() => import("@/components/views/CohortOverviewView"));
 
 function AppContent() {
   const { currentView, loading } = useApp();
@@ -60,8 +59,6 @@ function AppContent() {
         return <MillerGuideView />;
       case "srs-dashboard":
         return <SrsDashboardView />;
-      case "cohort-overview":
-        return <CohortOverviewView />;
       default:
         return <HomeView />;
     }

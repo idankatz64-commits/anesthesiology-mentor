@@ -34,7 +34,6 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: "formula-sheet", label: "Formula Sheet", icon: <SquircleIcon icon={FlaskConical} gradient="violet" /> },
   { id: "summaries", label: "סיכומי נושאים", icon: <SquircleIcon icon={FileText} gradient="cyan" /> },
   { id: "miller-guide", label: "מדריך Miller", icon: <SquircleIcon icon={GraduationCap} gradient="violet" /> },
-  { id: "cohort-overview", label: "דשבורד מנהל", icon: <SquircleIcon icon={Users} gradient="green" /> },
 ];
 
 export default function Sidebar() {
@@ -146,6 +145,12 @@ export default function Sidebar() {
                 <SquircleIcon icon={ShieldAlert} gradient="slate" size="sm" />
               </Link>
             )}
+            {isAdmin && (
+              <Link to="/manager" className={glassButton}>
+                <span>Manager Dashboard</span>
+                <SquircleIcon icon={Users} gradient="green" size="sm" />
+              </Link>
+            )}
             <button onClick={toggleTheme} className={glassButton}>
               <span>מצב תצוגה</span>
               <SquircleIcon icon={isDark ? Sun : Moon} gradient="slate" size="sm" />
@@ -173,6 +178,11 @@ export default function Sidebar() {
             {isAdmin && (
               <Link to="/admin" title="Admin" className={glassButtonCollapsed}>
                 <SquircleIcon icon={ShieldAlert} gradient="slate" size="sm" />
+              </Link>
+            )}
+            {isAdmin && (
+              <Link to="/manager" title="Manager Dashboard" className={glassButtonCollapsed}>
+                <SquircleIcon icon={Users} gradient="green" size="sm" />
               </Link>
             )}
             <button onClick={toggleTheme} title="מצב תצוגה" className={glassButtonCollapsed}>
