@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import type { CohortResident } from "@/data/cohortMockData";
 import { getResidentDetail } from "@/lib/cohortDetail";
 import { accuracyColor } from "@/lib/cohortStats";
 import ResidentOverview from "./ResidentOverview";
 import ResidentPlanTab from "./ResidentPlanTab";
+import ResidentReport from "./ResidentReport";
 
 type Tab = "overview" | "plan";
 
@@ -15,8 +16,13 @@ interface Props {
 
 export default function ResidentDetail({ resident, onBack }: Props) {
   const [tab, setTab] = useState<Tab>("overview");
+  const [view, setView] = useState<"detail" | "report">("detail");
   const detail = getResidentDetail(resident);
   const r = resident;
+
+  if (view === "report") {
+    return <ResidentReport resident={r} onBack={() => setView("detail")} />;
+  }
 
   const stat = (value: string, label: string, color?: string) => (
     <div className="text-center">
@@ -52,6 +58,12 @@ export default function ResidentDetail({ resident, onBack }: Props) {
           {stat(`${r.accuracy}%`, "Accuracy", accuracyColor(r.accuracy))}
           {stat(`${r.coverage}%`, "Coverage")}
           {stat(`${r.tasksCompleted}/${r.tasksTotal}`, "Tasks")}
+          <button
+            onClick={() => setView("report")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+          >
+            <FileText className="w-3.5 h-3.5" /> Generate Report
+          </button>
         </div>
       </div>
 
