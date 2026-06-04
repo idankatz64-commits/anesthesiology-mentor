@@ -1,11 +1,12 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Users, LayoutGrid, Table2, ChevronDown } from "lucide-react";
+import { Users, LayoutGrid, Table2, ChevronDown, FileText } from "lucide-react";
 import ResidentTileGrid from "@/components/cohort/ResidentTileGrid";
 import ResidentDetail from "@/components/cohort/ResidentDetail";
 import CohortKpiRow from "@/components/cohort/CohortKpiRow";
 import CohortTable from "@/components/cohort/CohortTable";
 import CohortTopicHeatmap from "@/components/cohort/CohortTopicHeatmap";
+import CohortReport from "@/components/cohort/CohortReport";
 import { computeCohortKpis } from "@/lib/cohortStats";
 import { COHORT_RESIDENTS, COHORT_TOPICS } from "@/data/cohortMockData";
 
@@ -22,6 +23,7 @@ export default function CohortOverviewView() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("residents");
   const [showWeakSpots, setShowWeakSpots] = useState(false);
+  const [showCohortReport, setShowCohortReport] = useState(false);
   const selected = COHORT_RESIDENTS.find((r) => r.id === selectedId) || null;
   const kpis = computeCohortKpis(COHORT_RESIDENTS);
 
@@ -29,6 +31,14 @@ export default function CohortOverviewView() {
     `flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs transition-colors ${
       active ? "bg-primary/15 text-primary font-semibold" : "text-muted-foreground hover:text-foreground"
     }`;
+
+  if (showCohortReport && !selected) {
+    return (
+      <div className="fade-in w-full mx-auto">
+        <CohortReport residents={COHORT_RESIDENTS} topics={COHORT_TOPICS} onBack={() => setShowCohortReport(false)} />
+      </div>
+    );
+  }
 
   return (
     <div className="fade-in w-full mx-auto flex flex-col gap-3" dir="ltr">
@@ -52,6 +62,12 @@ export default function CohortOverviewView() {
                 <Table2 className="w-3.5 h-3.5" /> Cohort
               </button>
             </div>
+            <button
+              onClick={() => setShowCohortReport(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold bg-primary text-primary-foreground hover:opacity-90 transition-opacity"
+            >
+              <FileText className="w-3.5 h-3.5" /> Cohort Report
+            </button>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-medium bg-warning/15 text-warning border border-warning/20">
               mockup · sample data
             </span>
