@@ -13,9 +13,10 @@ import CohortOverviewView from "@/components/views/CohortOverviewView";
  */
 export default function ManagerDashboard() {
   const { loading, isAdmin } = useAdminGuard();
-  // DX-04: scoped design-direction switch (?theme=graphite | default midnight)
+  // DX-04: scoped design-direction switch (?theme=glass | graphite | default midnight)
+  const themeParam = new URLSearchParams(window.location.search).get("theme");
   const themeClass =
-    new URLSearchParams(window.location.search).get("theme") === "graphite" ? "theme-graphite" : "theme-midnight";
+    themeParam === "graphite" ? "theme-graphite" : themeParam === "glass" ? "theme-glass" : "theme-midnight";
 
   if (loading || !isAdmin) {
     return (

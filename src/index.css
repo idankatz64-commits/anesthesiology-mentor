@@ -716,3 +716,131 @@
 .theme-graphite .bg-brand-mark {
   background-image: linear-gradient(135deg, #2997ff, #0071e3);
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   LIQUID GLASS — Apple visionOS-inspired scoped manager theme (DX-04)
+   Idan rejected the FLAT Graphite ("dated, no depth, missing Apple's
+   famous GLASS"). This direction leans INTO the app's existing frosted
+   utilities instead of flattening them: deep indigo canvas + soft
+   ambient light "blobs" behind the content (the backdrop the frosted
+   cards blur), translucent `.glass-tile` surfaces with a lit top edge
+   and layered elevation. SF Pro for the authentic Apple feel.
+   Applied ONLY under `.theme-glass` (the /manager?theme=glass wrapper);
+   the resident app — outside this wrapper — stays untouched.
+   ════════════════════════════════════════════════════════════════════ */
+.theme-glass {
+  /* surfaces — deep indigo canvas (rich, so the blur has color to reveal) */
+  --background: 232 44% 7%; /* #0A0C1A indigo-black page         */
+  --foreground: 225 25% 93%; /* #E7E9F2 cool off-white          */
+  --card: 230 32% 15%; /* #1A2036 elevated (popovers/menus)      */
+  --card-foreground: 225 25% 93%;
+  --popover: 230 30% 13%;
+  --popover-foreground: 225 25% 93%;
+
+  /* structural accent = luminous indigo (visionOS periwinkle) */
+  --primary: 234 89% 74%; /* #818CF8 indigo-400                  */
+  --primary-foreground: 232 44% 9%;
+
+  /* neutral surfaces */
+  --secondary: 230 28% 18%;
+  --secondary-foreground: 225 25% 93%;
+  --muted: 230 26% 18%;
+  --muted-foreground: 225 16% 68%; /* #9CA3C0 cool grey         */
+  --accent: 230 30% 22%; /* shadcn hover surface                 */
+  --accent-foreground: 225 25% 93%;
+
+  /* status accents (kept legible for data parity with B) */
+  --success: 158 64% 52%; /* #34D399 emerald-400                */
+  --success-foreground: 232 44% 9%;
+  --warning: 38 95% 60%; /* #FBBF24 amber                       */
+  --warning-foreground: 232 44% 9%;
+  --info: 190 90% 60%; /* #38D6F0 cyan                          */
+  --info-foreground: 232 44% 9%;
+  --destructive: 350 90% 65%; /* #F2557A rose                   */
+  --destructive-foreground: 0 0% 100%;
+
+  /* lines + focus (frosted tiles get their own white-translucent border) */
+  --border: 230 25% 28%;
+  --input: 230 25% 24%;
+  --ring: 234 89% 74%;
+  --radius: 1rem; /* generous Apple corners                     */
+
+  /* glow: luminous indigo */
+  --glow-primary: 0 0 28px hsl(234 89% 74% / 0.25);
+
+  /* SF Pro is native on Apple devices → Inter fallback elsewhere */
+  --font-display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
+  --font-data: var(--font-display);
+
+  position: relative;
+  isolation: isolate; /* contain the ambient layer's stacking   */
+  font-family: var(--font-display);
+  letter-spacing: -0.011em;
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Ambient light — soft colored "blobs" painted BEHIND the content
+   (z-index:-1, above the page bg) so the frosted tiles have something
+   rich + colorful to blur. This is what creates the liquid-glass depth. */
+.theme-glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(48% 38% at 12% 6%, hsl(234 90% 62% / 0.32), transparent 72%),
+    radial-gradient(42% 34% at 90% 14%, hsl(190 95% 55% / 0.18), transparent 72%),
+    radial-gradient(48% 44% at 80% 96%, hsl(268 85% 62% / 0.24), transparent 74%);
+}
+
+/* numbers stay in the sans, tabular (Apple uses tabular SF, not mono) */
+.theme-glass .tabular-nums {
+  font-feature-settings: "tnum";
+  letter-spacing: -0.015em;
+}
+
+/* tighter tracking on headings — Apple's display signature */
+.theme-glass h1,
+.theme-glass h2,
+.theme-glass h3 {
+  letter-spacing: -0.02em;
+}
+
+/* THE GLASS: translucent frosted tiles with a lit top edge + depth.
+   We deliberately do NOT flatten `.glass-tile` here (B/Graphite did);
+   we amplify it — saturate() makes the blurred backdrop vivid, the
+   inset top highlight reads as light catching the glass edge. */
+.theme-glass .glass-tile {
+  background: linear-gradient(160deg, hsl(0 0% 100% / 0.12) 0%, hsl(0 0% 100% / 0.05) 42%, hsl(0 0% 100% / 0.03) 100%);
+  backdrop-filter: blur(22px) saturate(1.7);
+  -webkit-backdrop-filter: blur(22px) saturate(1.7);
+  border: 1px solid hsl(0 0% 100% / 0.12);
+  box-shadow:
+    inset 0 1px 0 0 hsl(0 0% 100% / 0.22),
+    0 10px 34px -10px hsl(232 60% 3% / 0.65);
+}
+.theme-glass .glass-tile:hover {
+  transform: translateY(-3px);
+  border-color: hsl(var(--primary) / 0.4);
+  box-shadow:
+    inset 0 1px 0 0 hsl(0 0% 100% / 0.3),
+    0 16px 46px -12px hsl(232 60% 3% / 0.75),
+    0 0 30px hsl(var(--primary) / 0.22);
+}
+
+/* the single `bg-card` panel → faint frosted glass too (consistency) */
+.theme-glass .bg-card {
+  background: hsl(var(--card) / 0.55) !important;
+  backdrop-filter: blur(18px) saturate(1.5);
+  -webkit-backdrop-filter: blur(18px) saturate(1.5);
+}
+
+/* indigo → cyan brand gradients (liquid-glass family) */
+.theme-glass .bg-avatar-gradient {
+  background-image: linear-gradient(135deg, #818cf8, #38d6f0);
+}
+.theme-glass .bg-brand-mark {
+  background-image: linear-gradient(135deg, #818cf8, #a855f7);
+}
