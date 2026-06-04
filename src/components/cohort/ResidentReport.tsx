@@ -145,7 +145,10 @@ export default function ResidentReport({ resident: r, onBack }: Props) {
       </div>
 
       {/* Accuracy trend (reuses the shared interactive chart) */}
-      <ResidentTrendChart resident={r} />
+      <ResidentTrendChart
+        resident={r}
+        labels={{ title: t.trendSection, subtitle: t.trendSub, ranges: t.trendRanges, tooltip: t.accuracy }}
+      />
 
       {/* Strengths + Focus areas */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

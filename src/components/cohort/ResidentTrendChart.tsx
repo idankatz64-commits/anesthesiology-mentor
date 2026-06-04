@@ -4,12 +4,21 @@ import { TrendingUp, TrendingDown } from "lucide-react";
 import type { CohortResident } from "@/data/cohortMockData";
 import { getResidentTrendSeries, type TrendRange } from "@/lib/cohortDetail";
 
-const RANGES: { key: TrendRange; label: string }[] = [
-  { key: "week", label: "Week" },
-  { key: "month", label: "Month" },
-  { key: "year", label: "Year" },
-  { key: "all", label: "All" },
-];
+const RANGE_KEYS: TrendRange[] = ["week", "month", "year", "all"];
+
+export interface TrendLabels {
+  title: string;
+  subtitle: string;
+  ranges: Record<TrendRange, string>;
+  tooltip: string;
+}
+
+const DEFAULT_TREND_LABELS: TrendLabels = {
+  title: "Accuracy Trend",
+  subtitle: "Improvement over time — the signal that matters most",
+  ranges: { week: "Week", month: "Month", year: "Year", all: "All" },
+  tooltip: "Accuracy",
+};
 
 /**
  * Accuracy trend over time — the headline "is this resident improving?" view.
@@ -17,7 +26,13 @@ const RANGES: { key: TrendRange; label: string }[] = [
  * The trajectory matters more than any single snapshot, so this gets prime
  * placement and space in the personal file.
  */
-export default function ResidentTrendChart({ resident }: { resident: CohortResident }) {
+export default function ResidentTrendChart({
+  resident,
+  labels = DEFAULT_TREND_LABELS,
+}: {
+  resident: CohortResident;
+  labels?: TrendLabels;
+}) {
   const [range, setRange] = useState<TrendRange>("month");
   const data = getResidentTrendSeries(resident, range);
   const first = data[0]?.score ?? 0;
@@ -29,8 +44,8 @@ export default function ResidentTrendChart({ resident }: { resident: CohortResid
     <div className="glass-tile rounded-xl p-4">
       <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
         <div>
-          <h3 className="text-sm font-bold text-foreground">Accuracy Trend</h3>
-          <p className="text-[11px] text-muted-foreground">Improvement over time — the signal that matters most</p>
+          <h3 className="text-sm font-bold text-foreground">{labels.title}</h3>
+          <p className="text-[11px] text-muted-foreground">{labels.subtitle}</p>
         </div>
         <div className="flex items-center gap-2">
           <div
@@ -41,17 +56,17 @@ export default function ResidentTrendChart({ resident }: { resident: CohortResid
             {delta}%
           </div>
           <div className="flex items-center rounded-lg border border-border bg-muted/20 p-0.5">
-            {RANGES.map((rg) => (
+            {RANGE_KEYS.map((key) => (
               <button
-                key={rg.key}
-                onClick={() => setRange(rg.key)}
+                key={key}
+                onClick={() => setRange(key)}
                 className={`px-2 py-0.5 rounded-md text-[11px] transition-colors ${
-                  range === rg.key
+                  range === key
                     ? "bg-primary/15 text-primary font-semibold"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                {rg.label}
+                {labels.ranges[key]}
               </button>
             ))}
           </div>
@@ -92,7 +107,7 @@ export default function ResidentTrendChart({ resident }: { resident: CohortResid
               }}
               labelStyle={{ color: "hsl(var(--foreground))" }}
               itemStyle={{ color: "hsl(var(--primary))" }}
-              formatter={(v) => [`${v}%`, "Accuracy"]}
+              formatter={(v) => [`${v}%`, labels.tooltip]}
             />
             <Area
               type="monotone"

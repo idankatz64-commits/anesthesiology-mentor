@@ -35,48 +35,46 @@ export interface TopicCatalogEntry {
   chapters: { chapter: number; title: string }[];
 }
 
+// Miller 10e chapter numbers/titles (verified against src/data/millerChapters.ts).
 export const TOPIC_CATALOG: TopicCatalogEntry[] = [
   {
     topic: "Neuromuscular Blockers",
     chapters: [
-      { chapter: 12, title: "Pharmacology of NMBAs" },
-      { chapter: 13, title: "Reversal Agents" },
+      { chapter: 11, title: "Neuromuscular Physiology & Pharmacology" },
+      { chapter: 24, title: "Neuromuscular Blocking Drugs & Reversal" },
     ],
   },
   {
     topic: "Local Anesthetic Toxicity (LAST)",
     chapters: [
-      { chapter: 24, title: "Local Anesthetics" },
-      { chapter: 25, title: "LAST Recognition & Management" },
+      { chapter: 25, title: "Local Anesthetics" },
+      { chapter: 42, title: "Peripheral Nerve Blocks & Regional US" },
     ],
   },
   {
     topic: "Cardiovascular Anesthesia",
     chapters: [
-      { chapter: 40, title: "Cardiac Physiology" },
-      { chapter: 54, title: "Anesthesia for Cardiac Surgery" },
-      { chapter: 55, title: "Cardiopulmonary Bypass" },
+      { chapter: 13, title: "Cardiac Physiology" },
+      { chapter: 32, title: "Cardiovascular Monitoring" },
+      { chapter: 50, title: "Anesthesia for Cardiac Surgery" },
     ],
   },
   {
     topic: "Airway Management",
-    chapters: [
-      { chapter: 44, title: "Airway Anatomy & Evaluation" },
-      { chapter: 45, title: "The Difficult Airway" },
-    ],
+    chapters: [{ chapter: 40, title: "Airway Management in the Adult" }],
   },
   {
     topic: "Obstetric Anesthesia",
     chapters: [
-      { chapter: 62, title: "Maternal Physiology" },
-      { chapter: 63, title: "Labor Analgesia" },
+      { chapter: 58, title: "Anesthesia for Obstetrics" },
+      { chapter: 59, title: "Fetal Surgery & Fetal Therapies" },
     ],
   },
   {
     topic: "Respiratory Physiology",
     chapters: [
-      { chapter: 15, title: "Respiratory Physiology" },
-      { chapter: 38, title: "Pulmonary Function & Gas Exchange" },
+      { chapter: 12, title: "Respiratory Physiology & Pathophysiology" },
+      { chapter: 37, title: "Respiratory Monitoring" },
     ],
   },
 ];

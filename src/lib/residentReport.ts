@@ -29,6 +29,7 @@ export interface ReportStrings {
   trendLabel: string;
   trendSection: string;
   trendSub: string;
+  trendRanges: { week: string; month: string; year: string; all: string };
   strengths: string;
   focusAreas: string;
   millerCh: string;
@@ -63,6 +64,7 @@ export const REPORT_STRINGS: Record<ReportLang, ReportStrings> = {
     trendLabel: "Trend",
     trendSection: "Accuracy Trend",
     trendSub: "Accuracy over the reporting period",
+    trendRanges: { week: "Week", month: "Month", year: "Year", all: "All" },
     strengths: "Strengths",
     focusAreas: "Focus Areas",
     millerCh: "Miller Ch.",
@@ -95,6 +97,7 @@ export const REPORT_STRINGS: Record<ReportLang, ReportStrings> = {
     trendLabel: "מגמה",
     trendSection: "מגמת דיוק",
     trendSub: "דיוק לאורך תקופת הדיווח",
+    trendRanges: { week: "שבוע", month: "חודש", year: "שנה", all: "הכל" },
     strengths: "חוזקות",
     focusAreas: "תחומים לחיזוק",
     millerCh: "מילר פרק",

@@ -43,7 +43,7 @@ const DRAFTS: Record<string, DraftQuestion> = {
     explanation:
       "Sugammadex encapsulates aminosteroid NMBAs (rocuronium, vecuronium) and reliably reverses moderate-to-deep block faster than acetylcholinesterase inhibitors, which plateau at a ceiling effect.",
     topic: "Neuromuscular Blockers",
-    chapter: 13,
+    chapter: 24,
   },
   "Local Anesthetic Toxicity (LAST)": {
     question:
@@ -69,7 +69,7 @@ const DRAFTS: Record<string, DraftQuestion> = {
     explanation:
       "On full CPB the native ejection is bypassed, so arterial pulsatility is lost and perfusion is managed to a mean arterial pressure target (commonly 50–80 mmHg), not a pulse pressure.",
     topic: "Cardiovascular Anesthesia",
-    chapter: 55,
+    chapter: 50,
   },
 };
 
@@ -111,7 +111,7 @@ export const SEED_QUEUE: BankQuestion[] = [
     explanation:
       "Beard, obesity, age >55, edentulousness, and snoring predict difficult mask ventilation; Mallampati and thyromental distance better predict difficult laryngoscopy.",
     topic: "Airway Management",
-    chapter: 44,
+    chapter: 40,
     status: "approved",
     author: "Dr. R. Levi",
     source: "manual",
