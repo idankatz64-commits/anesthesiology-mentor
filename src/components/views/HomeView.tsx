@@ -11,7 +11,7 @@ import {
 import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { StatCard } from '@/components/stats/StatCard';
-import { getExamProximityPhase, EXAM_DATE } from '@/lib/smartSelection';
+import { getExamProximityPhase, EXAM_DATE, selectSmartQuestions } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
 import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
 import HomeTopicHeatmap from '@/components/stats/HomeTopicHeatmap';
@@ -386,7 +386,18 @@ function SessionPanel({
 
 /* ── Main Component ── */
 export default function HomeView() {
-  const { data, progress, navigate, startSession, getDueQuestions, savedSessionInfo, resumeSessionFromDb, clearSavedSession, loadingSavedSession } = useApp();
+  const {
+    data,
+    progress,
+    navigate,
+    startSession,
+    getDueQuestions,
+    savedSessionInfo,
+    resumeSessionFromDb,
+    clearSavedSession,
+    loadingSavedSession,
+    fetchSrsData,
+  } = useApp();
   const [loadingDue, setLoadingDue] = useState(false);
   const [resuming, setResuming] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -412,57 +423,34 @@ export default function HomeView() {
   const withExp = data.filter(q => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
 
-  const handleSmartPractice = () => {
+  // Same engine as SetupView: cool-down + future-schedule de-dup + smart ranking.
+  // Old home path used weighted-random with NO de-dup → "repeats" after a session.
+  const handleSmartPractice = async () => {
     if (!data.length) return;
-    const topicStats: Record<string, { correct: number; total: number }> = {};
-    Object.entries(progress.history).forEach(([id, h]) => {
-      const q = data.find(x => x[KEYS.ID] === id);
-      if (q && q[KEYS.TOPIC]) {
-        if (!topicStats[q[KEYS.TOPIC]]) topicStats[q[KEYS.TOPIC]] = { correct: 0, total: 0 };
-        topicStats[q[KEYS.TOPIC]].total += h.answered;
-        topicStats[q[KEYS.TOPIC]].correct += h.correct;
-      }
-    });
-
-    let weightedPool: { q: typeof data[0]; weight: number }[] = [];
-    const mistakeQs = data.filter(q => progress.history[q[KEYS.ID]]?.lastResult === 'wrong');
-    mistakeQs.forEach(q => weightedPool.push({ q, weight: 10 }));
-
-    const others = data.filter(q => progress.history[q[KEYS.ID]]?.lastResult !== 'wrong');
-    others.forEach(q => {
-      let weight = 1;
-      const topic = q[KEYS.TOPIC];
-      if (topicStats[topic]) {
-        const acc = topicStats[topic].correct / topicStats[topic].total;
-        if (acc < 0.5) weight = 3;
-        else if (acc < 0.8) weight = 1.5;
-      } else {
-        weight = 2;
-      }
-      weightedPool.push({ q, weight });
-    });
-
-    const selected: typeof data = [];
-    for (let i = 0; i < 15 && weightedPool.length > 0; i++) {
-      const totalWeight = weightedPool.reduce((sum, item) => sum + item.weight, 0);
-      let random = Math.random() * totalWeight;
-      for (let j = 0; j < weightedPool.length; j++) {
-        random -= weightedPool[j].weight;
-        if (random <= 0) {
-          selected.push(weightedPool[j].q);
-          weightedPool.splice(j, 1);
-          break;
-        }
-      }
+    try {
+      const srsData = await fetchSrsData();
+      const selected = selectSmartQuestions(data, 15, 'quick', srsData, progress.history, data);
+      if (selected.length === 0) return;
+      startSession(selected, selected.length, 'practice');
+    } catch (e) {
+      console.error('Smart practice selection failed, falling back to random pool:', e);
+      startSession(data, 15, 'practice');
     }
-
-    if (selected.length === 0) return;
-    startSession(selected, selected.length, 'practice');
   };
 
-  const handleSimulation = () => {
+  // Same simulation proportions as Setup (Miller topic mix) + SRS pre-filters.
+  // Old path: startSession(data, 120) = random 120 from full bank, no filters.
+  const handleSimulation = async () => {
     if (!data.length) return;
-    startSession(data, 120, 'simulation');
+    try {
+      const srsData = await fetchSrsData();
+      const selected = selectSmartQuestions(data, 120, 'simulation', srsData, progress.history, data);
+      if (selected.length === 0) return;
+      startSession(selected, selected.length, 'simulation');
+    } catch (e) {
+      console.error('Simulation selection failed, falling back to random pool:', e);
+      startSession(data, 120, 'simulation');
+    }
   };
 
   const handleSpacedRepetition = async () => {
