@@ -32,6 +32,7 @@ scripts/master-report/__pycache__/
 # Secrets — NEVER commit
 .env
 .env.local
+.env.local.*
 .env.*.local
 **/.env
 
@@ -40,3 +41,6 @@ scripts/master-report/_legacy_v2/*.html
 
 # Audit findings (kept locally, not in product)
 audit/
+
+# Generated test output
+test-results/
