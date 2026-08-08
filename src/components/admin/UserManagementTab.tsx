@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Loader2, Plus, Trash2, Save, X, UserPlus } from 'lucide-react';
+import { errorMessage } from './errorMessage';
 
 interface AdminUser {
   id: string;
@@ -43,8 +44,8 @@ export default function UserManagementTab() {
         .order('created_at', { ascending: true });
       if (error) throw error;
       setUsers(data || []);
-    } catch (err: any) {
-      toast.error('שגיאה בטעינת משתמשים: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה בטעינת משתמשים: ' + errorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -61,7 +62,7 @@ export default function UserManagementTab() {
       // For now, we'll search for the user in auth via a workaround
       // Actually, looking at the table schema, id is the PK and email is required
       // We need to find the auth user ID by email
-      const { data: { users: authUsers }, error: searchError } = await (supabase as any).auth.admin.listUsers();
+      const { data: { users: authUsers }, error: searchError } = await supabase.auth.admin.listUsers();
       
       // If admin API isn't available, try inserting with a generated UUID
       // The admin_users table just needs id + email + role
@@ -84,8 +85,8 @@ export default function UserManagementTab() {
       setNewEmail('');
       setNewRole('editor');
       fetchUsers();
-    } catch (err: any) {
-      toast.error('שגיאה בהוספת משתמש: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה בהוספת משתמש: ' + errorMessage(err));
     } finally {
       setAdding(false);
     }
@@ -102,8 +103,8 @@ export default function UserManagementTab() {
       toast.success('התפקיד עודכן בהצלחה');
       setEditingId(null);
       fetchUsers();
-    } catch (err: any) {
-      toast.error('שגיאה בעדכון תפקיד: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה בעדכון תפקיד: ' + errorMessage(err));
     } finally {
       setSavingRole(false);
     }
@@ -121,8 +122,8 @@ export default function UserManagementTab() {
       toast.success('המשתמש הוסר בהצלחה');
       setDeleteUser(null);
       fetchUsers();
-    } catch (err: any) {
-      toast.error('שגיאה במחיקת משתמש: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה במחיקת משתמש: ' + errorMessage(err));
     } finally {
       setDeleting(false);
     }

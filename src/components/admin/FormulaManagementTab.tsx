@@ -9,6 +9,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { toast } from 'sonner';
 import { Pencil, Trash2, Loader2, Save, X, Plus, BookOpen, Calculator, Upload, Download, FileJson, ChevronDown, ChevronUp, Eye, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { errorMessage } from './errorMessage';
 
 // ─── Reference formula types ───
 interface ReferenceFormula {
@@ -23,11 +24,11 @@ interface ReferenceFormula {
 }
 
 // ─── Calculator formula types ───
-interface CalcInput {
+type CalcInput = {
   id: string;
   label: string;
   default: number;
-}
+};
 
 interface CalculatorFormula {
   id: string;
@@ -158,8 +159,8 @@ function ReferenceFormulaManager() {
       }
       setEditItem(null);
       fetch();
-    } catch (err: any) {
-      toast.error('שגיאה: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה: ' + errorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -174,8 +175,8 @@ function ReferenceFormulaManager() {
       toast.success('הנוסחה נמחקה');
       setDeleteTarget(null);
       fetch();
-    } catch (err: any) {
-      toast.error('שגיאה: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה: ' + errorMessage(err));
     } finally {
       setDeleting(false);
     }
@@ -334,6 +335,15 @@ const SAMPLE_JSON: Partial<CalculatorFormula>[] = [
   }
 ];
 
+/** Narrow a parsed JSON value to an object without claiming anything about its fields. */
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+const asString = (value: unknown): string => (typeof value === 'string' ? value : '');
+
 function validateCalcFormulaJson(data: unknown): { valid: boolean; errors: string[]; formulas: Partial<CalculatorFormula>[] } {
   const errors: string[] = [];
   if (!Array.isArray(data)) {
@@ -343,28 +353,39 @@ function validateCalcFormulaJson(data: unknown): { valid: boolean; errors: strin
     return { valid: false, errors: ['המערך ריק — אין נוסחאות לייבא'], formulas: [] };
   }
   const formulas: Partial<CalculatorFormula>[] = [];
-  data.forEach((item: any, i: number) => {
+  data.forEach((raw: unknown, i: number) => {
     const prefix = `נוסחה #${i + 1}`;
+    // This is a file the user chose. Prove it is an object before reading it -
+    // `[null]` is valid JSON, and a validator must report that, not throw on it.
+    const item = asRecord(raw);
+    if (!item) {
+      errors.push(`${prefix}: אינו אובייקט`);
+      return;
+    }
     if (!item.id || typeof item.id !== 'string') errors.push(`${prefix}: חסר שדה id (מחרוזת)`);
     if (!item.formula_name || typeof item.formula_name !== 'string') errors.push(`${prefix}: חסר שדה formula_name`);
     if (!item.expression || typeof item.expression !== 'string') errors.push(`${prefix}: חסר שדה expression`);
     if (!item.unit || typeof item.unit !== 'string') errors.push(`${prefix}: חסר שדה unit`);
     if (!Array.isArray(item.inputs)) errors.push(`${prefix}: שדה inputs חייב להיות מערך`);
     else {
-      item.inputs.forEach((inp: any, j: number) => {
-        if (!inp.id || !inp.label) errors.push(`${prefix}, input #${j + 1}: חסר id או label`);
+      item.inputs.forEach((rawInput: unknown, j: number) => {
+        const inp = asRecord(rawInput);
+        if (!inp || !inp.id || !inp.label) errors.push(`${prefix}, input #${j + 1}: חסר id או label`);
       });
     }
     formulas.push({
-      id: item.id || '',
-      category_id: item.category_id || '',
-      category_label: item.category_label || '',
-      formula_name: item.formula_name || '',
-      expression: item.expression || '',
-      unit: item.unit || '',
-      note: item.note || null,
-      inputs: item.inputs || [],
-      sort_order: item.sort_order ?? i,
+      id: asString(item.id),
+      category_id: asString(item.category_id),
+      category_label: asString(item.category_label),
+      formula_name: asString(item.formula_name),
+      expression: asString(item.expression),
+      unit: asString(item.unit),
+      note: asString(item.note) || null,
+      // Read only when `valid` is true (see the caller), i.e. when every element
+      // above passed the id/label check. `default` is not validated here and
+      // never was; this guard does not narrow that gap or widen it.
+      inputs: Array.isArray(item.inputs) ? (item.inputs as CalcInput[]) : [],
+      sort_order: typeof item.sort_order === 'number' ? item.sort_order : i,
     });
   });
   return { valid: errors.length === 0, errors, formulas };
@@ -397,7 +418,7 @@ function CalculatorFormulaManager() {
       .order('category_id')
       .order('sort_order');
     if (error) { toast.error('שגיאה בטעינה'); console.error(error); }
-    else setFormulas((data || []).map((r: any) => ({ ...r, inputs: r.inputs as CalcInput[] })));
+    else setFormulas((data || []).map((r) => ({ ...r, inputs: r.inputs as CalcInput[] })));
     setLoading(false);
   }, []);
 
@@ -447,7 +468,7 @@ function CalculatorFormulaManager() {
           expression: editForm.expression!,
           unit: editForm.unit || '',
           note: editForm.note || null,
-          inputs: parsedInputs as any,
+          inputs: parsedInputs,
           sort_order: editForm.sort_order || 0,
         });
         if (error) throw error;
@@ -460,7 +481,7 @@ function CalculatorFormulaManager() {
           expression: editForm.expression,
           unit: editForm.unit,
           note: editForm.note || null,
-          inputs: parsedInputs as any,
+          inputs: parsedInputs,
           sort_order: editForm.sort_order,
         }).eq('id', editItem!.id);
         if (error) throw error;
@@ -468,8 +489,8 @@ function CalculatorFormulaManager() {
       }
       setEditItem(null);
       fetchData();
-    } catch (err: any) {
-      toast.error('שגיאה: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה: ' + errorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -484,8 +505,8 @@ function CalculatorFormulaManager() {
       toast.success('הנוסחה נמחקה');
       setDeleteTarget(null);
       fetchData();
-    } catch (err: any) {
-      toast.error('שגיאה: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה: ' + errorMessage(err));
     } finally {
       setDeleting(false);
     }
@@ -528,7 +549,7 @@ function CalculatorFormulaManager() {
         expression: f.expression!,
         unit: f.unit || '',
         note: f.note || null,
-        inputs: (f.inputs || []) as any,
+        inputs: f.inputs || [],
         sort_order: f.sort_order ?? 0,
       }));
       const { error } = await supabase.from('calculator_formulas').upsert(rows, { onConflict: 'id' });
@@ -537,8 +558,8 @@ function CalculatorFormulaManager() {
       setImportPreview(null);
       setImportErrors([]);
       fetchData();
-    } catch (err: any) {
-      toast.error('שגיאה בייבוא: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה בייבוא: ' + errorMessage(err));
     } finally {
       setImporting(false);
     }
