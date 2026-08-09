@@ -114,12 +114,16 @@ export default function StatsView() {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = (ev) => {
+    // `async` + `await importData(...)`: this used to fire and forget, so the
+    // success alert appeared before a single row had been written, and any
+    // failure inside importData became an unhandled rejection this catch could
+    // never see. The success message must not run unless the save resolved.
+    reader.onload = async (ev) => {
       try {
         const parsed = JSON.parse(ev.target?.result as string);
         if (parsed && parsed.history && typeof parsed.history === 'object') {
-          importData(parsed);
           const count = Object.keys(parsed.history).length;
+          await importData(parsed);
           alert(`הנתונים נטענו בהצלחה! ${count} שאלות יובאו.`);
           return;
         }
@@ -135,13 +139,15 @@ export default function StatsView() {
           };
           const count = Object.keys(normalized.history).length;
           if (count > 0) {
-            importData(normalized);
+            await importData(normalized);
             alert(`יובאו בהצלחה ${count} שאלות מהגרסה הישנה!`);
             return;
           }
         }
         alert('קובץ לא תקין — לא זוהה היסטוריית שאלות.');
-      } catch { alert('שגיאה בקריאת הקובץ. ודא שהקובץ הוא JSON תקני.'); }
+      } catch (err) {
+        alert(err instanceof Error ? err.message : 'שגיאה בקריאת הקובץ. ודא שהקובץ הוא JSON תקני.');
+      }
     };
     reader.readAsText(file);
     e.target.value = '';

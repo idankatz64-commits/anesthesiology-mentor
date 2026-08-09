@@ -9,14 +9,9 @@ import { Loader2, Save, Trash2, Upload, FileUp, CheckCircle, XCircle, AlertCircl
 import Papa from 'papaparse';
 import { errorMessage } from './errorMessage';
 import { dedupeImportRows } from './dedupeImportRows';
+import { hashId } from './hashId';
 
 /* ── helpers ── */
-
-function hashId(str: string): string {
-  let h = 0;
-  for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
-  return Math.abs(h).toString(16).substring(0, 6).toUpperCase();
-}
 
 // The live `questions` table holds exactly these, on 3,923 of 3,923 rows.
 // Anything else is a misclassified import, and `kind: ''` is accepted by the
@@ -30,11 +25,16 @@ const EMPTY_FORM = {
   chapter: 0, media_type: '', media_link: '',
 };
 
+// `categories` owns both the topic name and its chapter number, so one dropdown
+// can set both. Before this the form had no chapter input at all and wrote
+// chapter 0 on every question - which makes it invisible in the app.
+type Category = { name: string; chapter: number };
+
 /* ═══════════════════════════════════════════════ */
 /*  Section 1 – Create Single Question            */
 /* ═══════════════════════════════════════════════ */
 
-function CreateSingleQuestion({ categories }: { categories: string[] }) {
+function CreateSingleQuestion({ categories }: { categories: Category[] }) {
   const [form, setForm] = useState({ ...EMPTY_FORM });
   const [saving, setSaving] = useState(false);
 
@@ -44,10 +44,16 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
   const handleSave = async () => {
     if (!form.question.trim()) { toast.error('יש להזין טקסט שאלה'); return; }
     if (!form.correct) { toast.error('יש לבחור תשובה נכונה'); return; }
+    // chapter 0 means the question never surfaces in the app. The topic
+    // dropdown carries the chapter, so requiring a topic requires a real chapter.
+    if (!form.chapter) { toast.error('יש לבחור נושא — בלי פרק השאלה לא תופיע באפליקציה'); return; }
     setSaving(true);
     try {
       const id = hashId(form.question);
-      const { error } = await supabase.from('questions').upsert({
+      // `insert`, not `upsert`. On a hashId collision an upsert silently
+      // overwrote an unrelated existing question and still reported success.
+      // An insert fails loudly instead, and nothing is destroyed.
+      const { error } = await supabase.from('questions').insert({
         id,
         question: form.question,
         a: form.a, b: form.b, c: form.c, d: form.d,
@@ -58,11 +64,16 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
         source: form.source || null,
         kind: form.kind || null,
         miller: form.miller || null,
-        chapter: form.chapter || 0,
+        chapter: form.chapter,
         media_type: form.media_type || null,
         media_link: form.media_link || null,
         manually_edited: true,
-      }, { onConflict: 'id' });
+      });
+      // 23505 = unique_violation. Either the same question text was submitted
+      // twice, or a genuine hash collision - both mean "do not write".
+      if (error?.code === '23505') {
+        throw new Error('שאלה עם המזהה ' + id + ' כבר קיימת. לא נוצרה שאלה חדשה ולא נמחק דבר.');
+      }
       if (error) throw error;
       toast.success('השאלה נוצרה בהצלחה (ID: ' + id + ')');
       setForm({ ...EMPTY_FORM });
@@ -108,12 +119,15 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
           </Select>
         </div>
         <div>
-          <label className="text-sm font-medium text-foreground mb-1 block">נושא</label>
-          <Select value={form.topic || '__none__'} onValueChange={v => set('topic', v === '__none__' ? '' : v)}>
+          <label className="text-sm font-medium text-foreground mb-1 block">נושא (קובע את הפרק) *</label>
+          <Select value={form.topic || '__none__'} onValueChange={v => {
+            const hit = categories.find(c => c.name === v);
+            setForm(f => ({ ...f, topic: hit ? hit.name : '', chapter: hit ? hit.chapter : 0 }));
+          }}>
             <SelectTrigger><SelectValue placeholder="בחר נושא" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="__none__">— ללא —</SelectItem>
-              {categories.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              {categories.map(c => <SelectItem key={c.name} value={c.name}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
@@ -480,15 +494,21 @@ function BulkCsvImport() {
 /* ═══════════════════════════════════════════════ */
 
 export default function ImportQuestionsTab() {
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
 
   useEffect(() => {
     supabase
       .from('categories')
-      .select('topic_main')
+      .select('topic_main, topic_num')
       .order('topic_num', { ascending: true })
       .then(({ data }) => {
-        if (data) setCategories(data.map(r => r.topic_main).filter(Boolean));
+        // topic_num 0 is 'Unclassified' - deliberately not offered, so a new
+        // question cannot be filed as unclassified from this form.
+        if (data) setCategories(
+          data
+            .filter(r => r.topic_main && r.topic_num)
+            .map(r => ({ name: r.topic_main as string, chapter: r.topic_num as number })),
+        );
       });
   }, []);
 

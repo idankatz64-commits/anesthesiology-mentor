@@ -839,6 +839,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const userId = userIdRef.current;
     if (!userId) return;
 
+    // Every write below is checked and every failure is collected. Until
+    // 2026-08-09 all five results were discarded, so a restore that Postgres
+    // rejected still reported "loaded successfully" and the user lost the data
+    // without ever seeing an error.
+    const failures: string[] = [];
+    const check = (label: string, error: { message: string } | null) => {
+      if (error) failures.push(`${label}: ${error.message}`);
+    };
+
     // Batch write to Supabase
     // History -> user_answers
     const answerRows = Object.entries(newProgress.history).map(([qid, h]) => ({
@@ -848,21 +857,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       answered_count: h.answered,
       correct_count: h.correct,
       ever_wrong: h.everWrong,
-      updated_at: new Date(h.timestamp).toISOString(),
+      // Backups exported before `timestamp` existed carry undefined here, and
+      // new Date(undefined).toISOString() throws RangeError - which aborted the
+      // whole restore before a single row was written.
+      updated_at: Number.isFinite(h.timestamp)
+        ? new Date(h.timestamp).toISOString()
+        : new Date().toISOString(),
     }));
     if (answerRows.length) {
       // Batch in chunks of 500
       for (let i = 0; i < answerRows.length; i += 500) {
-        await supabase
+        const { error } = await supabase
           .from("user_answers")
           .upsert(answerRows.slice(i, i + 500) as any, { onConflict: "user_id,question_id" });
+        check("היסטוריית תשובות", error);
       }
     }
 
     // Favorites
     if (newProgress.favorites.length) {
       const favRows = newProgress.favorites.map((qid) => ({ user_id: userId, question_id: qid }));
-      await supabase.from("user_favorites").upsert(favRows as any, { onConflict: "user_id,question_id" });
+      const { error } = await supabase
+        .from("user_favorites")
+        .upsert(favRows as any, { onConflict: "user_id,question_id" });
+      check("מועדפים", error);
     }
 
     // Notes
@@ -874,7 +892,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         note_text: text,
         updated_at: new Date().toISOString(),
       }));
-      await supabase.from("user_notes").upsert(noteRows as any, { onConflict: "user_id,question_id" });
+      const { error } = await supabase
+        .from("user_notes")
+        .upsert(noteRows as any, { onConflict: "user_id,question_id" });
+      check("הערות", error);
     }
 
     // Ratings
@@ -886,7 +907,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         rating,
         updated_at: new Date().toISOString(),
       }));
-      await supabase.from("user_ratings").upsert(ratingRows as any, { onConflict: "user_id,question_id" });
+      const { error } = await supabase
+        .from("user_ratings")
+        .upsert(ratingRows as any, { onConflict: "user_id,question_id" });
+      check("דירוגים", error);
     }
 
     // Tags
@@ -895,7 +919,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       tags.forEach((tag) => tagRows.push({ user_id: userId, question_id: qid, tag }));
     });
     if (tagRows.length) {
-      await supabase.from("user_tags").upsert(tagRows as any, { onConflict: "user_id,question_id,tag" });
+      const { error } = await supabase
+        .from("user_tags")
+        .upsert(tagRows as any, { onConflict: "user_id,question_id,tag" });
+      check("תגיות", error);
+    }
+
+    // Throw so the caller cannot report success over a partial restore.
+    if (failures.length) {
+      throw new Error("חלק מהנתונים לא נשמרו — " + failures.join(" | "));
     }
   }, []);
 
