@@ -34,7 +34,7 @@ export const MILLER_CHAPTERS: Record<number, string> = {
   33: "Perioperative Echocardiography and Point-of-Care Ultrasound (POCUS)",
   34: "Implantable Cardiac Pulse Generators: Pacemakers and Cardioverter-Defibrillators",
   35: "Neurophysiologic Monitoring",
-  36: "Monitoring the Brain's Response to Anesthesia and Surgery",
+  36: "Monitoring the Brain’s Response to Anesthesia and Surgery",
   37: "Respiratory Monitoring",
   38: "Renal Pathophysiology and Treatment for Perioperative Ischemia and Nephrotoxic Injury",
   39: "Neuromuscular Monitoring",
@@ -80,7 +80,10 @@ export const MILLER_CHAPTERS: Record<number, string> = {
   79: "Critical Care Anesthesiology",
   80: "Neurocritical Care",
   81: "Extracorporeal Membrane Oxygenation and Cardiac Devices",
-  82: "Cardiopulmonary Resuscitation and Advanced Cardiac Life Support",
+  // Miller titles this "Cardiopulmonary Resuscitation and Advanced Cardiac Life
+  // Support". The app shows the abbreviation, which is what `categories` holds,
+  // so the two agree and 62 characters do not wrap in every stats tile.
+  82: "ACLS",
   83: "Burn Management",
   84: "Occupational Safety, Infection Control, and Substance Use Disorders",
   85: "Emergency Preparedness in Health Care",

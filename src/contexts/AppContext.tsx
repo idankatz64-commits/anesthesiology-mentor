@@ -501,7 +501,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           p_user_id: userId,
           p_question_id: id,
           p_is_correct: isCorrect,
-          p_topic: topic ?? null,
+          // `|| null`, not `?? null`: the RPC guards with COALESCE, which stops
+          // NULL but not "". An empty topic used to overwrite a good one - 1,733
+          // history rows were blanked this way before it was caught.
+          p_topic: topic || null,
         });
 
         if (error) {

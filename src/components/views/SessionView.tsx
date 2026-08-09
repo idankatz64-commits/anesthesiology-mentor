@@ -1395,14 +1395,19 @@ export default function SessionView() {
                       const { valid } = resolveChapterName(chapterDraft);
                       if (!valid) return;
                       setSavingChapter("saving");
-                      const chapterVal = chapterDraft.trim().toUpperCase() === "ACLS" ? 0 : parseInt(chapterDraft, 10);
-                      const chapterName = MILLER_CHAPTERS[chapterVal] || "";
+                      // "ACLS" is chapter 82, not 0. Chapter 0 is "Unclassified",
+                      // so typing the abbreviation used to file the question under
+                      // nothing and the sync trigger would then blank its topic.
+                      const chapterVal = chapterDraft.trim().toUpperCase() === "ACLS" ? 82 : parseInt(chapterDraft, 10);
+                      // `topic` is deliberately not sent: the sync_chapter_topic_num
+                      // trigger derives it from `categories` whenever `chapter`
+                      // changes, and the database owns the display name. Sending our
+                      // own copy is how the two drifted apart in the first place.
                       const { error } = await supabase
                         .from("questions")
                         .update({
                           chapter: chapterVal,
                           miller: String(chapterVal),
-                          topic: chapterName,
                           manually_edited: true,
                         })
                         .eq("id", serialNumber);
@@ -1411,7 +1416,7 @@ export default function SessionView() {
                         updateQuizQuestion(index, {
                           [KEYS.CHAPTER]: chapterVal,
                           [KEYS.MILLER]: String(chapterVal),
-                          [KEYS.TOPIC]: chapterName,
+                          [KEYS.TOPIC]: MILLER_CHAPTERS[chapterVal] || "",
                         });
                         setSavingChapter("saved");
                         setChapterDraft("");

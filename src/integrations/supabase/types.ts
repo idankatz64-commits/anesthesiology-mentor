@@ -224,42 +224,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ideas: {
-        Row: {
-          content: string
-          created_at: string
-          id: string
-          notes: string | null
-          plan: string | null
-          remind_at: string | null
-          reviewed_at: string | null
-          source: string
-          status: Database["public"]["Enums"]["idea_status"]
-        }
-        Insert: {
-          content: string
-          created_at?: string
-          id?: string
-          notes?: string | null
-          plan?: string | null
-          remind_at?: string | null
-          reviewed_at?: string | null
-          source?: string
-          status?: Database["public"]["Enums"]["idea_status"]
-        }
-        Update: {
-          content?: string
-          created_at?: string
-          id?: string
-          notes?: string | null
-          plan?: string | null
-          remind_at?: string | null
-          reviewed_at?: string | null
-          source?: string
-          status?: Database["public"]["Enums"]["idea_status"]
-        }
-        Relationships: []
-      }
       profiles: {
         Row: {
           created_at: string
@@ -359,28 +323,17 @@ export type Database = {
           c: string | null
           chapter: number | null
           correct: string | null
-          correct_answer: string | null
           created_at: string | null
           d: string | null
           explanation: string | null
           id: string
-          institution: string | null
           kind: string | null
           manually_edited: boolean | null
-          media_kind: string | null
           media_link: string | null
           media_type: string | null
           miller: string | null
-          miller_page: string | null
-          option_a: string | null
-          option_b: string | null
-          option_c: string | null
-          option_d: string | null
           question: string | null
-          question_id: string | null
-          question_text: string | null
           ref_id: string | null
-          serial_number: number | null
           source: string | null
           topic: string | null
           topic_num: number | null
@@ -393,28 +346,17 @@ export type Database = {
           c?: string | null
           chapter?: number | null
           correct?: string | null
-          correct_answer?: string | null
           created_at?: string | null
           d?: string | null
           explanation?: string | null
           id?: string
-          institution?: string | null
           kind?: string | null
           manually_edited?: boolean | null
-          media_kind?: string | null
           media_link?: string | null
           media_type?: string | null
           miller?: string | null
-          miller_page?: string | null
-          option_a?: string | null
-          option_b?: string | null
-          option_c?: string | null
-          option_d?: string | null
           question?: string | null
-          question_id?: string | null
-          question_text?: string | null
           ref_id?: string | null
-          serial_number?: number | null
           source?: string | null
           topic?: string | null
           topic_num?: number | null
@@ -427,28 +369,17 @@ export type Database = {
           c?: string | null
           chapter?: number | null
           correct?: string | null
-          correct_answer?: string | null
           created_at?: string | null
           d?: string | null
           explanation?: string | null
           id?: string
-          institution?: string | null
           kind?: string | null
           manually_edited?: boolean | null
-          media_kind?: string | null
           media_link?: string | null
           media_type?: string | null
           miller?: string | null
-          miller_page?: string | null
-          option_a?: string | null
-          option_b?: string | null
-          option_c?: string | null
-          option_d?: string | null
           question?: string | null
-          question_id?: string | null
-          question_text?: string | null
           ref_id?: string | null
-          serial_number?: number | null
           source?: string | null
           topic?: string | null
           topic_num?: number | null
@@ -781,27 +712,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      user_weekly_plans: {
-        Row: {
-          id: string
-          plan_data: Json
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          id?: string
-          plan_data?: Json
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          id?: string
-          plan_data?: Json
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: []
       }
     }
     Views: {

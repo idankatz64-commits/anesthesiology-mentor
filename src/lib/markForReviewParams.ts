@@ -33,6 +33,6 @@ export function buildMarkForReviewIncrementArgs(
     p_user_id: userId,
     p_question_id: questionId,
     p_is_correct: false,
-    p_topic: topic ?? null,
+    p_topic: topic || null, // "" must not overwrite a stored topic - see AppContext
   };
 }
