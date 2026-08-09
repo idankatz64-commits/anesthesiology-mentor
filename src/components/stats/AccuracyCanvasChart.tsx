@@ -181,7 +181,13 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
       setRawRows(userRows);
       if (!groupRes.error && groupRes.data) {
         const map: Record<string, number> = {};
-        (groupRes.data as any[]).forEach((r: any) => { map[r.day] = Number(r.avg_accuracy); });
+        // get_global_daily_accuracy returns AVG(1.0/0.0) rounded to 4 dp, i.e.
+        // a 0-1 fraction. Everything downstream - the y axis, the tooltip's `%`
+        // - is in percent, so scale here, once, at the boundary. Same rounding
+        // as the user series above.
+        (groupRes.data as any[]).forEach((r: any) => {
+          map[r.day] = Math.round(Number(r.avg_accuracy) * 100 * 10) / 10;
+        });
         setGroupDailyAvg(map);
       }
       setLoading(false);
@@ -584,7 +590,7 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
             }}
           >
             <div className="font-bold mb-1 text-foreground">{formatDateHeb(hovered.date)}</div>
-            <div className="text-muted-foreground">שאלות היום: <span className="font-bold text-foreground">{hovered.total}</span></div>
+            <div className="text-muted-foreground">שאלות: <span className="font-bold text-foreground">{hovered.total}</span></div>
             <div className="text-muted-foreground">דיוק: <span className="font-bold" style={{ color: getBarColor(hovered.accuracy) }}>{hovered.accuracy}%</span></div>
             {showEma7 && hovered.ema7 !== null && <div className="text-muted-foreground">EMA 7: <span className="font-bold" style={{ color: DATA_COLORS.ema7 }}>{hovered.ema7}%</span></div>}
             {showEma14 && hovered.ema14 !== null && <div className="text-muted-foreground">EMA 14: <span className="font-bold" style={{ color: DATA_COLORS.ema14 }}>{hovered.ema14}%</span></div>}

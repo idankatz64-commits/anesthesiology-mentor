@@ -87,7 +87,7 @@ def fetch_data(supabase, user_id):
 
     # Q3: User performance per topic (user_answers — final SRS state)
     res = (supabase.table("user_answers")
-           .select("question_id, correct_count, wrong_count, questions(topic)")
+           .select("question_id, correct_count, answered_count, questions(topic)")
            .eq("user_id", user_id)
            .execute())
     topics_user = {}
@@ -95,9 +95,12 @@ def fetch_data(supabase, user_id):
         topic = row["questions"]["topic"] if row.get("questions") else "Unknown"
         if topic not in topics_user:
             topics_user[topic] = {"topic": topic, "n": 0, "c": 0, "w": 0}
+        # `n` counts questions, `c`/`w` count attempts - they are not the same
+        # denominator, and mixing them is what printed accuracies above 100%.
+        # user_answers has no wrong_count column; it stores the total instead.
         topics_user[topic]["n"] += 1
         topics_user[topic]["c"] += row["correct_count"]
-        topics_user[topic]["w"] += row["wrong_count"]
+        topics_user[topic]["w"] += row["answered_count"] - row["correct_count"]
 
     # Q4: Answer history per topic (all attempts — realistic accuracy)
     res = (supabase.rpc("get_topic_history_stats", {"p_user_id": user_id})
@@ -203,11 +206,18 @@ def compute_basics(data):
     total_answered = sum(t["n"] for t in data["topics_user"])
     total_correct = sum(t["c"] for t in data["topics_user"])
     total_attempts = sum(d["n"] for d in data["daily"])
-    accuracy = round(total_correct / total_answered * 100, 1) if total_answered else 0
+    # Accuracy divides by attempts. Coverage on the next line is the one place
+    # `total_answered` (distinct questions) is the right denominator.
+    ua_attempts = sum(t["c"] + t["w"] for t in data["topics_user"])
+    accuracy = round(total_correct / ua_attempts * 100, 1) if ua_attempts else 0
     coverage_pct = round(total_answered / data["total_db"] * 100, 1)
     srs_total = sum(v["total"] for v in data["srs"].values())
     srs_due = sum(v["due"] for v in data["srs"].values())
     srs_backlog_pct = round(srs_due / srs_total * 100, 1) if srs_total else 0
+    # The bug this replaced divided correct attempts by question count and shipped
+    # 162.3% into a published report. A percentage over 100 means the denominator
+    # regressed; fail here rather than render it.
+    assert 0 <= accuracy <= 100, f"accuracy out of range: {accuracy}"
     return {
         "total_answered": total_answered, "total_correct": total_correct,
         "total_attempts": total_attempts, "accuracy": accuracy,
@@ -240,7 +250,7 @@ def compute_bootstrap_ci(data, n_iter=2000):
         results[t["topic"]] = {
             "lo": round(means[int(n_iter * 0.025)], 1),
             "hi": round(means[int(n_iter * 0.975)], 1),
-            "obs": round(t["c"] / t["n"] * 100, 1),
+            "obs": round(t["c"] / (t["c"] + t["w"]) * 100, 1) if (t["c"] + t["w"]) else 0,
         }
     return results
 
@@ -298,7 +308,7 @@ def compute_evpi(data):
         if t["n"] < 3:
             continue
         db = topics_db.get(t["topic"], 10)
-        acc = t["c"] / t["n"]
+        acc = t["c"] / (t["c"] + t["w"]) if (t["c"] + t["w"]) else 0
         p_fail = (t["w"] + 1) / (t["n"] + 2)
         evpi = (db / total_db) * 0.08 * p_fail
         results.append({
@@ -340,7 +350,8 @@ def compute_readiness(data, basics, mc, bootstrap):
     topics_db = data["topics_db"]
     critical = [t for t in data["topics_user"]
                 if t["n"] >= 5 and topics_db.get(t["topic"], 0) >= 50]
-    critical_avg = (sum(t["c"] / t["n"] * 100 for t in critical) / len(critical)
+    critical_avg = (sum(t["c"] / (t["c"] + t["w"]) * 100
+                        for t in critical if (t["c"] + t["w"])) / len(critical)
                     if critical else 50)
     critical_score = min(critical_avg, 100)
 

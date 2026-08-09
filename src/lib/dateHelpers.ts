@@ -13,6 +13,31 @@ export function getIsraelToday(): string {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * The instant Israel's civil day starts, as an ISO string Postgres can compare
+ * against a timestamptz.
+ *
+ * Israel is UTC+2 (IST) for roughly a third of the year and UTC+3 (IDT) for the
+ * rest, so neither offset can be hardcoded: pick the wrong one and the day
+ * boundary moves an hour, quietly pulling the tail of yesterday into "today".
+ * Ask Intl which offset applies on that date instead. The probe is midday UTC,
+ * far from the ~02:00 local changeover, so the transition days answer cleanly.
+ */
+export function getIsraelStartOfDay(isoDate: string): string {
+  const offset = new Intl.DateTimeFormat('en-US', {
+    timeZone: TZ,
+    timeZoneName: 'longOffset',
+  })
+    .formatToParts(new Date(`${isoDate}T12:00:00Z`))
+    .find(p => p.type === 'timeZoneName')!.value; // "GMT+03:00"
+  return `${isoDate}T00:00:00${offset.replace('GMT', '')}`;
+}
+
+/** The Israel-local calendar date of an instant, as YYYY-MM-DD. */
+export function getIsraelDateStr(d: Date): string {
+  return d.toLocaleDateString('en-CA', { timeZone: TZ });
+}
+
 export function addDaysIsrael(isoDate: string, days: number): string {
   const [y, m, d] = isoDate.split('-').map(Number);
   const dt = new Date(Date.UTC(y, m - 1, d));
