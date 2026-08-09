@@ -819,7 +819,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         supabase.from("user_notes").delete().eq("user_id", userId),
         supabase.from("user_ratings").delete().eq("user_id", userId),
         supabase.from("user_tags").delete().eq("user_id", userId),
-        supabase.from("user_weekly_plans").delete().eq("user_id", userId),
         supabase.from("spaced_repetition").delete().eq("user_id", userId),
       ]);
     }

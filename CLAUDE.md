@@ -89,7 +89,6 @@ Documented here so the next one can close it on sight.
 | `user_ratings` | easy/medium/hard ratings |
 | `user_tags` | Custom tags on questions |
 | `user_feedback` | User-submitted feedback |
-| `user_weekly_plans` | Weekly study plan |
 | `saved_sessions` | Auto-saved session state |
 | `topic_summaries` | Miller chapter summaries (Summaries module — not in generated types, used via raw queries) |
 | `resource_links` | External resource links (shown in TopNav + session toolbar — not in generated types, used via raw queries) |
@@ -146,7 +145,6 @@ Documented here so the next one can close it on sight.
 - **Welcome modal** — WelcomeModal onboarding
 - **Quote splash** — motivational QuoteSplash
 - **Matrix countdown** — MatrixCountdown to exam date
-- **Weekly plan** — WeeklyPlanView
 - **Reset password** — full forgot password flow
 - **Google OAuth** — sign in with Google
 
