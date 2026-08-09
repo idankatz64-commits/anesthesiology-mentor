@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Loader2, Save, Trash2, Upload, FileUp, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import { errorMessage } from './errorMessage';
+import { dedupeImportRows } from './dedupeImportRows';
 
 /* ── helpers ── */
 
@@ -281,15 +282,21 @@ function BulkCsvImport() {
     let failed = 0;
 
     try {
-      const mapped: QuestionUpsert[] = [];
+      const staged: { line: number; row: QuestionUpsert }[] = [];
       parsedRows.forEach((row, i) => {
         const rowNumber = i + 2; // the CSV header is row 1
         const m = mapRow(row);
         if (!m) { errors.push(`שורה ${rowNumber}: חסר טקסט שאלה`); return; }
         const reason = rejectionReason(m);
         if (reason) { errors.push(`שורה ${rowNumber}: ${reason}`); return; }
-        mapped.push({ ...m, chapter: Number(m.chapter) });
+        staged.push({ line: rowNumber, row: { ...m, chapter: Number(m.chapter) } });
       });
+
+      // Dedup runs BEFORE the all-or-nothing gate. Two rows sharing an id with
+      // different text lose a question, which is a rejection reason like any
+      // other - it belongs in the same list, not in silence after the gate.
+      const { unique, errors: collisions } = dedupeImportRows(staged);
+      errors.push(...collisions);
 
       // All-or-nothing: one invalid row and the file imports nothing. Every
       // reason is listed, not the first - the point is to fix the file, and
@@ -309,14 +316,6 @@ function BulkCsvImport() {
         toast.error(`הייבוא בוטל — ${errors.length} שורות פסולות. לא יובאה אף שורה.`);
         return;
       }
-
-      // Deduplicate by id
-      const seen = new Set<string>();
-      const unique = mapped.filter(q => {
-        if (seen.has(q.id)) { return false; }
-        seen.add(q.id);
-        return true;
-      });
 
       // Upsert in batches
       const batchSize = 200;

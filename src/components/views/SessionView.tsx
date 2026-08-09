@@ -1373,7 +1373,7 @@ export default function SessionView() {
                 rel="noopener noreferrer"
                 className="text-xs text-muted-foreground bg-muted hover:bg-muted/80 px-4 py-2 rounded-full font-medium transition flex items-center gap-2 w-fit border border-border"
               >
-                <BookOpen className="w-3 h-3" /> Miller Page: {qData[KEYS.MILLER]}
+                <BookOpen className="w-3 h-3" /> פרק מילר: {qData[KEYS.MILLER]}
               </a>
 
               {/* Editor inline chapter editor */}

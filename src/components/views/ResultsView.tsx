@@ -411,7 +411,7 @@ export default function ResultsView() {
                       rel="noopener noreferrer"
                       className="text-xs text-muted-foreground bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-full font-medium transition flex items-center gap-2 w-fit border border-border"
                     >
-                      <BookOpen className="w-3 h-3" /> Miller Page: {d.q[KEYS.MILLER]}
+                      <BookOpen className="w-3 h-3" /> פרק מילר: {d.q[KEYS.MILLER]}
                     </a>
                   )}
                 </div>
