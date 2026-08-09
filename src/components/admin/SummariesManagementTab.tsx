@@ -40,8 +40,12 @@ export default function SummariesManagementTab() {
   useEffect(() => { load(); }, [load]);
 
   const handleAdd = async () => {
-    if (!newSummary.topic_key.trim() || !newSummary.title.trim()) {
-      toast.error('יש למלא מפתח נושא וכותרת');
+    // embed_url is NOT NULL in the table with no default, and this form used to
+    // send `|| null` for it - so every insert failed and the module has 0 rows
+    // all-time. Required here rather than nullable in the DB: an embed with no
+    // URL is a blank card, which is what the screen was already showing.
+    if (!newSummary.topic_key.trim() || !newSummary.title.trim() || !newSummary.embed_url.trim()) {
+      toast.error('יש למלא מפתח נושא, כותרת וקישור הטמעה');
       return;
     }
     setAdding(true);
@@ -49,7 +53,7 @@ export default function SummariesManagementTab() {
     const { error } = await supabase.from('topic_summaries').insert({
       topic_key: newSummary.topic_key.trim(),
       title: newSummary.title.trim(),
-      embed_url: newSummary.embed_url.trim() || null,
+      embed_url: newSummary.embed_url.trim(),
       drive_url: newSummary.drive_url.trim() || null,
       created_by: user?.id,
     });
@@ -74,6 +78,12 @@ export default function SummariesManagementTab() {
   };
 
   const handleUpdateField = async (id: string, field: keyof TopicSummary, value: string) => {
+    // Same NOT NULL trap as handleAdd: clearing embed_url inline would send null
+    // and the update would fail with a toast that does not say why.
+    if (field === 'embed_url' && !value.trim()) {
+      toast.error('קישור הטמעה הוא שדה חובה');
+      return;
+    }
     setSaving(id);
     const { error } = await supabase.from('topic_summaries').update({ [field]: value || null }).eq('id', id);
     if (error) { toast.error('שגיאה בשמירה'); }

@@ -38,6 +38,23 @@
 
 **WARNING:** Do NOT touch Supabase project `agmcauhjhfwksrjllxar` — it's the old inactive project.
 
+### The `assistant` schema — known, intentional, not a finding
+
+Project `ksbblqnwcmfylpxygyrj` contains a second schema, `assistant` (3 tables),
+holding Idan's **personal** schedule data — licence-renewal reminders, reserve-duty
+handover items, calendar-sync flags. It is deliberate and it stays.
+
+- **Not a security problem.** Measured: no `anon`, `authenticated` or even
+  `service_role` access, and no schema grant. Reachable only over a direct
+  postgres connection. It is the most locked-down object in the database.
+- **It is not in this repo and must never be recreated from it.** No migration
+  describes it; a repo-driven rebuild would silently drop it.
+- **The real consequence** is shared blast radius: it rides along in every app
+  backup, and any destructive restore of the app takes it too.
+
+Audits keep rediscovering this and filing it as a critical finding. It is not.
+Documented here so the next one can close it on sight.
+
 ## How Changes Work
 
 - **DB (tables, RLS, functions):** Via Supabase MCP directly — instant

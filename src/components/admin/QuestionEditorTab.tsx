@@ -570,12 +570,18 @@ export default function QuestionEditorTab() {
           .filter(k => editForm[k] !== editQuestion[k]);
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user && changedFields.length > 0) {
+            // 'edit', not 'update': the table's CHECK accepts edit|create|delete,
+            // so every insert this ever made was rejected - the table holds 0 rows
+            // against question_audit_log's 4,055. The bare .then() below is why
+            // nobody noticed, so it now reports instead of swallowing.
             supabase.from('question_edit_log').insert({
               editor_id: session.user.id,
               question_id: editQuestion.id,
               fields_changed: changedFields,
-              action: 'update',
-            }).then();
+              action: 'edit',
+            }).then(({ error }) => {
+              if (error) console.error('question_edit_log insert failed:', error);
+            });
           }
         });
       }
