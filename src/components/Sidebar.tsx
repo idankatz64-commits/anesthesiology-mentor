@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Heart, BookOpen, Timer, BarChart3, StickyNote, Moon, Sun, MessageSquareWarning, ShieldAlert, FlaskConical, ChevronLeft, ChevronRight, FileText, GraduationCap, Brain } from 'lucide-react';
+import { Heart, BookOpen, Timer, BarChart3, StickyNote, Moon, Sun, ShieldAlert, FlaskConical, ChevronLeft, ChevronRight, FileText, GraduationCap, Brain } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
 import { KEYS } from '@/lib/types';
-import FeedbackModal from './FeedbackModal';
 import { supabase } from '@/integrations/supabase/client';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -23,7 +22,6 @@ const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
 
 export default function Sidebar() {
   const { currentView, navigate, isDark, toggleTheme, progress, data } = useApp();
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() =>
     localStorage.getItem('sidebar-collapsed') === 'true'
@@ -119,13 +117,6 @@ export default function Sidebar() {
       <div className={`${isCollapsed ? 'p-2' : 'p-6'} space-y-3`}>
         {!isCollapsed ? (
           <>
-            <button
-              onClick={() => setFeedbackOpen(true)}
-              className={glassButton}
-            >
-              <span>דווח על טעות / פידבק</span>
-              <SquircleIcon icon={MessageSquareWarning} gradient="rose" size="sm" />
-            </button>
             {isAdmin && (
               <Link
                 to="/admin"
@@ -160,13 +151,6 @@ export default function Sidebar() {
           </>
         ) : (
           <>
-            <button
-              onClick={() => setFeedbackOpen(true)}
-              title="דווח על טעות / פידבק"
-              className={glassButtonCollapsed}
-            >
-              <SquircleIcon icon={MessageSquareWarning} gradient="rose" size="sm" />
-            </button>
             {isAdmin && (
               <Link
                 to="/admin"
@@ -186,7 +170,6 @@ export default function Sidebar() {
           </>
         )}
       </div>
-      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </aside>
   );
 }
