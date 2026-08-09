@@ -14,6 +14,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { toast } from 'sonner';
 import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X, Download, ChevronDown, Check, Mail, CalendarIcon, Clock } from 'lucide-react';
 import Papa from 'papaparse';
+import { errorMessage } from './errorMessage';
 
 /** מסיר תגי <img> מטקסט לפני ייצוא CSV — explanation מכיל HTML עם תמונות */
 function stripImages(text: string | null | undefined): string {
@@ -70,7 +71,7 @@ function BatchChapterUpdate() {
       .or('chapter.is.null,chapter.eq.0')
       .order('id')
       .limit(BATCH_PAGE_SIZE);
-    setRows((data || []) as any);
+    setRows(data || []);
     setTotalMissing(count || 0);
     setLoading(false);
   };
@@ -468,8 +469,8 @@ export default function QuestionEditorTab() {
       a.click();
       URL.revokeObjectURL(url);
       toast.success(`יוצאו ${allRows.length} שאלות בהצלחה`);
-    } catch (err: any) {
-      toast.error('שגיאה בייצוא: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה בייצוא: ' + errorMessage(err));
     } finally {
       setExporting(false);
     }
@@ -511,8 +512,8 @@ export default function QuestionEditorTab() {
       if (error) throw error;
       setQuestions(data || []);
       setTotalCount(count || 0);
-    } catch (err: any) {
-      toast.error('שגיאה בטעינת שאלות: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה בטעינת שאלות: ' + errorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -565,23 +566,30 @@ export default function QuestionEditorTab() {
 
       // Fire-and-forget edit log
       if (editForm && editQuestion) {
-        const changedFields = Object.keys(editForm).filter(k => (editForm as any)[k] !== (editQuestion as any)[k]);
+        const changedFields = (Object.keys(editForm) as (keyof QuestionRow)[])
+          .filter(k => editForm[k] !== editQuestion[k]);
         supabase.auth.getSession().then(({ data: { session } }) => {
           if (session?.user && changedFields.length > 0) {
+            // 'edit', not 'update': the table's CHECK accepts edit|create|delete,
+            // so every insert this ever made was rejected - the table holds 0 rows
+            // against question_audit_log's 4,055. The bare .then() below is why
+            // nobody noticed, so it now reports instead of swallowing.
             supabase.from('question_edit_log').insert({
               editor_id: session.user.id,
               question_id: editQuestion.id,
               fields_changed: changedFields,
-              action: 'update',
-            }).then();
+              action: 'edit',
+            }).then(({ error }) => {
+              if (error) console.error('question_edit_log insert failed:', error);
+            });
           }
         });
       }
 
       setEditQuestion(null);
       fetchQuestions();
-    } catch (err: any) {
-      toast.error('שגיאה בשמירה: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה בשמירה: ' + errorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -598,8 +606,8 @@ export default function QuestionEditorTab() {
       invalidateQuestions();
       setDeleteId(null);
       fetchQuestions();
-    } catch (err: any) {
-      toast.error('שגיאה במחיקה: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה במחיקה: ' + errorMessage(err));
     } finally {
       setDeleting(false);
     }
@@ -761,7 +769,7 @@ export default function QuestionEditorTab() {
                 <div key={opt}>
                   <label className="text-sm font-medium text-foreground mb-1 block">תשובה {opt.toUpperCase()}</label>
                   <Input
-                    value={(editForm as any)[opt] || ''}
+                    value={editForm[opt] || ''}
                     onChange={(e) => setEditForm(f => ({ ...f, [opt]: e.target.value }))}
                   />
                 </div>

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
 import { motion } from 'framer-motion';
 import AnimatedNumber from '@/components/AnimatedNumber';
+import { getIsraelToday, getIsraelDateStr } from '@/lib/dateHelpers';
 
 /* ── SVG Donut Ring ── */
 function DonutRing({ 
@@ -100,10 +101,12 @@ export default function HomeStatsSummary() {
     const correct = entries.filter(h => h.lastResult === 'correct').length;
     const wrong = entries.filter(h => h.lastResult === 'wrong').length;
 
-    const today = new Date().toDateString();
+    // toDateString() is the browser's timezone, not Israel's. Abroad, or on any
+    // machine whose clock is not set to Asia/Jerusalem, "today" was the wrong day.
+    const today = getIsraelToday();
     const todayAnswered = entries.filter(h => {
       if (!h.timestamp) return false;
-      return new Date(h.timestamp).toDateString() === today;
+      return getIsraelDateStr(new Date(h.timestamp)) === today;
     }).length;
 
     const totalQuestions = data?.length || 1;

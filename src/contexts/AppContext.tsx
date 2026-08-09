@@ -501,7 +501,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           p_user_id: userId,
           p_question_id: id,
           p_is_correct: isCorrect,
-          p_topic: topic ?? null,
+          // `|| null`, not `?? null`: the RPC guards with COALESCE, which stops
+          // NULL but not "". An empty topic used to overwrite a good one - 1,733
+          // history rows were blanked this way before it was caught.
+          p_topic: topic || null,
         });
 
         if (error) {
@@ -768,7 +771,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProgress((prev) => {
       snapshot = prev.tags;
       const existing = prev.tags[id] ?? [];
-      if (existing.includes(tag)) return prev; // no-op, no DB call
+      // Compare trimmed: " ards" and "ards" are the same tag to a reader, and
+      // the dedupe is the only thing standing between them and two rows.
+      if (existing.some(t => t.trim() === tag.trim())) return prev; // no-op, no DB call
       didMutate = true;
       return { ...prev, tags: { ...prev.tags, [id]: [...existing, tag] } };
     });
@@ -817,7 +822,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         supabase.from("user_notes").delete().eq("user_id", userId),
         supabase.from("user_ratings").delete().eq("user_id", userId),
         supabase.from("user_tags").delete().eq("user_id", userId),
-        supabase.from("user_weekly_plans").delete().eq("user_id", userId),
         supabase.from("spaced_repetition").delete().eq("user_id", userId),
       ]);
     }

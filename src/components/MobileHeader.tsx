@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { Heart, Moon, Sun, Menu, X, MessageSquareWarning } from 'lucide-react';
+import { Heart, Moon, Sun, Menu, X } from 'lucide-react';
 import { type ViewId } from '@/lib/types';
-import FeedbackModal from './FeedbackModal';
 import { motion, AnimatePresence } from 'framer-motion';
 import { springGentle } from '@/lib/animations';
 
@@ -16,7 +15,6 @@ const mobileNav: { id: ViewId; label: string; emoji: string }[] = [
 
 export default function MobileHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { isDark, toggleTheme, navigate } = useApp();
 
   return (
@@ -73,17 +71,10 @@ export default function MobileHeader() {
                   {item.emoji} {item.label}
                 </button>
               ))}
-              <button
-                onClick={() => { setFeedbackOpen(true); setMenuOpen(false); }}
-                className="w-full text-right p-4 font-medium border-b border-border text-primary hover:bg-muted transition rounded-lg flex items-center gap-2 justify-end"
-              >
-                דווח על טעות / פידבק <MessageSquareWarning className="w-4 h-4" />
-              </button>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </>
   );
 }

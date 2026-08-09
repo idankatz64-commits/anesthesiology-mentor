@@ -137,7 +137,7 @@ function ActivityHeatmap({ history }: { history: Record<string, any> }) {
 
 /* ── Main Results View ── */
 export default function ResultsView() {
-  const { session, progress, data, navigate, startSession, updateHistory } = useApp();
+  const { session, progress, data, navigate, startSession } = useApp();
   const { quiz, answers, mode } = session;
   const [expandedQ, setExpandedQ] = useState<number | null>(null);
 
@@ -157,19 +157,12 @@ export default function ResultsView() {
     return { score, pct, details };
   }, [quiz, answers]);
 
-  // Update history for exam mode
-  const historyUpdated = useRef(false);
-  useEffect(() => {
-    if (mode === 'exam' && !historyUpdated.current) {
-      historyUpdated.current = true;
-      quiz.forEach((q, i) => {
-        const userAns = answers[i];
-        if (userAns) {
-          updateHistory(q[KEYS.ID], userAns === q[KEYS.CORRECT], q[KEYS.TOPIC]);
-        }
-      });
-    }
-  }, [mode, quiz, answers, updateHistory]);
+  // Exam answers are NOT written here. SessionView's processQuizAnswersForSrs
+  // already calls updateHistory for every answered question on submit, for both
+  // simulation and exam, so this screen was recording each exam answer a second
+  // time: answered_count incremented twice and two answer_history rows per
+  // answer. Cherry-picked by hand from e677ca9, whose other 250 lines are a
+  // reformat.
 
   // Save last session results to localStorage
   const lastSessionSaved = useRef(false);
@@ -411,7 +404,7 @@ export default function ResultsView() {
                       rel="noopener noreferrer"
                       className="text-xs text-muted-foreground bg-muted hover:bg-muted/80 px-3 py-1.5 rounded-full font-medium transition flex items-center gap-2 w-fit border border-border"
                     >
-                      <BookOpen className="w-3 h-3" /> Miller Page: {d.q[KEYS.MILLER]}
+                      <BookOpen className="w-3 h-3" /> פרק מילר: {d.q[KEYS.MILLER]}
                     </a>
                   )}
                 </div>

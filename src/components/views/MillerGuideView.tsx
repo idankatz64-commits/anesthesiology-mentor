@@ -56,10 +56,11 @@ export default function MillerGuideView() {
   const [search, setSearch] = useState('');
   const [openNum, setOpenNum] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>('notes');
+  const [chapterNames, setChapterNames] = useState<Map<number, string>>(new Map());
 
   useEffect(() => {
     const fetchData = async () => {
-      const [contentRes, gapsRes] = await Promise.all([
+      const [contentRes, gapsRes, catsRes] = await Promise.all([
         supabase
           .from('chapter_content')
           .select('chapter_number, chapter_title, content_md, keywords_md, last_synced_at')
@@ -67,9 +68,25 @@ export default function MillerGuideView() {
         supabase
           .from('chapter_gaps')
           .select('chapter_number, chapter_title, severity, severity_reason, missing_topics, missing_drugs, missing_clinical_pearls, missing_numbers, summary_he, generated_at'),
+        supabase
+          .from('categories')
+          .select('topic_num, topic_main'),
       ]);
 
       if (!contentRes.error) setChapters(contentRes.data ?? []);
+
+      // chapter_content.chapter_title is a sanitised filename - every ':' and
+      // apostrophe became '_', so this screen was showing "Brain_s Response" and
+      // "Inhaled Anesthetics_ Mechanisms". `categories` owns the display name,
+      // so prefer it. It has no row for a handful of chapters (26, 48, 63, 85),
+      // which is why the filename stays as the fallback.
+      if (!catsRes.error) {
+        const nameMap = new Map<number, string>();
+        for (const c of (catsRes.data ?? [])) {
+          if (c.topic_num !== null) nameMap.set(c.topic_num, c.topic_main);
+        }
+        setChapterNames(nameMap);
+      }
 
       if (!gapsRes.error) {
         const gapMap = new Map<number, ChapterGap>();
@@ -94,8 +111,11 @@ export default function MillerGuideView() {
     }
   };
 
+  const titleOf = (ch: ChapterContent) =>
+    chapterNames.get(ch.chapter_number) ?? ch.chapter_title;
+
   const filtered = chapters.filter(ch =>
-    ch.chapter_title.toLowerCase().includes(search.toLowerCase()) ||
+    titleOf(ch).toLowerCase().includes(search.toLowerCase()) ||
     String(ch.chapter_number).includes(search)
   );
 
@@ -161,7 +181,7 @@ export default function MillerGuideView() {
                     {ch.chapter_number}
                   </div>
                   <p className="font-medium text-foreground text-right text-sm leading-snug">
-                    {ch.chapter_title}
+                    {titleOf(ch)}
                   </p>
                 </div>
 

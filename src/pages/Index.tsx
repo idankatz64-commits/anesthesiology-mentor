@@ -13,7 +13,6 @@ import ResultsView from '@/components/views/ResultsView';
 import StatsView from '@/components/views/StatsView';
 import NotebookView from '@/components/views/NotebookView';
 import FlashcardView from '@/components/views/FlashcardView';
-import AdminView from '@/components/views/AdminView';
 import FormulaSheetView from '@/components/views/FormulaSheetView';
 import SummariesView from '@/components/views/SummariesView';
 import MillerGuideView from '@/components/views/MillerGuideView';
@@ -35,7 +34,6 @@ function AppContent() {
       case 'stats': return <StatsView />;
       case 'notebook': return <NotebookView />;
       case 'flashcards': return <FlashcardView />;
-      case 'admin': return <AdminView />;
       case 'formula-sheet': return <FormulaSheetView />;
       case 'summaries': return <SummariesView />;
       case 'miller-guide': return <MillerGuideView />;

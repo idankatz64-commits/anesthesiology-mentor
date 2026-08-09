@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import type { Tables } from '@/integrations/supabase/types';
 import { Loader2, RefreshCw } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import {
@@ -10,6 +11,12 @@ import { Button } from '@/components/ui/button';
 function toIsraelDateStr(d: Date): string {
   return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
 }
+
+// The three columns this tab selects from `question_edit_log`.
+type EditLogRow = Pick<
+  Tables<'question_edit_log'>,
+  'editor_id' | 'edited_at' | 'question_id'
+>;
 
 interface EditorRow {
   email: string;
@@ -48,8 +55,7 @@ export default function EditorActivityTab({ isActive = true }: Props) {
       supabase.from('questions').select('id, topic'),
     ]);
 
-    const allLogs: { editor_id: string; edited_at: string; question_id: string | null }[] =
-      (allLogsRes.data as any) || [];
+    const allLogs: EditLogRow[] = allLogsRes.data || [];
     const adminMap = new Map<string, string>();
     (adminsRes.data || []).forEach((a) => adminMap.set(a.id, a.email));
 
@@ -179,7 +185,7 @@ export default function EditorActivityTab({ isActive = true }: Props) {
             <Tooltip
               contentStyle={{ direction: 'rtl', textAlign: 'right' }}
               labelFormatter={(l) => `תאריך: ${l}`}
-              formatter={(v: number, _name: string, props: any) => [
+              formatter={(v: number, _name: string, props: { payload: DayBar }) => [
                 `${v} עריכות`,
                 `נושאים: ${props.payload.topics}`,
               ]}

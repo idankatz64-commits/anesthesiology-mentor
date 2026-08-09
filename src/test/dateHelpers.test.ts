@@ -1,5 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getIsraelToday, addDaysIsrael, daysBetween } from '@/lib/dateHelpers';
+import {
+  getIsraelToday,
+  addDaysIsrael,
+  daysBetween,
+  getIsraelStartOfDay,
+  getIsraelDateStr,
+} from '@/lib/dateHelpers';
 
 describe('dateHelpers', () => {
   beforeEach(() => { vi.useFakeTimers(); });
@@ -13,6 +19,23 @@ describe('dateHelpers', () => {
   it('getIsraelToday handles pre-midnight UTC correctly', () => {
     vi.setSystemTime(new Date('2026-04-15T10:00:00Z'));
     expect(getIsraelToday()).toBe('2026-04-15');
+  });
+
+  // The bug this replaced hardcoded +03:00 all year. In winter that starts the
+  // day an hour early and counts the tail of yesterday as today.
+  it('getIsraelStartOfDay uses +03:00 in summer and +02:00 in winter', () => {
+    expect(getIsraelStartOfDay('2026-07-01')).toBe('2026-07-01T00:00:00+03:00');
+    expect(getIsraelStartOfDay('2026-01-15')).toBe('2026-01-15T00:00:00+02:00');
+  });
+
+  it('getIsraelStartOfDay is right on both sides of a DST changeover', () => {
+    expect(getIsraelStartOfDay('2026-03-26')).toBe('2026-03-26T00:00:00+02:00');
+    expect(getIsraelStartOfDay('2026-03-28')).toBe('2026-03-28T00:00:00+03:00');
+  });
+
+  it('getIsraelDateStr reads the Israel date, not the machine timezone', () => {
+    expect(getIsraelDateStr(new Date('2026-04-15T23:30:00Z'))).toBe('2026-04-16');
+    expect(getIsraelDateStr(new Date('2026-04-15T10:00:00Z'))).toBe('2026-04-15');
   });
 
   it('addDaysIsrael adds days and preserves YYYY-MM-DD', () => {

@@ -7,6 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Loader2, Save, Trash2, Upload, FileUp, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
 import Papa from 'papaparse';
+import { errorMessage } from './errorMessage';
+import { dedupeImportRows } from './dedupeImportRows';
 
 /* ── helpers ── */
 
@@ -15,6 +17,11 @@ function hashId(str: string): string {
   for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
   return Math.abs(h).toString(16).substring(0, 6).toUpperCase();
 }
+
+// The live `questions` table holds exactly these, on 3,923 of 3,923 rows.
+// Anything else is a misclassified import, and `kind: ''` is accepted by the
+// column - it fails silently where a bad `chapter` fails loudly.
+const ALLOWED_KINDS = ['sim', 'quiz', 'test'] as const;
 
 const EMPTY_FORM = {
   question: '', a: '', b: '', c: '', d: '',
@@ -59,8 +66,8 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
       if (error) throw error;
       toast.success('השאלה נוצרה בהצלחה (ID: ' + id + ')');
       setForm({ ...EMPTY_FORM });
-    } catch (err: any) {
-      toast.error('שגיאה: ' + err.message);
+    } catch (err: unknown) {
+      toast.error('שגיאה: ' + errorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -84,7 +91,7 @@ function CreateSingleQuestion({ categories }: { categories: string[] }) {
         {(['a', 'b', 'c', 'd'] as const).map(opt => (
           <div key={opt}>
             <label className="text-sm font-medium text-foreground mb-1 block">תשובה {opt.toUpperCase()}</label>
-            <Input value={(form as any)[opt]} onChange={e => set(opt, e.target.value)} />
+            <Input value={form[opt]} onChange={e => set(opt, e.target.value)} />
           </div>
         ))}
       </div>
@@ -212,6 +219,29 @@ function BulkCsvImport() {
     chapter: 'chapter', media_type: 'media_type', media_link: 'media_link',
   };
 
+  // Whatever `mapRow` builds is what gets upserted - name it rather than
+  // re-describing it at each cast, so the two can never drift apart. `chapter`
+  // is still the raw CSV string here; it becomes a number only after passing
+  // `rejectionReason`.
+  type MappedQuestion = NonNullable<ReturnType<typeof mapRow>>;
+  type QuestionUpsert = Omit<MappedQuestion, 'chapter'> & { chapter: number };
+
+  // `id` is a hash of the question text, so an upsert of an existing question
+  // is an UPDATE. A row that is merely invalid does not fail on its own - it
+  // overwrites the correct row it collides with. Rejecting before the upsert is
+  // what keeps that from happening.
+  const rejectionReason = (row: MappedQuestion): string | null => {
+    // `0` is rejected too: the live table has 77 distinct chapters and zero rows
+    // at chapter 0, so a 0 would be the first false chapter number, not a real one.
+    if (!/^\d+$/.test(row.chapter) || Number(row.chapter) < 1) {
+      return row.chapter ? `chapter אינו מספר פרק תקין: '${row.chapter}'` : 'חסר chapter';
+    }
+    if (!(ALLOWED_KINDS as readonly string[]).includes(row.kind)) {
+      return row.kind ? `kind לא מוכר: '${row.kind}'` : 'חסר kind';
+    }
+    return null;
+  };
+
   const mapRow = (row: Record<string, string>) => {
     const lowerRow: Record<string, string> = {};
     for (const [k, v] of Object.entries(row)) lowerRow[k.trim().toLowerCase()] = (v || '').trim();
@@ -219,7 +249,7 @@ function BulkCsvImport() {
     const q = lowerRow['question'] || lowerRow['questiontext'] || '';
     if (!q) return null;
 
-    let id = lowerRow['id'] || lowerRow['serial_question_number#'] || lowerRow['serial'] || hashId(q);
+    const id = lowerRow['id'] || lowerRow['serial_question_number#'] || lowerRow['serial'] || hashId(q);
     const correct = (lowerRow['correct'] || lowerRow['correctanswer'] || '').toUpperCase();
 
     return {
@@ -252,26 +282,45 @@ function BulkCsvImport() {
     let failed = 0;
 
     try {
-      const mapped = parsedRows
-        .map((row, i) => {
-          const m = mapRow(row);
-          if (!m) { errors.push(`שורה ${i + 2}: חסר טקסט שאלה`); failed++; return null; }
-          return m;
-        })
-        .filter(Boolean) as Record<string, any>[];
-
-      // Deduplicate by id
-      const seen = new Set<string>();
-      const unique = mapped.filter(q => {
-        if (seen.has(q.id)) { return false; }
-        seen.add(q.id);
-        return true;
+      const staged: { line: number; row: QuestionUpsert }[] = [];
+      parsedRows.forEach((row, i) => {
+        const rowNumber = i + 2; // the CSV header is row 1
+        const m = mapRow(row);
+        if (!m) { errors.push(`שורה ${rowNumber}: חסר טקסט שאלה`); return; }
+        const reason = rejectionReason(m);
+        if (reason) { errors.push(`שורה ${rowNumber}: ${reason}`); return; }
+        staged.push({ line: rowNumber, row: { ...m, chapter: Number(m.chapter) } });
       });
+
+      // Dedup runs BEFORE the all-or-nothing gate. Two rows sharing an id with
+      // different text lose a question, which is a rejection reason like any
+      // other - it belongs in the same list, not in silence after the gate.
+      const { unique, errors: collisions } = dedupeImportRows(staged);
+      errors.push(...collisions);
+
+      // All-or-nothing: one invalid row and the file imports nothing. Every
+      // reason is listed, not the first - the point is to fix the file, and
+      // that needs the whole list. `id` is a hash of the question text, so a
+      // partial import would write some rows over existing ones and leave the
+      // file half-applied with no way to tell which half.
+      if (errors.length > 0) {
+        failed = parsedRows.length;
+        setResult({
+          inserted: 0,
+          failed,
+          errors: [
+            `הייבוא בוטל: ${errors.length} שורות פסולות מתוך ${parsedRows.length}. לא יובאה אף שורה.`,
+            ...errors,
+          ],
+        });
+        toast.error(`הייבוא בוטל — ${errors.length} שורות פסולות. לא יובאה אף שורה.`);
+        return;
+      }
 
       // Upsert in batches
       const batchSize = 200;
       for (let i = 0; i < unique.length; i += batchSize) {
-        const batch = unique.slice(i, i + batchSize) as { id: string; question: string; correct: string; [k: string]: any }[];
+        const batch = unique.slice(i, i + batchSize);
         const { error } = await supabase.from('questions').upsert(batch, { onConflict: 'id' });
         if (error) {
           errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
@@ -284,9 +333,9 @@ function BulkCsvImport() {
       setResult({ inserted, failed, errors });
       if (failed === 0) toast.success(`יובאו ${inserted} שאלות בהצלחה`);
       else toast.warning(`יובאו ${inserted}, נכשלו ${failed}`);
-    } catch (err: any) {
-      toast.error('שגיאה בייבוא: ' + err.message);
-      setResult({ inserted, failed: failed + 1, errors: [...errors, err.message] });
+    } catch (err: unknown) {
+      toast.error('שגיאה בייבוא: ' + errorMessage(err));
+      setResult({ inserted, failed: failed + 1, errors: [...errors, errorMessage(err)] });
     } finally {
       setImporting(false);
     }

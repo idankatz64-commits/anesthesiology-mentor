@@ -4,10 +4,7 @@ import { useApp } from '@/contexts/AppContext';
 import AnimatedNumber from '@/components/AnimatedNumber';
 import { Skeleton } from '@/components/ui/skeleton';
 import { FileText, TrendingUp, TrendingDown, Minus } from 'lucide-react';
-
-function toIsraelDateStr(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
-}
+import { getIsraelDateStr, getIsraelStartOfDay } from '@/lib/dateHelpers';
 
 interface DailyData {
   questionsToday: number;
@@ -28,12 +25,12 @@ export default function DailyReportTile() {
 
       // Use Israel timezone for "today" boundaries
       const now = new Date();
-      const todayStr = toIsraelDateStr(now);
-      const todayISO = todayStr + 'T00:00:00+03:00'; // Israel timezone offset
+      const todayStr = getIsraelDateStr(now);
+      const todayISO = getIsraelStartOfDay(todayStr);
 
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
-      const tomorrowDate = toIsraelDateStr(tomorrow);
+      const tomorrowDate = getIsraelDateStr(tomorrow);
 
       const [answersRes, srsRes] = await Promise.all([
         supabase

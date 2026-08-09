@@ -135,6 +135,15 @@ export const CommunityNotes = forwardRef<HTMLDivElement, CommunityNotesProps>(fu
         </button>
       </div>
 
+      {/* maxLength stops typing at 500 to match the table's CHECK, but silently:
+          the longest live note is exactly 500, which is what being cut off
+          mid-sentence looks like. Show the count once it is close. */}
+      {newNote.length >= 450 && (
+        <p className={`text-xs mb-3 ${newNote.length >= 500 ? 'text-destructive' : 'text-muted-foreground'}`}>
+          {newNote.length}/500 תווים
+        </p>
+      )}
+
       {notes.length === 0 ? (
         <p className="text-xs text-muted-foreground text-center py-2">אין הערות עדיין. היה הראשון!</p>
       ) : (

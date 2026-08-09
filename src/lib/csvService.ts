@@ -39,7 +39,7 @@ export async function fetchQuestions(retries = 3, skipCache = false): Promise<Qu
         const mapped = data.map((row: any) => ({
           [KEYS.ID]: row.id,
           [KEYS.REF_ID]: row.ref_id || 'N/A',
-          [KEYS.QUESTION]: row.question,
+          [KEYS.QUESTION]: row.question || '',
           [KEYS.A]: row.a || '',
           [KEYS.B]: row.b || '',
           [KEYS.C]: row.c || '',

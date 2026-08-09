@@ -4,33 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CheckCircle, Target, TrendingDown, RotateCcw } from 'lucide-react';
 import AnimatedNumber from '@/components/AnimatedNumber';
+import { getIsraelToday, getIsraelStartOfDay } from '@/lib/dateHelpers';
 
 interface WeakTopic {
   topic: string;
   errorCount: number;
-}
-
-function toIsraelStartOfDay(): string {
-  const now = new Date();
-  const israelDate = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Jerusalem' }));
-  israelDate.setHours(0, 0, 0, 0);
-  // Convert back to UTC ISO string
-  const offset = now.getTime() - new Date(now.toLocaleString('en-US', { timeZone: 'UTC' })).getTime();
-  const israelOffset = israelDate.getTime() - offset;
-  // Simpler: just format as ISO in Israel midnight
-  const y = israelDate.getFullYear();
-  const m = String(israelDate.getMonth() + 1).padStart(2, '0');
-  const d = String(israelDate.getDate()).padStart(2, '0');
-  // Israel is UTC+2 or UTC+3 (DST)
-  // Use the browser's knowledge of the offset
-  const utcMidnightIsrael = new Date(`${y}-${m}-${d}T00:00:00+03:00`);
-  // Check if we're in DST by comparing
-  const jan = new Date(y, 0, 1).getTimezoneOffset();
-  const jul = new Date(y, 6, 1).getTimezoneOffset();
-  const isDST = israelDate.getTimezoneOffset() < Math.max(jan, jul);
-  // Israel: IST = UTC+2, IDT = UTC+3
-  const offsetStr = isDST ? '+03:00' : '+02:00';
-  return `${y}-${m}-${d}T00:00:00${offsetStr}`;
 }
 
 export default function DailyReportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -48,7 +26,7 @@ export default function DailyReportModal({ open, onClose }: { open: boolean; onC
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { setLoading(false); return; }
 
-      const todayStart = toIsraelStartOfDay();
+      const todayStart = getIsraelStartOfDay(getIsraelToday());
 
       const [totalRes, correctRes, srsRes, topicRes, categoriesRes] = await Promise.all([
         // Total answered today

@@ -59,7 +59,9 @@ serve(async (req) => {
     // 3. Fetch question text + explanation
     const { data: questions } = await supabaseAdmin
       .from("questions")
-      .select("id, question_text, correct_answer, explanation, topic")
+      // `question_text` and `correct_answer` are NULL on all 3,923 rows; the
+      // text lives in `question`. This was sending Claude a list of blanks.
+      .select("id, question, explanation, topic")
       .in("id", questionIds);
 
     const questionMap = new Map((questions || []).map((q: any) => [q.id, q]));
@@ -80,7 +82,7 @@ serve(async (req) => {
         topicMap[topic].explanations.push(explanation.slice(0, 400));
       }
       if (!row.is_correct && topicMap[topic].missed.length < 3) {
-        topicMap[topic].missed.push(q.question_text?.slice(0, 100) || "");
+        topicMap[topic].missed.push(q.question?.slice(0, 100) || "");
       }
     }
 
