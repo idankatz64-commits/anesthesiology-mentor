@@ -131,14 +131,28 @@ ALTER TABLE public.questions
   DROP COLUMN IF EXISTS serial_number;
 
 
--- ============================================================================
---  לא בוצע, בכוונה
--- ============================================================================
---  user_answers.confidence ו-user_answers.topic_num — ריקות ב-33,522 השורות,
---  אבל ל-confidence יש קורא חי: get_question_ids_by_confidence, פונקציה
---  SECURITY DEFINER שנכשלת בכל קריאה (42804) ואין לה אף משתמש. צריך לסגור
---  אותה קודם.
+-- ─── 9 · confidence המתה והקורא השבור שלה ─────────────────── בוצע ✔
+--  שים לב: יש שתי עמודות בשם confidence ורק אחת מתה.
+--    spaced_repetition.confidence — 33,272/33,272 מלאות, מניעה את כל מנגנון
+--    החזרה המרווחת. לא נגענו ואסור לגעת.
+--    user_answers.confidence — 0 מתוך 33,522. שארית מעיצוב ישן.
 --
---  sync-questions כותבת עמודה synced_at שלא קיימת ב-questions. הפונקציה
---  שבורה מהסיבה הזאת. תיקון קוד נפרד.
+--  הפונקציה נמחקה ראשונה: היא נכשלה בכל קריאה (42804 — מוצהרת uuid, מחזירה
+--  text), אפס קריאות בקוד, ב-edge functions ובקוד הבנוי, והיא SECURITY
+--  DEFINER שכל אנונימי יכול להריץ.
+DROP FUNCTION IF EXISTS public.get_question_ids_by_confidence(uuid, text);
+
+--  topic_num נכנסה איתה: 0 ערכים, אף קורא, אף כותב, ונשאה את המפתח הזר
+--  היחיד ל-categories ואינדקס שלא יכלו להתאים לאף שורה.
+ALTER TABLE public.user_answers
+  DROP COLUMN IF EXISTS confidence, DROP COLUMN IF EXISTS topic_num;
+--  אומת אחרי: user_answers 33,522 שורות · spaced_repetition.confidence 33,272.
+
+
+-- ============================================================================
+--  נשאר פתוח
+-- ============================================================================
+--  טבלת הגיבוי topic_backfill_backup_20260809 עדיין קיימת, בכוונה. למחוק
+--  אחרי שבוע-שבועיים של שימוש אמיתי, כשברור שהסטטיסטיקות הגיוניות:
+--    DROP TABLE public.topic_backfill_backup_20260809;
 -- ============================================================================
