@@ -157,7 +157,10 @@ Deno.serve(async (req) => {
         chapter: parseInt(row["chapter"] || row["topic num"] || "0") || 0,
         media_type: (row["mediakind"] || row["media type"] || "").toLowerCase(),
         media_link: row["medialink"] || row["media link"] || "",
-        synced_at: now,
+        // No `synced_at`: the column does not exist on `questions`, and
+        // PostgREST rejects the whole batch over one unknown key. Every sync
+        // failed on this. The timestamp still goes back in the response below,
+        // which is where the caller actually reads it.
       });
     }
 
