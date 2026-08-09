@@ -18,7 +18,7 @@ function hashId(str: string): string {
   return Math.abs(h).toString(16).substring(0, 6).toUpperCase();
 }
 
-// The live `questions` table holds exactly these, on 3,922 of 3,923 rows.
+// The live `questions` table holds exactly these, on 3,923 of 3,923 rows.
 // Anything else is a misclassified import, and `kind: ''` is accepted by the
 // column - it fails silently where a bad `chapter` fails loudly.
 const ALLOWED_KINDS = ['sim', 'quiz', 'test'] as const;

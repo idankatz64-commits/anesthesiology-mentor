@@ -768,7 +768,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setProgress((prev) => {
       snapshot = prev.tags;
       const existing = prev.tags[id] ?? [];
-      if (existing.includes(tag)) return prev; // no-op, no DB call
+      // Compare trimmed: " ards" and "ards" are the same tag to a reader, and
+      // the dedupe is the only thing standing between them and two rows.
+      if (existing.some(t => t.trim() === tag.trim())) return prev; // no-op, no DB call
       didMutate = true;
       return { ...prev, tags: { ...prev.tags, [id]: [...existing, tag] } };
     });
