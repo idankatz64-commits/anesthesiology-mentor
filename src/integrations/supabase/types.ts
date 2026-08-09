@@ -35,80 +35,10 @@ export type Database = {
         }
         Relationships: []
       }
-      anki_cards: {
-        Row: {
-          back: string
-          created_at: string
-          deck_id: string
-          due_date: string
-          ease_factor: number
-          front: string
-          id: string
-          interval_days: number
-          repetitions: number
-          user_id: string
-        }
-        Insert: {
-          back: string
-          created_at?: string
-          deck_id: string
-          due_date?: string
-          ease_factor?: number
-          front: string
-          id?: string
-          interval_days?: number
-          repetitions?: number
-          user_id: string
-        }
-        Update: {
-          back?: string
-          created_at?: string
-          deck_id?: string
-          due_date?: string
-          ease_factor?: number
-          front?: string
-          id?: string
-          interval_days?: number
-          repetitions?: number
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "anki_cards_deck_id_fkey"
-            columns: ["deck_id"]
-            isOneToOne: false
-            referencedRelation: "anki_decks"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      anki_decks: {
-        Row: {
-          created_at: string
-          description: string | null
-          id: string
-          name: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          name?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       answer_history: {
         Row: {
           answered_at: string
+          flagged_for_review: boolean | null
           id: string
           is_correct: boolean
           question_id: string
@@ -117,6 +47,7 @@ export type Database = {
         }
         Insert: {
           answered_at?: string
+          flagged_for_review?: boolean | null
           id?: string
           is_correct: boolean
           question_id: string
@@ -125,50 +56,12 @@ export type Database = {
         }
         Update: {
           answered_at?: string
+          flagged_for_review?: boolean | null
           id?: string
           is_correct?: boolean
           question_id?: string
           topic?: string | null
           user_id?: string
-        }
-        Relationships: []
-      }
-      calculator_formulas: {
-        Row: {
-          category_id: string
-          category_label: string
-          created_at: string
-          expression: string
-          formula_name: string
-          id: string
-          inputs: Json
-          note: string | null
-          sort_order: number
-          unit: string
-        }
-        Insert: {
-          category_id: string
-          category_label: string
-          created_at?: string
-          expression: string
-          formula_name: string
-          id: string
-          inputs?: Json
-          note?: string | null
-          sort_order?: number
-          unit: string
-        }
-        Update: {
-          category_id?: string
-          category_label?: string
-          created_at?: string
-          expression?: string
-          formula_name?: string
-          id?: string
-          inputs?: Json
-          note?: string | null
-          sort_order?: number
-          unit?: string
         }
         Relationships: []
       }
@@ -193,6 +86,81 @@ export type Database = {
         }
         Relationships: []
       }
+      chapter_content: {
+        Row: {
+          chapter_number: number
+          chapter_title: string
+          content_md: string | null
+          file_hash: string | null
+          id: string
+          keywords_md: string | null
+          last_synced_at: string | null
+        }
+        Insert: {
+          chapter_number: number
+          chapter_title: string
+          content_md?: string | null
+          file_hash?: string | null
+          id?: string
+          keywords_md?: string | null
+          last_synced_at?: string | null
+        }
+        Update: {
+          chapter_number?: number
+          chapter_title?: string
+          content_md?: string | null
+          file_hash?: string | null
+          id?: string
+          keywords_md?: string | null
+          last_synced_at?: string | null
+        }
+        Relationships: []
+      }
+      chapter_gaps: {
+        Row: {
+          chapter_number: number
+          chapter_title: string
+          csv_used: boolean | null
+          generated_at: string | null
+          id: string
+          missing_clinical_pearls: Json | null
+          missing_drugs: Json | null
+          missing_numbers: Json | null
+          missing_topics: Json | null
+          severity: string | null
+          severity_reason: string | null
+          summary_he: string | null
+        }
+        Insert: {
+          chapter_number: number
+          chapter_title: string
+          csv_used?: boolean | null
+          generated_at?: string | null
+          id?: string
+          missing_clinical_pearls?: Json | null
+          missing_drugs?: Json | null
+          missing_numbers?: Json | null
+          missing_topics?: Json | null
+          severity?: string | null
+          severity_reason?: string | null
+          summary_he?: string | null
+        }
+        Update: {
+          chapter_number?: number
+          chapter_title?: string
+          csv_used?: boolean | null
+          generated_at?: string | null
+          id?: string
+          missing_clinical_pearls?: Json | null
+          missing_drugs?: Json | null
+          missing_numbers?: Json | null
+          missing_topics?: Json | null
+          severity?: string | null
+          severity_reason?: string | null
+          summary_he?: string | null
+        }
+        Relationships: []
+      }
       community_notes: {
         Row: {
           author_display: string
@@ -203,7 +171,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          author_display: string
+          author_display?: string
           created_at?: string
           id?: string
           note_text: string
@@ -225,7 +193,7 @@ export type Database = {
           category: string
           chapter: string
           clinical_note: string
-          created_at: string
+          created_at: string | null
           equation: string
           formula_name: string
           id: string
@@ -234,20 +202,20 @@ export type Database = {
         }
         Insert: {
           category: string
-          chapter: string
+          chapter?: string
           clinical_note?: string
-          created_at?: string
-          equation: string
+          created_at?: string | null
+          equation?: string
           formula_name: string
           id: string
-          unit: string
-          variables: string
+          unit?: string
+          variables?: string
         }
         Update: {
           category?: string
           chapter?: string
           clinical_note?: string
-          created_at?: string
+          created_at?: string | null
           equation?: string
           formula_name?: string
           id?: string
@@ -256,37 +224,127 @@ export type Database = {
         }
         Relationships: []
       }
+      ideas: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          notes: string | null
+          plan: string | null
+          remind_at: string | null
+          reviewed_at: string | null
+          source: string
+          status: Database["public"]["Enums"]["idea_status"]
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plan?: string | null
+          remind_at?: string | null
+          reviewed_at?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["idea_status"]
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          notes?: string | null
+          plan?: string | null
+          remind_at?: string | null
+          reviewed_at?: string | null
+          source?: string
+          status?: Database["public"]["Enums"]["idea_status"]
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          id: string
+          is_admin: boolean
+          is_editor: boolean
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          id: string
+          is_admin?: boolean
+          is_editor?: boolean
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          is_admin?: boolean
+          is_editor?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       question_audit_log: {
         Row: {
-          changed_at: string | null
+          changed_at: string
           changed_by: string | null
-          field_changed: string | null
+          field_changed: string
           id: string
           new_value: string | null
           old_value: string | null
-          question_id: string | null
+          question_id: string
         }
         Insert: {
-          changed_at?: string | null
+          changed_at?: string
           changed_by?: string | null
-          field_changed?: string | null
+          field_changed: string
           id?: string
           new_value?: string | null
           old_value?: string | null
-          question_id?: string | null
+          question_id: string
         }
         Update: {
-          changed_at?: string | null
+          changed_at?: string
           changed_by?: string | null
-          field_changed?: string | null
+          field_changed?: string
           id?: string
           new_value?: string | null
           old_value?: string | null
-          question_id?: string | null
+          question_id?: string
+        }
+        Relationships: []
+      }
+      question_edit_log: {
+        Row: {
+          action: string
+          edited_at: string
+          editor_id: string
+          fields_changed: string[] | null
+          id: string
+          question_id: string
+        }
+        Insert: {
+          action: string
+          edited_at?: string
+          editor_id: string
+          fields_changed?: string[] | null
+          id?: string
+          question_id: string
+        }
+        Update: {
+          action?: string
+          edited_at?: string
+          editor_id?: string
+          fields_changed?: string[] | null
+          id?: string
+          question_id?: string
         }
         Relationships: [
           {
-            foreignKeyName: "question_audit_log_question_id_fkey"
+            foreignKeyName: "question_edit_log_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
             referencedRelation: "questions"
@@ -294,53 +352,39 @@ export type Database = {
           },
         ]
       }
-      question_edit_log: {
-        Row: {
-          action: string
-          edited_at: string
-          editor_id: string
-          fields_changed: string[]
-          id: string
-          question_id: string | null
-        }
-        Insert: {
-          action?: string
-          edited_at?: string
-          editor_id: string
-          fields_changed?: string[]
-          id?: string
-          question_id?: string | null
-        }
-        Update: {
-          action?: string
-          edited_at?: string
-          editor_id?: string
-          fields_changed?: string[]
-          id?: string
-          question_id?: string | null
-        }
-        Relationships: []
-      }
       questions: {
         Row: {
           a: string | null
           b: string | null
           c: string | null
           chapter: number | null
-          correct: string
+          correct: string | null
+          correct_answer: string | null
+          created_at: string | null
           d: string | null
           explanation: string | null
           id: string
+          institution: string | null
           kind: string | null
-          manually_edited: boolean
+          manually_edited: boolean | null
+          media_kind: string | null
           media_link: string | null
           media_type: string | null
           miller: string | null
-          question: string
+          miller_page: string | null
+          option_a: string | null
+          option_b: string | null
+          option_c: string | null
+          option_d: string | null
+          question: string | null
+          question_id: string | null
+          question_text: string | null
           ref_id: string | null
+          serial_number: number | null
           source: string | null
-          synced_at: string
           topic: string | null
+          topic_num: number | null
+          updated_at: string | null
           year: string | null
         }
         Insert: {
@@ -348,20 +392,33 @@ export type Database = {
           b?: string | null
           c?: string | null
           chapter?: number | null
-          correct: string
+          correct?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
           d?: string | null
           explanation?: string | null
-          id: string
+          id?: string
+          institution?: string | null
           kind?: string | null
-          manually_edited?: boolean
+          manually_edited?: boolean | null
+          media_kind?: string | null
           media_link?: string | null
           media_type?: string | null
           miller?: string | null
-          question: string
+          miller_page?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question?: string | null
+          question_id?: string | null
+          question_text?: string | null
           ref_id?: string | null
+          serial_number?: number | null
           source?: string | null
-          synced_at?: string
           topic?: string | null
+          topic_num?: number | null
+          updated_at?: string | null
           year?: string | null
         }
         Update: {
@@ -369,117 +426,93 @@ export type Database = {
           b?: string | null
           c?: string | null
           chapter?: number | null
-          correct?: string
+          correct?: string | null
+          correct_answer?: string | null
+          created_at?: string | null
           d?: string | null
           explanation?: string | null
           id?: string
+          institution?: string | null
           kind?: string | null
-          manually_edited?: boolean
+          manually_edited?: boolean | null
+          media_kind?: string | null
           media_link?: string | null
           media_type?: string | null
           miller?: string | null
-          question?: string
+          miller_page?: string | null
+          option_a?: string | null
+          option_b?: string | null
+          option_c?: string | null
+          option_d?: string | null
+          question?: string | null
+          question_id?: string | null
+          question_text?: string | null
           ref_id?: string | null
+          serial_number?: number | null
           source?: string | null
-          synced_at?: string
           topic?: string | null
+          topic_num?: number | null
+          updated_at?: string | null
           year?: string | null
         }
         Relationships: []
       }
-      room_answers: {
+      resource_links: {
         Row: {
-          answered_at: string
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          icon: string | null
           id: string
-          is_correct: boolean
-          question_index: number
-          room_id: string
-          selected_answer: string
-          user_id: string
+          is_active: boolean
+          sort_order: number
+          title: string
+          url: string
         }
         Insert: {
-          answered_at?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
           id?: string
-          is_correct: boolean
-          question_index: number
-          room_id: string
-          selected_answer: string
-          user_id: string
+          is_active?: boolean
+          sort_order?: number
+          title: string
+          url: string
         }
         Update: {
-          answered_at?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          icon?: string | null
           id?: string
-          is_correct?: boolean
-          question_index?: number
-          room_id?: string
-          selected_answer?: string
-          user_id?: string
+          is_active?: boolean
+          sort_order?: number
+          title?: string
+          url?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "room_answers_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "study_rooms"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      room_participants: {
-        Row: {
-          display_name: string
-          id: string
-          is_ready: boolean
-          joined_at: string
-          last_active_at: string
-          room_id: string
-          user_id: string
-        }
-        Insert: {
-          display_name: string
-          id?: string
-          is_ready?: boolean
-          joined_at?: string
-          last_active_at?: string
-          room_id: string
-          user_id: string
-        }
-        Update: {
-          display_name?: string
-          id?: string
-          is_ready?: boolean
-          joined_at?: string
-          last_active_at?: string
-          room_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "room_participants_room_id_fkey"
-            columns: ["room_id"]
-            isOneToOne: false
-            referencedRelation: "study_rooms"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       saved_sessions: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           session_data: Json
           updated_at: string
           user_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           session_data?: Json
           updated_at?: string
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           session_data?: Json
           updated_at?: string
@@ -524,214 +557,248 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "spaced_repetition_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
-      study_rooms: {
+      topic_summaries: {
         Row: {
-          created_at: string
-          created_by: string
-          current_question_index: number
-          expires_at: string
+          created_by: string | null
+          drive_url: string | null
+          embed_url: string
           id: string
-          question_ids: string[]
-          room_code: string
-          status: string
+          title: string
+          topic_key: string
+          updated_at: string
         }
         Insert: {
-          created_at?: string
-          created_by: string
-          current_question_index?: number
-          expires_at?: string
+          created_by?: string | null
+          drive_url?: string | null
+          embed_url: string
           id?: string
-          question_ids: string[]
-          room_code: string
-          status?: string
+          title: string
+          topic_key: string
+          updated_at?: string
         }
         Update: {
-          created_at?: string
-          created_by?: string
-          current_question_index?: number
-          expires_at?: string
+          created_by?: string | null
+          drive_url?: string | null
+          embed_url?: string
           id?: string
-          question_ids?: string[]
-          room_code?: string
-          status?: string
+          title?: string
+          topic_key?: string
+          updated_at?: string
         }
         Relationships: []
       }
       user_answers: {
         Row: {
+          answered_at: string
           answered_count: number
+          confidence: string | null
           correct_count: number
           ever_wrong: boolean
           id: string
           is_correct: boolean
           question_id: string
           topic: string | null
-          updated_at: string
+          topic_num: number | null
+          updated_at: string | null
           user_id: string
         }
         Insert: {
+          answered_at?: string
           answered_count?: number
+          confidence?: string | null
           correct_count?: number
           ever_wrong?: boolean
           id?: string
           is_correct: boolean
           question_id: string
           topic?: string | null
-          updated_at?: string
+          topic_num?: number | null
+          updated_at?: string | null
           user_id: string
         }
         Update: {
+          answered_at?: string
           answered_count?: number
+          confidence?: string | null
           correct_count?: number
           ever_wrong?: boolean
           id?: string
           is_correct?: boolean
           question_id?: string
           topic?: string | null
-          updated_at?: string
+          topic_num?: number | null
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_answers_topic_num_fkey"
+            columns: ["topic_num"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["topic_num"]
+          },
+        ]
       }
       user_favorites: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           question_id: string
           user_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           question_id: string
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           question_id?: string
           user_id?: string
         }
-        Relationships: []
-      }
-      user_feedback: {
-        Row: {
-          created_at: string
-          feedback_text: string
-          id: string
-          page_context: string | null
-          question_id: string | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          feedback_text: string
-          id?: string
-          page_context?: string | null
-          question_id?: string | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          feedback_text?: string
-          id?: string
-          page_context?: string | null
-          question_id?: string | null
-          user_id?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_notes: {
         Row: {
           id: string
           note_text: string
           question_id: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           id?: string
-          note_text: string
+          note_text?: string
           question_id: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           id?: string
           note_text?: string
           question_id?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_notes_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_ratings: {
         Row: {
           id: string
           question_id: string
           rating: string
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           id?: string
           question_id: string
           rating: string
-          updated_at?: string
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           id?: string
           question_id?: string
           rating?: string
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_ratings_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_tags: {
         Row: {
-          created_at: string
+          created_at: string | null
           id: string
           question_id: string
           tag: string
           user_id: string
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           question_id: string
           tag: string
           user_id: string
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           id?: string
           question_id?: string
           tag?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_tags_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_weekly_plans: {
         Row: {
           id: string
           plan_data: Json
-          updated_at: string
+          updated_at: string | null
           user_id: string
         }
         Insert: {
           id?: string
-          plan_data: Json
-          updated_at?: string
+          plan_data?: Json
+          updated_at?: string | null
           user_id: string
         }
         Update: {
           id?: string
           plan_data?: Json
-          updated_at?: string
+          updated_at?: string | null
           user_id?: string
         }
         Relationships: []
@@ -756,22 +823,33 @@ export type Database = {
           total_users: number
         }[]
       }
+      get_question_ids_by_confidence: {
+        Args: { p_confidence_status: string; p_user_id: string }
+        Returns: {
+          question_id: string
+        }[]
+      }
       get_question_success_rate: {
         Args: { qid: string }
         Returns: {
-          correct_users: number
           success_rate: number
           total_users: number
         }[]
       }
-      is_admin: { Args: { _user_id: string }; Returns: boolean }
-      is_room_participant: {
-        Args: { _room_id: string; _user_id: string }
-        Returns: boolean
+      increment_user_answer: {
+        Args: {
+          p_is_correct: boolean
+          p_question_id: string
+          p_topic?: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
+      is_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_editor: { Args: { _user_id: string }; Returns: boolean }
     }
     Enums: {
-      [_ in never]: never
+      idea_status: "captured" | "planning" | "ready" | "done"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -898,6 +976,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      idea_status: ["captured", "planning", "ready", "done"],
+    },
   },
 } as const
