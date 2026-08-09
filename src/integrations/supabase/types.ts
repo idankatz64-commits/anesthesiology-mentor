@@ -532,42 +532,36 @@ export type Database = {
         Row: {
           answered_at: string
           answered_count: number
-          confidence: string | null
           correct_count: number
           ever_wrong: boolean
           id: string
           is_correct: boolean
           question_id: string
           topic: string | null
-          topic_num: number | null
           updated_at: string | null
           user_id: string
         }
         Insert: {
           answered_at?: string
           answered_count?: number
-          confidence?: string | null
           correct_count?: number
           ever_wrong?: boolean
           id?: string
           is_correct: boolean
           question_id: string
           topic?: string | null
-          topic_num?: number | null
           updated_at?: string | null
           user_id: string
         }
         Update: {
           answered_at?: string
           answered_count?: number
-          confidence?: string | null
           correct_count?: number
           ever_wrong?: boolean
           id?: string
           is_correct?: boolean
           question_id?: string
           topic?: string | null
-          topic_num?: number | null
           updated_at?: string | null
           user_id?: string
         }
@@ -578,13 +572,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "questions"
             referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_answers_topic_num_fkey"
-            columns: ["topic_num"]
-            isOneToOne: false
-            referencedRelation: "categories"
-            referencedColumns: ["topic_num"]
           },
         ]
       }
@@ -731,12 +718,6 @@ export type Database = {
           avg_accuracy: number
           topic: string
           total_users: number
-        }[]
-      }
-      get_question_ids_by_confidence: {
-        Args: { p_confidence_status: string; p_user_id: string }
-        Returns: {
-          question_id: string
         }[]
       }
       get_question_success_rate: {
