@@ -24,6 +24,7 @@ import {
   type SrsRecord,
 } from "@/lib/srsRepository";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { claimAcademyMembership, type AcademyMembership } from "@/lib/academyRepository";
 
 interface SavedSessionData {
   questionIds: string[];
@@ -33,6 +34,7 @@ interface SavedSessionData {
   confidence: (ConfidenceLevel | null)[];
   flagged: number[];
   skipped: number[];
+  quizId?: string;
   timerSeconds?: number;
   simTimerSeconds?: number;
   createdAt: string;
@@ -49,13 +51,15 @@ interface AppContextType {
   showWelcome: boolean;
   isAdmin: boolean;
   isEditor: boolean;
+  academyMember: AcademyMembership | null;
+  academyOnly: boolean;
 
   navigate: (view: ViewId, param?: string | null) => void;
   toggleTheme: () => void;
   closeWelcome: () => void;
 
   // Session actions
-  startSession: (pool: Question[], count: number, mode: SessionState["mode"]) => void;
+  startSession: (pool: Question[], count: number, mode: SessionState["mode"], quizMeta?: { quizId: string }) => void;
   setAnswer: (index: number, answer: string) => void;
   setConfidence: (index: number, level: ConfidenceLevel) => void;
   setSessionIndex: (index: number) => void;
@@ -237,6 +241,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [loadingSavedSession, setLoadingSavedSession] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditor, setIsEditor] = useState(false);
+  const [academyMember, setAcademyMember] = useState<AcademyMembership | null>(null);
   const editChannelRef = useRef<RealtimeChannel | null>(null);
 
   const progressRef = useRef(progress);
@@ -332,11 +337,19 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               }
             }
           });
+
+        // Hydrate academy membership
+        claimAcademyMembership()
+          .then((m) => {
+            if (hydrationIdRef.current === thisHydration) setAcademyMember(m);
+          })
+          .catch((e) => console.warn("Failed to load academy membership:", e));
       } else {
         setProgress({ ...defaultProgress });
         setConfidenceMap({});
         setIsAdmin(false);
         setIsEditor(false);
+        setAcademyMember(null);
         // Unsubscribe from edit notifications
         if (editChannelRef.current) {
           supabase.removeChannel(editChannelRef.current);
@@ -421,31 +434,35 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     setShowWelcome(false);
   }, []);
 
-  const startSession = useCallback((pool: Question[], count: number, mode: SessionState["mode"]) => {
-    const shuffled = [...pool].sort(() => Math.random() - 0.5);
-    const uid = userIdRef.current ?? "anon";
-    const quiz = shuffled.slice(0, Math.min(pool.length, count)).map((q) => {
-      const c = q[KEYS.CORRECT];
-      if (!c || c === "N/A" || c.trim() === "") {
-        return { ...q, [KEYS.CORRECT]: NA_OPTS[hashQidUid(q[KEYS.ID], uid)] };
-      }
-      return q;
-    });
-    setSession({
-      quiz,
-      index: 0,
-      score: 0,
-      mode,
-      answers: new Array(quiz.length).fill(null),
-      confidence: new Array(quiz.length).fill(null),
-      flagged: new Set(),
-      skipped: new Set(),
-      sourceFilter: "all",
-      countFilter: count,
-      unseenOnly: false,
-    });
-    setCurrentView("session");
-  }, []);
+  const startSession = useCallback(
+    (pool: Question[], count: number, mode: SessionState["mode"], quizMeta?: { quizId: string }) => {
+      const shuffled = [...pool].sort(() => Math.random() - 0.5);
+      const uid = userIdRef.current ?? "anon";
+      const quiz = shuffled.slice(0, Math.min(pool.length, count)).map((q) => {
+        const c = q[KEYS.CORRECT];
+        if (!c || c === "N/A" || c.trim() === "") {
+          return { ...q, [KEYS.CORRECT]: NA_OPTS[hashQidUid(q[KEYS.ID], uid)] };
+        }
+        return q;
+      });
+      setSession({
+        quiz,
+        index: 0,
+        score: 0,
+        mode,
+        answers: new Array(quiz.length).fill(null),
+        confidence: new Array(quiz.length).fill(null),
+        flagged: new Set(),
+        skipped: new Set(),
+        sourceFilter: "all",
+        countFilter: count,
+        unseenOnly: false,
+        quizId: quizMeta?.quizId,
+      });
+      setCurrentView("session");
+    },
+    [],
+  );
 
   const setAnswer = useCallback((index: number, answer: string) => {
     setSession((prev) => {
@@ -1080,6 +1097,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       confidence: currentSession.confidence,
       flagged: Array.from(currentSession.flagged),
       skipped: Array.from(currentSession.skipped),
+      quizId: currentSession.quizId,
       timerSeconds,
       simTimerSeconds,
       createdAt: new Date().toISOString(),
@@ -1138,6 +1156,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       sourceFilter: "all",
       countFilter: quiz.length,
       unseenOnly: false,
+      quizId: savedSessionInfo.quizId,
       resumedTimerSeconds: savedSessionInfo.timerSeconds,
       resumedSimTimerSeconds: savedSessionInfo.simTimerSeconds,
     });
@@ -1166,6 +1185,13 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
+  const academyOnly =
+    !!academyMember &&
+    academyMember.status === "active" &&
+    academyMember.access_level === "academy" &&
+    !isAdmin &&
+    !isEditor;
+
   const value: AppContextType = {
     data,
     loading,
@@ -1177,6 +1203,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     showWelcome,
     isAdmin,
     isEditor,
+    academyMember,
+    academyOnly,
     invalidateQuestions,
     navigate,
     toggleTheme,
