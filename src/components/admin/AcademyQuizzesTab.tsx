@@ -55,11 +55,14 @@ export default function AcademyQuizzesTab() {
   const missingIds = parsedIds.filter((id) => !questionById.has(id));
 
   const randomFill = () => {
+    const n = Math.max(1, Math.min(120, Number(fillCount) || 1));
     const chosen = new Set(parsedIds);
-    const pool = data.filter((q) => q[KEYS.CHAPTER] === fillChapter && !chosen.has(String(q[KEYS.ID])));
-    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, fillCount);
-    if (shuffled.length < fillCount) {
-      toast.warning(`בפרק ${fillChapter} נמצאו רק ${shuffled.length} שאלות פנויות`);
+    const pool = data.filter(
+      (q) => q[KEYS.CHAPTER] === fillChapter && !chosen.has(String(q[KEYS.ID])) && Boolean(q[KEYS.CORRECT]),
+    );
+    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, n);
+    if (shuffled.length < n) {
+      toast.warning(`בפרק ${fillChapter} נמצאו רק ${shuffled.length} שאלות פנויות עם תשובה נכונה`);
     }
     const added = shuffled.map((q) => String(q[KEYS.ID]));
     setIdsText([...parsedIds, ...added].join("\n"));
@@ -79,6 +82,11 @@ export default function AcademyQuizzesTab() {
     if (uniqueMissingIds.length > 0)
       return toast.error(
         `${uniqueMissingIds.length} מזהים לא קיימים במאגר: ${uniqueMissingIds.slice(0, 5).join(", ")}`,
+      );
+    const noCorrectAnswerIds = uniqueIds.filter((id) => !questionById.get(id)?.[KEYS.CORRECT]);
+    if (noCorrectAnswerIds.length > 0)
+      return toast.error(
+        `${noCorrectAnswerIds.length} שאלות ללא תשובה נכונה מוגדרת — הסר אותן: ${noCorrectAnswerIds.slice(0, 5).join(", ")}`,
       );
     const opens = new Date(opensAt);
     const closes = new Date(closesAt);
