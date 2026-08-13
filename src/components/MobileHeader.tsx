@@ -17,8 +17,9 @@ const mobileNav: { id: ViewId; label: string; emoji: string }[] = [
 export default function MobileHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isDark, toggleTheme, navigate, academyMember, academyOnly } = useApp();
+  const academyOrder: ViewId[] = ["academy", "setup-practice", "stats"];
   const visibleNav = academyOnly
-    ? mobileNav.filter((i) => i.id === "academy")
+    ? academyOrder.map((id) => mobileNav.find((i) => i.id === id)).filter((i): i is (typeof mobileNav)[number] => !!i)
     : academyMember
       ? mobileNav
       : mobileNav.filter((i) => i.id !== "academy");

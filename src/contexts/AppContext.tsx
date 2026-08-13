@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useRef, useEffect } from "react";
+import React, { createContext, useContext, useState, useCallback, useRef, useEffect, useMemo } from "react";
 import { fetchQuestions, invalidateQuestionsCache } from "@/lib/csvService";
 import {
   KEYS,
@@ -24,7 +24,7 @@ import {
   type SrsRecord,
 } from "@/lib/srsRepository";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import { claimAcademyMembership, type AcademyMembership } from "@/lib/academyRepository";
+import { claimAcademyMembership, fetchMyAttempts, type AcademyMembership } from "@/lib/academyRepository";
 
 interface SavedSessionData {
   questionIds: string[];
@@ -53,6 +53,7 @@ interface AppContextType {
   isEditor: boolean;
   academyMember: AcademyMembership | null;
   academyOnly: boolean;
+  registerAttemptedQuestions: (ids: string[]) => void;
 
   navigate: (view: ViewId, param?: string | null) => void;
   toggleTheme: () => void;
@@ -94,6 +95,7 @@ interface AppContextType {
   // Computed
   getFilteredQuestions: (serial?: string, textSearch?: string) => Question[];
   getDueQuestions: () => Promise<Question[]>;
+  getQuestionsByIds: (ids: string[]) => Question[];
   fetchSrsData: () => Promise<Record<string, SrsRecord>>;
 
   // Session persistence
@@ -242,12 +244,36 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isEditor, setIsEditor] = useState(false);
   const [academyMember, setAcademyMember] = useState<AcademyMembership | null>(null);
+  const [attemptedQuizIds, setAttemptedQuizIds] = useState<Set<string>>(new Set());
+
+  // Status is intentionally NOT checked here: a suspended academy-tier member
+  // must stay academy-locked (not fall through to the full app). AcademyView
+  // renders a suspended notice instead of the quiz list for that case.
+  const academyOnly = !!academyMember && academyMember.access_level === "academy" && !isAdmin && !isEditor;
+
+  // Amendment 2: academy-tier residents only see questions from quizzes they've
+  // already submitted (union of quiz_attempts.question_ids). This projection
+  // happens ONLY here, at the context value boundary — internal paths
+  // (resumeSessionFromDb, quiz question resolution) read the RAW data via
+  // dataRef / getQuestionsByIds so a quiz can always resolve its own questions
+  // even when they fall outside the resident's practice pool.
+  const visibleData = useMemo(() => {
+    if (!academyOnly) return data;
+    return data.filter((q) => attemptedQuizIds.has(q[KEYS.ID]));
+  }, [data, academyOnly, attemptedQuizIds]);
+
   const editChannelRef = useRef<RealtimeChannel | null>(null);
 
   const progressRef = useRef(progress);
   progressRef.current = progress;
   const dataRef = useRef(data);
   dataRef.current = data;
+  const visibleDataRef = useRef(visibleData);
+  visibleDataRef.current = visibleData;
+  const academyOnlyRef = useRef(academyOnly);
+  academyOnlyRef.current = academyOnly;
+  const attemptedQuizIdsRef = useRef(attemptedQuizIds);
+  attemptedQuizIdsRef.current = attemptedQuizIds;
   const sessionRef = useRef(session);
   sessionRef.current = session;
   const multiSelectRef = useRef(multiSelect);
@@ -338,10 +364,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             }
           });
 
-        // Hydrate academy membership
+        // Hydrate academy membership + the pool of already-attempted questions
         claimAcademyMembership()
           .then((m) => {
-            if (hydrationIdRef.current === thisHydration) setAcademyMember(m);
+            if (hydrationIdRef.current !== thisHydration) return;
+            setAcademyMember(m);
+            if (!m) return;
+            fetchMyAttempts(userId)
+              .then((attempts) => {
+                if (hydrationIdRef.current !== thisHydration) return;
+                const ids = new Set<string>();
+                for (const a of attempts) for (const id of a.question_ids) ids.add(id);
+                setAttemptedQuizIds(ids);
+              })
+              .catch((e) => console.warn("Failed to load attempted quiz questions:", e));
           })
           .catch((e) => console.warn("Failed to load academy membership:", e));
       } else {
@@ -350,6 +386,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsAdmin(false);
         setIsEditor(false);
         setAcademyMember(null);
+        setAttemptedQuizIds(new Set());
         // Unsubscribe from edit notifications
         if (editChannelRef.current) {
           supabase.removeChannel(editChannelRef.current);
@@ -983,7 +1020,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const getFilteredQuestions = useCallback((serial?: string, textSearch?: string): Question[] => {
-    const d = dataRef.current;
+    const d = visibleDataRef.current;
     const p = progressRef.current;
     const s = sessionRef.current;
     const ms = multiSelectRef.current;
@@ -1048,15 +1085,29 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const dueIds = new Set(cappedRows.map((r) => r.question_id));
 
     // Prefer in-memory cache when available
-    let matched = dataRef.current.filter((q) => dueIds.has(q[KEYS.ID]));
+    let matched = visibleDataRef.current.filter((q) => dueIds.has(q[KEYS.ID]));
 
     // Fallback eliminates the race when questions haven't finished loading
     if (matched.length === 0) {
       const all = await fetchQuestions();
-      matched = all.filter((q) => dueIds.has(q[KEYS.ID]));
+      const pool = academyOnlyRef.current ? all.filter((q) => attemptedQuizIdsRef.current.has(q[KEYS.ID])) : all;
+      matched = pool.filter((q) => dueIds.has(q[KEYS.ID]));
     }
 
     return matched;
+  }, []);
+
+  // Resolves questions from the RAW bank regardless of the academy pool
+  // projection — a quiz must always be able to resolve its own questions.
+  const getQuestionsByIds = useCallback((ids: string[]): Question[] => {
+    const byId = new Map(dataRef.current.map((q) => [q[KEYS.ID], q]));
+    return ids.map((id) => byId.get(id)).filter((q): q is Question => Boolean(q));
+  }, []);
+
+  // Immutably merges newly-submitted quiz question ids into the academy
+  // practice pool so they're selectable immediately after submit.
+  const registerAttemptedQuestions = useCallback((ids: string[]) => {
+    setAttemptedQuizIds((prev) => new Set([...prev, ...ids]));
   }, []);
 
   const fetchSrsData = useCallback(async (): Promise<Record<string, SrsRecord>> => {
@@ -1183,13 +1234,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
-  // Status is intentionally NOT checked here: a suspended academy-tier member
-  // must stay academy-locked (not fall through to the full app). AcademyView
-  // renders a suspended notice instead of the quiz list for that case.
-  const academyOnly = !!academyMember && academyMember.access_level === "academy" && !isAdmin && !isEditor;
-
   const value: AppContextType = {
-    data,
+    data: visibleData,
     loading,
     progress,
     session,
@@ -1201,6 +1247,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     isEditor,
     academyMember,
     academyOnly,
+    registerAttemptedQuestions,
     invalidateQuestions,
     navigate,
     toggleTheme,
@@ -1229,6 +1276,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     updateQuizQuestion,
     getFilteredQuestions,
     getDueQuestions,
+    getQuestionsByIds,
     fetchSrsData,
     saveSessionToDb,
     resumeSessionFromDb,

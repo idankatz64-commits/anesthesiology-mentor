@@ -61,8 +61,9 @@ export default function Sidebar() {
   });
   const pct = totalAnswered > 0 ? Math.round((totalCorrect / totalAnswered) * 100) : 0;
 
+  const academyOrder: ViewId[] = ["academy", "setup-practice", "stats"];
   const visibleItems = academyOnly
-    ? navItems.filter((i) => i.id === "academy")
+    ? academyOrder.map((id) => navItems.find((i) => i.id === id)).filter((i): i is (typeof navItems)[number] => !!i)
     : academyMember || isAdmin
       ? navItems
       : navItems.filter((i) => i.id !== "academy");

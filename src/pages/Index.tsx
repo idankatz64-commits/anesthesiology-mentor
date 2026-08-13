@@ -25,7 +25,7 @@ function AppContent() {
   const { currentView, loading, academyOnly } = useApp();
 
   const renderView = () => {
-    if (academyOnly && !["academy", "session", "results"].includes(currentView)) {
+    if (academyOnly && !["academy", "setup-practice", "session", "results", "review", "stats"].includes(currentView)) {
       return <AcademyView />;
     }
     switch (currentView) {

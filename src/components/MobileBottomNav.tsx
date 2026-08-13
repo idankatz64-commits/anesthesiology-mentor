@@ -15,8 +15,9 @@ const bottomNav: { id: ViewId; label: string; icon: React.ReactNode }[] = [
 export default function MobileBottomNav() {
   const { currentView, navigate, academyMember, academyOnly } = useApp();
 
+  const academyOrder: ViewId[] = ["academy", "setup-practice", "stats"];
   const visibleItems = academyOnly
-    ? bottomNav.filter((i) => i.id === "academy")
+    ? academyOrder.map((id) => bottomNav.find((i) => i.id === id)).filter((i): i is (typeof bottomNav)[number] => !!i)
     : academyMember
       ? bottomNav
       : bottomNav.filter((i) => i.id !== "academy");
