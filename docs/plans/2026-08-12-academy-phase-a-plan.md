@@ -1904,3 +1904,14 @@ Task impacts:
 - **Task 2 (quizScore.ts): CANCELLED** — scoring is server-side; ResultsView keeps its existing local display computation. Do not create the file.
 - **Task 3:** drop `buildAttemptRow` and `scoreQuizAttempt` import; `submitQuizAttempt(quizId: string, questionIds: string[], answers: (string|null)[]): Promise<{score:number; total:number}>` calls the RPC and maps errors by `error.message.includes('ALREADY_SUBMITTED'|'WINDOW_CLOSED'|'NOT_MEMBER')` → `Error` with those exact names; anything else rethrows `error.message`. `NewAttempt` type no longer needed. Tests: keep `parseEmailList` tests; no buildAttemptRow tests.
 - **Task 5:** `submitQuizAttemptFlow` gathers `questionIds = quiz.map(q => String(q[KEYS.ID]))` and `answers` (normalized to null for unanswered) from session state and calls `submitQuizAttempt(session.quizId, questionIds, answers)`; no client-side score is sent. Error toasts unchanged, plus `NOT_MEMBER` → "אינך רשום למחזור — פנה לאחראי האקדמיה".
+
+---
+
+## Amendment 2 (2026-08-13, approved by Idan — "Phase A.5" wave)
+
+Scope approved verbatim by Idan (chat, 12:08):
+1. **Academy-tier access redesign.** An academy-tier resident sees THREE areas: אקדמיה, תרגול, סטטיסטיקה (plus סיכומי נושאים in the future — stays hidden for now). Everything else hidden until Idan grants 'full'. The practice pool for academy-tier users is RESTRICTED to questions from quizzes they have already submitted (union of their quiz_attempts.question_ids). SRS/smart-selection operate inside that pool. View allowlist for academyOnly: ['academy','setup-practice','session','results','review','stats'].
+2. **Post-submission quiz review.** From "הבחנים שלי" a resident opens a full review of a submitted attempt: each question with its options, their answer, the correct answer highlighted, and the DOMPurify-sanitized explanation. Available immediately after OWN submission (deliberate: ResultsView already showed this content at submit time; re-access adds no new leak surface).
+3. **Clearer NOT_MEMBER message:** "אינך משויך למחזור — התחבר עם חשבון Google או פנה לאחראי האקדמיה".
+
+Implementation constraints: the restricted-pool projection happens ONLY at the AppContext value boundary (consumer-facing `data`, `getFilteredQuestions`, `getDueQuestions`); internal paths (resumeSessionFromDb, quiz question resolution) use the RAW bank via a new `getQuestionsByIds(ids)` helper — a quiz must always resolve its questions even when outside the resident's pool. After a successful quiz submit, the submitted ids join the pool immediately (`registerAttemptedQuestions`).
