@@ -22,6 +22,7 @@ import QuestionEditorTab from "@/components/admin/QuestionEditorTab";
 import ResourceLinksTab from "@/components/admin/ResourceLinksTab";
 import SummariesManagementTab from "@/components/admin/SummariesManagementTab";
 import AcademyMembersTab from "@/components/admin/AcademyMembersTab";
+import AcademyQuizzesTab from "@/components/admin/AcademyQuizzesTab";
 import { motion } from "framer-motion";
 import { fadeUp } from "@/lib/animations";
 
@@ -127,7 +128,7 @@ export default function AdminDashboard() {
             {activeTab === "summaries" && <SummariesManagementTab />}
             {activeTab === "editor-activity" && <EditorActivityTab isActive={activeTab === "editor-activity"} />}
             {activeTab === "academy-members" && <AcademyMembersTab />}
-            {activeTab === "academy-quizzes" && null}
+            {activeTab === "academy-quizzes" && <AcademyQuizzesTab />}
             {activeTab === "academy-dashboard" && null}
           </div>
         </main>
