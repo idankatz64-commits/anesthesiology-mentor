@@ -462,6 +462,14 @@ export default function SessionView() {
       navigate("review");
       return;
     }
+    // Academy quiz simulations must submit via handleSubmitSimulation (server-side
+    // scoring RPC) — never just clear + navigate, or the attempt is silently lost.
+    // This covers the "הבא" button and the Enter/Space/ArrowRight keyboard handler,
+    // which both call handleNext (see onKey below, canGoNext branch).
+    if (isSimulation && session.quizId) {
+      await handleSubmitSimulation();
+      return;
+    }
     shouldAutoSaveRef.current = false;
     clearSavedSession();
     if (isReviewMode) navigate("results");
@@ -568,6 +576,11 @@ export default function SessionView() {
       } else if (msg === "NOT_MEMBER") {
         toast({
           title: "אינך רשום למחזור — פנה לאחראי האקדמיה",
+          variant: "destructive",
+        });
+      } else if (msg === "INCOMPLETE_SUBMISSION" || msg === "DUPLICATE_QUESTIONS") {
+        toast({
+          title: "אי-התאמה בין שאלות הבוחן למאגר — צא מהבוחן, רענן את האפליקציה ונסה שוב",
           variant: "destructive",
         });
       } else {

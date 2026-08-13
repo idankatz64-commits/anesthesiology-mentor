@@ -118,6 +118,8 @@ export async function submitQuizAttempt(
     if (message.includes("ALREADY_SUBMITTED")) throw new Error("ALREADY_SUBMITTED");
     if (message.includes("WINDOW_CLOSED")) throw new Error("WINDOW_CLOSED");
     if (message.includes("NOT_MEMBER")) throw new Error("NOT_MEMBER");
+    if (message.includes("INCOMPLETE_SUBMISSION")) throw new Error("INCOMPLETE_SUBMISSION");
+    if (message.includes("DUPLICATE_QUESTIONS")) throw new Error("DUPLICATE_QUESTIONS");
     throw new Error(error.message);
   }
   const row = Array.isArray(data) ? data[0] : data;
