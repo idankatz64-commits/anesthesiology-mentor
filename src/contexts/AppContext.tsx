@@ -790,7 +790,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const existing = prev.tags[id] ?? [];
       // Compare trimmed: " ards" and "ards" are the same tag to a reader, and
       // the dedupe is the only thing standing between them and two rows.
-      if (existing.some(t => t.trim() === tag.trim())) return prev; // no-op, no DB call
+      if (existing.some((t) => t.trim() === tag.trim())) return prev; // no-op, no DB call
       didMutate = true;
       return { ...prev, tags: { ...prev.tags, [id]: [...existing, tag] } };
     });
@@ -877,9 +877,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       // Backups exported before `timestamp` existed carry undefined here, and
       // new Date(undefined).toISOString() throws RangeError - which aborted the
       // whole restore before a single row was written.
-      updated_at: Number.isFinite(h.timestamp)
-        ? new Date(h.timestamp).toISOString()
-        : new Date().toISOString(),
+      updated_at: Number.isFinite(h.timestamp) ? new Date(h.timestamp).toISOString() : new Date().toISOString(),
     }));
     if (answerRows.length) {
       // Batch in chunks of 500
@@ -1185,12 +1183,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }));
   }, []);
 
-  const academyOnly =
-    !!academyMember &&
-    academyMember.status === "active" &&
-    academyMember.access_level === "academy" &&
-    !isAdmin &&
-    !isEditor;
+  // Status is intentionally NOT checked here: a suspended academy-tier member
+  // must stay academy-locked (not fall through to the full app). AcademyView
+  // renders a suspended notice instead of the quiz list for that case.
+  const academyOnly = !!academyMember && academyMember.access_level === "academy" && !isAdmin && !isEditor;
 
   const value: AppContextType = {
     data,

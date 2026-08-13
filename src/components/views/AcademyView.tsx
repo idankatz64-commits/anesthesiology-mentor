@@ -17,11 +17,21 @@ const fmtDate = (iso: string): string =>
   new Date(iso).toLocaleString("he-IL", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
 
 export default function AcademyView() {
-  const { data, startSession } = useApp();
+  const {
+    data,
+    startSession,
+    invalidateQuestions,
+    academyMember,
+    savedSessionInfo,
+    resumeSessionFromDb,
+    loadingSavedSession,
+  } = useApp();
   const [quizzes, setQuizzes] = useState<QuizRow[]>([]);
   const [attempts, setAttempts] = useState<QuizAttemptRow[]>([]);
   const [stats, setStats] = useState<Record<string, CohortStats | null>>({});
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [resuming, setResuming] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -41,6 +51,7 @@ export default function AcademyView() {
       } catch (e) {
         console.warn("Academy load failed:", e);
         toast.error("טעינת הבחנים נכשלה — נסה לרענן");
+        if (!cancelled) setLoadError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -56,8 +67,10 @@ export default function AcademyView() {
   const open = quizzes.filter(
     (q) => now >= Date.parse(q.opens_at) && now <= Date.parse(q.closes_at) && !attemptByQuiz.has(q.id),
   );
-  const upcoming = quizzes.filter((q) => now < Date.parse(q.opens_at));
   const done = attempts;
+
+  const isSuspended = academyMember?.status === "suspended";
+  const hasSavedQuiz = !loadingSavedSession && !!savedSessionInfo?.quizId;
 
   const startQuiz = (quizRow: QuizRow) => {
     if (data.length === 0) {
@@ -67,12 +80,18 @@ export default function AcademyView() {
     const byId = new Map(data.map((q) => [String(q[KEYS.ID]), q]));
     const questions = quizRow.question_ids.map((id) => byId.get(id)).filter((q): q is Question => Boolean(q));
     const missing = quizRow.question_ids.length - questions.length;
-    if (questions.length === 0) {
-      toast.error("שאלות הבוחן לא נמצאו במאגר — פנה לאחראי האקדמיה");
+    if (missing > 0) {
+      toast.error("חלק משאלות הבוחן חסרות במאגר המקומי — המאגר מתרענן, נסה שוב בעוד רגע");
+      void invalidateQuestions();
       return;
     }
-    if (missing > 0) toast.warning(`${missing} שאלות לא נמצאו במאגר וידולגו`);
     startSession(questions, questions.length, "simulation", { quizId: quizRow.id });
+  };
+
+  const handleResume = async () => {
+    setResuming(true);
+    await resumeSessionFromDb();
+    setResuming(false);
   };
 
   if (loading) {
@@ -81,6 +100,24 @@ export default function AcademyView() {
 
   return (
     <div className="max-w-3xl mx-auto p-4 space-y-8" dir="rtl">
+      {hasSavedQuiz && (
+        <div className="border rounded-xl p-4 bg-primary/5 border-primary/30 flex items-center justify-between gap-4">
+          <div>
+            <div className="font-medium">יש לך בוחן שנקטע באמצע</div>
+            <div className="text-sm text-muted-foreground">
+              שאלה {savedSessionInfo!.index + 1}/{savedSessionInfo!.questionIds.length}
+            </div>
+          </div>
+          <button
+            onClick={handleResume}
+            disabled={resuming}
+            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 disabled:opacity-50"
+          >
+            {resuming ? "טוען…" : "המשך בוחן"}
+          </button>
+        </div>
+      )}
+
       <div className="flex items-center gap-3">
         <GraduationCap className="w-8 h-8 text-primary" />
         <div>
@@ -89,40 +126,49 @@ export default function AcademyView() {
         </div>
       </div>
 
-      <section>
-        <h2 className="font-semibold mb-3 flex items-center gap-2">
-          <PlayCircle className="w-5 h-5" /> בחנים פתוחים
-        </h2>
-        {open.length === 0 && <p className="text-sm text-muted-foreground">אין בוחן פתוח כרגע.</p>}
-        <div className="space-y-3">
-          {open.map((q) => (
-            <div key={q.id} className="border rounded-xl p-4 flex items-center justify-between gap-4">
-              <div>
-                <div className="font-medium">{q.title}</div>
-                <div className="text-sm text-muted-foreground flex items-center gap-1">
-                  <Clock className="w-4 h-4" /> נסגר: {fmtDate(q.closes_at)} · {q.question_ids.length} שאלות
-                </div>
-              </div>
-              <button
-                onClick={() => startQuiz(q)}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90"
-              >
-                התחל בוחן
-              </button>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {upcoming.length > 0 && (
+      {isSuspended ? (
         <section>
-          <h2 className="font-semibold mb-3">בקרוב</h2>
-          <div className="space-y-2">
-            {upcoming.map((q) => (
-              <div key={q.id} className="border rounded-xl p-3 text-sm text-muted-foreground">
-                {q.title} — נפתח {fmtDate(q.opens_at)}
-              </div>
-            ))}
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <PlayCircle className="w-5 h-5" /> בחנים פתוחים
+          </h2>
+          <div className="border rounded-xl p-4 text-sm text-muted-foreground">
+            החשבון שלך מסומן כמושהה (רוטציה/מילואים) — הבחנים מוסתרים. פנה לאחראי האקדמיה בחזרתך.
+          </div>
+        </section>
+      ) : (
+        <section>
+          <h2 className="font-semibold mb-3 flex items-center gap-2">
+            <PlayCircle className="w-5 h-5" /> בחנים פתוחים
+          </h2>
+          {loadError ? (
+            <p className="text-sm text-destructive">טעינת הבחנים נכשלה — רענן את הדף</p>
+          ) : (
+            open.length === 0 && <p className="text-sm text-muted-foreground">אין בוחן פתוח כרגע.</p>
+          )}
+          <div className="space-y-3">
+            {open.map((q) => {
+              const savedForThisQuiz = savedSessionInfo?.quizId === q.id;
+              return (
+                <div key={q.id} className="border rounded-xl p-4 flex items-center justify-between gap-4">
+                  <div>
+                    <div className="font-medium">{q.title}</div>
+                    <div className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Clock className="w-4 h-4" /> נסגר: {fmtDate(q.closes_at)} · {q.question_ids.length} שאלות
+                    </div>
+                  </div>
+                  {savedForThisQuiz ? (
+                    <span className="text-sm text-muted-foreground px-4 py-2">בוחן באמצע — המשך למעלה</span>
+                  ) : (
+                    <button
+                      onClick={() => startQuiz(q)}
+                      className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90"
+                    >
+                      התחל בוחן
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </section>
       )}
