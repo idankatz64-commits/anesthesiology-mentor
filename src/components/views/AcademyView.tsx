@@ -60,6 +60,10 @@ export default function AcademyView() {
   const done = attempts;
 
   const startQuiz = (quizRow: QuizRow) => {
+    if (data.length === 0) {
+      toast.error("מאגר השאלות עדיין נטען — נסה שוב בעוד רגע");
+      return;
+    }
     const byId = new Map(data.map((q) => [String(q[KEYS.ID]), q]));
     const questions = quizRow.question_ids.map((id) => byId.get(id)).filter((q): q is Question => Boolean(q));
     const missing = quizRow.question_ids.length - questions.length;
