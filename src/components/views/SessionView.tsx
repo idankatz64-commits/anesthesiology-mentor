@@ -237,6 +237,7 @@ export default function SessionView() {
     invalidateQuestions,
     updateQuizQuestion,
     isEditor,
+    registerAttemptedQuestions,
   } = useApp();
   const { toast } = useToast();
   const isAdmin = useIsAdmin();
@@ -560,6 +561,7 @@ export default function SessionView() {
     const normalizedAnswers = quiz.map((_, i) => answers[i] ?? null);
     try {
       await submitQuizAttempt(session.quizId as string, questionIds, normalizedAnswers);
+      registerAttemptedQuestions(questionIds);
       return true;
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
@@ -575,7 +577,7 @@ export default function SessionView() {
         });
       } else if (msg === "NOT_MEMBER") {
         toast({
-          title: "אינך רשום למחזור — פנה לאחראי האקדמיה",
+          title: "אינך משויך למחזור — התחבר עם חשבון Google או פנה לאחראי האקדמיה",
           variant: "destructive",
         });
       } else if (msg === "INCOMPLETE_SUBMISSION" || msg === "DUPLICATE_QUESTIONS") {
