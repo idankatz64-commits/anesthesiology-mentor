@@ -53,6 +53,9 @@ interface AppContextType {
   isEditor: boolean;
   academyMember: AcademyMembership | null;
   academyOnly: boolean;
+  // False only while a logged-in user's academy-membership check is in flight
+  // (default true — covers "resolved" for anonymous users and the pre-hydration moment).
+  membershipResolved: boolean;
   registerAttemptedQuestions: (ids: string[]) => void;
 
   navigate: (view: ViewId, param?: string | null) => void;
@@ -245,6 +248,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isEditor, setIsEditor] = useState(false);
   const [academyMember, setAcademyMember] = useState<AcademyMembership | null>(null);
   const [attemptedQuizIds, setAttemptedQuizIds] = useState<Set<string>>(new Set());
+  const [membershipResolved, setMembershipResolved] = useState(true);
 
   // Status is intentionally NOT checked here: a suspended academy-tier member
   // must stay academy-locked (not fall through to the full app). AcademyView
@@ -298,6 +302,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       userIdRef.current = userId;
       const thisHydration = ++hydrationIdRef.current;
       if (userId) {
+        setMembershipResolved(false);
         fetchProgressFromSupabase(userId)
           .then((prog) => {
             if (hydrationIdRef.current === thisHydration) setProgress(prog);
@@ -369,6 +374,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           .then((m) => {
             if (hydrationIdRef.current !== thisHydration) return;
             setAcademyMember(m);
+            setMembershipResolved(true);
             if (!m) return;
             fetchMyAttempts(userId)
               .then((attempts) => {
@@ -379,7 +385,10 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               })
               .catch((e) => console.warn("Failed to load attempted quiz questions:", e));
           })
-          .catch((e) => console.warn("Failed to load academy membership:", e));
+          .catch((e) => {
+            console.warn("Failed to load academy membership:", e);
+            if (hydrationIdRef.current === thisHydration) setMembershipResolved(true);
+          });
       } else {
         setProgress({ ...defaultProgress });
         setConfidenceMap({});
@@ -387,6 +396,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setIsEditor(false);
         setAcademyMember(null);
         setAttemptedQuizIds(new Set());
+        setMembershipResolved(true);
         // Unsubscribe from edit notifications
         if (editChannelRef.current) {
           supabase.removeChannel(editChannelRef.current);
@@ -1247,6 +1257,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     isEditor,
     academyMember,
     academyOnly,
+    membershipResolved,
     registerAttemptedQuestions,
     invalidateQuestions,
     navigate,

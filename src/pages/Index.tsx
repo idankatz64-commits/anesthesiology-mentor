@@ -22,9 +22,31 @@ import { motion, AnimatePresence } from "framer-motion";
 import { slideFromRight } from "@/lib/animations";
 
 function AppContent() {
-  const { currentView, loading, academyOnly } = useApp();
+  const { currentView, loading, academyOnly, membershipResolved } = useApp();
 
   const renderView = () => {
+    // membershipResolved is only ever false while a logged-in user's academy
+    // status is still loading — so this alone gates the "flash of full app"
+    // race without needing a separate "is a user logged in" check.
+    if (!membershipResolved) {
+      return (
+        <div className="flex flex-col items-center justify-center py-24">
+          <motion.div
+            className="w-16 h-16 rounded-2xl bg-primary/20"
+            animate={{ opacity: [0.4, 0.8, 0.4], scale: [0.95, 1.05, 0.95] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+          <motion.p
+            className="text-muted-foreground font-light tracking-wide mt-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            טוען נתונים...
+          </motion.p>
+        </div>
+      );
+    }
     if (academyOnly && !["academy", "setup-practice", "session", "results", "review", "stats"].includes(currentView)) {
       return <AcademyView />;
     }

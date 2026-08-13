@@ -254,7 +254,7 @@ function AttemptReviewDialog({
             <div className="space-y-6 mt-2">
               {attempt.question_ids.map((qid, i) => {
                 const q = byId.get(qid);
-                const userAnswerText = attempt.answers[i];
+                const userAnswer = attempt.answers[i]; // letter, e.g. "A" — same semantics as SessionView's handleAnswer
                 if (!q) {
                   return (
                     <div
@@ -277,7 +277,7 @@ function AttemptReviewDialog({
                         const text = q[OPTION_KEYS[letter]];
                         if (!text) return null;
                         const isCorrect = correctLetter === letter;
-                        const isWrongChoice = !isCorrect && userAnswerText === text;
+                        const isWrongChoice = !isCorrect && userAnswer === letter;
                         return (
                           <div
                             key={letter}
@@ -309,7 +309,7 @@ function AttemptReviewDialog({
                         );
                       })}
                     </div>
-                    {!userAnswerText && <div className="mt-2 text-xs font-medium text-muted-foreground">לא נענתה</div>}
+                    {!userAnswer && <div className="mt-2 text-xs font-medium text-muted-foreground">לא נענתה</div>}
                     {explanation && explanation.trim().length > 0 && (
                       <div className="mt-4">
                         <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">הסבר</h4>
