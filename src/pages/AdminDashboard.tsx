@@ -1,33 +1,62 @@
-import { useState } from 'react';
-import { AppProvider } from '@/contexts/AppContext';
-import { useAdminGuard } from '@/hooks/useAdminGuard';
-import { Link } from 'react-router-dom';
-import { Loader2, Users, Upload, ArrowRight, ShieldAlert, FlaskConical, BarChart3, FileEdit, Link as LinkIcon, BookOpen } from 'lucide-react';
-import UserManagementTab from '@/components/admin/UserManagementTab';
-import ImportQuestionsTab from '@/components/admin/ImportQuestionsTab';
-import FormulaManagementTab from '@/components/admin/FormulaManagementTab';
-import EditorActivityTab from '@/components/admin/EditorActivityTab';
-import QuestionEditorTab from '@/components/admin/QuestionEditorTab';
-import ResourceLinksTab from '@/components/admin/ResourceLinksTab';
-import SummariesManagementTab from '@/components/admin/SummariesManagementTab';
-import { motion } from 'framer-motion';
-import { fadeUp } from '@/lib/animations';
+import { useState } from "react";
+import { AppProvider } from "@/contexts/AppContext";
+import { useAdminGuard } from "@/hooks/useAdminGuard";
+import { Link } from "react-router-dom";
+import {
+  Loader2,
+  Users,
+  Upload,
+  ArrowRight,
+  ShieldAlert,
+  FlaskConical,
+  BarChart3,
+  FileEdit,
+  Link as LinkIcon,
+  BookOpen,
+} from "lucide-react";
+import UserManagementTab from "@/components/admin/UserManagementTab";
+import ImportQuestionsTab from "@/components/admin/ImportQuestionsTab";
+import FormulaManagementTab from "@/components/admin/FormulaManagementTab";
+import EditorActivityTab from "@/components/admin/EditorActivityTab";
+import QuestionEditorTab from "@/components/admin/QuestionEditorTab";
+import ResourceLinksTab from "@/components/admin/ResourceLinksTab";
+import SummariesManagementTab from "@/components/admin/SummariesManagementTab";
+import AcademyMembersTab from "@/components/admin/AcademyMembersTab";
+import { motion } from "framer-motion";
+import { fadeUp } from "@/lib/animations";
 
-type AdminTab = 'user-management' | 'import-questions' | 'formula-management' | 'editor-activity' | 'question-editor' | 'resource-links' | 'summaries';
+type AdminTab =
+  | "user-management"
+  | "import-questions"
+  | "formula-management"
+  | "editor-activity"
+  | "question-editor"
+  | "resource-links"
+  | "summaries"
+  | "academy-members"
+  | "academy-quizzes"
+  | "academy-dashboard";
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
-  { id: 'user-management', label: 'User Management', icon: <Users className="w-5 h-5" /> },
-  { id: 'import-questions', label: 'Import Questions', icon: <Upload className="w-5 h-5" /> },
-  { id: 'question-editor', label: 'ייצוא שאלות', icon: <FileEdit className="w-5 h-5" /> },
-  { id: 'summaries', label: 'סיכומי נושאים', icon: <BookOpen className="w-5 h-5" /> },
-  { id: 'resource-links', label: 'קישורים', icon: <LinkIcon className="w-5 h-5" /> },
-  { id: 'formula-management', label: 'Formula Management', icon: <FlaskConical className="w-5 h-5" /> },
-  { id: 'editor-activity', label: 'דוח עורכים', icon: <BarChart3 className="w-5 h-5" /> },
+  { id: "user-management", label: "User Management", icon: <Users className="w-5 h-5" /> },
+  { id: "import-questions", label: "Import Questions", icon: <Upload className="w-5 h-5" /> },
+  { id: "question-editor", label: "ייצוא שאלות", icon: <FileEdit className="w-5 h-5" /> },
+  { id: "summaries", label: "סיכומי נושאים", icon: <BookOpen className="w-5 h-5" /> },
+  { id: "resource-links", label: "קישורים", icon: <LinkIcon className="w-5 h-5" /> },
+  { id: "formula-management", label: "Formula Management", icon: <FlaskConical className="w-5 h-5" /> },
+  { id: "editor-activity", label: "דוח עורכים", icon: <BarChart3 className="w-5 h-5" /> },
+  { id: "academy-members", label: "מחזור אקדמיה", icon: <Users className="w-5 h-5" /> },
+  { id: "academy-quizzes", label: "בחנים", icon: <FlaskConical className="w-5 h-5" /> },
+  {
+    id: "academy-dashboard",
+    label: "דאשבורד אקדמיה",
+    icon: <BarChart3 className="w-5 h-5" />,
+  },
 ];
 
 export default function AdminDashboard() {
   const { loading, isAdmin } = useAdminGuard();
-  const [activeTab, setActiveTab] = useState<AdminTab>('user-management');
+  const [activeTab, setActiveTab] = useState<AdminTab>("user-management");
 
   if (loading || !isAdmin) {
     return (
@@ -66,8 +95,8 @@ export default function AdminDashboard() {
                 onClick={() => setActiveTab(tab.id)}
                 className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-xl text-sm transition-all ${
                   activeTab === tab.id
-                    ? 'bg-primary/10 text-primary font-semibold border-r-[3px] border-primary'
-                    : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                    ? "bg-primary/10 text-primary font-semibold border-r-[3px] border-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 }`}
               >
                 {tab.icon}
@@ -90,13 +119,16 @@ export default function AdminDashboard() {
         {/* Main content */}
         <main className="flex-1 p-8 overflow-y-auto">
           <div className="max-w-5xl mx-auto fade-in">
-            {activeTab === 'user-management' && <UserManagementTab />}
-            {activeTab === 'import-questions' && <ImportQuestionsTab />}
-            {activeTab === 'formula-management' && <FormulaManagementTab />}
-            {activeTab === 'question-editor' && <QuestionEditorTab />}
-            {activeTab === 'resource-links' && <ResourceLinksTab />}
-            {activeTab === 'summaries' && <SummariesManagementTab />}
-            {activeTab === 'editor-activity' && <EditorActivityTab isActive={activeTab === 'editor-activity'} />}
+            {activeTab === "user-management" && <UserManagementTab />}
+            {activeTab === "import-questions" && <ImportQuestionsTab />}
+            {activeTab === "formula-management" && <FormulaManagementTab />}
+            {activeTab === "question-editor" && <QuestionEditorTab />}
+            {activeTab === "resource-links" && <ResourceLinksTab />}
+            {activeTab === "summaries" && <SummariesManagementTab />}
+            {activeTab === "editor-activity" && <EditorActivityTab isActive={activeTab === "editor-activity"} />}
+            {activeTab === "academy-members" && <AcademyMembersTab />}
+            {activeTab === "academy-quizzes" && null}
+            {activeTab === "academy-dashboard" && null}
           </div>
         </main>
       </motion.div>
