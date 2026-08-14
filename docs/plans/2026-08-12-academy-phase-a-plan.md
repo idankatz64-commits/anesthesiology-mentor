@@ -1889,3 +1889,29 @@ git add -A && git commit -m "test(academy): e2e verification fixes" # only if fi
 - **Spec coverage:** cohort+allowlist (T0/T7), auto-link on signup (claim RPC, T0/T4), access tiers + gating (T0/T4/T6), quiz entity with window + fixed list + SRS bypass (T0/T6 startQuiz passes the full list, count=length — the shuffle inside `startSession` randomizes ORDER per resident, which is intentional), once-only at DB level (UNIQUE, T0), attempt snapshot (`question_ids` per attempt, T2/T3), separate `quiz_attempts` table away from the `trg_sync_answer_history` trap (T0/T5), baseline 3×40 = three baseline-type quizzes (T8 + T11 ops), basic dashboard matrix + domain breakdown (T9), resident sees self + anonymous cohort stats (T0 RPC + T6), suspended members excluded from writes and dimmed in matrix (T0 RLS + T9).
 - **Deferred to Phase B (per spec §9):** in-attempt timer, question hiding flag, post-close review screen, appeals, per-question miss-rate, demo-data mode. Note: without the timer, `SessionView` shows its default 3h simulation countdown during quizzes — harmless; window is enforced server-side.
 - **Type consistency check:** `KEYS.ID`/`KEYS.CORRECT`/`KEYS.CHAPTER` string keys used consistently; `QuizRow`/`QuizAttemptRow` field names match the migration column names exactly; `startSession(..., quizMeta)` matches T4/T6 call sites; `answers` is a JSON array aligned with `question_ids` in both `buildAttemptRow` and the dashboard aggregation.
+
+---
+
+## Amendment 1 (2026-08-12, post-Task-0 security review — approved by Idan)
+
+Two design-level security findings were confirmed and Idan chose the hardened options. These CHANGE Tasks 2, 3, 5:
+
+1. **Verified-email claim.** `claim_academy_membership()` links only when the JWT's `app_metadata.providers` contains `'google'` (Google-verified email). Email+password signups (autoconfirmed, ownership unproven) do NOT link — the members tab shows "טרם נרשם" and onboarding instructs residents to sign in with Google. Residual risk (attacker pre-registers a password account and the victim later Google-links into it) documented in the ledger — accepted for a closed cohort.
+2. **Server-side scoring.** New SECURITY DEFINER RPC `public.submit_quiz_attempt(_quiz_id uuid, _question_ids text[], _answers jsonb) RETURNS TABLE(score integer, total integer)` — validates auth/membership/window/duplicate/questions-belong-to-quiz, scores against `questions.correct`, INSERTs the attempt itself, and raises `NOT_AUTHENTICATED` / `NOT_MEMBER` / `QUIZ_NOT_FOUND` / `WINDOW_CLOSED` / `ALREADY_SUBMITTED` / `EMPTY_ATTEMPT` / `QUESTION_NOT_IN_QUIZ` on violation. The `"Members can submit attempt during window"` INSERT policy is DROPPED — the RPC is the only write path (a direct INSERT with a forged score is impossible). UNIQUE constraint stays as race backstop.
+3. **Aggregate masking.** `quiz_cohort_stats` returns NULL `avg_pct`/`median_pct` when fewer than 3 attempts exist (single-submission de-anonymization).
+
+Task impacts:
+- **Task 2 (quizScore.ts): CANCELLED** — scoring is server-side; ResultsView keeps its existing local display computation. Do not create the file.
+- **Task 3:** drop `buildAttemptRow` and `scoreQuizAttempt` import; `submitQuizAttempt(quizId: string, questionIds: string[], answers: (string|null)[]): Promise<{score:number; total:number}>` calls the RPC and maps errors by `error.message.includes('ALREADY_SUBMITTED'|'WINDOW_CLOSED'|'NOT_MEMBER')` → `Error` with those exact names; anything else rethrows `error.message`. `NewAttempt` type no longer needed. Tests: keep `parseEmailList` tests; no buildAttemptRow tests.
+- **Task 5:** `submitQuizAttemptFlow` gathers `questionIds = quiz.map(q => String(q[KEYS.ID]))` and `answers` (normalized to null for unanswered) from session state and calls `submitQuizAttempt(session.quizId, questionIds, answers)`; no client-side score is sent. Error toasts unchanged, plus `NOT_MEMBER` → "אינך רשום למחזור — פנה לאחראי האקדמיה".
+
+---
+
+## Amendment 2 (2026-08-13, approved by Idan — "Phase A.5" wave)
+
+Scope approved verbatim by Idan (chat, 12:08):
+1. **Academy-tier access redesign.** An academy-tier resident sees THREE areas: אקדמיה, תרגול, סטטיסטיקה (plus סיכומי נושאים in the future — stays hidden for now). Everything else hidden until Idan grants 'full'. The practice pool for academy-tier users is RESTRICTED to questions from quizzes they have already submitted (union of their quiz_attempts.question_ids). SRS/smart-selection operate inside that pool. View allowlist for academyOnly: ['academy','setup-practice','session','results','review','stats'].
+2. **Post-submission quiz review.** From "הבחנים שלי" a resident opens a full review of a submitted attempt: each question with its options, their answer, the correct answer highlighted, and the DOMPurify-sanitized explanation. Available immediately after OWN submission (deliberate: ResultsView already showed this content at submit time; re-access adds no new leak surface).
+3. **Clearer NOT_MEMBER message:** "אינך משויך למחזור — התחבר עם חשבון Google או פנה לאחראי האקדמיה".
+
+Implementation constraints: the restricted-pool projection happens ONLY at the AppContext value boundary (consumer-facing `data`, `getFilteredQuestions`, `getDueQuestions`); internal paths (resumeSessionFromDb, quiz question resolution) use the RAW bank via a new `getQuestionsByIds(ids)` helper — a quiz must always resolve its questions even when outside the resident's pool. After a successful quiz submit, the submitted ids join the pool immediately (`registerAttemptedQuestions`).

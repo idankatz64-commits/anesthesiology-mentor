@@ -1,44 +1,86 @@
-import { AppProvider, useApp } from '@/contexts/AppContext';
-import Sidebar from '@/components/Sidebar';
-import MobileHeader from '@/components/MobileHeader';
-import MobileBottomNav from '@/components/MobileBottomNav';
-import TopNav from '@/components/TopNav';
-import WelcomeModal from '@/components/WelcomeModal';
-import QuoteSplash from '@/components/QuoteSplash';
-import HomeView from '@/components/views/HomeView';
-import SetupView from '@/components/views/SetupView';
-import SessionView from '@/components/views/SessionView';
-import ReviewView from '@/components/views/ReviewView';
-import ResultsView from '@/components/views/ResultsView';
-import StatsView from '@/components/views/StatsView';
-import NotebookView from '@/components/views/NotebookView';
-import FlashcardView from '@/components/views/FlashcardView';
-import FormulaSheetView from '@/components/views/FormulaSheetView';
-import SummariesView from '@/components/views/SummariesView';
-import MillerGuideView from '@/components/views/MillerGuideView';
-import { SrsDashboardView } from '@/components/views/SrsDashboardView';
-import { motion, AnimatePresence } from 'framer-motion';
-import { slideFromRight } from '@/lib/animations';
+import { AppProvider, useApp } from "@/contexts/AppContext";
+import Sidebar from "@/components/Sidebar";
+import MobileHeader from "@/components/MobileHeader";
+import MobileBottomNav from "@/components/MobileBottomNav";
+import TopNav from "@/components/TopNav";
+import WelcomeModal from "@/components/WelcomeModal";
+import QuoteSplash from "@/components/QuoteSplash";
+import HomeView from "@/components/views/HomeView";
+import SetupView from "@/components/views/SetupView";
+import SessionView from "@/components/views/SessionView";
+import ReviewView from "@/components/views/ReviewView";
+import ResultsView from "@/components/views/ResultsView";
+import StatsView from "@/components/views/StatsView";
+import NotebookView from "@/components/views/NotebookView";
+import FlashcardView from "@/components/views/FlashcardView";
+import FormulaSheetView from "@/components/views/FormulaSheetView";
+import SummariesView from "@/components/views/SummariesView";
+import MillerGuideView from "@/components/views/MillerGuideView";
+import { SrsDashboardView } from "@/components/views/SrsDashboardView";
+import AcademyView from "@/components/views/AcademyView";
+import { motion, AnimatePresence } from "framer-motion";
+import { slideFromRight } from "@/lib/animations";
 
 function AppContent() {
-  const { currentView, loading } = useApp();
+  const { currentView, loading, academyOnly, membershipResolved } = useApp();
 
   const renderView = () => {
+    // membershipResolved is only ever false while a logged-in user's academy
+    // status is still loading — so this alone gates the "flash of full app"
+    // race without needing a separate "is a user logged in" check.
+    if (!membershipResolved) {
+      return (
+        <div className="flex flex-col items-center justify-center py-24">
+          <motion.div
+            className="w-16 h-16 rounded-2xl bg-primary/20"
+            animate={{ opacity: [0.4, 0.8, 0.4], scale: [0.95, 1.05, 0.95] }}
+            transition={{ duration: 1.5, repeat: Infinity }}
+          />
+          <motion.p
+            className="text-muted-foreground font-light tracking-wide mt-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3 }}
+          >
+            טוען נתונים...
+          </motion.p>
+        </div>
+      );
+    }
+    if (academyOnly && !["academy", "setup-practice", "session", "results", "review", "stats"].includes(currentView)) {
+      return <AcademyView />;
+    }
     switch (currentView) {
-      case 'home': return <HomeView />;
-      case 'setup-practice': return <SetupView mode="practice" />;
-      case 'setup-exam': return <SetupView mode="exam" />;
-      case 'session': return <SessionView />;
-      case 'review': return <ReviewView />;
-      case 'results': return <ResultsView />;
-      case 'stats': return <StatsView />;
-      case 'notebook': return <NotebookView />;
-      case 'flashcards': return <FlashcardView />;
-      case 'formula-sheet': return <FormulaSheetView />;
-      case 'summaries': return <SummariesView />;
-      case 'miller-guide': return <MillerGuideView />;
-      case 'srs-dashboard': return <SrsDashboardView />;
-      default: return <HomeView />;
+      case "home":
+        return <HomeView />;
+      case "setup-practice":
+        return <SetupView mode="practice" />;
+      case "setup-exam":
+        return <SetupView mode="exam" />;
+      case "session":
+        return <SessionView />;
+      case "review":
+        return <ReviewView />;
+      case "results":
+        return <ResultsView />;
+      case "stats":
+        return <StatsView />;
+      case "notebook":
+        return <NotebookView />;
+      case "flashcards":
+        return <FlashcardView />;
+      case "formula-sheet":
+        return <FormulaSheetView />;
+      case "summaries":
+        return <SummariesView />;
+      case "miller-guide":
+        return <MillerGuideView />;
+      case "srs-dashboard":
+        return <SrsDashboardView />;
+      case "academy":
+        return <AcademyView />;
+      default:
+        return <HomeView />;
     }
   };
 
@@ -76,7 +118,7 @@ function AppContent() {
               exit={slideFromRight.exit}
               transition={slideFromRight.transition}
               className="w-full px-4"
-              style={{ willChange: 'transform', minHeight: '60vh' }}
+              style={{ willChange: "transform", minHeight: "60vh" }}
             >
               {renderView()}
             </motion.div>

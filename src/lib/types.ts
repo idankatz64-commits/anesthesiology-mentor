@@ -75,6 +75,8 @@ export type SessionState = {
   sourceFilter: 'all' | 'mistakes' | 'fixed' | 'favorites';
   countFilter: number;
   unseenOnly: boolean;
+  /** Set when this session is an academy quiz — submit routes to quiz_attempts */
+  quizId?: string;
   /** Timer values restored when resuming a saved session */
   resumedTimerSeconds?: number;
   resumedSimTimerSeconds?: number;
@@ -89,4 +91,4 @@ export type MultiSelectState = {
   usertags: Set<string>;
 };
 
-export type ViewId = 'home' | 'setup-practice' | 'setup-exam' | 'session' | 'review' | 'results' | 'stats' | 'notebook' | 'simulation-results' | 'flashcards' | 'formula-sheet' | 'summaries' | 'miller-guide' | 'srs-dashboard';
+export type ViewId = 'home' | 'setup-practice' | 'setup-exam' | 'session' | 'review' | 'results' | 'stats' | 'notebook' | 'simulation-results' | 'flashcards' | 'formula-sheet' | 'summaries' | 'miller-guide' | 'srs-dashboard' | 'academy';

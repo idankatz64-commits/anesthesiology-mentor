@@ -1,21 +1,28 @@
-import { useState } from 'react';
-import { useApp } from '@/contexts/AppContext';
-import { Heart, Moon, Sun, Menu, X } from 'lucide-react';
-import { type ViewId } from '@/lib/types';
-import { motion, AnimatePresence } from 'framer-motion';
-import { springGentle } from '@/lib/animations';
+import { useState } from "react";
+import { useApp } from "@/contexts/AppContext";
+import { Heart, Moon, Sun, Menu, X } from "lucide-react";
+import { type ViewId } from "@/lib/types";
+import { motion, AnimatePresence } from "framer-motion";
+import { springGentle } from "@/lib/animations";
 
 const mobileNav: { id: ViewId; label: string; emoji: string }[] = [
-  { id: 'home', label: 'ראשי', emoji: '🏠' },
-  { id: 'setup-practice', label: 'תרגול', emoji: '📖' },
-  { id: 'setup-exam', label: 'בחינה', emoji: '⏱️' },
-  { id: 'stats', label: 'סטטיסטיקה', emoji: '📊' },
-  { id: 'notebook', label: 'המחברת שלי', emoji: '📝' },
+  { id: "home", label: "ראשי", emoji: "🏠" },
+  { id: "setup-practice", label: "תרגול", emoji: "📖" },
+  { id: "setup-exam", label: "בחינה", emoji: "⏱️" },
+  { id: "stats", label: "סטטיסטיקה", emoji: "📊" },
+  { id: "notebook", label: "המחברת שלי", emoji: "📝" },
+  { id: "academy", label: "אקדמיה", emoji: "🎓" },
 ];
 
 export default function MobileHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const { isDark, toggleTheme, navigate } = useApp();
+  const { isDark, toggleTheme, navigate, academyMember, academyOnly } = useApp();
+  const academyOrder: ViewId[] = ["academy", "setup-practice", "stats"];
+  const visibleNav = academyOnly
+    ? academyOrder.map((id) => mobileNav.find((i) => i.id === id)).filter((i): i is (typeof mobileNav)[number] => !!i)
+    : academyMember
+      ? mobileNav
+      : mobileNav.filter((i) => i.id !== "academy");
 
   return (
     <>
@@ -54,18 +61,21 @@ export default function MobileHeader() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={springGentle}
-              style={{ willChange: 'transform' }}
-              onClick={e => e.stopPropagation()}
+              style={{ willChange: "transform" }}
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="flex justify-end mb-4">
                 <button onClick={() => setMenuOpen(false)} className="text-muted-foreground p-2">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-              {mobileNav.map(item => (
+              {visibleNav.map((item) => (
                 <button
                   key={item.id}
-                  onClick={() => { navigate(item.id); setMenuOpen(false); }}
+                  onClick={() => {
+                    navigate(item.id);
+                    setMenuOpen(false);
+                  }}
                   className="w-full text-right p-4 font-medium border-b border-border text-foreground hover:bg-muted hover:text-primary transition rounded-lg"
                 >
                   {item.emoji} {item.label}
