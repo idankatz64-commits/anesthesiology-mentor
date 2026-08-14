@@ -4,7 +4,13 @@ import { useApp } from "@/contexts/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { KEYS } from "@/lib/types";
 import { MILLER_CHAPTERS, getChapterDisplay } from "@/data/millerChapters";
-import { createQuiz, deleteQuiz, fetchQuizzes, fetchAllAttempts, QuizRow } from "@/lib/academyRepository";
+import {
+  createQuiz,
+  deleteQuiz,
+  fetchQuizzes,
+  fetchAllAttempts,
+  QuizRow,
+} from "@/lib/academyRepository";
 
 // datetime-local wants "YYYY-MM-DDTHH:mm" in local time
 const toLocalInput = (d: Date): string => {
@@ -15,24 +21,35 @@ const toLocalInput = (d: Date): string => {
 export default function AcademyQuizzesTab() {
   const { data } = useApp();
   const [quizzes, setQuizzes] = useState<QuizRow[]>([]);
-  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>({});
+  const [attemptCounts, setAttemptCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [title, setTitle] = useState("");
   const [quizType, setQuizType] = useState<"weekly" | "baseline">("weekly");
   const [opensAt, setOpensAt] = useState(toLocalInput(new Date()));
-  const [closesAt, setClosesAt] = useState(toLocalInput(new Date(Date.now() + 24 * 3600 * 1000)));
+  const [closesAt, setClosesAt] = useState(
+    toLocalInput(new Date(Date.now() + 24 * 3600 * 1000)),
+  );
   const [idsText, setIdsText] = useState("");
   const [fillChapter, setFillChapter] = useState<number>(1);
   const [fillCount, setFillCount] = useState(10);
   const [busy, setBusy] = useState(false);
 
-  const questionById = useMemo(() => new Map(data.map((q) => [String(q[KEYS.ID]), q])), [data]);
+  const questionById = useMemo(
+    () => new Map(data.map((q) => [String(q[KEYS.ID]), q])),
+    [data],
+  );
 
   const reload = useCallback(async () => {
     try {
-      const [qs, attempts] = await Promise.all([fetchQuizzes(), fetchAllAttempts()]);
+      const [qs, attempts] = await Promise.all([
+        fetchQuizzes(),
+        fetchAllAttempts(),
+      ]);
       setQuizzes(qs);
       const counts: Record<string, number> = {};
-      for (const a of attempts) counts[a.quiz_id] = (counts[a.quiz_id] ?? 0) + 1;
+      for (const a of attempts)
+        counts[a.quiz_id] = (counts[a.quiz_id] ?? 0) + 1;
       setAttemptCounts(counts);
     } catch (e) {
       console.error("quiz reload failed:", e);
@@ -58,11 +75,16 @@ export default function AcademyQuizzesTab() {
     const n = Math.max(1, Math.min(120, Number(fillCount) || 1));
     const chosen = new Set(parsedIds);
     const pool = data.filter(
-      (q) => q[KEYS.CHAPTER] === fillChapter && !chosen.has(String(q[KEYS.ID])) && Boolean(q[KEYS.CORRECT]),
+      (q) =>
+        q[KEYS.CHAPTER] === fillChapter &&
+        !chosen.has(String(q[KEYS.ID])) &&
+        Boolean(q[KEYS.CORRECT]),
     );
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, n);
     if (shuffled.length < n) {
-      toast.warning(`בפרק ${fillChapter} נמצאו רק ${shuffled.length} שאלות פנויות עם תשובה נכונה`);
+      toast.warning(
+        `בפרק ${fillChapter} נמצאו רק ${shuffled.length} שאלות פנויות עם תשובה נכונה`,
+      );
     }
     const added = shuffled.map((q) => String(q[KEYS.ID]));
     setIdsText([...parsedIds, ...added].join("\n"));
@@ -83,14 +105,17 @@ export default function AcademyQuizzesTab() {
       return toast.error(
         `${uniqueMissingIds.length} מזהים לא קיימים במאגר: ${uniqueMissingIds.slice(0, 5).join(", ")}`,
       );
-    const noCorrectAnswerIds = uniqueIds.filter((id) => !questionById.get(id)?.[KEYS.CORRECT]);
+    const noCorrectAnswerIds = uniqueIds.filter(
+      (id) => !questionById.get(id)?.[KEYS.CORRECT],
+    );
     if (noCorrectAnswerIds.length > 0)
       return toast.error(
         `${noCorrectAnswerIds.length} שאלות ללא תשובה נכונה מוגדרת — הסר אותן: ${noCorrectAnswerIds.slice(0, 5).join(", ")}`,
       );
     const opens = new Date(opensAt);
     const closes = new Date(closesAt);
-    if (!(closes > opens)) return toast.error("שעת הסגירה חייבת להיות אחרי שעת הפתיחה");
+    if (!(closes > opens))
+      return toast.error("שעת הסגירה חייבת להיות אחרי שעת הפתיחה");
     setBusy(true);
     try {
       const { data: userData } = await supabase.auth.getUser();
@@ -115,7 +140,8 @@ export default function AcademyQuizzesTab() {
   };
 
   const handleDelete = async (quizRow: QuizRow) => {
-    if ((attemptCounts[quizRow.id] ?? 0) > 0) return toast.error("יש הגשות לבוחן — לא ניתן למחוק");
+    if ((attemptCounts[quizRow.id] ?? 0) > 0)
+      return toast.error("יש הגשות לבוחן — לא ניתן למחוק");
     if (!window.confirm(`למחוק את "${quizRow.title}"?`)) return;
     try {
       await deleteQuiz(quizRow.id);
@@ -135,12 +161,14 @@ export default function AcademyQuizzesTab() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="כותרת (למשל: בייסליין חלק 1)"
-            className="border rounded-lg p-2"
+            className="border border-input bg-background text-foreground rounded-lg p-2"
           />
           <select
             value={quizType}
-            onChange={(e) => setQuizType(e.target.value as "weekly" | "baseline")}
-            className="border rounded-lg p-2"
+            onChange={(e) =>
+              setQuizType(e.target.value as "weekly" | "baseline")
+            }
+            className="border border-input bg-background text-foreground rounded-lg p-2"
           >
             <option value="weekly">בוחן שבועי</option>
             <option value="baseline">בייסליין</option>
@@ -151,7 +179,7 @@ export default function AcademyQuizzesTab() {
               type="datetime-local"
               value={opensAt}
               onChange={(e) => setOpensAt(e.target.value)}
-              className="border rounded-lg p-2 w-full"
+              className="border border-input bg-background text-foreground rounded-lg p-2 w-full"
               dir="ltr"
             />
           </label>
@@ -161,7 +189,7 @@ export default function AcademyQuizzesTab() {
               type="datetime-local"
               value={closesAt}
               onChange={(e) => setClosesAt(e.target.value)}
-              className="border rounded-lg p-2 w-full"
+              className="border border-input bg-background text-foreground rounded-lg p-2 w-full"
               dir="ltr"
             />
           </label>
@@ -174,7 +202,7 @@ export default function AcademyQuizzesTab() {
               <select
                 value={fillChapter}
                 onChange={(e) => setFillChapter(Number(e.target.value))}
-                className="border rounded-lg p-2 w-64 block"
+                className="border border-input bg-background text-foreground rounded-lg p-2 w-64 block"
               >
                 {Object.keys(MILLER_CHAPTERS).map((ch) => (
                   <option key={ch} value={ch}>
@@ -191,10 +219,13 @@ export default function AcademyQuizzesTab() {
                 max={120}
                 value={fillCount}
                 onChange={(e) => setFillCount(Number(e.target.value))}
-                className="border rounded-lg p-2 w-20 block"
+                className="border border-input bg-background text-foreground rounded-lg p-2 w-20 block"
               />
             </label>
-            <button onClick={randomFill} className="px-3 py-2 rounded-lg border font-medium">
+            <button
+              onClick={randomFill}
+              className="px-3 py-2 rounded-lg border font-medium"
+            >
               מלא אקראית
             </button>
           </div>
@@ -203,12 +234,17 @@ export default function AcademyQuizzesTab() {
             onChange={(e) => setIdsText(e.target.value)}
             rows={5}
             dir="ltr"
-            className="w-full border rounded-lg p-2 text-sm font-mono"
+            className="w-full border border-input bg-background text-foreground rounded-lg p-2 text-sm font-mono"
             placeholder="מזהי שאלות — שורה לכל מזהה"
           />
           <div className="text-sm text-muted-foreground">
             {parsedIds.length} שאלות נבחרו
-            {missingIds.length > 0 && <span className="text-destructive"> · {missingIds.length} מזהים לא קיימים</span>}
+            {missingIds.length > 0 && (
+              <span className="text-destructive">
+                {" "}
+                · {missingIds.length} מזהים לא קיימים
+              </span>
+            )}
           </div>
         </div>
 
@@ -237,14 +273,20 @@ export default function AcademyQuizzesTab() {
             {quizzes.map((q) => (
               <tr key={q.id} className="border-b">
                 <td className="p-2 font-medium">{q.title}</td>
-                <td className="p-2">{q.quiz_type === "baseline" ? "בייסליין" : "שבועי"}</td>
+                <td className="p-2">
+                  {q.quiz_type === "baseline" ? "בייסליין" : "שבועי"}
+                </td>
                 <td className="p-2 text-xs" dir="ltr">
-                  {new Date(q.opens_at).toLocaleString("he-IL")} → {new Date(q.closes_at).toLocaleString("he-IL")}
+                  {new Date(q.opens_at).toLocaleString("he-IL")} →{" "}
+                  {new Date(q.closes_at).toLocaleString("he-IL")}
                 </td>
                 <td className="p-2">{q.question_ids.length}</td>
                 <td className="p-2">{attemptCounts[q.id] ?? 0}</td>
                 <td className="p-2">
-                  <button onClick={() => void handleDelete(q)} className="text-destructive">
+                  <button
+                    onClick={() => void handleDelete(q)}
+                    className="text-destructive"
+                  >
                     מחק
                   </button>
                 </td>
@@ -252,7 +294,10 @@ export default function AcademyQuizzesTab() {
             ))}
             {quizzes.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                <td
+                  colSpan={6}
+                  className="p-4 text-center text-muted-foreground"
+                >
                   אין בחנים עדיין
                 </td>
               </tr>

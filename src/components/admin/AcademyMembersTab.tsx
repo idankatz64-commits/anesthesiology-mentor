@@ -82,7 +82,7 @@ export default function AcademyMembersTab() {
           onChange={(e) => setEmailsText(e.target.value)}
           rows={4}
           dir="ltr"
-          className="w-full border rounded-lg p-2 text-sm font-mono"
+          className="w-full border border-input bg-background text-foreground rounded-lg p-2 text-sm font-mono"
           placeholder="resident1@gmail.com&#10;resident2@gmail.com"
         />
         <button
@@ -117,7 +117,7 @@ export default function AcademyMembersTab() {
                   <input
                     defaultValue={m.full_name ?? ""}
                     placeholder="—"
-                    className="border rounded p-1 w-32"
+                    className="border border-input bg-background text-foreground rounded p-1 w-32"
                     onBlur={(e) => {
                       const v = e.target.value.trim();
                       if (v !== (m.full_name ?? ""))
@@ -135,7 +135,7 @@ export default function AcademyMembersTab() {
                           : null,
                       })
                     }
-                    className="border rounded p-1"
+                    className="border border-input bg-background text-foreground rounded p-1"
                   >
                     <option value="">—</option>
                     {[1, 2, 3, 4, 5, 6, 7].map((y) => (
@@ -152,7 +152,7 @@ export default function AcademyMembersTab() {
                     onChange={(e) =>
                       void patch(m.id, { access_level: e.target.value })
                     }
-                    className="border rounded p-1"
+                    className="border border-input bg-background text-foreground rounded p-1"
                   >
                     <option value="academy">אקדמיה בלבד</option>
                     <option value="full">גישה מלאה (שלב א')</option>

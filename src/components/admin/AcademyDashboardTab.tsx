@@ -203,7 +203,7 @@ export default function AcademyDashboardTab() {
           <select
             value={selectedMember}
             onChange={(e) => setSelectedMember(e.target.value)}
-            className="border rounded-lg p-2 bg-background"
+            className="border border-input bg-background text-foreground rounded-lg p-2"
           >
             <option value="">בחר מתמחה…</option>
             {members
