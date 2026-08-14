@@ -47,6 +47,14 @@ describe("tallyByDomain", () => {
     expect(t.get("פרמקולוגיה")).toBeUndefined(); // unanswered -> not counted
   });
 
+  it("survives an answers array shorter or longer than question_ids (DB does not enforce equal length)", () => {
+    const short = tallyByDomain([attempt({ question_ids: ["phys1", "phys2"], answers: ["A"] })], resolve);
+    expect(short.get("פיזיולוגיה")).toEqual({ answered: 1, correct: 1 }); // missing slot = unanswered
+
+    const long = tallyByDomain([attempt({ question_ids: ["phys1"], answers: ["A", "B", "C"] })], resolve);
+    expect(long.get("פיזיולוגיה")).toEqual({ answered: 1, correct: 1 }); // extra answers ignored
+  });
+
   it("files questions missing from the bank under לא מסווג and never credits them", () => {
     const t = tallyByDomain(
       [attempt({ question_ids: ["ghost"], answers: ["A"] })],
@@ -66,6 +74,14 @@ describe("personalTrend", () => {
     expect(personalTrend(QUIZZES, attempts, "u1")).toEqual([
       { quiz: "בוחן 1", mine: 50, cohort: 70 },
       { quiz: "בוחן 2", mine: null, cohort: 60 }, // did not sit quiz 2
+    ]);
+  });
+
+  it("distinguishes a real 0%% submission from never having sat the quiz", () => {
+    const attempts = [attempt({ quiz_id: "q1", user_id: "u1", score: 0, total: 10 })];
+    expect(personalTrend(QUIZZES, attempts, "u1")).toEqual([
+      { quiz: "בוחן 1", mine: 0, cohort: 0 }, // sat it, scored nothing
+      { quiz: "בוחן 2", mine: null, cohort: null }, // never sat it
     ]);
   });
 

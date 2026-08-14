@@ -35,21 +35,22 @@ interface Props {
   selectedUserId: string | null;
 }
 
-// Distinct enough to tell 13 domain lines apart; readable on both themes.
+// Distinct enough to tell 13 domain lines apart. Mid-luminance shades only:
+// each clears 3:1 against BOTH the white light-theme card and the dark card.
 const DOMAIN_COLORS = [
-  "#F97316",
+  "#EA580C",
   "#3B82F6",
-  "#10B981",
-  "#EC4899",
-  "#8B5CF6",
-  "#EAB308",
-  "#06B6D4",
-  "#EF4444",
-  "#84CC16",
-  "#F472B6",
-  "#0EA5E9",
-  "#A855F7",
-  "#94A3B8",
+  "#059669",
+  "#DB2777",
+  "#7C3AED",
+  "#A16207",
+  "#0891B2",
+  "#DC2626",
+  "#65A30D",
+  "#E11D48",
+  "#0284C7",
+  "#9333EA",
+  "#64748B",
 ];
 
 const axisTick = { fill: "hsl(var(--muted-foreground))", fontSize: 11 };
@@ -81,9 +82,12 @@ const Empty = ({ children }: { children: React.ReactNode }) => (
   <p className="text-sm text-muted-foreground py-6 text-center">{children}</p>
 );
 
-/** Red (0%) → green (100%). Neutral when there is no data. */
+/** Red (0%) → green (100%). Neutral when there is no data.
+ * Lightness is pinned at 28%: at 45% the yellow/green half of the range dropped
+ * to ~2:1 against the white cell text (WCAG AA needs 4.5:1). At 28% the worst
+ * point of the range (yellow, hue 60) sits at 4.8:1. */
 const heatColor = (pct: number | null) =>
-  pct === null ? "hsl(var(--muted))" : `hsl(${Math.round(pct * 1.2)} 65% 45%)`;
+  pct === null ? "hsl(var(--muted))" : `hsl(${Math.round(pct * 1.2)} 65% 28%)`;
 
 export default function AcademyProgressCharts({
   members,
@@ -159,7 +163,7 @@ export default function AcademyProgressCharts({
                   type="monotone"
                   dataKey="mine"
                   name="המתמחה"
-                  stroke="#F97316"
+                  stroke="#EA580C"
                   strokeWidth={2}
                   dot={{ r: 3 }}
                   connectNulls
@@ -168,7 +172,7 @@ export default function AcademyProgressCharts({
                   type="monotone"
                   dataKey="cohort"
                   name="ממוצע המחזור"
-                  stroke="#60A5FA"
+                  stroke="#2563EB"
                   strokeWidth={2}
                   strokeDasharray="6 3"
                   dot={false}
@@ -248,14 +252,27 @@ export default function AcademyProgressCharts({
             >
               <thead>
                 <tr>
-                  <th className="p-1 text-right font-medium sticky right-0 bg-background">
+                  <th
+                    scope="col"
+                    className="p-1 text-right font-medium sticky right-0 bg-background"
+                  >
                     מתמחה
                   </th>
                   {matrix.domains.map((d) => (
-                    <th key={d} className="p-1 font-medium align-bottom">
+                    <th
+                      key={d}
+                      scope="col"
+                      className="p-1 font-medium align-bottom"
+                      title={d}
+                    >
                       <div
                         className="whitespace-nowrap"
-                        style={{ writingMode: "vertical-rl", height: 110 }}
+                        style={{
+                          writingMode: "vertical-rl",
+                          height: 150,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                        }}
                       >
                         {d}
                       </div>
@@ -266,9 +283,12 @@ export default function AcademyProgressCharts({
               <tbody>
                 {matrix.rows.map((row) => (
                   <tr key={row.id}>
-                    <td className="p-1 whitespace-nowrap sticky right-0 bg-background">
+                    <th
+                      scope="row"
+                      className="p-1 whitespace-nowrap text-right font-normal sticky right-0 bg-background"
+                    >
                       {row.label}
-                    </td>
+                    </th>
                     {row.cells.map((cell) => (
                       <td
                         key={cell.domain}
@@ -317,6 +337,8 @@ export default function AcademyProgressCharts({
                   tick={axisTick}
                   axisLine={false}
                   tickLine={false}
+                  // 0% must sit at the right-hand labels so bars grow leftward, like the reading direction
+                  reversed
                 />
                 <YAxis
                   type="category"
