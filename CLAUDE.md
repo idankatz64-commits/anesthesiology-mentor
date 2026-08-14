@@ -82,6 +82,25 @@ else, so widening access is a one-line change, never a migration.
 > does _not_ mean "logged-in users". That one word was the original hole. Any new
 > policy on content must be `TO authenticated` **and** call `is_approved()`.
 
+> 🚨 **`profiles` is not user-writable, and must stay that way.** `INSERT`/`UPDATE`
+> are revoked from `anon` and `authenticated`. The "Users can update own profile"
+> policy is `FOR UPDATE ... USING (auth.uid() = id)` with **no `WITH CHECK`** —
+> Postgres then reuses `USING` as the check, so the only test is _"is this your
+> row"_, never _"which column"_. While that grant existed, any registered user could
+> `update profiles set approved = true where id = auth.uid()` and walk straight
+> through this entire lockdown, or set `is_admin = true` and read every user's
+> answer history via the `user_answers` / `question_edit_log` policies that trust
+> that column. Both were reproduced against production on 14.8 and closed by
+> revoking the privilege — column grants are enforced independently of RLS. The app
+> never reads or writes `profiles`, so nothing depends on it. If a profile-editing
+> feature is ever added, grant the single column, never the table. `SELECT` stays
+> granted: other policies contain `EXISTS (SELECT 1 FROM profiles ...)` subqueries.
+
+> ⚠️ **Known debt, not currently exploitable:** "who is an admin" is stored three
+> ways — `admin_users`, `profiles.is_admin`/`is_editor`, and one `question_audit_log`
+> policy matching on **email string** rather than id. Harmless while `profiles` is
+> read-only to users; consolidate before trusting `is_admin` again.
+
 > ⚠️ `public/study-guide/` (4.5 MB, 72 chapter HTML files + the Miller .docx) was
 > deleted — Vercel served it statically, so RLS never touched it, and **no code
 > referenced it**; MillerGuideView reads `chapter_content` instead. Recover with
