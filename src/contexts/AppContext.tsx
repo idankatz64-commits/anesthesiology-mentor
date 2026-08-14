@@ -56,6 +56,14 @@ interface AppContextType {
   // False only while a logged-in user's academy-membership check is in flight
   // (default true — covers "resolved" for anonymous users and the pre-hydration moment).
   membershipResolved: boolean;
+  // ── access gate (lockdown 2026-08-14) ──
+  // Logged-in user id, or null when signed out.
+  userId: string | null;
+  // False until the first Supabase auth check comes back. Nothing may render before then.
+  authResolved: boolean;
+  // Result of the is_approved() RPC — null while that round trip is in flight.
+  // The DB enforces this too; this only decides what the UI shows.
+  approved: boolean | null;
   registerAttemptedQuestions: (ids: string[]) => void;
 
   navigate: (view: ViewId, param?: string | null) => void;
@@ -249,6 +257,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [academyMember, setAcademyMember] = useState<AcademyMembership | null>(null);
   const [attemptedQuizIds, setAttemptedQuizIds] = useState<Set<string>>(new Set());
   const [membershipResolved, setMembershipResolved] = useState(true);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [authResolved, setAuthResolved] = useState(false);
+  const [approved, setApproved] = useState<boolean | null>(null);
 
   // Status is intentionally NOT checked here: a suspended academy-tier member
   // must stay academy-locked (not fall through to the full app). AcademyView
@@ -300,9 +311,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const hydrateUser = (userId: string | null) => {
       userIdRef.current = userId;
+      setUserId(userId);
       const thisHydration = ++hydrationIdRef.current;
       if (userId) {
         setMembershipResolved(false);
+        // Access gate (lockdown 2026-08-14). Same function the RLS policies use,
+        // so the screen can never disagree with what the database will hand over.
+        setApproved(null);
+        supabase.rpc("is_approved", { _user_id: userId }).then(({ data, error }) => {
+          if (hydrationIdRef.current !== thisHydration) return;
+          const ok = !error && data === true;
+          setApproved(ok);
+          // Questions are cached in sessionStorage. Someone who was approved
+          // earlier in this tab must not keep reading that cache after losing
+          // access, so drop it the moment approval comes back false.
+          if (!ok) invalidateQuestionsCache();
+        });
         fetchProgressFromSupabase(userId)
           .then((prog) => {
             if (hydrationIdRef.current === thisHydration) setProgress(prog);
@@ -397,6 +421,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setAcademyMember(null);
         setAttemptedQuizIds(new Set());
         setMembershipResolved(true);
+        setApproved(false);
+        // Signed out — drop the cached question bank with the session.
+        invalidateQuestionsCache();
         // Unsubscribe from edit notifications
         if (editChannelRef.current) {
           supabase.removeChannel(editChannelRef.current);
@@ -411,6 +438,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "SIGNED_OUT") {
         hydrateUser(session?.user?.id ?? null);
+        // INITIAL_SESSION always fires, so this is the one place that can
+        // truthfully say "we now know whether anyone is logged in".
+        setAuthResolved(true);
       } else if (event === "TOKEN_REFRESHED" && session?.user?.id) {
         // Re-check admin/editor role after token refresh — lightweight, no full re-hydration
         const userId = session.user.id;
@@ -1258,6 +1288,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     academyMember,
     academyOnly,
     membershipResolved,
+    userId,
+    authResolved,
+    approved,
     registerAttemptedQuestions,
     invalidateQuestions,
     navigate,

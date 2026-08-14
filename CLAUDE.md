@@ -23,14 +23,14 @@
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Frontend | React + Vite + TypeScript + Tailwind + shadcn/ui |
-| Hosting | Vercel — team: `team_9nc4gBGF5aLVsHGGf7vJiWld`, project: `prj_TVptaSlthQVDRSlxyN5gjslw5Y0s` |
-| Backend/DB | Supabase — project ID: `ksbblqnwcmfylpxygyrj` |
-| Auth | Email+password + Google OAuth (email confirm OFF) |
-| AI (explanations) | Anthropic API → Supabase Edge Function `matot-report` |
-| Source | https://github.com/idankatz64-commits/anesthesiology-mentor.git |
+| Layer             | Technology                                                                                  |
+| ----------------- | ------------------------------------------------------------------------------------------- |
+| Frontend          | React + Vite + TypeScript + Tailwind + shadcn/ui                                            |
+| Hosting           | Vercel — team: `team_9nc4gBGF5aLVsHGGf7vJiWld`, project: `prj_TVptaSlthQVDRSlxyN5gjslw5Y0s` |
+| Backend/DB        | Supabase — project ID: `ksbblqnwcmfylpxygyrj`                                               |
+| Auth              | Email+password + Google OAuth (email confirm OFF)                                           |
+| AI (explanations) | Anthropic API → Supabase Edge Function `matot-report`                                       |
+| Source            | https://github.com/idankatz64-commits/anesthesiology-mentor.git                             |
 
 **Local code (CORRECT PATH):** `/Users/idankatz15/Desktop/3_APP_DEV/repo-temp/`
 
@@ -55,6 +55,38 @@ handover items, calendar-sync flags. It is deliberate and it stays.
 Audits keep rediscovering this and filing it as a critical finding. It is not.
 Documented here so the next one can close it on sight.
 
+### Access control — approved users only (locked down 2026-08-14)
+
+Until 14 Aug 2026 the app was readable by **anyone on the internet with no
+account**: 3,923 questions _including the `correct` column_, plus categories,
+formulas, community notes and a 27 MB explanations backup table. Closed now.
+
+**One gate, one place.** `public.is_approved(uuid)` (SECURITY DEFINER, STABLE)
+returns true for: admin · editor · active `academy_members` row ·
+`profiles.approved = true`. **Every** content SELECT policy calls it and nothing
+else, so widening access is a one-line change, never a migration.
+
+- **To let someone in:** `update profiles set approved = true where id = '<uid>';`
+  That is the whole operation. Do not add policies, do not add tables.
+- **New signups default to `approved = false`** and see a "waiting for approval"
+  screen. Registration is deliberately left open — vetting happens at approval.
+- **Gated tables (9):** `questions`, `categories`, `formulas`, `community_notes`,
+  `topic_summaries`, `resource_links`, `chapter_content`, `chapter_gaps`, and
+  `explanation_b64_backup_20260809` (RLS on with _zero_ policies = service_role only).
+- **UI half:** `src/lib/accessGate.ts` → `resolveGate()`, applied at the top of
+  `AppContent` in `src/pages/Index.tsx`. It only decides what to _show_; the
+  database is the actual boundary.
+- **Rollback:** `Desktop/project_ACADEMY/backups/pg_policies-BEFORE-lockdown-2026-08-14.sql`
+
+> ⚠️ `TO public` in a Postgres policy means **every role including `anon`** — it
+> does _not_ mean "logged-in users". That one word was the original hole. Any new
+> policy on content must be `TO authenticated` **and** call `is_approved()`.
+
+> ⚠️ `public/study-guide/` (4.5 MB, 72 chapter HTML files + the Miller .docx) was
+> deleted — Vercel served it statically, so RLS never touched it, and **no code
+> referenced it**; MillerGuideView reads `chapter_content` instead. Recover with
+> `git checkout 613ca45 -- public/study-guide` if it is ever wanted again.
+
 ## How Changes Work
 
 - **DB (tables, RLS, functions):** Via Supabase MCP directly — instant
@@ -63,47 +95,48 @@ Documented here so the next one can close it on sight.
 
 ## Active Edge Functions
 
-| Function | Purpose |
-|---|---|
-| `sync-questions` | Sync from Google Sheets → Supabase (admin only) |
-| `daily-csv-export` | Send daily CSV to email |
-| `admin-manage-users` | Add/manage admins and editors |
-| `matot-report` | Explain question via Claude API (Anthropic) |
-| `weekly-report` | Weekly 7-day question digest email |
-| `ai-summary` | AI learning summary (daily/weekly via Claude) |
+| Function             | Purpose                                         |
+| -------------------- | ----------------------------------------------- |
+| `sync-questions`     | Sync from Google Sheets → Supabase (admin only) |
+| `daily-csv-export`   | Send daily CSV to email                         |
+| `admin-manage-users` | Add/manage admins and editors                   |
+| `matot-report`       | Explain question via Claude API (Anthropic)     |
+| `weekly-report`      | Weekly 7-day question digest email              |
+| `ai-summary`         | AI learning summary (daily/weekly via Claude)   |
 
 ## Supabase Tables (current as of May 2026)
 
-| Table | Purpose |
-|---|---|
-| `questions` | All exam questions (fetched with sessionStorage cache) |
-| `user_answers` | Per-user answer history with atomic upsert via `increment_user_answer()` |
-| `answer_history` | Full answer log per attempt |
-| `spaced_repetition` | SM-2 algorithm data per user+question (5 fields: ease_factor, interval_days, repetitions, confidence, next_review_date) |
-| `admin_users` | Admin/editor roles |
-| `categories` | Topic classifications |
-| `formulas` | 98 Miller formulas (chapter filter) |
-| `calculator_formulas` | Interactive calculator formulas with expressions |
-| `user_favorites` | Bookmarked questions |
-| `user_notes` | Per-question notes |
-| `user_ratings` | easy/medium/hard ratings |
-| `user_tags` | Custom tags on questions |
-| `user_feedback` | User-submitted feedback |
-| `saved_sessions` | Auto-saved session state |
-| `topic_summaries` | Miller chapter summaries (Summaries module — not in generated types, used via raw queries) |
-| `resource_links` | External resource links (shown in TopNav + session toolbar — not in generated types, used via raw queries) |
-| `community_notes` | Shared notes between users |
-| `question_audit_log` | Audit log for question edits |
-| `question_edit_log` | Edit history per question |
-| `study_rooms` | Multiplayer study rooms |
-| `room_participants` | Room participants |
-| `room_answers` | Answers within rooms |
-| `anki_decks` | Anki-style decks |
-| `anki_cards` | Anki-style flashcards with SM-2 |
+| Table                 | Purpose                                                                                                                 |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `questions`           | All exam questions (fetched with sessionStorage cache)                                                                  |
+| `user_answers`        | Per-user answer history with atomic upsert via `increment_user_answer()`                                                |
+| `answer_history`      | Full answer log per attempt                                                                                             |
+| `spaced_repetition`   | SM-2 algorithm data per user+question (5 fields: ease_factor, interval_days, repetitions, confidence, next_review_date) |
+| `admin_users`         | Admin/editor roles                                                                                                      |
+| `categories`          | Topic classifications                                                                                                   |
+| `formulas`            | 98 Miller formulas (chapter filter)                                                                                     |
+| `calculator_formulas` | Interactive calculator formulas with expressions                                                                        |
+| `user_favorites`      | Bookmarked questions                                                                                                    |
+| `user_notes`          | Per-question notes                                                                                                      |
+| `user_ratings`        | easy/medium/hard ratings                                                                                                |
+| `user_tags`           | Custom tags on questions                                                                                                |
+| `user_feedback`       | User-submitted feedback                                                                                                 |
+| `saved_sessions`      | Auto-saved session state                                                                                                |
+| `topic_summaries`     | Miller chapter summaries (Summaries module — not in generated types, used via raw queries)                              |
+| `resource_links`      | External resource links (shown in TopNav + session toolbar — not in generated types, used via raw queries)              |
+| `community_notes`     | Shared notes between users                                                                                              |
+| `question_audit_log`  | Audit log for question edits                                                                                            |
+| `question_edit_log`   | Edit history per question                                                                                               |
+| `study_rooms`         | Multiplayer study rooms                                                                                                 |
+| `room_participants`   | Room participants                                                                                                       |
+| `room_answers`        | Answers within rooms                                                                                                    |
+| `anki_decks`          | Anki-style decks                                                                                                        |
+| `anki_cards`          | Anki-style flashcards with SM-2                                                                                         |
 
 ## Current Features (LIVE as of May 24, 2026)
 
 ### Study Core
+
 - **Session mode** — practice questions with answer selection, confidence rating, flagging
 - **Simulation mode** — exam-style timed session
 - **Smart question selection** — two-stage topic-aware selection (Hamilton method, SRS urgency) with pre-filter composer (cool-down + future-schedule), 30% new-question quota reservation per topic
@@ -113,12 +146,14 @@ Documented here so the next one can close it on sight.
 - **Resume session** — auto-saves and resumes interrupted sessions (in-flight overlap guard via `createInFlightGuard`)
 
 ### Content
+
 - **Formulas** — 98 Miller formulas, chapter filter, descriptions
 - **Formula calculator** — interactive calculator with clinical descriptions (Hebrew)
-- **Miller study guide** — 72 chapter summaries (public/study-guide/)
+- **Miller study guide** — chapter summaries + gap analysis, served from the `chapter_content` / `chapter_gaps` tables (MillerGuideView)
 - **Summaries module** — SummariesView for per-chapter notes
 
 ### Admin / Editor
+
 - **QuestionEditorTab** — edit questions, explanations, correct answers inline
 - **FormulaManagementTab** — manage formulas and calculator formulas
 - **SummariesManagementTab** — manage chapter summaries
@@ -128,6 +163,7 @@ Documented here so the next one can close it on sight.
 - **EditorActivityTab** — view editor activity log
 
 ### UI
+
 - **Image gallery** — Critical Visuals from explanations, lightbox zoom
 - **Resource links** — in TopNav, HomeView, and session toolbar (🔗 popover)
 - **AI explanation drawer** — Claude API explains any question
@@ -149,10 +185,12 @@ Documented here so the next one can close it on sight.
 - **Google OAuth** — sign in with Google
 
 ### Data
+
 - **CSV export** — strips `<img>` HTML before export
 - **Daily CSV email** — automated daily export
 
 ### Security (recent patches — May 2026)
+
 - **XSS hardening** — B3 HIGH findings closed (input sanitization)
 - **Storage security** — bucket listing + upload restrictions enforced
 - **Optimistic UI rollback** — Supabase write failures revert local state (B5)
@@ -174,4 +212,4 @@ Questions were previously fetched from Google Sheets CSV — **now fetched from 
 
 ---
 
-*Last updated: May 28, 2026 — synced from GitHub + Vercel MCP*
+_Last updated: May 28, 2026 — synced from GitHub + Vercel MCP_
