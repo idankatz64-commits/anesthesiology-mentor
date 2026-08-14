@@ -112,6 +112,7 @@ export default function AcademyDashboardTab() {
         id: m.id,
         label: m.full_name || m.email,
         userId: m.user_id,
+        residencyYear: m.residency_year,
       })),
     [members],
   );
@@ -134,69 +135,75 @@ export default function AcademyDashboardTab() {
   };
 
   return (
-    <div className="space-y-8" dir="rtl">
-      <section className="border rounded-xl overflow-x-auto">
-        <h3 className="font-semibold p-3">מטריצת הגשות — מתמחה × בוחן</h3>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b bg-muted/50 text-right">
-              <th className="p-2">מתמחה</th>
-              {sortedQuizzes.map((q) => (
-                <th key={q.id} className="p-2 whitespace-nowrap">
-                  {q.title}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {members.map((m) => (
-              <tr
-                key={m.id}
-                className={`border-b ${m.status === "suspended" ? "opacity-50" : ""}`}
-              >
-                <td className="p-2">
-                  {m.full_name || m.email}
-                  {m.status === "suspended" && (
-                    <span className="text-xs text-amber-600 mr-1">(מושהה)</span>
-                  )}
-                  {!m.user_id && (
-                    <span className="text-xs text-muted-foreground mr-1">
-                      (טרם נרשם)
-                    </span>
-                  )}
-                </td>
+    <div className="space-y-6" dir="rtl">
+      <section className="deep-tile rounded-2xl p-5 sm:p-6">
+        <h3 className="text-base font-bold mb-5">
+          מטריצת הגשות — מתמחה × בוחן
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b bg-muted/50 text-right">
+                <th className="p-2">מתמחה</th>
                 {sortedQuizzes.map((q) => (
-                  <td key={q.id} className="p-2">
-                    {pctCell(
-                      m.user_id
-                        ? attemptsByUser.get(m.user_id)?.get(q.id)
-                        : undefined,
-                    )}
-                  </td>
+                  <th key={q.id} className="p-2 whitespace-nowrap">
+                    {q.title}
+                  </th>
                 ))}
               </tr>
-            ))}
-            {members.length === 0 && (
-              <tr>
-                <td
-                  className="p-4 text-center text-muted-foreground"
-                  colSpan={1 + sortedQuizzes.length}
+            </thead>
+            <tbody>
+              {members.map((m) => (
+                <tr
+                  key={m.id}
+                  className={`border-b ${m.status === "suspended" ? "opacity-50" : ""}`}
                 >
-                  המחזור ריק
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+                  <td className="p-2">
+                    {m.full_name || m.email}
+                    {m.status === "suspended" && (
+                      <span className="text-xs text-amber-600 mr-1">
+                        (מושהה)
+                      </span>
+                    )}
+                    {!m.user_id && (
+                      <span className="text-xs text-muted-foreground mr-1">
+                        (טרם נרשם)
+                      </span>
+                    )}
+                  </td>
+                  {sortedQuizzes.map((q) => (
+                    <td key={q.id} className="p-2">
+                      {pctCell(
+                        m.user_id
+                          ? attemptsByUser.get(m.user_id)?.get(q.id)
+                          : undefined,
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {members.length === 0 && (
+                <tr>
+                  <td
+                    className="p-4 text-center text-muted-foreground"
+                    colSpan={1 + sortedQuizzes.length}
+                  >
+                    המחזור ריק
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
-      <section className="border rounded-xl p-3 space-y-3">
-        <div className="flex items-center gap-3">
-          <h3 className="font-semibold">פילוח תחומים למתמחה</h3>
+      <section className="deep-tile rounded-2xl p-5 sm:p-6 space-y-5">
+        <div className="flex items-center gap-3 flex-wrap">
+          <h3 className="text-base font-bold">פילוח תחומים למתמחה</h3>
           <select
             value={selectedMember}
             onChange={(e) => setSelectedMember(e.target.value)}
-            className="border rounded-lg p-2"
+            className="border rounded-lg p-2 bg-background"
           >
             <option value="">בחר מתמחה…</option>
             {members

@@ -12,6 +12,7 @@ export interface AcademyMemberRow {
   user_id: string | null;
   access_level: string;
   status: string;
+  residency_year: number | null;
   created_at: string;
 }
 
@@ -59,7 +60,10 @@ function throwIfError(error: { code?: string; message: string } | null): void {
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function parseEmailList(text: string): { valid: string[]; invalid: string[] } {
+export function parseEmailList(text: string): {
+  valid: string[];
+  invalid: string[];
+} {
   const tokens = text
     .split(/[\s,;]+/)
     .map((t) => t.trim().toLowerCase())
@@ -80,7 +84,9 @@ export function parseEmailList(text: string): { valid: string[]; invalid: string
 
 export async function claimAcademyMembership(): Promise<AcademyMembership | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.rpc as any)("claim_academy_membership");
+  const { data, error } = await (supabase.rpc as any)(
+    "claim_academy_membership",
+  );
   if (error) throw new Error(error.message);
   const row = Array.isArray(data) ? data[0] : data;
   if (!row) return null;
@@ -88,12 +94,16 @@ export async function claimAcademyMembership(): Promise<AcademyMembership | null
 }
 
 export async function fetchQuizzes(): Promise<QuizRow[]> {
-  const { data, error } = await table("quizzes").select("*").order("opens_at", { ascending: false });
+  const { data, error } = await table("quizzes")
+    .select("*")
+    .order("opens_at", { ascending: false });
   throwIfError(error);
   return (data ?? []) as QuizRow[];
 }
 
-export async function fetchMyAttempts(userId: string): Promise<QuizAttemptRow[]> {
+export async function fetchMyAttempts(
+  userId: string,
+): Promise<QuizAttemptRow[]> {
   const { data, error } = await table("quiz_attempts")
     .select("*")
     .eq("user_id", userId)
@@ -115,18 +125,23 @@ export async function submitQuizAttempt(
   });
   if (error) {
     const message = error.message ?? "";
-    if (message.includes("ALREADY_SUBMITTED")) throw new Error("ALREADY_SUBMITTED");
+    if (message.includes("ALREADY_SUBMITTED"))
+      throw new Error("ALREADY_SUBMITTED");
     if (message.includes("WINDOW_CLOSED")) throw new Error("WINDOW_CLOSED");
     if (message.includes("NOT_MEMBER")) throw new Error("NOT_MEMBER");
-    if (message.includes("INCOMPLETE_SUBMISSION")) throw new Error("INCOMPLETE_SUBMISSION");
-    if (message.includes("DUPLICATE_QUESTIONS")) throw new Error("DUPLICATE_QUESTIONS");
+    if (message.includes("INCOMPLETE_SUBMISSION"))
+      throw new Error("INCOMPLETE_SUBMISSION");
+    if (message.includes("DUPLICATE_QUESTIONS"))
+      throw new Error("DUPLICATE_QUESTIONS");
     throw new Error(error.message);
   }
   const row = Array.isArray(data) ? data[0] : data;
   return { score: Number(row.score), total: Number(row.total) };
 }
 
-export async function fetchCohortStats(quizId: string): Promise<CohortStats | null> {
+export async function fetchCohortStats(
+  quizId: string,
+): Promise<CohortStats | null> {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase.rpc as any)("quiz_cohort_stats", {
     _quiz_id: quizId,
@@ -144,7 +159,9 @@ export async function fetchCohortStats(quizId: string): Promise<CohortStats | nu
 // ---------- admin ----------
 
 export async function fetchMembers(): Promise<AcademyMemberRow[]> {
-  const { data, error } = await table("academy_members").select("*").order("created_at", { ascending: true });
+  const { data, error } = await table("academy_members")
+    .select("*")
+    .order("created_at", { ascending: true });
   throwIfError(error);
   return (data ?? []) as AcademyMemberRow[];
 }
@@ -161,7 +178,12 @@ export async function addMembers(emails: string[]): Promise<void> {
 
 export async function updateMember(
   id: string,
-  patch: Partial<Pick<AcademyMemberRow, "full_name" | "access_level" | "status">>,
+  patch: Partial<
+    Pick<
+      AcademyMemberRow,
+      "full_name" | "access_level" | "status" | "residency_year"
+    >
+  >,
 ): Promise<void> {
   const { error } = await table("academy_members").update(patch).eq("id", id);
   throwIfError(error);
@@ -192,7 +214,9 @@ export async function deleteQuiz(id: string): Promise<void> {
 }
 
 export async function fetchAllAttempts(): Promise<QuizAttemptRow[]> {
-  const { data, error } = await table("quiz_attempts").select("*").order("submitted_at", { ascending: true });
+  const { data, error } = await table("quiz_attempts")
+    .select("*")
+    .order("submitted_at", { ascending: true });
   throwIfError(error);
   return (data ?? []) as QuizAttemptRow[];
 }

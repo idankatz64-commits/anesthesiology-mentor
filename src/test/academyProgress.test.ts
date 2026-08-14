@@ -1,6 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
   AttemptLike,
+  COHORT_KEY,
+  YEAR_KEY,
+  comparisonTrend,
   QuestionResolver,
   cohortStrength,
   domainTrend,
@@ -48,10 +51,16 @@ describe("tallyByDomain", () => {
   });
 
   it("survives an answers array shorter or longer than question_ids (DB does not enforce equal length)", () => {
-    const short = tallyByDomain([attempt({ question_ids: ["phys1", "phys2"], answers: ["A"] })], resolve);
+    const short = tallyByDomain(
+      [attempt({ question_ids: ["phys1", "phys2"], answers: ["A"] })],
+      resolve,
+    );
     expect(short.get("פיזיולוגיה")).toEqual({ answered: 1, correct: 1 }); // missing slot = unanswered
 
-    const long = tallyByDomain([attempt({ question_ids: ["phys1"], answers: ["A", "B", "C"] })], resolve);
+    const long = tallyByDomain(
+      [attempt({ question_ids: ["phys1"], answers: ["A", "B", "C"] })],
+      resolve,
+    );
     expect(long.get("פיזיולוגיה")).toEqual({ answered: 1, correct: 1 }); // extra answers ignored
   });
 
@@ -78,7 +87,9 @@ describe("personalTrend", () => {
   });
 
   it("distinguishes a real 0%% submission from never having sat the quiz", () => {
-    const attempts = [attempt({ quiz_id: "q1", user_id: "u1", score: 0, total: 10 })];
+    const attempts = [
+      attempt({ quiz_id: "q1", user_id: "u1", score: 0, total: 10 }),
+    ];
     expect(personalTrend(QUIZZES, attempts, "u1")).toEqual([
       { quiz: "בוחן 1", mine: 0, cohort: 0 }, // sat it, scored nothing
       { quiz: "בוחן 2", mine: null, cohort: null }, // never sat it
@@ -166,5 +177,47 @@ describe("cohortStrength", () => {
       ["פרמקולוגיה", 0],
       ["פיזיולוגיה", 100],
     ]);
+  });
+});
+
+describe("comparisonTrend", () => {
+  const attempts = [
+    attempt({ quiz_id: "q1", user_id: "u1", score: 4, total: 10 }),
+    attempt({ quiz_id: "q1", user_id: "u2", score: 8, total: 10 }),
+    attempt({ quiz_id: "q1", user_id: "u3", score: 6, total: 10 }),
+    attempt({ quiz_id: "q2", user_id: "u1", score: 7, total: 10 }),
+  ];
+  const selected = [
+    { userId: "u1", label: "דנה" },
+    { userId: "u2", label: "יוסי" },
+  ];
+
+  it("gives each selected member its own series alongside the cohort average", () => {
+    const { series, points } = comparisonTrend(
+      QUIZZES,
+      attempts,
+      selected,
+      null,
+    );
+    expect(series.map((s) => s.key)).toEqual(["u1", "u2", COHORT_KEY]);
+    expect(points).toEqual([
+      { quiz: "בוחן 1", u1: 40, u2: 80, [COHORT_KEY]: 60 }, // (40+80+60)/3
+      { quiz: "בוחן 2", u1: 70, u2: null, [COHORT_KEY]: 70 }, // only u1 sat it
+    ]);
+  });
+
+  it("averages only the given year peers into the year series", () => {
+    const { series, points } = comparisonTrend(QUIZZES, attempts, selected, [
+      "u1",
+      "u3",
+    ]);
+    expect(series.map((s) => s.label)).toContain("ממוצע השנתון");
+    expect(points[0][YEAR_KEY]).toBe(50); // (40+60)/2, excludes u2
+    expect(points[0][COHORT_KEY]).toBe(60); // whole cohort still includes u2
+  });
+
+  it("reports null, not 0, for a year that nobody from it sat", () => {
+    const { points } = comparisonTrend(QUIZZES, attempts, selected, ["u3"]);
+    expect(points[1][YEAR_KEY]).toBeNull(); // u3 never sat quiz 2
   });
 });

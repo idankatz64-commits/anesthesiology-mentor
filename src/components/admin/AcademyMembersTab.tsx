@@ -74,7 +74,8 @@ export default function AcademyMembersTab() {
       <div className="border rounded-xl p-4 space-y-3">
         <h3 className="font-semibold">הוספת מתמחים למחזור</h3>
         <p className="text-sm text-muted-foreground">
-          הדבק מיילים (שורה לכל מייל או מופרדים בפסיק). מי שיירשם עם מייל מהרשימה ישויך אוטומטית.
+          הדבק מיילים (שורה לכל מייל או מופרדים בפסיק). מי שיירשם עם מייל
+          מהרשימה ישויך אוטומטית.
         </p>
         <textarea
           value={emailsText}
@@ -99,6 +100,7 @@ export default function AcademyMembersTab() {
             <tr className="border-b bg-muted/50 text-right">
               <th className="p-2">מייל</th>
               <th className="p-2">שם</th>
+              <th className="p-2">שנת התמחות</th>
               <th className="p-2">נרשם?</th>
               <th className="p-2">רמת גישה</th>
               <th className="p-2">סטטוס</th>
@@ -118,15 +120,38 @@ export default function AcademyMembersTab() {
                     className="border rounded p-1 w-32"
                     onBlur={(e) => {
                       const v = e.target.value.trim();
-                      if (v !== (m.full_name ?? "")) void patch(m.id, { full_name: v || null });
+                      if (v !== (m.full_name ?? ""))
+                        void patch(m.id, { full_name: v || null });
                     }}
                   />
+                </td>
+                <td className="p-2">
+                  <select
+                    value={m.residency_year ?? ""}
+                    onChange={(e) =>
+                      void patch(m.id, {
+                        residency_year: e.target.value
+                          ? Number(e.target.value)
+                          : null,
+                      })
+                    }
+                    className="border rounded p-1"
+                  >
+                    <option value="">—</option>
+                    {[1, 2, 3, 4, 5, 6, 7].map((y) => (
+                      <option key={y} value={y}>
+                        שנה {y}
+                      </option>
+                    ))}
+                  </select>
                 </td>
                 <td className="p-2">{m.user_id ? "✅" : "טרם"}</td>
                 <td className="p-2">
                   <select
                     value={m.access_level}
-                    onChange={(e) => void patch(m.id, { access_level: e.target.value })}
+                    onChange={(e) =>
+                      void patch(m.id, { access_level: e.target.value })
+                    }
                     className="border rounded p-1"
                   >
                     <option value="academy">אקדמיה בלבד</option>
@@ -135,14 +160,25 @@ export default function AcademyMembersTab() {
                 </td>
                 <td className="p-2">
                   <button
-                    onClick={() => void patch(m.id, { status: m.status === "active" ? "suspended" : "active" })}
-                    className={m.status === "active" ? "text-green-600" : "text-amber-600"}
+                    onClick={() =>
+                      void patch(m.id, {
+                        status: m.status === "active" ? "suspended" : "active",
+                      })
+                    }
+                    className={
+                      m.status === "active"
+                        ? "text-green-600"
+                        : "text-amber-600"
+                    }
                   >
                     {m.status === "active" ? "פעיל" : "מושהה"}
                   </button>
                 </td>
                 <td className="p-2">
-                  <button onClick={() => void remove(m)} className="text-destructive">
+                  <button
+                    onClick={() => void remove(m)}
+                    className="text-destructive"
+                  >
                     הסר
                   </button>
                 </td>
@@ -150,7 +186,10 @@ export default function AcademyMembersTab() {
             ))}
             {members.length === 0 && (
               <tr>
-                <td colSpan={6} className="p-4 text-center text-muted-foreground">
+                <td
+                  colSpan={7}
+                  className="p-4 text-center text-muted-foreground"
+                >
                   המחזור ריק — הוסף מיילים למעלה
                 </td>
               </tr>

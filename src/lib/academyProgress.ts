@@ -122,6 +122,54 @@ export function domainTrend(
   return { domains, points };
 }
 
+export interface TrendSeries {
+  /** dataKey on the chart points. */
+  key: string;
+  label: string;
+}
+
+export const COHORT_KEY = "__cohort";
+export const YEAR_KEY = "__year";
+
+/**
+ * Overall score per quiz for several members at once, plus the cohort average
+ * and (when a year is given) the average of that residency year only.
+ * A member who did not sit a quiz gets null there — distinct from a real 0.
+ */
+export function comparisonTrend(
+  quizzes: QuizLike[],
+  attempts: AttemptLike[],
+  selected: { userId: string; label: string }[],
+  yearPeerIds: string[] | null,
+): { series: TrendSeries[]; points: Record<string, string | number | null>[] } {
+  const scoreOf = (a: AttemptLike) => (100 * a.score) / a.total;
+  const avg = (xs: number[]) =>
+    xs.length ? Math.round(xs.reduce((s, x) => s + x, 0) / xs.length) : null;
+
+  const points = sortQuizzesChronologically(quizzes).map((quiz) => {
+    const onQuiz = attempts.filter((a) => a.quiz_id === quiz.id && a.total > 0);
+    const point: Record<string, string | number | null> = { quiz: quiz.title };
+    for (const member of selected) {
+      const mine = onQuiz.find((a) => a.user_id === member.userId);
+      point[member.userId] = mine ? Math.round(scoreOf(mine)) : null;
+    }
+    point[COHORT_KEY] = avg(onQuiz.map(scoreOf));
+    if (yearPeerIds) {
+      point[YEAR_KEY] = avg(
+        onQuiz.filter((a) => yearPeerIds.includes(a.user_id)).map(scoreOf),
+      );
+    }
+    return point;
+  });
+
+  const series: TrendSeries[] = [
+    ...selected.map((m) => ({ key: m.userId, label: m.label })),
+    { key: COHORT_KEY, label: "ממוצע המחזור" },
+    ...(yearPeerIds ? [{ key: YEAR_KEY, label: "ממוצע השנתון" }] : []),
+  ];
+  return { series, points };
+}
+
 export interface HeatCell {
   domain: string;
   pct: number | null;
