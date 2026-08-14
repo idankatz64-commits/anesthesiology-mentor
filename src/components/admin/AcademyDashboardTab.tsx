@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useApp } from "@/contexts/AppContext";
 import { KEYS } from "@/lib/types";
-import { domainOfChapter, ACADEMY_DOMAINS, UNCLASSIFIED_DOMAIN } from "@/lib/academyDomains";
+import {
+  tallyByDomain,
+  DOMAIN_ORDER,
+  QuestionResolver,
+} from "@/lib/academyProgress";
+import AcademyProgressCharts from "./AcademyProgressCharts";
 import {
   fetchMembers,
   fetchQuizzes,
@@ -29,7 +34,11 @@ export default function AcademyDashboardTab() {
   useEffect(() => {
     (async () => {
       try {
-        const [ms, qs, ats] = await Promise.all([fetchMembers(), fetchQuizzes(), fetchAllAttempts()]);
+        const [ms, qs, ats] = await Promise.all([
+          fetchMembers(),
+          fetchQuizzes(),
+          fetchAllAttempts(),
+        ]);
         setMembers(ms);
         setQuizzes(qs);
         setAttempts(ats);
@@ -42,7 +51,23 @@ export default function AcademyDashboardTab() {
     })();
   }, []);
 
-  const questionById = useMemo(() => new Map(data.map((q) => [String(q[KEYS.ID]), q])), [data]);
+  const questionById = useMemo(
+    () => new Map(data.map((q) => [String(q[KEYS.ID]), q])),
+    [data],
+  );
+
+  const resolve = useMemo<QuestionResolver>(
+    () => (id) => {
+      const q = questionById.get(id);
+      return q
+        ? {
+            chapter: q[KEYS.CHAPTER] as number,
+            correct: q[KEYS.CORRECT] as string,
+          }
+        : undefined;
+    },
+    [questionById],
+  );
 
   // member.user_id -> quiz_id -> attempt
   const attemptsByUser = useMemo(() => {
@@ -55,36 +80,57 @@ export default function AcademyDashboardTab() {
   }, [attempts]);
 
   const sortedQuizzes = useMemo(
-    () => [...quizzes].sort((a, b) => Date.parse(a.opens_at) - Date.parse(b.opens_at)),
+    () =>
+      [...quizzes].sort(
+        (a, b) => Date.parse(a.opens_at) - Date.parse(b.opens_at),
+      ),
     [quizzes],
   );
 
-  const domainRows = useMemo((): DomainAgg[] => {
-    const member = members.find((m) => m.id === selectedMember);
-    if (!member?.user_id) return [];
-    const byDomain = new Map<string, DomainAgg>();
-    const order = [...ACADEMY_DOMAINS.map((d) => d.label), UNCLASSIFIED_DOMAIN];
-    for (const label of order) byDomain.set(label, { domain: label, answered: 0, correct: 0 });
-    for (const attempt of attemptsByUser.get(member.user_id)?.values() ?? []) {
-      attempt.question_ids.forEach((qid, i) => {
-        const ans = attempt.answers[i];
-        if (!ans) return;
-        const question = questionById.get(qid);
-        const domain = domainOfChapter(question ? (question[KEYS.CHAPTER] as number) : null);
-        const agg = byDomain.get(domain)!;
-        agg.answered++;
-        if (question && ans === question[KEYS.CORRECT]) agg.correct++;
-      });
-    }
-    return [...byDomain.values()].filter((r) => r.answered > 0);
-  }, [selectedMember, members, attemptsByUser, questionById]);
+  const selectedUserId = useMemo(
+    () => members.find((m) => m.id === selectedMember)?.user_id ?? null,
+    [members, selectedMember],
+  );
 
-  if (loading) return <div className="p-8 text-center text-muted-foreground">טוען…</div>;
+  const domainRows = useMemo((): DomainAgg[] => {
+    if (!selectedUserId) return [];
+    const tallies = tallyByDomain(
+      attempts.filter((a) => a.user_id === selectedUserId),
+      resolve,
+    );
+    return DOMAIN_ORDER.flatMap((domain) => {
+      const t = tallies.get(domain);
+      return t && t.answered > 0
+        ? [{ domain, answered: t.answered, correct: t.correct }]
+        : [];
+    });
+  }, [selectedUserId, attempts, resolve]);
+
+  const chartMembers = useMemo(
+    () =>
+      members.map((m) => ({
+        id: m.id,
+        label: m.full_name || m.email,
+        userId: m.user_id,
+      })),
+    [members],
+  );
+
+  if (loading)
+    return <div className="p-8 text-center text-muted-foreground">טוען…</div>;
 
   const pctCell = (a: QuizAttemptRow | undefined) => {
     if (!a) return <span className="text-muted-foreground">—</span>;
     const pct = a.total > 0 ? Math.round((100 * a.score) / a.total) : 0;
-    return <span className={pct >= 60 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>{pct}%</span>;
+    return (
+      <span
+        className={
+          pct >= 60 ? "text-green-600 font-medium" : "text-red-600 font-medium"
+        }
+      >
+        {pct}%
+      </span>
+    );
   };
 
   return (
@@ -104,22 +150,38 @@ export default function AcademyDashboardTab() {
           </thead>
           <tbody>
             {members.map((m) => (
-              <tr key={m.id} className={`border-b ${m.status === "suspended" ? "opacity-50" : ""}`}>
+              <tr
+                key={m.id}
+                className={`border-b ${m.status === "suspended" ? "opacity-50" : ""}`}
+              >
                 <td className="p-2">
                   {m.full_name || m.email}
-                  {m.status === "suspended" && <span className="text-xs text-amber-600 mr-1">(מושהה)</span>}
-                  {!m.user_id && <span className="text-xs text-muted-foreground mr-1">(טרם נרשם)</span>}
+                  {m.status === "suspended" && (
+                    <span className="text-xs text-amber-600 mr-1">(מושהה)</span>
+                  )}
+                  {!m.user_id && (
+                    <span className="text-xs text-muted-foreground mr-1">
+                      (טרם נרשם)
+                    </span>
+                  )}
                 </td>
                 {sortedQuizzes.map((q) => (
                   <td key={q.id} className="p-2">
-                    {pctCell(m.user_id ? attemptsByUser.get(m.user_id)?.get(q.id) : undefined)}
+                    {pctCell(
+                      m.user_id
+                        ? attemptsByUser.get(m.user_id)?.get(q.id)
+                        : undefined,
+                    )}
                   </td>
                 ))}
               </tr>
             ))}
             {members.length === 0 && (
               <tr>
-                <td className="p-4 text-center text-muted-foreground" colSpan={1 + sortedQuizzes.length}>
+                <td
+                  className="p-4 text-center text-muted-foreground"
+                  colSpan={1 + sortedQuizzes.length}
+                >
                   המחזור ריק
                 </td>
               </tr>
@@ -147,7 +209,9 @@ export default function AcademyDashboardTab() {
           </select>
         </div>
         {selectedMember && domainRows.length === 0 && (
-          <p className="text-sm text-muted-foreground">אין עדיין הגשות למתמחה זה.</p>
+          <p className="text-sm text-muted-foreground">
+            אין עדיין הגשות למתמחה זה.
+          </p>
         )}
         {domainRows.length > 0 && (
           <table className="w-full text-sm">
@@ -167,7 +231,11 @@ export default function AcademyDashboardTab() {
                     <td className="p-2">{r.domain}</td>
                     <td className="p-2">{r.answered}</td>
                     <td className="p-2">{r.correct}</td>
-                    <td className={`p-2 font-medium ${pct >= 60 ? "text-green-600" : "text-red-600"}`}>{pct}%</td>
+                    <td
+                      className={`p-2 font-medium ${pct >= 60 ? "text-green-600" : "text-red-600"}`}
+                    >
+                      {pct}%
+                    </td>
                   </tr>
                 );
               })}
@@ -175,6 +243,14 @@ export default function AcademyDashboardTab() {
           </table>
         )}
       </section>
+
+      <AcademyProgressCharts
+        members={chartMembers}
+        quizzes={quizzes}
+        attempts={attempts}
+        resolve={resolve}
+        selectedUserId={selectedUserId}
+      />
     </div>
   );
 }
