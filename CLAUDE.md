@@ -82,8 +82,8 @@ else, so widening access is a one-line change, never a migration.
 > does _not_ mean "logged-in users". That one word was the original hole. Any new
 > policy on content must be `TO authenticated` **and** call `is_approved()`.
 
-> 🚨 **`profiles` is not user-writable, and must stay that way.** `INSERT`/`UPDATE`
-> are revoked from `anon` and `authenticated`. The "Users can update own profile"
+> 🚨 **`profiles` is not user-writable, and must stay that way.** `INSERT`, `UPDATE`
+> and `DELETE` are all revoked from `anon` and `authenticated`. The "Users can update own profile"
 > policy is `FOR UPDATE ... USING (auth.uid() = id)` with **no `WITH CHECK`** —
 > Postgres then reuses `USING` as the check, so the only test is _"is this your
 > row"_, never _"which column"_. While that grant existed, any registered user could
