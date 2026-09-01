@@ -24,6 +24,7 @@ import SummariesManagementTab from "@/components/admin/SummariesManagementTab";
 import AcademyMembersTab from "@/components/admin/AcademyMembersTab";
 import AcademyQuizzesTab from "@/components/admin/AcademyQuizzesTab";
 import AcademyDashboardTab from "@/components/admin/AcademyDashboardTab";
+import ManagerDashboardTab from "@/components/admin/ManagerDashboardTab";
 import { motion } from "framer-motion";
 import { fadeUp } from "@/lib/animations";
 
@@ -37,7 +38,8 @@ type AdminTab =
   | "summaries"
   | "academy-members"
   | "academy-quizzes"
-  | "academy-dashboard";
+  | "academy-dashboard"
+  | "manager-dashboard";
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: "user-management", label: "User Management", icon: <Users className="w-5 h-5" /> },
@@ -53,6 +55,11 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     id: "academy-dashboard",
     label: "דאשבורד אקדמיה",
     icon: <BarChart3 className="w-5 h-5" />,
+  },
+  {
+    id: "manager-dashboard",
+    label: "דשבורד מנהל",
+    icon: <Users className="w-5 h-5" />,
   },
 ];
 
@@ -131,6 +138,7 @@ export default function AdminDashboard() {
             {activeTab === "academy-members" && <AcademyMembersTab />}
             {activeTab === "academy-quizzes" && <AcademyQuizzesTab />}
             {activeTab === "academy-dashboard" && <AcademyDashboardTab />}
+            {activeTab === "manager-dashboard" && <ManagerDashboardTab />}
           </div>
         </main>
       </motion.div>
