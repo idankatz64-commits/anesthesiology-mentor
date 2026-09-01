@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { isDemo } from "@/lib/demoMode";
 
 export interface AcademyMembership {
   access_level: "academy" | "full";
@@ -176,6 +177,7 @@ export async function addMembers(emails: string[]): Promise<void> {
   throwIfError(error);
 }
 
+// ponytail: demo-guard בנקודת החנק — מכסה את כל פקדי חברי-האקדמיה במקום guard פר-שדה
 export async function updateMember(
   id: string,
   patch: Partial<
@@ -185,11 +187,13 @@ export async function updateMember(
     >
   >,
 ): Promise<void> {
+  if (isDemo()) return; // מצב דמו — תצוגה בלבד, בלי כתיבות
   const { error } = await table("academy_members").update(patch).eq("id", id);
   throwIfError(error);
 }
 
 export async function deleteMember(id: string): Promise<void> {
+  if (isDemo()) return; // מצב דמו — תצוגה בלבד
   const { error } = await table("academy_members").delete().eq("id", id);
   throwIfError(error);
 }

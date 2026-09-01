@@ -1,5 +1,6 @@
 import { useState, useEffect, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { maskName, maskEmail } from '@/lib/demoMode';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, LogOut, User, ChevronDown, BookOpen, Activity, Heart, FolderOpen, FileText, Link as LinkIcon } from 'lucide-react';
 import type { User as SupaUser } from '@supabase/supabase-js';
@@ -34,7 +35,7 @@ const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>
     setDropdownOpen(false);
   };
 
-  const displayName = user?.user_metadata?.full_name || user?.email || '';
+  const displayName = maskName(user?.user_metadata?.full_name || user?.email || '');
 
   return (
     <div ref={ref} className="fixed top-0 left-0 right-0 h-14 bg-background/60 backdrop-blur-xl border-b border-border/50 z-50 flex items-center justify-between px-4 md:px-8" dir="rtl">
@@ -142,7 +143,7 @@ const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>
                     dir="rtl"
                   >
                     <div className="px-4 py-2.5 text-xs text-muted-foreground border-b border-border/50 truncate">
-                      {user.email}
+                      {maskEmail(user.email)}
                     </div>
                     <button
                       onClick={handleLogout}

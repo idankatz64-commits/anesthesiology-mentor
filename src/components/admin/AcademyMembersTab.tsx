@@ -60,7 +60,7 @@ export default function AcademyMembersTab() {
   };
 
   const remove = async (m: AcademyMemberRow) => {
-    if (!window.confirm(`להסיר את ${m.email} מהמחזור?`)) return;
+    if (!window.confirm(`להסיר את ${maskEmail(m.email)} מהמחזור?`)) return;
     try {
       await deleteMember(m.id);
       await reload();
@@ -115,7 +115,7 @@ export default function AcademyMembersTab() {
                 </td>
                 <td className="p-2">
                   <input
-                    defaultValue={isDemo() ? maskName(m.full_name ?? "") : (m.full_name ?? "")}
+                    defaultValue={isDemo() ? maskName(m.full_name || m.email) : (m.full_name ?? "")}
                     placeholder="—"
                     disabled={isDemo()}
                     className="border border-input bg-background text-foreground rounded p-1 w-32"

@@ -42,6 +42,28 @@ describe("demoMode", () => {
     expect(maskEmail("alice@gmail.com")).not.toContain("alice");
   });
 
+  it("never collides — 30 distinct keys get 30 distinct aliases", () => {
+    sessionStorage.setItem("ysnp-demo", "1");
+    _resetDemoCache();
+    const keys = Array.from({ length: 30 }, (_, i) => `resident.${i}@gmail.com`);
+    expect(new Set(keys.map(maskName)).size).toBe(30);
+    expect(new Set(keys.map(maskEmail)).size).toBe(30);
+  });
+
+  it("stays on when sessionStorage throws but ?demo is in the URL", () => {
+    window.history.replaceState({}, "", "/?demo");
+    _resetDemoCache();
+    const orig = Storage.prototype.setItem;
+    Storage.prototype.setItem = () => {
+      throw new Error("blocked");
+    };
+    try {
+      expect(isDemo()).toBe(true);
+    } finally {
+      Storage.prototype.setItem = orig;
+    }
+  });
+
   it("handles empty values safely", () => {
     sessionStorage.setItem("ysnp-demo", "1");
     _resetDemoCache();

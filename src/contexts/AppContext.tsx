@@ -12,6 +12,7 @@ import {
   type ConfidenceLevel,
 } from "@/lib/types";
 import { supabase } from "@/integrations/supabase/client";
+import { maskEmail } from "@/lib/demoMode";
 import { toast } from "sonner";
 import { getIsraelToday, addDaysIsrael } from "@/lib/dateHelpers";
 import { buildMarkForReviewIncrementArgs } from "@/lib/markForReviewParams";
@@ -380,7 +381,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                           ? supabase.from("questions").select("topic").eq("id", newRow.question_id).maybeSingle()
                           : Promise.resolve({ data: null }),
                       ]);
-                      const editorEmail = editorRes.data?.email ?? "עורך";
+                      const editorEmail = maskEmail(editorRes.data?.email) || "עורך";
                       const topic = questionRes.data?.topic || "לא ידוע";
                       toast(`✏️ שאלה נערכה`, {
                         description: `שאלה: ${newRow.question_id?.slice(0, 12) ?? "—"}\nנושא: ${topic}\nנערך על ידי: ${editorEmail}`,

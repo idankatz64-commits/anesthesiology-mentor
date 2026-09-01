@@ -1,5 +1,6 @@
 import { useState, useEffect, forwardRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { maskName } from '@/lib/demoMode';
 import { Users, Send, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -152,7 +153,7 @@ export const CommunityNotes = forwardRef<HTMLDivElement, CommunityNotesProps>(fu
             <div key={note.id} className="bg-card p-3 rounded-xl border border-border text-sm flex justify-between items-start gap-2">
               <div className="flex-grow">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-bold text-primary text-xs">@{note.author_display}</span>
+                  <span className="font-bold text-primary text-xs">@{maskName(note.author_display)}</span>
                   <span className="text-xs text-muted-foreground matrix-text">{formatDate(note.created_at)}</span>
                 </div>
                 <p className="text-foreground text-sm leading-relaxed">{note.note_text}</p>

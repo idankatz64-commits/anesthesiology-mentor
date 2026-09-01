@@ -1,6 +1,6 @@
 // demo-mode: הצגה בפני קהל בלי לחשוף שמות/מיילים אמיתיים (פסיקת עידן 1.9, לקראת 6.9).
-// הפעלה: פתיחת האפליקציה עם ?demo — הדגל נשמר ל-session; כיבוי: סגירת הטאב.
-// המיסוך דטרמיניסטי (אותו משתמש ← אותו כינוי לאורך כל המסכים) ותצוגתי בלבד — הנתונים לא משתנים.
+// הפעלה: פתיחת האפליקציה עם ?demo — הדגל נלכד בעליית האפליקציה (main.tsx) ונשמר ל-session;
+// כיבוי: סגירת הטאב. המיסוך תצוגתי בלבד — הנתונים לא משתנים.
 
 const DEMO_KEY = "ysnp-demo";
 
@@ -33,41 +33,53 @@ const FAKE_NAMES = [
 
 let cached: boolean | null = null;
 
+/** נקרא eager מ-main.tsx כדי שה-?demo ייקלט לפני שהראוטר מוחק את ה-query */
 export function isDemo(): boolean {
   if (cached !== null) return cached;
+  let on = false;
   try {
-    if (new URLSearchParams(window.location.search).has("demo")) {
-      sessionStorage.setItem(DEMO_KEY, "1");
-    }
-    cached = sessionStorage.getItem(DEMO_KEY) === "1";
+    on = new URLSearchParams(window.location.search).has("demo");
   } catch {
-    cached = false;
+    /* no window (tests/SSR) */
   }
-  return cached;
+  try {
+    if (on) sessionStorage.setItem(DEMO_KEY, "1");
+    on = on || sessionStorage.getItem(DEMO_KEY) === "1";
+  } catch {
+    /* storage blocked — הדגל מה-URL עדיין מכובד בזיכרון */
+  }
+  cached = on;
+  return on;
 }
 
-/** לבדיקות בלבד — isDemo נשמר ב-cache כדי לא לקרוא sessionStorage בכל שורת טבלה */
+/** לבדיקות בלבד */
 export function _resetDemoCache(): void {
   cached = null;
+  aliasIndex.clear();
 }
 
-function hashKey(s: string): number {
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
-  return h;
+// כינוי פר-מפתח, ייחודי מובטח (בלי התנגשויות hash): המפתח הראשון שנראה מקבל את השם הראשון וכו'.
+// אותו מפתח ← אותו כינוי לכל אורך ה-session, בכל המסכים.
+const aliasIndex = new Map<string, number>();
+
+function indexFor(key: string): number {
+  let i = aliasIndex.get(key);
+  if (i === undefined) {
+    i = aliasIndex.size;
+    aliasIndex.set(key, i);
+  }
+  return i;
 }
 
 export function maskName(real: string | null | undefined): string {
   const v = real ?? "";
   if (!isDemo() || !v) return v;
-  const h = hashKey(v);
-  const name = FAKE_NAMES[h % FAKE_NAMES.length];
-  // ponytail: על >24 משתמשים ייתכן כינוי כפול לשם המשפחה — הסיומת המספרית מבדילה
-  return `${name} ${(h % 89) + 10}`;
+  const i = indexFor(v);
+  return i < FAKE_NAMES.length ? FAKE_NAMES[i] : `מתמחה ${i + 1}`;
 }
 
 export function maskEmail(real: string | null | undefined): string {
   const v = real ?? "";
   if (!isDemo() || !v) return v;
-  return `resident${(hashKey(v) % 89) + 10}@demo.local`;
+  return `resident${indexFor(v) + 1}@demo.local`;
 }
