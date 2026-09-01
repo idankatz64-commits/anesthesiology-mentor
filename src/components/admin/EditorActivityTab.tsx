@@ -1,22 +1,18 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/integrations/supabase/client';
-import type { Tables } from '@/integrations/supabase/types';
-import { Loader2, RefreshCw } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
+import { useState, useEffect, useCallback } from "react";
+import { maskEmail } from "@/lib/demoMode";
+import { supabase } from "@/integrations/supabase/client";
+import type { Tables } from "@/integrations/supabase/types";
+import { Loader2, RefreshCw } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 
 function toIsraelDateStr(d: Date): string {
-  return d.toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
+  return d.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
 }
 
 // The three columns this tab selects from `question_edit_log`.
-type EditLogRow = Pick<
-  Tables<'question_edit_log'>,
-  'editor_id' | 'edited_at' | 'question_id'
->;
+type EditLogRow = Pick<Tables<"question_edit_log">, "editor_id" | "edited_at" | "question_id">;
 
 interface EditorRow {
   email: string;
@@ -47,12 +43,12 @@ export default function EditorActivityTab({ isActive = true }: Props) {
 
     const [allLogsRes, adminsRes, questionsRes] = await Promise.all([
       supabase
-        .from('question_edit_log')
-        .select('editor_id, edited_at, question_id')
-        .order('edited_at', { ascending: false })
+        .from("question_edit_log")
+        .select("editor_id, edited_at, question_id")
+        .order("edited_at", { ascending: false })
         .limit(5000),
-      supabase.from('admin_users').select('id, email'),
-      supabase.from('questions').select('id, topic'),
+      supabase.from("admin_users").select("id, email"),
+      supabase.from("questions").select("id, topic"),
     ]);
 
     const allLogs: EditLogRow[] = allLogsRes.data || [];
@@ -60,7 +56,7 @@ export default function EditorActivityTab({ isActive = true }: Props) {
     (adminsRes.data || []).forEach((a) => adminMap.set(a.id, a.email));
 
     const topicMap = new Map<string, string>();
-    (questionsRes.data || []).forEach((q) => topicMap.set(q.id, q.topic || 'ללא נושא'));
+    (questionsRes.data || []).forEach((q) => topicMap.set(q.id, q.topic || "ללא נושא"));
 
     // --- Editor summary ---
     const byEditor = new Map<string, { total: number; today: number; topicsToday: Set<string> }>();
@@ -81,10 +77,10 @@ export default function EditorActivityTab({ isActive = true }: Props) {
     const rows: EditorRow[] = [];
     byEditor.forEach((v, editorId) => {
       rows.push({
-        email: adminMap.get(editorId) || editorId.slice(0, 8) + '…',
+        email: adminMap.get(editorId) || editorId.slice(0, 8) + "…",
         editsToday: v.today,
         totalEdits: v.total,
-        topicsToday: v.topicsToday.size > 0 ? Array.from(v.topicsToday).join(', ') : '—',
+        topicsToday: v.topicsToday.size > 0 ? Array.from(v.topicsToday).join(", ") : "—",
       });
     });
     rows.sort((a, b) => b.totalEdits - a.totalEdits);
@@ -110,8 +106,8 @@ export default function EditorActivityTab({ isActive = true }: Props) {
     }
     const bars: DayBar[] = [];
     dayData.forEach(({ count, topics }, date) => {
-      const [, m, d] = date.split('-');
-      bars.push({ label: `${d}/${m}`, date, count, topics: topics.size > 0 ? Array.from(topics).join(', ') : '—' });
+      const [, m, d] = date.split("-");
+      bars.push({ label: `${d}/${m}`, date, count, topics: topics.size > 0 ? Array.from(topics).join(", ") : "—" });
     });
     setChartData(bars);
 
@@ -143,7 +139,7 @@ export default function EditorActivityTab({ isActive = true }: Props) {
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-bold text-foreground">דוח עורכים</h2>
         <Button variant="ghost" size="sm" onClick={handleRefresh} disabled={refreshing}>
-          <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
           רענן
         </Button>
       </div>
@@ -164,7 +160,7 @@ export default function EditorActivityTab({ isActive = true }: Props) {
             <TableBody>
               {editors.map((e) => (
                 <TableRow key={e.email}>
-                  <TableCell className="font-medium">{e.email}</TableCell>
+                  <TableCell className="font-medium">{maskEmail(e.email)}</TableCell>
                   <TableCell>{e.editsToday}</TableCell>
                   <TableCell>{e.totalEdits}</TableCell>
                   <TableCell className="text-sm text-muted-foreground max-w-xs truncate">{e.topicsToday}</TableCell>
@@ -183,7 +179,7 @@ export default function EditorActivityTab({ isActive = true }: Props) {
             <XAxis dataKey="label" tick={{ fontSize: 12 }} />
             <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
             <Tooltip
-              contentStyle={{ direction: 'rtl', textAlign: 'right' }}
+              contentStyle={{ direction: "rtl", textAlign: "right" }}
               labelFormatter={(l) => `תאריך: ${l}`}
               formatter={(v: number, _name: string, props: { payload: DayBar }) => [
                 `${v} עריכות`,

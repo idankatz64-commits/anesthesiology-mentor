@@ -1,12 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { maskName } from "@/lib/demoMode";
 import { useApp } from "@/contexts/AppContext";
 import { KEYS } from "@/lib/types";
-import {
-  tallyByDomain,
-  DOMAIN_ORDER,
-  QuestionResolver,
-} from "@/lib/academyProgress";
+import { tallyByDomain, DOMAIN_ORDER, QuestionResolver } from "@/lib/academyProgress";
 import AcademyProgressCharts from "./AcademyProgressCharts";
 import {
   fetchMembers,
@@ -34,11 +31,7 @@ export default function AcademyDashboardTab() {
   useEffect(() => {
     (async () => {
       try {
-        const [ms, qs, ats] = await Promise.all([
-          fetchMembers(),
-          fetchQuizzes(),
-          fetchAllAttempts(),
-        ]);
+        const [ms, qs, ats] = await Promise.all([fetchMembers(), fetchQuizzes(), fetchAllAttempts()]);
         setMembers(ms);
         setQuizzes(qs);
         setAttempts(ats);
@@ -51,10 +44,7 @@ export default function AcademyDashboardTab() {
     })();
   }, []);
 
-  const questionById = useMemo(
-    () => new Map(data.map((q) => [String(q[KEYS.ID]), q])),
-    [data],
-  );
+  const questionById = useMemo(() => new Map(data.map((q) => [String(q[KEYS.ID]), q])), [data]);
 
   const resolve = useMemo<QuestionResolver>(
     () => (id) => {
@@ -80,10 +70,7 @@ export default function AcademyDashboardTab() {
   }, [attempts]);
 
   const sortedQuizzes = useMemo(
-    () =>
-      [...quizzes].sort(
-        (a, b) => Date.parse(a.opens_at) - Date.parse(b.opens_at),
-      ),
+    () => [...quizzes].sort((a, b) => Date.parse(a.opens_at) - Date.parse(b.opens_at)),
     [quizzes],
   );
 
@@ -100,9 +87,7 @@ export default function AcademyDashboardTab() {
     );
     return DOMAIN_ORDER.flatMap((domain) => {
       const t = tallies.get(domain);
-      return t && t.answered > 0
-        ? [{ domain, answered: t.answered, correct: t.correct }]
-        : [];
+      return t && t.answered > 0 ? [{ domain, answered: t.answered, correct: t.correct }] : [];
     });
   }, [selectedUserId, attempts, resolve]);
 
@@ -110,36 +95,25 @@ export default function AcademyDashboardTab() {
     () =>
       members.map((m) => ({
         id: m.id,
-        label: m.full_name || m.email,
+        label: maskName(m.full_name || m.email),
         userId: m.user_id,
         residencyYear: m.residency_year,
       })),
     [members],
   );
 
-  if (loading)
-    return <div className="p-8 text-center text-muted-foreground">טוען…</div>;
+  if (loading) return <div className="p-8 text-center text-muted-foreground">טוען…</div>;
 
   const pctCell = (a: QuizAttemptRow | undefined) => {
     if (!a) return <span className="text-muted-foreground">—</span>;
     const pct = a.total > 0 ? Math.round((100 * a.score) / a.total) : 0;
-    return (
-      <span
-        className={
-          pct >= 60 ? "text-green-600 font-medium" : "text-red-600 font-medium"
-        }
-      >
-        {pct}%
-      </span>
-    );
+    return <span className={pct >= 60 ? "text-green-600 font-medium" : "text-red-600 font-medium"}>{pct}%</span>;
   };
 
   return (
     <div className="space-y-6" dir="rtl">
       <section className="deep-tile rounded-2xl p-5 sm:p-6">
-        <h3 className="text-base font-bold mb-5">
-          מטריצת הגשות — מתמחה × בוחן
-        </h3>
+        <h3 className="text-base font-bold mb-5">מטריצת הגשות — מתמחה × בוחן</h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -154,40 +128,22 @@ export default function AcademyDashboardTab() {
             </thead>
             <tbody>
               {members.map((m) => (
-                <tr
-                  key={m.id}
-                  className={`border-b ${m.status === "suspended" ? "opacity-50" : ""}`}
-                >
+                <tr key={m.id} className={`border-b ${m.status === "suspended" ? "opacity-50" : ""}`}>
                   <td className="p-2">
-                    {m.full_name || m.email}
-                    {m.status === "suspended" && (
-                      <span className="text-xs text-amber-600 mr-1">
-                        (מושהה)
-                      </span>
-                    )}
-                    {!m.user_id && (
-                      <span className="text-xs text-muted-foreground mr-1">
-                        (טרם נרשם)
-                      </span>
-                    )}
+                    {maskName(m.full_name || m.email)}
+                    {m.status === "suspended" && <span className="text-xs text-amber-600 mr-1">(מושהה)</span>}
+                    {!m.user_id && <span className="text-xs text-muted-foreground mr-1">(טרם נרשם)</span>}
                   </td>
                   {sortedQuizzes.map((q) => (
                     <td key={q.id} className="p-2">
-                      {pctCell(
-                        m.user_id
-                          ? attemptsByUser.get(m.user_id)?.get(q.id)
-                          : undefined,
-                      )}
+                      {pctCell(m.user_id ? attemptsByUser.get(m.user_id)?.get(q.id) : undefined)}
                     </td>
                   ))}
                 </tr>
               ))}
               {members.length === 0 && (
                 <tr>
-                  <td
-                    className="p-4 text-center text-muted-foreground"
-                    colSpan={1 + sortedQuizzes.length}
-                  >
+                  <td className="p-4 text-center text-muted-foreground" colSpan={1 + sortedQuizzes.length}>
                     המחזור ריק
                   </td>
                 </tr>
@@ -210,15 +166,13 @@ export default function AcademyDashboardTab() {
               .filter((m) => m.user_id)
               .map((m) => (
                 <option key={m.id} value={m.id}>
-                  {m.full_name || m.email}
+                  {maskName(m.full_name || m.email)}
                 </option>
               ))}
           </select>
         </div>
         {selectedMember && domainRows.length === 0 && (
-          <p className="text-sm text-muted-foreground">
-            אין עדיין הגשות למתמחה זה.
-          </p>
+          <p className="text-sm text-muted-foreground">אין עדיין הגשות למתמחה זה.</p>
         )}
         {domainRows.length > 0 && (
           <table className="w-full text-sm">
@@ -238,11 +192,7 @@ export default function AcademyDashboardTab() {
                     <td className="p-2">{r.domain}</td>
                     <td className="p-2">{r.answered}</td>
                     <td className="p-2">{r.correct}</td>
-                    <td
-                      className={`p-2 font-medium ${pct >= 60 ? "text-green-600" : "text-red-600"}`}
-                    >
-                      {pct}%
-                    </td>
+                    <td className={`p-2 font-medium ${pct >= 60 ? "text-green-600" : "text-red-600"}`}>{pct}%</td>
                   </tr>
                 );
               })}
