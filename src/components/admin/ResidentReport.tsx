@@ -7,6 +7,8 @@ import {
   fetchManagerNote,
   saveManagerNote,
   accuracyPct,
+  weeklyRate,
+  coveragePct,
   trendDelta,
   chapterWeaknesses,
   buildResidentSummary,
@@ -90,9 +92,17 @@ export default function ResidentReport({ row, bankSize, onBack }: ResidentReport
   useEffect(() => {
     (async () => {
       try {
-        const [ch, n] = await Promise.all([fetchMemberChapters(row.user_id), fetchManagerNote(row.user_id)]);
-        ch.sort((a, b) => a.current_correct / a.seen - b.current_correct / b.seen);
-        setChapters(ch);
+        // במצב דמו לא מושכים את הערת המנהל האמיתית — טקסט חופשי עלול לזהות את המתמחה
+        const [ch, n] = await Promise.all([
+          fetchMemberChapters(row.user_id),
+          isDemo() ? Promise.resolve("") : fetchManagerNote(row.user_id),
+        ]);
+        const sorted = [...ch].sort((a, b) => {
+          const av = a.seen ? a.current_correct / a.seen : Infinity;
+          const bv = b.seen ? b.current_correct / b.seen : Infinity;
+          return av - bv;
+        });
+        setChapters(sorted);
         setNote(n);
       } catch (e) {
         console.error("resident report load failed:", e);
@@ -135,7 +145,10 @@ export default function ResidentReport({ row, bankSize, onBack }: ResidentReport
         @media print {
           aside, nav, .no-print { display: none !important; }
           main { padding: 0 !important; }
-          #resident-report { color: #111; }
+          html, body { background: #fff !important; }
+          #resident-report, #resident-report * { color: #111 !important; }
+          #resident-report .text-green-600 { color: #15803d !important; }
+          #resident-report .text-amber-600 { color: #b45309 !important; }
           .glass-card { box-shadow: none !important; border: 1px solid #ddd !important; background: #fff !important; }
         }
       `}</style>
@@ -168,7 +181,7 @@ export default function ResidentReport({ row, bankSize, onBack }: ResidentReport
       <header>
         <h2 className="text-xl font-bold">
           {t.title} · {maskName(row.display_name)}
-          {row.residency_year ? (
+          {row.residency_year != null ? (
             <span className="text-muted-foreground font-normal text-base">
               {" "}
               · {t.year} {row.residency_year}
@@ -184,15 +197,18 @@ export default function ResidentReport({ row, bankSize, onBack }: ResidentReport
           <div className="text-xs text-muted-foreground mt-1">{t.accuracy}</div>
         </div>
         <div className="glass-card rounded-2xl p-4 text-center border border-border">
-          <div className="text-2xl font-extrabold">{bankSize ? Math.round((100 * row.coverage) / bankSize) : 0}%</div>
+          <div className="text-2xl font-extrabold">{coveragePct(row.coverage, bankSize)}%</div>
           <div className="text-xs text-muted-foreground mt-1">{t.coverage}</div>
         </div>
         <div className="glass-card rounded-2xl p-4 text-center border border-border">
-          <div className="text-2xl font-extrabold">{Math.round(row.qs_last30 / 4.3)}</div>
+          <div className="text-2xl font-extrabold">{weeklyRate(row.qs_last30)}</div>
           <div className="text-xs text-muted-foreground mt-1">{t.weekly}</div>
         </div>
         <div className="glass-card rounded-2xl p-4 text-center border border-border">
-          <div className={`text-2xl font-extrabold ${delta !== null && delta < 0 ? "text-red-500" : "text-green-600"}`}>
+          <div
+            dir="ltr"
+            className={`text-2xl font-extrabold tabular-nums ${delta !== null && delta < 0 ? "text-red-500" : "text-green-600"}`}
+          >
             {delta !== null ? (delta > 0 ? `+${delta}` : delta) : "—"}
           </div>
           <div className="text-xs text-muted-foreground mt-1">{t.trend}</div>
@@ -220,7 +236,7 @@ export default function ResidentReport({ row, bankSize, onBack }: ResidentReport
                 <span dir="ltr">
                   Ch. {w.chapter} — {w.topic}
                 </span>
-                <span className="num font-bold text-amber-600">{accuracyPct(w.first_correct, w.first_seen)}%</span>
+                <span className="tabular-nums font-bold text-amber-600" dir="ltr">{accuracyPct(w.first_correct, w.first_seen)}%</span>
               </div>
             ))}
           </div>
@@ -255,11 +271,11 @@ export default function ResidentReport({ row, bankSize, onBack }: ResidentReport
                   <td className="p-3" dir="ltr">
                     Ch. {c.chapter} — {c.topic}
                   </td>
-                  <td className="p-3 num">{c.seen}</td>
-                  <td className="p-3 num">{c.answered_total}</td>
-                  <td className="p-3 num text-muted-foreground">{first !== null ? `${first}%` : "—"}</td>
+                  <td className="p-3 tabular-nums" dir="ltr">{c.seen}</td>
+                  <td className="p-3 tabular-nums" dir="ltr">{c.answered_total}</td>
+                  <td className="p-3 tabular-nums text-muted-foreground" dir="ltr">{first !== null ? `${first}%` : "—"}</td>
                   <td
-                    className={`p-3 num font-bold ${cur !== null && cur >= 70 ? "text-green-600" : "text-amber-600"}`}
+                    className={`p-3 tabular-nums font-bold ${cur !== null && cur >= 70 ? "text-green-600" : "text-amber-600"}`}
                   >
                     {cur !== null ? `${cur}%` : "—"}
                   </td>

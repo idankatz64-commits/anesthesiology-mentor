@@ -14,6 +14,7 @@ const base: OverviewRow = {
   display_name: "דנה",
   residency_year: 2,
   is_academy_member: true,
+  is_staff: false,
   answered_total: 500,
   coverage: 400,
   current_correct: 300,
@@ -28,6 +29,12 @@ describe("accuracyPct / trendDelta", () => {
   it("computes current-state accuracy", () => {
     expect(accuracyPct(300, 400)).toBe(75);
     expect(accuracyPct(0, 0)).toBeNull();
+  });
+
+  it("rounds trend half away from zero — a -4.5 drop stays -5 and trips the threshold", () => {
+    const r = { ...base, qs_last30: 100, correct_last30: 50, qs_prev30: 200, correct_prev30: 109 };
+    expect(trendDelta(r)).toBe(-5);
+    expect(residentStatus(r, new Date())).toBe("attention");
   });
 
   it("trend = last30 accuracy minus prev30 accuracy, null without data", () => {
@@ -124,6 +131,15 @@ describe("buildResidentSummary", () => {
     const s = buildResidentSummary(base, chapters, 4263, "en");
     expect(s).toMatch(/accuracy/i);
     expect(s).toContain("Fluids");
+  });
+
+  it("does not invent a review recommendation when all chapters are strong", () => {
+    const strong: MemberChapterRow[] = [
+      { chapter: 1, topic: "A", seen: 40, current_correct: 36, answered_total: 50, first_seen: 40, first_correct: 35 },
+      { chapter: 2, topic: "B", seen: 40, current_correct: 34, answered_total: 50, first_seen: 40, first_correct: 33 },
+    ];
+    const s = buildResidentSummary(base, strong, 4263, "he");
+    expect(s).not.toContain("חיזוק ממוקד");
   });
 
   it("handles a resident with no chapter data", () => {

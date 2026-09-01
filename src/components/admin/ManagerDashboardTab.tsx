@@ -7,6 +7,8 @@ import {
   fetchCohortChapters,
   fetchBankSize,
   accuracyPct,
+  weeklyRate,
+  coveragePct,
   trendDelta,
   residentStatus,
   type OverviewRow,
@@ -36,14 +38,14 @@ function TrendCell({ delta }: { delta: number | null }) {
     return (
       <span className="text-green-600 inline-flex items-center gap-1">
         <TrendingUp className="w-4 h-4" />
-        {delta}+
+        <span dir="ltr">+{delta}</span>
       </span>
     );
   if (delta < 0)
     return (
       <span className="text-red-500 inline-flex items-center gap-1">
         <TrendingDown className="w-4 h-4" />
-        {delta}
+        <span dir="ltr">{delta}</span>
       </span>
     );
   return <Minus className="w-4 h-4 text-muted-foreground inline" />;
@@ -67,7 +69,7 @@ function ChapterBar({ topic, pct: p }: { topic: string; pct: number }) {
       <div className="w-28 h-2 rounded-full bg-muted overflow-hidden shrink-0">
         <div className={`h-full ${tone}`} style={{ width: `${p}%` }} />
       </div>
-      <span className="num font-bold w-10 text-left shrink-0">{p}%</span>
+      <span className="tabular-nums font-bold w-10 text-left shrink-0" dir="ltr">{p}%</span>
     </div>
   );
 }
@@ -83,8 +85,9 @@ export default function ManagerDashboardTab() {
     (async () => {
       try {
         const [o, c, b] = await Promise.all([fetchOverview(), fetchCohortChapters(), fetchBankSize()]);
-        o.sort((a, b2) => b2.answered_total - a.answered_total);
-        setRows(o);
+        // הדוח מציג מתמחים בלבד — צוות (אדמין/עורכים) מסונן; מיון על עותק, בלי מוטציה
+        const residents = o.filter((r) => !r.is_staff);
+        setRows([...residents].sort((a, b2) => b2.answered_total - a.answered_total));
         setChapters(c);
         setBankSize(b);
       } catch (e) {
@@ -103,11 +106,10 @@ export default function ManagerDashboardTab() {
     const correct = rows.reduce((s, r) => s + r.current_correct, 0);
     const active = rows.filter((r) => r.qs_last30 > 0);
     const attention = rows.filter((r) => residentStatus(r, now) === "attention").length;
-    const weeklyAvg = active.length ? Math.round(active.reduce((s, r) => s + r.qs_last30, 0) / 4.3 / active.length) : 0;
-    const coverageAvg =
-      rows.length && bankSize
-        ? Math.round(rows.reduce((s, r) => s + (100 * r.coverage) / bankSize, 0) / rows.length)
-        : 0;
+    const weeklyAvg = active.length ? Math.round(active.reduce((s, r) => s + weeklyRate(r.qs_last30), 0) / active.length) : 0;
+    const coverageAvg = rows.length
+      ? Math.round(rows.reduce((s, r) => s + coveragePct(r.coverage, bankSize), 0) / rows.length)
+      : 0;
     return { accuracy: accuracyPct(correct, seen), active: active.length, attention, weeklyAvg, coverageAvg };
   }, [rows, bankSize, now]);
 
@@ -116,7 +118,12 @@ export default function ManagerDashboardTab() {
       .filter((c) => c.seen >= 100)
       .map((c) => ({ ...c, pct: Math.round((100 * c.current_correct) / c.seen) }))
       .sort((a, b) => a.pct - b.pct);
-    return { weak: rated.slice(0, 3), strong: rated.slice(-3).reverse() };
+    const weak = rated.slice(0, 3);
+    const strong = rated
+      .slice(-3)
+      .reverse()
+      .filter((c) => !weak.some((w) => w.chapter === c.chapter));
+    return { weak, strong };
   }, [chapters]);
 
   if (loading)
@@ -140,7 +147,7 @@ export default function ManagerDashboardTab() {
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
-        <Kpi value={String(rows.length)} label="מתמחים במערכת" />
+        <Kpi value={String(rows.length)} label="מתמחים פעילים במערכת" />
         <Kpi value={kpis.accuracy !== null ? `${kpis.accuracy}%` : "—"} label="דיוק קבוצתי" tone="text-green-600" />
         <Kpi value={`${kpis.coverageAvg}%`} label="כיסוי מאגר ממוצע" />
         <Kpi value={String(kpis.weeklyAvg)} label="שאלות/שבוע (פעילים)" />
@@ -162,6 +169,9 @@ export default function ManagerDashboardTab() {
           {chapterSplit.strong.map((c) => (
             <ChapterBar key={c.chapter} topic={c.topic} pct={c.pct} />
           ))}
+          {chapterSplit.strong.length === 0 && (
+            <p className="text-sm text-muted-foreground">אין עדיין מספיק נתונים פר פרק</p>
+          )}
         </section>
       </div>
 
@@ -190,17 +200,17 @@ export default function ManagerDashboardTab() {
                   className="border-b border-border/50 hover:bg-muted/40 cursor-pointer transition-colors"
                 >
                   <td className="p-3 font-semibold">{maskName(r.display_name)}</td>
-                  <td className="p-3 num">{r.residency_year ?? "—"}</td>
-                  <td className="p-3 num">{bankSize ? Math.round((100 * r.coverage) / bankSize) : 0}%</td>
+                  <td className="p-3 tabular-nums" dir="ltr">{r.residency_year ?? "—"}</td>
+                  <td className="p-3 tabular-nums" dir="ltr">{coveragePct(r.coverage, bankSize)}%</td>
                   <td
-                    className={`p-3 num font-bold ${acc !== null && acc >= 75 ? "text-green-600" : "text-amber-600"}`}
+                    className={`p-3 tabular-nums font-bold ${acc !== null && acc >= 75 ? "text-green-600" : "text-amber-600"}`}
                   >
                     {acc !== null ? `${acc}%` : "—"}
                   </td>
-                  <td className="p-3 num">
+                  <td className="p-3 tabular-nums" dir="ltr">
                     <TrendCell delta={trendDelta(r)} />
                   </td>
-                  <td className="p-3 num">{Math.round(r.qs_last30 / 4.3)}</td>
+                  <td className="p-3 tabular-nums" dir="ltr">{weeklyRate(r.qs_last30)}</td>
                   <td className="p-3 text-muted-foreground">{lastActiveLabel(r.last_active)}</td>
                   <td className="p-3">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${status.cls}`}>

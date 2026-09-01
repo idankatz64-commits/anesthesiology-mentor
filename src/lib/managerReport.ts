@@ -9,6 +9,7 @@ export interface OverviewRow {
   display_name: string;
   residency_year: number | null;
   is_academy_member: boolean;
+  is_staff: boolean;
   answered_total: number;
   coverage: number;
   current_correct: number;
@@ -44,12 +45,24 @@ export function accuracyPct(correct: number, seen: number): number | null {
   return Math.round((100 * correct) / seen);
 }
 
+/** קצב שבועי משוער מתוך חלון 30 הימים (30/7 ≈ 4.3 שבועות) */
+export function weeklyRate(qsLast30: number): number {
+  return Math.round(qsLast30 / 4.3);
+}
+
+/** אחוז כיסוי מאגר */
+export function coveragePct(coverage: number, bankSize: number): number {
+  return bankSize ? Math.round((100 * coverage) / bankSize) : 0;
+}
+
 /** דלתא של דיוק: 30 הימים האחרונים מול 30 שקדמו להם; null כשאין נתונים באחד הצדדים */
 export function trendDelta(r: OverviewRow): number | null {
   if (!r.qs_last30 || !r.qs_prev30) return null;
   const last = (100 * r.correct_last30) / r.qs_last30;
   const prev = (100 * r.correct_prev30) / r.qs_prev30;
-  return Math.round(last - prev);
+  const d = last - prev;
+  // עיגול חצי-הרחק-מאפס: 4.5- חייב להישאר 5- כדי לא לפספס את סף האיתות
+  return Math.sign(d) * Math.round(Math.abs(d));
 }
 
 const ATTENTION_TREND = -5;
@@ -83,12 +96,14 @@ export function buildResidentSummary(
   lang: "he" | "en",
 ): string {
   const acc = accuracyPct(r.current_correct, r.coverage);
-  const coveragePct = bankSize ? Math.round((100 * r.coverage) / bankSize) : 0;
+  const coverage = coveragePct(r.coverage, bankSize);
   const rated = chapters.filter((c) => c.seen >= 10);
   const byAcc = [...rated].sort((a, b) => b.current_correct / b.seen - a.current_correct / a.seen);
   const strongest = byAcc[0];
-  const weakest = byAcc.length > 1 ? byAcc[byAcc.length - 1] : undefined;
-  const weekly = Math.round(r.qs_last30 / 4.3);
+  const last = byAcc.length > 1 ? byAcc[byAcc.length - 1] : undefined;
+  // ממליצים על חיזוק רק כשבאמת יש חולשה — לא כשהפרק "החלש" בעצמו מעל 75%
+  const weakest = last && accuracyPct(last.current_correct, last.seen)! < 75 ? last : undefined;
+  const weekly = weeklyRate(r.qs_last30);
   const delta = trendDelta(r);
 
   if (lang === "en") {
@@ -96,7 +111,7 @@ export function buildResidentSummary(
     parts.push(
       acc === null
         ? "No practice activity recorded yet."
-        : `Overall accuracy ${acc}% on the current state (${coveragePct}% bank coverage).`,
+        : `Overall accuracy ${acc}% on the current state (${coverage}% bank coverage).`,
     );
     if (strongest)
       parts.push(`Strongest in ${strongest.topic} (${accuracyPct(strongest.current_correct, strongest.seen)}%).`);
@@ -112,7 +127,7 @@ export function buildResidentSummary(
 
   const parts: string[] = [];
   parts.push(
-    acc === null ? "עדיין לא נרשמה פעילות תרגול." : `דיוק כולל ${acc}% על המצב העדכני (כיסוי מאגר ${coveragePct}%).`,
+    acc === null ? "עדיין לא נרשמה פעילות תרגול." : `דיוק כולל ${acc}% על המצב העדכני (כיסוי מאגר ${coverage}%).`,
   );
   if (strongest)
     parts.push(`הכי חזק ב-${strongest.topic} (${accuracyPct(strongest.current_correct, strongest.seen)}%).`);
@@ -160,10 +175,12 @@ export async function fetchManagerNote(memberUserId: string): Promise<string> {
 }
 
 export async function saveManagerNote(memberUserId: string, note: string): Promise<void> {
+  const { data: auth } = await supabase.auth.getUser();
   const { error } = await notesTable().upsert({
     member_id: memberUserId,
     note,
     updated_at: new Date().toISOString(),
+    updated_by: auth.user?.id ?? null,
   });
   if (error) throw error;
 }
