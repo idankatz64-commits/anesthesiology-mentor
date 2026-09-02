@@ -3,6 +3,8 @@
 // עקרון: הכשרה-לא-הערכה — הסטטוסים הם איתותי ליווי ("כדאי לשים לב"), לא דירוג.
 
 import { supabase } from "@/integrations/supabase/client";
+import { isDemo } from "@/lib/demoMode";
+import { cohort, demoBankSize, type DemoResident } from "@/lib/demoCohort";
 
 export interface OverviewRow {
   user_id: string;
@@ -37,7 +39,30 @@ export interface MemberChapterRow {
   first_correct: number;
 }
 
-export type ResidentStatusKind = "active" | "steady" | "attention";
+export interface DailyRow {
+  day: string; // YYYY-MM-DD, כבר בשעון ישראל (ה-RPC ממיר)
+  user_id: string;
+  answered: number;
+  correct: number;
+}
+
+export interface RepetitionRow {
+  times_answered: number; // 1..5, כאשר 5 = "5 ומעלה"
+  questions: number;
+  correct: number;
+}
+
+export interface SeriesPoint {
+  day: string;
+  answered: number;
+  /** null ביום בלי מענים — "לא ידוע", לא "0% הצלחה" */
+  accuracy: number | null;
+}
+
+/** חלון התצוגה של הגרף: מספר ימים, או כל ההיסטוריה */
+export type RangeKey = 7 | 30 | 90 | "all";
+
+export type ResidentStatusKind = "active" | "steady" | "attention" | "inactive";
 
 /** דיוק על המצב העדכני (התשובה האחרונה לכל שאלה) — ההגדרה שנפסקה 30.8 */
 export function accuracyPct(correct: number, seen: number): number | null {
@@ -67,15 +92,86 @@ export function trendDelta(r: OverviewRow): number | null {
 
 const ATTENTION_TREND = -5;
 const ATTENTION_IDLE_DAYS = 14;
+const INACTIVE_DAYS = 30;
 
-/** איתות ליווי: ירידה במגמה או חוסר פעילות ממושך → "כדאי לשים לב" */
+/**
+ * איתות ליווי. "לא פעיל" נבדק ראשון בכוונה (פסיקת עידן 2.9): כשכל מי ששקט
+ * נצבע "כדאי לשים לב", הסטטוס נדלק אצל 100% מהמחזור ומפסיק להעביר מידע.
+ * הפרדת השקט לסטטוס משלו מחזירה ל"כדאי לשים לב" את משמעותו —
+ * מתמחה שכן מתרגל ובכל זאת יורד.
+ */
 export function residentStatus(r: OverviewRow, now: Date): ResidentStatusKind {
+  const idleDays = r.last_active ? (now.getTime() - new Date(r.last_active).getTime()) / 86400000 : Infinity;
+  if (idleDays >= INACTIVE_DAYS) return "inactive";
   const delta = trendDelta(r);
   if (delta !== null && delta <= ATTENTION_TREND) return "attention";
-  const idleDays = r.last_active ? (now.getTime() - new Date(r.last_active).getTime()) / 86400000 : Infinity;
   if (idleDays >= ATTENTION_IDLE_DAYS) return "attention";
   if (r.qs_last30 > 0) return "active";
   return "steady";
+}
+
+/* ─────────── סדרת זמן ─────────── */
+
+const DAY_MS = 86400000;
+/** צהריים-UTC: מנטרל הזזות של שעון קיץ בחישוב "יום ועוד יום" */
+const dayToMs = (day: string) => Date.parse(`${day}T12:00:00Z`);
+const msToDay = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+const todayInIsrael = (now: Date) => now.toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+
+/**
+ * מקבץ שורות יומיות לסדרה רציפה לגרף.
+ * ימים שקטים נשארים בסדרה עם answered=0 ו-accuracy=null — קו שנקטע במקום
+ * שנופל ל-0%, כי "לא ענו" ו-"ענו והכל שגוי" הם לא אותו דבר.
+ */
+export function seriesForRange(rows: DailyRow[], range: RangeKey, userId: string | null, now: Date): SeriesPoint[] {
+  const mine = userId ? rows.filter((r) => r.user_id === userId) : rows;
+  const lastDay = todayInIsrael(now);
+
+  let firstDay: string;
+  if (range === "all") {
+    if (mine.length === 0) return [];
+    firstDay = mine.reduce((min, r) => (r.day < min ? r.day : min), mine[0].day);
+  } else {
+    firstDay = msToDay(dayToMs(lastDay) - (range - 1) * DAY_MS);
+  }
+
+  const byDay = new Map<string, { answered: number; correct: number }>();
+  for (const r of mine) {
+    if (r.day < firstDay || r.day > lastDay) continue;
+    const acc = byDay.get(r.day) ?? { answered: 0, correct: 0 };
+    acc.answered += r.answered;
+    acc.correct += r.correct;
+    byDay.set(r.day, acc);
+  }
+
+  const out: SeriesPoint[] = [];
+  for (let ms = dayToMs(firstDay); ms <= dayToMs(lastDay); ms += DAY_MS) {
+    const day = msToDay(ms);
+    const hit = byDay.get(day);
+    out.push({
+      day,
+      answered: hit?.answered ?? 0,
+      accuracy: hit && hit.answered > 0 ? Math.round((100 * hit.correct) / hit.answered) : null,
+    });
+  }
+  return out;
+}
+
+/** הפער בין חשיפה ראשונה לשאלות שחזרו עליהן — כמה החזרה מוסיפה, בנקודות */
+export function repetitionLift(rows: RepetitionRow[]): {
+  first: number | null;
+  last: number | null;
+  lift: number | null;
+} {
+  const pct = (r: RepetitionRow) => (r.questions ? Math.round((100 * r.correct) / r.questions) : null);
+  const firstRow = rows.find((r) => r.times_answered === 1);
+  const lastRow = rows.reduce<RepetitionRow | null>(
+    (max, r) => (max === null || r.times_answered > max.times_answered ? r : max),
+    null,
+  );
+  const first = firstRow ? pct(firstRow) : null;
+  const last = lastRow ? pct(lastRow) : null;
+  return { first, last, lift: first !== null && last !== null ? last - first : null };
 }
 
 const WEAKNESS_MIN_FIRST = 20;
@@ -138,6 +234,81 @@ export function buildResidentSummary(
   return parts.join(" ");
 }
 
+/* ─────────── שכבת הדמו ───────────
+   כשהדמו דולק אף שליפה לא יוצאת ל-DB. השער יושב כאן, בשכבת הנתונים, ולא
+   ברכיבי התצוגה — כך מסך חדש מקבל את ההגנה בלי שמישהו יזכור להוסיף אותה. */
+
+const dayMinus = (n: number) =>
+  new Date(Date.now() - n * 86400000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+
+function demoOverview(): OverviewRow[] {
+  const last30 = dayMinus(30);
+  const prev30 = dayMinus(60);
+  return cohort().map((d) => {
+    const sum = (f: (c: DemoResident["chapters"][number]) => number) => d.chapters.reduce((s, c) => s + f(c), 0);
+    const win = (from: string, to: string) =>
+      d.daily
+        .filter((x) => x.day > from && x.day <= to)
+        .reduce((a, x) => ({ q: a.q + x.answered, c: a.c + x.correct }), { q: 0, c: 0 });
+    const recent = win(last30, dayMinus(-1));
+    const before = win(prev30, last30);
+    const lastDay = d.daily.length ? d.daily[d.daily.length - 1].day : null;
+    return {
+      user_id: d.user_id,
+      display_name: d.display_name,
+      residency_year: d.residency_year,
+      is_academy_member: true,
+      is_staff: false,
+      answered_total: sum((c) => c.answered_total),
+      coverage: sum((c) => c.seen),
+      current_correct: sum((c) => c.current_correct),
+      qs_last30: recent.q,
+      correct_last30: recent.c,
+      qs_prev30: before.q,
+      correct_prev30: before.c,
+      last_active: lastDay ? new Date(`${lastDay}T12:00:00Z`).toISOString() : null,
+    };
+  });
+}
+
+function demoCohortChapters(): CohortChapterRow[] {
+  const byChapter = new Map<number, CohortChapterRow>();
+  for (const d of cohort()) {
+    for (const c of d.chapters) {
+      const hit = byChapter.get(c.chapter) ?? { chapter: c.chapter, topic: c.topic, seen: 0, current_correct: 0 };
+      hit.seen += c.seen;
+      hit.current_correct += c.current_correct;
+      byChapter.set(c.chapter, hit);
+    }
+  }
+  return [...byChapter.values()];
+}
+
+function demoMemberChapters(userId: string): MemberChapterRow[] {
+  return cohort().find((d) => d.user_id === userId)?.chapters ?? [];
+}
+
+function demoDaily(): DailyRow[] {
+  return cohort().flatMap((d) => d.daily.map((x) => ({ ...x, user_id: d.user_id })));
+}
+
+/** הסולם נגזר מהחשיפה-הראשונה ומהמצב-העדכני של אותו מחזור, כדי שלא יסתור אותם */
+function demoRepetition(userId: string | null): RepetitionRow[] {
+  const src = userId ? cohort().filter((d) => d.user_id === userId) : cohort();
+  const chapters = src.flatMap((d) => d.chapters);
+  const firstSeen = chapters.reduce((s, c) => s + c.first_seen, 0) || 1;
+  const first = chapters.reduce((s, c) => s + c.first_correct, 0) / firstSeen;
+  const seen = chapters.reduce((s, c) => s + c.seen, 0) || 1;
+  const current = chapters.reduce((s, c) => s + c.current_correct, 0) / seen;
+  const top = Math.min(0.97, current + 0.05);
+  return [1, 2, 3, 4, 5].map((times) => {
+    const t = (times - 1) / 4;
+    const acc = first + (top - first) * t;
+    const questions = Math.round((seen * (0.44 - 0.07 * (times - 1))) / 1);
+    return { times_answered: times, questions, correct: Math.round(questions * acc) };
+  });
+}
+
 /* ─────────── fetchers ─────────── */
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- the manager_* RPCs are newer than the generated types */
@@ -145,27 +316,45 @@ const rpc = (name: string, args?: Record<string, unknown>) => (supabase.rpc as a
 const notesTable = () => (supabase.from as any)("manager_notes");
 
 export async function fetchOverview(): Promise<OverviewRow[]> {
+  if (isDemo()) return demoOverview();
   const { data, error } = await rpc("manager_cohort_overview");
   if (error) throw error;
   return (data ?? []) as OverviewRow[];
 }
 
 export async function fetchCohortChapters(): Promise<CohortChapterRow[]> {
+  if (isDemo()) return demoCohortChapters();
   const { data, error } = await rpc("manager_cohort_chapters");
   if (error) throw error;
   return (data ?? []) as CohortChapterRow[];
 }
 
 export async function fetchMemberChapters(userId: string): Promise<MemberChapterRow[]> {
+  if (isDemo()) return demoMemberChapters(userId);
   const { data, error } = await rpc("manager_member_chapters", { p_user: userId });
   if (error) throw error;
   return (data ?? []) as MemberChapterRow[];
 }
 
 export async function fetchBankSize(): Promise<number> {
+  if (isDemo()) return demoBankSize();
   const { count, error } = await supabase.from("questions").select("id", { count: "exact", head: true });
   if (error) throw error;
   return count ?? 0;
+}
+
+export async function fetchDailySeries(days = 180): Promise<DailyRow[]> {
+  if (isDemo()) return demoDaily();
+  const { data, error } = await rpc("manager_daily_series", { p_days: days });
+  if (error) throw error;
+  return (data ?? []) as DailyRow[];
+}
+
+export async function fetchRepetitionCurve(userId: string | null = null): Promise<RepetitionRow[]> {
+  if (isDemo()) return demoRepetition(userId);
+  const { data, error } = await rpc("manager_repetition_curve", { p_user: userId });
+  if (error) throw error;
+  return (data ?? []) as RepetitionRow[];
 }
 
 export async function fetchManagerNote(memberUserId: string): Promise<string> {
