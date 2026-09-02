@@ -168,6 +168,7 @@ export async function fetchMembers(): Promise<AcademyMemberRow[]> {
 }
 
 export async function addMembers(emails: string[]): Promise<void> {
+  if (isDemo()) return; // אחיותיה כבר מוגנות — זו נשכחה, וכתבה לבסיס האמיתי מתוך הדמו
   if (emails.length === 0) return;
   const rows = emails.map((email) => ({ email }));
   const { error } = await table("academy_members").upsert(rows, {
