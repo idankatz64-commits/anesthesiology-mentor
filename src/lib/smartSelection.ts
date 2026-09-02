@@ -123,14 +123,37 @@ export const SIMULATION_PROPORTIONS: Record<string, number> = {
 };
 
 // ── Hardcoded exam date ─────────────────────────────────────────────
-export const EXAM_DATE = new Date('2026-06-16T08:00:00');
+// שלב א' נערך ב-16 ביוני. תאריך קבוע אחד הוא באג שמתפוצץ בשקט: ב-2.9.2026
+// EXAM_DATE הצביע על 16.6.2026 שכבר חלף, ואז getExamProximityPhase החזירה 'early'
+// בעוד גורם הקרבה חישב 1 − (−78/60) ונחתך ל-1.00 — שני חצאי אותו מנגנון בסתירה.
+// המועד מתגלגל עכשיו לבד, ולכן daysUntilExam לעולם אינו שלילי.
+const EXAM_MONTH = 5; // יוני (אפס-בסיס)
+const EXAM_DAY = 16;
+
+/** מועד שלב א' הבא שטרם חלף */
+export function nextExamDate(from: Date = new Date()): Date {
+  const thisYear = new Date(from.getFullYear(), EXAM_MONTH, EXAM_DAY, 8, 0, 0);
+  return from.getTime() <= thisYear.getTime()
+    ? thisYear
+    : new Date(from.getFullYear() + 1, EXAM_MONTH, EXAM_DAY, 8, 0, 0);
+}
+
+/** ימים עד המועד הבא — תמיד אי-שלילי */
+export function daysUntilExam(from: Date = new Date()): number {
+  return (nextExamDate(from).getTime() - from.getTime()) / 86400000;
+}
+
+/** גורם קרבת המבחן: 0 מעל 60 יום, עולה ל-1 ביום המבחן */
+export function examProximityFactor(from: Date = new Date()): number {
+  const d = daysUntilExam(from);
+  return d < 60 ? clamp01(1 - d / 60) : 0;
+}
 
 // ── Exam proximity phase ────────────────────────────────────────────
 export type ExamPhase = 'early' | 'approaching' | 'imminent';
 
-export function getExamProximityPhase(): ExamPhase {
-  const daysLeft = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
-  if (daysLeft <= 0) return 'early';  // המבחן כבר עבר — חזרה למצב רגיל
+export function getExamProximityPhase(from: Date = new Date()): ExamPhase {
+  const daysLeft = Math.ceil(daysUntilExam(from));
   if (daysLeft > 90) return 'early';
   if (daysLeft > 30) return 'approaching';
   return 'imminent';
@@ -221,8 +244,7 @@ function computeTopicScores(
   weights: number[],
 ): Record<string, number> {
   const scores: Record<string, number> = {};
-  const daysUntilExam = (EXAM_DATE.getTime() - Date.now()) / 86400000;
-  const examProximity = daysUntilExam < 60 ? clamp01(1 - daysUntilExam / 60) : 0;
+  const examProximity = examProximityFactor();
 
   for (const topic of topics) {
     const ts = topicStats[topic];
@@ -289,8 +311,7 @@ export function computeSmartScore(q: Question, params: ScoringParams): number {
   }
 
   // 5. examProximity
-  const daysUntilExam = (EXAM_DATE.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-  const examProximity = daysUntilExam < 60 ? clamp01(1 - daysUntilExam / 60) : 0;
+  const examProximity = examProximityFactor(today);
 
   // 6. yieldBoost (default 0.1 — aligned with Stage 1 at line 219)
   const yieldBoost = YIELD_TIER_MAP[topic] ?? 0.1;
