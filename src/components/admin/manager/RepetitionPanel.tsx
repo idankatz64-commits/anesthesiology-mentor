@@ -21,9 +21,11 @@ export default function RepetitionPanel({ rows, scope }: Props) {
     () =>
       [...rows]
         .sort((a, b) => a.times_answered - b.times_answered)
+        // דלי ריק אינו "0% הצלחה" אלא "אין נתון" — מסננים אותו במקום לצייר עמודה אדומה
+        .filter((r) => r.questions > 0)
         .map((r) => ({
           bucket: r.times_answered >= 5 ? "5+" : String(r.times_answered),
-          accuracy: accuracyPct(r.correct, r.questions) ?? 0,
+          accuracy: accuracyPct(r.correct, r.questions) as number,
           questions: r.questions,
         })),
     [rows],
@@ -71,7 +73,7 @@ export default function RepetitionPanel({ rows, scope }: Props) {
             </BarChart>
           </ResponsiveContainer>
           <div className="flex justify-between text-[10px] text-muted-foreground mt-2 px-1" dir="rtl">
-            {[...data].reverse().map((d) => (
+            {data.map((d) => (
               <span key={d.bucket} style={MONO}>
                 ({d.questions.toLocaleString("he-IL")})
               </span>

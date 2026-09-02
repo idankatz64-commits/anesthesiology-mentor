@@ -48,7 +48,7 @@ export default function ActivityPanel({ rows, people, lockedUserId, title }: Pro
       title={title ?? "נפח תרגול לאורך זמן"}
       hint={`${totals.answered.toLocaleString("he-IL")} מענים · ${totals.activeDays} ימים פעילים בטווח. הדיוק היומי מופיע בהצבעה על עמודה.`}
     >
-      <div className="flex flex-wrap items-center gap-2 mb-5">
+      <div className="flex flex-wrap items-center gap-2 mb-5 no-print">
         <div className="flex gap-1.5">
           {RANGES.map((r) => (
             <button
@@ -68,6 +68,7 @@ export default function ActivityPanel({ rows, people, lockedUserId, title }: Pro
         </div>
         {!lockedUserId && people && people.length > 0 && (
           <select
+            aria-label="סינון הגרף למתמחה"
             value={userId ?? ""}
             onChange={(e) => setUserId(e.target.value || null)}
             className="text-xs rounded-full px-3 py-1.5 border border-border bg-background text-foreground me-auto"

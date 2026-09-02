@@ -92,6 +92,7 @@ export default function ResidentReport({ row, bankSize, daily = [], onBack }: Re
   const [repetition, setRepetition] = useState<RepetitionRow[]>([]);
   const [note, setNote] = useState("");
   const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [lang, setLang] = useState<Lang>("he");
   const t = T[lang];
@@ -110,6 +111,7 @@ export default function ResidentReport({ row, bankSize, daily = [], onBack }: Re
         setNote(n);
       } catch (e) {
         console.error("resident report load failed:", e);
+        setFailed(true);
         toast.error("טעינת דוח המתמחה נכשלה");
       } finally {
         setLoading(false);
@@ -135,6 +137,23 @@ export default function ResidentReport({ row, bankSize, daily = [], onBack }: Re
       setSaving(false);
     }
   };
+
+  // טעינה שנכשלה חייבת לעצור את המסך: דוח על מערך פרקים ריק מציג
+  // "אין פרקים מתחת לסף — כל הכבוד", וזו קביעה חיובית על מתמחה שאיש לא בדק.
+  if (failed)
+    return (
+      <div className="space-y-4" dir="rtl">
+        <button onClick={onBack} className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+          <ArrowRight className="w-4 h-4" />
+          {t.back}
+        </button>
+        <div className="deep-tile rounded-2xl p-10 text-center">
+          <p className="text-sm text-muted-foreground">
+            טעינת הדוח נכשלה, ולכן הוא לא מוצג — דוח חלקי היה עלול להיקרא כאילו אין למתמחה חולשות. נסה שוב.
+          </p>
+        </div>
+      </div>
+    );
 
   if (loading)
     return (
@@ -162,12 +181,14 @@ export default function ResidentReport({ row, bankSize, daily = [], onBack }: Re
           aside, nav, .no-print { display: none !important; }
           main { padding: 0 !important; }
           html, body { background: #fff !important; }
-          #resident-report, #resident-report * { color: #111 !important; }
+          /* צבע בירושה ולא !important: טקסט רגיל יוצא שחור, אבל צבעי הדיוק
+             (inline style) שורדים — אחרת הדוח המודפס מאבד את ההבחנה חזק/חלש */
+          #resident-report { color: #111; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+          #resident-report .text-muted-foreground { color: #555 !important; }
           #resident-report .deep-tile, #resident-report .glass-card {
             box-shadow: none !important; border: 1px solid #ddd !important; background: #fff !important;
           }
-          /* הגרפים נשענים על צבע רקע; בהדפסה משאירים את הצבע של הסימנים עצמם */
-          #resident-report svg text { fill: #111 !important; }
+          #resident-report section, #resident-report .deep-tile { break-inside: avoid; page-break-inside: avoid; }
         }
       `}</style>
 
@@ -216,8 +237,9 @@ export default function ResidentReport({ row, bankSize, daily = [], onBack }: Re
         <KpiTile
           value={delta}
           label={t.trend}
+          signed
           tone={delta !== null && delta < 0 ? TONE.low : TONE.good}
-          suffix=" נק'"
+          suffix={lang === "he" ? " נק'" : " pts"}
         />
       </motion.div>
 

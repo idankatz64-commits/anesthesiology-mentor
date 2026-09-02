@@ -120,3 +120,20 @@ describe("residentStatus - inactive is its own state", () => {
     expect(residentStatus(base, NOW)).toBe("active");
   });
 });
+
+describe("repetitionLift — רצפת מדגם", () => {
+  it("מתעלם מדלי עליון דק, כדי שלא תיווצר כותרת ענקית משלוש שאלות", () => {
+    const rows: RepetitionRow[] = [
+      { times_answered: 1, questions: 1813, correct: 1221 }, // 67%
+      { times_answered: 3, questions: 402, correct: 330 }, // 82%
+      { times_answered: 5, questions: 3, correct: 3 }, // 100% על 3 שאלות — לא ראיה
+    ];
+    const out = repetitionLift(rows);
+    expect(out.last).toBe(82);
+    expect(out.lift).toBe(15);
+  });
+
+  it("מחזיר null כשאף דלי לא עובר את הרצפה", () => {
+    expect(repetitionLift([{ times_answered: 1, questions: 4, correct: 4 }]).lift).toBeNull();
+  });
+});

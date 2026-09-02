@@ -33,13 +33,15 @@ export default function CohortShapePanel({ rows, bankSize }: Props) {
     () =>
       rows
         .map((r) => ({
+          id: r.user_id,
           name: maskName(r.display_name),
           coverage: coveragePct(r.coverage, bankSize),
           accuracy: accuracyPct(r.current_correct, r.coverage),
           answered: r.answered_total,
         }))
         .filter(
-          (p): p is { name: string; coverage: number; accuracy: number; answered: number } => p.accuracy !== null,
+          (p): p is { id: string; name: string; coverage: number; accuracy: number; answered: number } =>
+            p.accuracy !== null,
         ),
     [rows, bankSize],
   );
@@ -121,7 +123,7 @@ export default function CohortShapePanel({ rows, bankSize }: Props) {
               />
               <Scatter data={points} fillOpacity={0.85}>
                 {points.map((p) => (
-                  <Cell key={p.name} fill={accTone(p.accuracy)} />
+                  <Cell key={p.id} fill={accTone(p.accuracy)} />
                 ))}
               </Scatter>
             </ScatterChart>

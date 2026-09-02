@@ -76,3 +76,51 @@ describe("דשבורד מנהל במצב דמו", () => {
     expect(screen.getByText("נפח תרגול לאורך זמן")).toBeInTheDocument();
   });
 });
+
+describe("עקביות נתוני הדמו", () => {
+  beforeEach(() => {
+    sessionStorage.setItem("ysnp-demo", "1");
+    _resetDemoCache();
+    _resetCohort();
+  });
+
+  it("דליי החזרה מחלקים את הכיסוי, לא מנפחים אותו", async () => {
+    const { fetchRepetitionCurve, fetchOverview } = await import("@/lib/managerReport");
+    const [curve, overview] = await Promise.all([fetchRepetitionCurve(null), fetchOverview()]);
+
+    const bucketQuestions = curve.reduce((s, r) => s + r.questions, 0);
+    const coverage = overview.reduce((s, r) => s + r.coverage, 0);
+    // חמשת הדליים הם חלוקה של אותן שאלות שנראו — סכומם חייב להיות הכיסוי עצמו
+    expect(Math.abs(bucketQuestions - coverage) / coverage).toBeLessThan(0.02);
+  });
+
+  it("הדיוק המשוקלל של הדליים תואם את דיוק המחזור", async () => {
+    const { fetchRepetitionCurve, fetchOverview, accuracyPct } = await import("@/lib/managerReport");
+    const [curve, overview] = await Promise.all([fetchRepetitionCurve(null), fetchOverview()]);
+
+    const cohortAcc = accuracyPct(
+      overview.reduce((s, r) => s + r.current_correct, 0),
+      overview.reduce((s, r) => s + r.coverage, 0),
+    )!;
+    const bucketAcc = accuracyPct(
+      curve.reduce((s, r) => s + r.correct, 0),
+      curve.reduce((s, r) => s + r.questions, 0),
+    )!;
+    expect(Math.abs(bucketAcc - cohortAcc)).toBeLessThanOrEqual(2);
+  });
+
+  it("לכל 33 המתמחים יש שם אמיתי — אף אחד לא נופל ל'מתמחה N'", async () => {
+    const { fetchOverview } = await import("@/lib/managerReport");
+    const { maskName } = await import("@/lib/demoMode");
+    const names = (await fetchOverview()).map((r) => maskName(r.display_name));
+    expect(names).toHaveLength(33);
+    expect(names.filter((n) => /^מתמחה \d+$/.test(n))).toHaveLength(0);
+  });
+
+  it("הערת מנהל לא נשלפת ולא נשמרת במצב דמו", async () => {
+    const { fetchManagerNote, saveManagerNote } = await import("@/lib/managerReport");
+    // ה-supabase המדומה זורק בכל פנייה, אז השער נבדק כאן ולא ברכיב
+    await expect(fetchManagerNote("demo-01")).resolves.toBe("");
+    await expect(saveManagerNote("demo-01", "טקסט")).resolves.toBeUndefined();
+  });
+});

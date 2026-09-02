@@ -157,6 +157,8 @@ export function seriesForRange(rows: DailyRow[], range: RangeKey, userId: string
   return out;
 }
 
+const LIFT_MIN_QUESTIONS = 20;
+
 /** הפער בין חשיפה ראשונה לשאלות שחזרו עליהן — כמה החזרה מוסיפה, בנקודות */
 export function repetitionLift(rows: RepetitionRow[]): {
   first: number | null;
@@ -165,10 +167,11 @@ export function repetitionLift(rows: RepetitionRow[]): {
 } {
   const pct = (r: RepetitionRow) => (r.questions ? Math.round((100 * r.correct) / r.questions) : null);
   const firstRow = rows.find((r) => r.times_answered === 1);
-  const lastRow = rows.reduce<RepetitionRow | null>(
-    (max, r) => (max === null || r.times_answered > max.times_answered ? r : max),
-    null,
-  );
+  // בלי רצפת-מדגם, שלוש שאלות שנענו נכון הופכות ל"100%" בכותרת ענקית.
+  // אותה רוח כמו WEAKNESS_MIN_FIRST — לא מכריזים על ממצא ממדגם זעיר.
+  const lastRow = rows
+    .filter((r) => r.questions >= LIFT_MIN_QUESTIONS)
+    .reduce<RepetitionRow | null>((max, r) => (max === null || r.times_answered > max.times_answered ? r : max), null);
   const first = firstRow ? pct(firstRow) : null;
   const last = lastRow ? pct(lastRow) : null;
   return { first, last, lift: first !== null && last !== null ? last - first : null };
@@ -300,12 +303,18 @@ function demoRepetition(userId: string | null): RepetitionRow[] {
   const first = chapters.reduce((s, c) => s + c.first_correct, 0) / firstSeen;
   const seen = chapters.reduce((s, c) => s + c.seen, 0) || 1;
   const current = chapters.reduce((s, c) => s + c.current_correct, 0) / seen;
+  // חמשת הדליים מחלקים ביניהם את אותן שאלות שנראו, ולכן המשקלים מסתכמים ל-1.
+  // הדיוקים מוזזים בקבוע כך שהממוצע המשוקלל שלהם שווה בדיוק לדיוק המחזור —
+  // אחרת העמודות כאן סותרות את אריח ה-KPI שמעליהן.
+  const shares = [0.42, 0.26, 0.16, 0.1, 0.06];
   const top = Math.min(0.97, current + 0.05);
-  return [1, 2, 3, 4, 5].map((times) => {
-    const t = (times - 1) / 4;
-    const acc = first + (top - first) * t;
-    const questions = Math.round((seen * (0.44 - 0.07 * (times - 1))) / 1);
-    return { times_answered: times, questions, correct: Math.round(questions * acc) };
+  const raw = shares.map((_, i) => first + (top - first) * (i / (shares.length - 1)));
+  const weighted = shares.reduce((s, w, i) => s + w * raw[i], 0);
+  const shift = current - weighted;
+  return shares.map((w, i) => {
+    const acc = Math.min(0.99, Math.max(0.05, raw[i] + shift));
+    const questions = Math.round(seen * w);
+    return { times_answered: i + 1, questions, correct: Math.round(questions * acc) };
   });
 }
 
@@ -358,12 +367,15 @@ export async function fetchRepetitionCurve(userId: string | null = null): Promis
 }
 
 export async function fetchManagerNote(memberUserId: string): Promise<string> {
+  // הערת מנהל היא טקסט חופשי שעלול לזהות מתמחה אמיתי — השער חייב לשבת כאן, לא ברכיב
+  if (isDemo()) return "";
   const { data, error } = await notesTable().select("note").eq("member_id", memberUserId).maybeSingle();
   if (error) throw error;
   return data?.note ?? "";
 }
 
 export async function saveManagerNote(memberUserId: string, note: string): Promise<void> {
+  if (isDemo()) return; // אין כתיבה לבסיס האמיתי ממצב דמו
   const { data: auth } = await supabase.auth.getUser();
   const { error } = await notesTable().upsert({
     member_id: memberUserId,

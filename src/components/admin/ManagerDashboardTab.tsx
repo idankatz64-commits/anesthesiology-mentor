@@ -83,7 +83,7 @@ export default function ManagerDashboardTab() {
           fetchOverview(),
           fetchCohortChapters(),
           fetchBankSize(),
-          fetchDailySeries(),
+          fetchDailySeries(400),
           fetchRepetitionCurve(null),
         ]);
         // הדוח מציג מתמחים בלבד — צוות (אדמין/עורכים) מסונן; מיון על עותק, בלי מוטציה
@@ -160,9 +160,10 @@ export default function ManagerDashboardTab() {
         <KpiTile
           value={lift.lift}
           label="מה החזרה מוסיפה"
+          signed
           suffix=" נק'"
-          tone={TONE.good}
-          hint={lift.first !== null ? `${lift.first}% → ${lift.last}%` : undefined}
+          tone={lift.lift !== null && lift.lift < 0 ? TONE.low : TONE.good}
+          hint={lift.first !== null && lift.last !== null ? `${lift.first}% → ${lift.last}%` : undefined}
         />
         <KpiTile value={kpis.coverageAvg} label="כיסוי מאגר ממוצע" suffix="%" tone={coverageTone(kpis.coverageAvg)} />
         <KpiTile value={kpis.weeklyAvg} label="שאלות/שבוע (פעילים)" />
