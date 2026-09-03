@@ -11,7 +11,7 @@ import {
 import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { StatCard } from '@/components/stats/StatCard';
-import { getExamProximityPhase, EXAM_DATE, selectSmartQuestions } from '@/lib/smartSelection';
+import { getExamProximityPhase, selectSmartQuestions } from '@/lib/smartSelection';
 import MatrixCountdown from '@/components/MatrixCountdown';
 import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
 import HomeTopicHeatmap from '@/components/stats/HomeTopicHeatmap';

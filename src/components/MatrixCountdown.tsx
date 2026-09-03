@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Pause, Play } from 'lucide-react';
-import { EXAM_DATE } from '@/lib/smartSelection';
+import { nextExamDate } from '@/lib/smartSelection';
 import { motivationalQuotes } from '@/data/motivationalQuotes';
 
 interface TimeUnit {
@@ -10,7 +10,8 @@ interface TimeUnit {
 }
 
 function getTimeLeft() {
-  const diff = EXAM_DATE.getTime() - Date.now();
+  const now = new Date(); // ponytail: one snapshot for both the rollover decision and the diff
+  const diff = nextExamDate(now).getTime() - now.getTime();
   if (diff <= 0) return null;
 
   const totalSeconds = Math.floor(diff / 1000);
@@ -21,7 +22,7 @@ function getTimeLeft() {
   const minutes = Math.floor(afterHours / 60);
   const seconds = afterHours - minutes * 60;
 
-  return { days, hours, minutes, seconds };
+  return { days, hours, minutes, seconds, totalDays: Math.ceil(diff / 86400000) };
 }
 
 function useIsDark() {
@@ -243,7 +244,7 @@ export default function MatrixCountdown() {
     { label: 'שניות', value: time.seconds },
   ];
 
-  const totalDays = Math.ceil((EXAM_DATE.getTime() - Date.now()) / 86400000);
+  const totalDays = time.totalDays;
   const urgency = totalDays <= 30 ? 'imminent' : totalDays <= 90 ? 'approaching' : 'normal';
 
   const accentColor = isDark ? '#f59f0a' : '#2563eb';
