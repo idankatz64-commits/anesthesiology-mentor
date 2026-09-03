@@ -707,6 +707,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return { ...prev, history };
     });
 
+    // Route through the same atomic RPC that updateHistory uses so
+    // user_answers stays in sync. The trg_sync_answer_history trigger
+    // populates answer_history automatically. The previous flagged_for_review
+    // flag is intentionally dropped (verified zero readers in frontend, edge
+    // functions, and DB objects).
+    // 3.9: this runs BEFORE the spaced_repetition write, like every other call
+    // site — the DB stamp trigger (trg_stamp_answer_history_confidence) copies
+    // the confidence onto the history row that already exists; SRS-first would
+    // leave this row unstamped, or stamp an older row of the same question.
+    const { error: incError } = await supabase.rpc(
+      "increment_user_answer",
+      buildMarkForReviewIncrementArgs(userId, questionId, topic),
+    );
+
     // Reset SRS
     const { data: existing } = await supabase
       .from("spaced_repetition")
@@ -739,21 +753,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // Route through the same atomic RPC that updateHistory uses so
-    // user_answers stays in sync. The trg_sync_answer_history trigger
-    // populates answer_history automatically. The previous flagged_for_review
-    // flag is intentionally dropped (verified zero readers in frontend, edge
-    // functions, and DB objects).
-    const { error: incError } = await supabase.rpc(
-      "increment_user_answer",
-      buildMarkForReviewIncrementArgs(userId, questionId, topic),
-    );
-
     setConfidenceMap((prev) => ({ ...prev, [questionId]: "guessed" }));
 
     if (incError) {
       console.error("markForReview: increment_user_answer RPC failed", incError);
-      // SRS row was saved above — the question WILL come back tomorrow.
+      // SRS row was saved — the question WILL come back tomorrow.
       // Only the answered-count update failed, which is non-blocking. Surface
       // a single toast that tells the user the SRS scheduling succeeded but
       // the count update did not, instead of stacking a misleading success
