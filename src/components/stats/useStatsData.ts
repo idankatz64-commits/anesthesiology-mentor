@@ -4,9 +4,15 @@ import { KEYS } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
 import { getChapterDisplay } from '@/data/millerChapters';
 
+// The single capability fetchAllRows needs from a Supabase query builder. Structural,
+// so any `.select(...)` chain satisfies it without importing Postgrest's generics.
+type RangeQuery = {
+  range(from: number, to: number): PromiseLike<{ data: unknown[] | null; error: unknown }>;
+};
+
 // Paginate past the 1000-row default limit
 async function fetchAllRows<T>(
-  buildQuery: () => any
+  buildQuery: () => RangeQuery
 ): Promise<T[]> {
   const PAGE = 1000;
   let allData: T[] = [];
@@ -79,6 +85,12 @@ export type PersonalStats = {
   repeatedErrors: number;
 };
 
+type AnswerHistoryRow = {
+  answered_at: string;
+  is_correct: boolean;
+  topic: string | null;
+};
+
 export type DetailedAnswer = {
   question_id: string;
   topic: string | null;
@@ -91,7 +103,6 @@ export type DetailedAnswer = {
 export function useStatsData() {
   const { data, progress } = useApp();
   const [dailyData90, setDailyData90] = useState<DailyData[]>([]);
-  const [spacedRep, setSpacedRep] = useState<any[]>([]);
   const [detailedAnswers, setDetailedAnswers] = useState<DetailedAnswer[]>([]);
 
   // Derive personalStats from local progress (instant, no race condition)
@@ -131,21 +142,15 @@ export function useStatsData() {
       startDate.setDate(endDate.getDate() - 89);
       const startStr = startDate.toISOString().split('T')[0];
 
-      const [answersData, srData, detailedData] = await Promise.all([
-        fetchAllRows<any>(() =>
+      const [answersData, detailedData] = await Promise.all([
+        fetchAllRows<AnswerHistoryRow>(() =>
           supabase
             .from('answer_history')
             .select('answered_at, is_correct, topic')
             .eq('user_id', session.user.id)
             .gte('answered_at', startStr + 'T00:00:00Z')
         ),
-        fetchAllRows<any>(() =>
-          supabase
-            .from('spaced_repetition')
-            .select('question_id, next_review_date, last_correct, updated_at, confidence')
-            .eq('user_id', session.user.id)
-        ),
-        fetchAllRows<any>(() =>
+        fetchAllRows<DetailedAnswer>(() =>
           supabase
             .from('user_answers')
             .select('question_id, topic, answered_count, correct_count, is_correct, ever_wrong')
@@ -160,7 +165,7 @@ export function useStatsData() {
         d.setDate(d.getDate() - (89 - i));
         buckets[toIsraelDateStr(d)] = { count: 0, correct: 0 };
       }
-      answersData.forEach((r: any) => {
+      answersData.forEach(r => {
         const day = toIsraelDateStr(new Date(r.answered_at));
         if (buckets[day]) {
           buckets[day].count++;
@@ -174,8 +179,7 @@ export function useStatsData() {
         }))
       );
 
-      setSpacedRep(srData);
-      setDetailedAnswers(detailedData as DetailedAnswer[]);
+      setDetailedAnswers(detailedData);
     };
     fetchData();
   }, [progress]);

@@ -5,6 +5,7 @@ import DOMPurify from "dompurify";
 import { useApp } from "@/contexts/AppContext";
 import { supabase } from "@/integrations/supabase/client";
 import { KEYS, Question } from "@/lib/types";
+import { formatActiveDuration } from "@/lib/exportPdf";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   fetchQuizzes,
@@ -203,6 +204,7 @@ export default function AcademyView() {
                   <div className="font-medium">{quizRow?.title ?? "בוחן"}</div>
                   <div className="text-sm text-muted-foreground">
                     הוגש {fmtDate(a.submitted_at)}
+                    {a.total_active_ms != null && ` · ${formatActiveDuration(a.total_active_ms)}`}
                     {s && s.avg_pct !== null && ` · ממוצע מחזור ${s.avg_pct}% (${s.submitted} הגשות)`}
                   </div>
                 </div>

@@ -109,7 +109,20 @@ function CustomTreemapContent(props: CustomContentProps) {
   );
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+// One treemap cell as `treemapData` builds it. Recharts mounts the tooltip as
+// `<CustomTooltip />` with no props and injects these at render time, so both are optional.
+type TreemapNode = {
+  name: string;
+  size: number;
+  smartScore: number;
+  accuracy: number;
+  coverage: number;
+  totalAnswered: number;
+  repeatedErrors: number;
+  showRepeatedOnly: boolean;
+};
+
+const CustomTooltip = ({ active, payload }: { active?: boolean; payload?: { payload?: TreemapNode }[] }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
@@ -147,7 +160,7 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
       </div>
     );
   }, [unclassifiedData, isAdmin, navigate]);
-  const treemapData = useMemo(() => {
+  const treemapData = useMemo<TreemapNode[]>(() => {
     return topicData
       .filter(t => t.totalInDb > 0 && !isUnclassifiedTopic(t.topic))
       .map(t => ({
@@ -192,7 +205,7 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
                 dataKey="size"
                 nameKey="name"
                 content={<CustomTreemapContent />}
-                onClick={(node: any) => {
+                onClick={(node) => {
                   if (node?.name) onTopicClick(node.name);
                 }}
               >
@@ -230,7 +243,7 @@ export default function TopicTreemap({ topicData, onTopicClick, unclassifiedData
                 dataKey="size"
                 nameKey="name"
                 content={<CustomTreemapContent />}
-                onClick={(node: any) => {
+                onClick={(node) => {
                   if (node?.name) onTopicClick(node.name);
                 }}
               >

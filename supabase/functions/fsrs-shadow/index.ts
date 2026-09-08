@@ -1,0 +1,48 @@
+import { processFsrsBatch, type FsrsWorkerApi } from "../_shared/fsrsProcessor.ts";
+import type { FsrsClaim, FsrsResult } from "../_shared/fsrsAdapter.ts";
+import { cors } from "./cors.ts";
+
+const jsonHeaders = { "Content-Type": "application/json" };
+async function rpc<T>(baseUrl: string, apiKey: string, authorization: string, name: string, body: Record<string, unknown>): Promise<T> {
+  const response = await fetch(`${baseUrl}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: { ...jsonHeaders, apikey: apiKey, Authorization: authorization },
+    body: JSON.stringify(body),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    const message = typeof payload?.message === "string" ? payload.message : `RPC_${response.status}`;
+    throw new Error(message);
+  }
+  return payload as T;
+}
+
+Deno.serve(async (request) => {
+  const corsHeaders = cors(request);
+  if (request.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  if (request.method !== "POST") return new Response(JSON.stringify({ error: "METHOD_NOT_ALLOWED" }), { status: 405, headers: { ...corsHeaders, ...jsonHeaders } });
+  try {
+    const authorization = request.headers.get("Authorization");
+    const baseUrl = Deno.env.get("SUPABASE_URL");
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    if (!authorization) return new Response(JSON.stringify({ error: "NOT_AUTHENTICATED" }), { status: 401, headers: { ...corsHeaders, ...jsonHeaders } });
+    if (!baseUrl || !anonKey || !serviceKey) throw new Error("SERVER_CONFIGURATION");
+
+    const role = await rpc<{ owner?: boolean }>(baseUrl, anonKey, authorization, "feedback_my_role", {});
+    if (role?.owner !== true) return new Response(JSON.stringify({ error: "NOT_OWNER" }), { status: 403, headers: { ...corsHeaders, ...jsonHeaders } });
+
+    const workerAuthorization = `Bearer ${serviceKey}`;
+    const worker: FsrsWorkerApi = {
+      claim: () => rpc<FsrsClaim[]>(baseUrl, serviceKey, workerAuthorization, "fsrs_worker_claim", { _limit: 25 }),
+      commit: (eventId: string, leaseToken: string, result: FsrsResult) => rpc(baseUrl, serviceKey, workerAuthorization, "fsrs_worker_commit", { _event_id: eventId, _lease_token: leaseToken, _result: result }),
+      exclude: (eventId: string, leaseToken: string) => rpc(baseUrl, serviceKey, workerAuthorization, "fsrs_worker_exclude", { _event_id: eventId, _lease_token: leaseToken }),
+      fail: (eventId: string, leaseToken: string, code: string) => rpc(baseUrl, serviceKey, workerAuthorization, "fsrs_worker_fail", { _event_id: eventId, _lease_token: leaseToken, _error_code: code }),
+    };
+    const result = await processFsrsBatch(worker);
+    return new Response(JSON.stringify(result), { headers: { ...corsHeaders, ...jsonHeaders } });
+  } catch (error) {
+    console.error("fsrs-shadow processor failed", error instanceof Error ? error.message : "UNKNOWN");
+    return new Response(JSON.stringify({ error: "PROCESSOR_UNAVAILABLE" }), { status: 500, headers: { ...corsHeaders, ...jsonHeaders } });
+  }
+});

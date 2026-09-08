@@ -15,6 +15,13 @@ export interface AcademyMemberRow {
   status: string;
   residency_year: number | null;
   created_at: string;
+  // Resident entitlement columns (migration 20260907000002). Optional until it is applied.
+  exam_this_year?: boolean | null;
+  exam_date?: string | null;
+  national_access?: boolean | null;
+  national_access_set_at?: string | null;
+  onboarding_completed_at?: string | null;
+  linked_at?: string | null;
 }
 
 export interface QuizRow {
@@ -37,6 +44,8 @@ export interface QuizAttemptRow {
   score: number;
   total: number;
   submitted_at: string;
+  /** Active time at submit (ms); absent on rows written before 20260908000002. */
+  total_active_ms?: number | null;
 }
 
 export interface CohortStats {
@@ -113,17 +122,33 @@ export async function fetchMyAttempts(
   return (data ?? []) as QuizAttemptRow[];
 }
 
+export type QuizTiming = {
+  totalActiveMs: number;
+  answerMs: number[];
+  confidence: (string | null)[];
+};
+
 export async function submitQuizAttempt(
   quizId: string,
   questionIds: string[],
   answers: (string | null)[],
-): Promise<{ score: number; total: number }> {
+  timing?: QuizTiming,
+): Promise<{ score: number; total: number; timingPersisted: boolean }> {
+  const base = { _quiz_id: quizId, _question_ids: questionIds, _answers: answers };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase.rpc as any)("submit_quiz_attempt", {
-    _quiz_id: quizId,
-    _question_ids: questionIds,
-    _answers: answers,
-  });
+  const call = (args: Record<string, unknown>) => (supabase.rpc as any)("submit_quiz_attempt", args);
+  let { data, error } = timing
+    ? await call({ ...base, _total_active_ms: Math.round(timing.totalActiveMs), _answer_ms: timing.answerMs.map(Math.round), _confidence: timing.confidence })
+    : await call(base);
+  // ponytail: until 20260908000002 is applied the 6-arg overload does not exist (PGRST202);
+  // the 3-arg submit still credits the quiz, only the timing is dropped.
+  // The outcome is explicit: `timingPersisted: false` tells the caller the score was
+  // credited but the timing/confidence were not stored; nothing is reclassified or resent.
+  let timingPersisted = !!timing;
+  if (error && timing && (error.code === "PGRST202" || /Could not find the function/i.test(error.message ?? ""))) {
+    ({ data, error } = await call(base));
+    timingPersisted = false;
+  }
   if (error) {
     const message = error.message ?? "";
     if (message.includes("ALREADY_SUBMITTED"))
@@ -137,7 +162,7 @@ export async function submitQuizAttempt(
     throw new Error(error.message);
   }
   const row = Array.isArray(data) ? data[0] : data;
-  return { score: Number(row.score), total: Number(row.total) };
+  return { score: Number(row.score), total: Number(row.total), timingPersisted };
 }
 
 export async function fetchCohortStats(
@@ -158,6 +183,20 @@ export async function fetchCohortStats(
 }
 
 // ---------- admin ----------
+
+/**
+ * The caller's row in admin_users. The `is_admin` RPC used by the admin
+ * route is broader (editors too); roster import and the national toggle are
+ * shown only to a real admin. The server RPCs still gate on `is_admin` —
+ * tracked as a backend follow-up, not widened here.
+ */
+export async function fetchMyAdminRole(): Promise<"admin" | "editor" | null> {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return null;
+  const { data, error } = await supabase.from("admin_users").select("role").eq("id", session.user.id).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data?.role === "admin" || data?.role === "editor" ? data.role : null;
+}
 
 export async function fetchMembers(): Promise<AcademyMemberRow[]> {
   const { data, error } = await table("academy_members")

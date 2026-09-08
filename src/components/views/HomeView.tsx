@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useApp } from '@/contexts/AppContext';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useApp, type SavedSessionData } from '@/contexts/AppContext';
+import { attemptErrorMessage } from '@/lib/attemptsRepository';
 import { KEYS, Question, UserProgress } from '@/lib/types';
 import { TrendingUp } from 'lucide-react';
 import {
@@ -11,15 +12,16 @@ import {
 import jigsawImg from '@/assets/jigsaw.png';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { StatCard } from '@/components/stats/StatCard';
-import { getExamProximityPhase, selectSmartQuestions } from '@/lib/smartSelection';
+import { getExamProximityPhase } from '@/lib/smartSelection';
+import { selectBounded, type SelectionResult } from '@/lib/selectionPolicy';
+import { policyModeFor, compositionText, shortageText, smartRank } from '@/lib/selectionSummary';
+import { readLastSession } from '@/lib/lastSessionStore';
 import MatrixCountdown from '@/components/MatrixCountdown';
 import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
 import HomeTopicHeatmap from '@/components/stats/HomeTopicHeatmap';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import DailyReportModal from '@/components/DailyReportModal';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { useDueCount } from '@/components/srs/useDueCount';
 
 const containerVariant = {
   hidden: {},
@@ -112,29 +114,6 @@ function BlinkIcon({ children }: { children: React.ReactNode }) {
       animate={reduced ? {} : { opacity: [1, 0.4, 1] }}
       transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
     >{children}</motion.div>
-  );
-}
-
-/* ── Param Tooltips ── */
-const PARAM_TOOLTIPS: Record<string, string> = {
-  srsUrgency: 'כמה דחוף לחזור על השאלה לפי אלגוריתם SRS — ערך גבוה = איחור גדול מתאריך החזרה',
-  topicWeakness: 'חולשה בנושא — ההפרש בין אחוז הדיוק שלך בנושא לדיוק הכללי',
-  recencyGap: 'כמה ימים עברו מאז תרגלת את הנושא הזה',
-  streakPenalty: 'עונש על רצף טעויות — אם טעית ברציפות בשאלה, הציון עולה',
-  examProximity: 'קרבה לתאריך הבחינה — ככל שהמבחן קרוב יותר, הדגש על נושאים חלשים עולה',
-  yieldBoost: 'חשיבות הנושא — Tier 1 (1.0), Tier 2 (0.6), Tier 3 (0.2)',
-};
-
-function FormulaParam({ name }: { name: string }) {
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <button type="button" className="text-primary cursor-help underline decoration-dotted underline-offset-2 bg-transparent border-none p-0 font-mono text-xs inline">{name}</button>
-      </TooltipTrigger>
-      <TooltipContent side="top" className="max-w-xs text-xs" dir="rtl">
-        <p>{PARAM_TOOLTIPS[name]}</p>
-      </TooltipContent>
-    </Tooltip>
   );
 }
 
@@ -236,17 +215,20 @@ function ResourceLinksSection() {
 
 /* ── Small Card ── */
 function SmallCard({
-  icon, title, subtitle, onClick,
+  icon, title, subtitle, onClick, disabled = false,
 }: {
   icon: React.ReactNode; title: string; subtitle: React.ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
+  disabled?: boolean;
 }) {
   return (
-    <motion.div
+    <motion.button
       variants={cardVariant}
-      whileTap={{ scale: 0.97 }}
+      type="button"
+      disabled={disabled}
+      whileTap={disabled ? undefined : { scale: 0.97 }}
       onClick={onClick}
-      className="glass-tile p-4 cursor-pointer group"
+      className="glass-tile p-4 text-right cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed"
       style={{ willChange: 'transform' }}
     >
       <div className="flex items-start gap-3">
@@ -258,34 +240,21 @@ function SmallCard({
           <p className="text-xs text-muted-foreground font-light mt-0.5">{subtitle}</p>
         </div>
       </div>
-    </motion.div>
+    </motion.button>
   );
-}
-
-/* ── Last Session Results type ── */
-interface LastSessionResults {
-  score: number;
-  total: number;
-  pct: number;
-  mode: string;
-  topics: string[];
-  timestamp: number;
 }
 
 /* ── Session Panel (always visible) ── */
 function SessionPanel({
-  savedSessionInfo, loadingSavedSession, resuming, onResume, onClear,
+  savedSessionInfo, loadingSavedSession, resuming, onResume, onClear, userId,
 }: {
-  savedSessionInfo: any; loadingSavedSession: boolean; resuming: boolean;
+  savedSessionInfo: SavedSessionData | null; loadingSavedSession: boolean; resuming: boolean;
   onResume: () => void; onClear: () => void;
-  progress: UserProgress; data: Question[];
+  progress: UserProgress; data: Question[]; userId: string | null;
 }) {
-  const lastSession = useMemo<LastSessionResults | null>(() => {
-    try {
-      const raw = localStorage.getItem('last_session_results');
-      return raw ? JSON.parse(raw) : null;
-    } catch { return null; }
-  }, []);
+  // Identity-scoped: a record left by a demo run or another account is not this
+  // user's last session and is not shown (see lib/lastSessionStore).
+  const lastSession = useMemo(() => readLastSession(userId), [userId]);
 
   const hasSaved = !loadingSavedSession && savedSessionInfo;
 
@@ -343,22 +312,22 @@ function SessionPanel({
       ) : lastSession ? (
         <div className="flex flex-col gap-3">
           <div className="flex items-center gap-2">
-            <span className="text-lg">{lastSession.pct >= 80 ? '🏆' : lastSession.pct >= 60 ? '💪' : '📚'}</span>
+            <span className="text-lg">{(lastSession.pct ?? 0) >= 80 ? '🏆' : (lastSession.pct ?? 0) >= 60 ? '💪' : '📚'}</span>
             <span className="text-xs font-semibold text-muted-foreground">סשן אחרון</span>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-bold text-foreground tabular-nums">{lastSession.score}/{lastSession.total}</span>
             <span className={`text-sm font-bold tabular-nums ${
-              lastSession.pct >= 70 ? 'text-success' : lastSession.pct >= 50 ? 'text-warning' : 'text-destructive'
-            }`}>({lastSession.pct}%)</span>
+              (lastSession.pct ?? 0) >= 70 ? 'text-success' : (lastSession.pct ?? 0) >= 50 ? 'text-warning' : 'text-destructive'
+            }`}>({lastSession.pct === null ? "—" : `${lastSession.pct ?? 0}%`})</span>
           </div>
           {/* Progress bar */}
           <div className="w-full h-1.5 rounded-full bg-muted/30 overflow-hidden">
             <motion.div
               className="h-full rounded-full"
-              style={{ backgroundColor: lastSession.pct >= 70 ? 'hsl(var(--success))' : lastSession.pct >= 50 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))' }}
+              style={{ backgroundColor: (lastSession.pct ?? 0) >= 70 ? 'hsl(var(--success))' : (lastSession.pct ?? 0) >= 50 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))' }}
               initial={{ width: 0 }}
-              animate={{ width: `${lastSession.pct}%` }}
+              animate={{ width: `${lastSession.pct ?? 0}%` }}
               transition={{ duration: 0.8, delay: 0.3 }}
             />
           </div>
@@ -391,18 +360,17 @@ export default function HomeView() {
     progress,
     navigate,
     startSession,
-    getDueQuestions,
     savedSessionInfo,
     resumeSessionFromDb,
     clearSavedSession,
     loadingSavedSession,
     fetchSrsData,
+    setSourceFilter,
+    userId,
   } = useApp();
-  const [loadingDue, setLoadingDue] = useState(false);
   const [resuming, setResuming] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   const [algoOpen, setAlgoOpen] = useState(false);
-  const { count: dueCount } = useDueCount();
 
   const examPhase = useMemo(() => getExamProximityPhase(), []);
   const [phaseDismissed, setPhaseDismissed] = useState(() => {
@@ -423,53 +391,59 @@ export default function HomeView() {
   const withExp = data.filter(q => q[KEYS.EXPLANATION] && q[KEYS.EXPLANATION].trim().length > 5).length;
   const withoutExp = data.length - withExp;
 
-  // Same engine as SetupView: cool-down + future-schedule de-dup + smart ranking.
-  // Old home path used weighted-random with NO de-dup → "repeats" after a session.
-  const handleSmartPractice = async () => {
-    if (!data.length) return;
+  // Quick actions are automatic selection: the same bounded policy as SetupView with the adaptive
+  // filters on (cool-down / future-schedule), ranked by the smart score inside the approved tiers.
+  // A shortage or an empty result is shown in a panel with explicit options — never a silent fallback pool.
+  type QuickMode = 'practice' | 'simulation';
+  // quickStart awaits the SRS fetch, and the shortage panel waits for a click. Meanwhile the user,
+  // the visible bank (entitlement projection) or the history may change — sign-out, quarantine,
+  // re-projection. fetchSrsData resolving {} is not proof of a current context, so the context is
+  // snapshotted at the click and compared by identity to what this view renders now, right before start.
+  type Ctx = { userId: typeof userId; data: typeof data; history: typeof progress.history };
+  const ctxRef = useRef<Ctx>({ userId, data, history: progress.history });
+  ctxRef.current = { userId, data, history: progress.history };
+  const mounted = useRef(true);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  const [pending, setPending] = useState<{ mode: QuickMode; result: SelectionResult; snap: Ctx } | null>(null);
+  useEffect(() => { setPending(null); }, [userId, data, progress.history]);
+  const abortIfStale = (snap: Ctx) => {
+    const now = ctxRef.current;
+    const stale = !mounted.current || now.userId !== snap.userId || now.data !== snap.data || now.history !== snap.history;
+    if (stale && mounted.current) toast.error('לא הצלחנו להכין את השאלות. אפשר לנסות שוב.');
+    return stale;
+  };
+  const launch = async (mode: QuickMode, result: SelectionResult, snap: Ctx) => {
+    if (abortIfStale(snap)) return;
+    setPending(null);
+    try {
+      await startSession(result.questions, result.questions.length, mode);
+      toast.info(compositionText(result.composition));
+    } catch (e) {
+      // Durable path only: the server refused to open the attempt. Report it; never retry on another pool.
+      toast.error(attemptErrorMessage(e));
+    }
+  };
+  const quickStart = async (mode: QuickMode, count: number) => {
+    const snap = ctxRef.current;
+    if (!snap.data.length) return;
+    let result: SelectionResult;
     try {
       const srsData = await fetchSrsData();
-      const selected = selectSmartQuestions(data, 15, 'quick', srsData, progress.history, data);
-      if (selected.length === 0) return;
-      startSession(selected, selected.length, 'practice');
+      if (abortIfStale(snap)) return;
+      result = selectBounded(snap.data, snap.history, srsData, {
+        mode: policyModeFor(mode), count, rank: smartRank(snap.data, snap.history, srsData, count),
+      });
     } catch (e) {
-      console.error('Smart practice selection failed, falling back to random pool:', e);
-      startSession(data, 15, 'practice');
+      console.error('Selection failed:', e);
+      toast.error('לא הצלחנו להכין את השאלות. אפשר לנסות שוב.');
+      return;
     }
+    if (result.shortage.reason !== 'none') { setPending({ mode, result, snap }); return; }
+    await launch(mode, result, snap);
   };
+  const handleSmartPractice = () => quickStart('practice', 15);
+  const handleSimulation = () => quickStart('simulation', 120);
 
-  // Same simulation proportions as Setup (Miller topic mix) + SRS pre-filters.
-  // Old path: startSession(data, 120) = random 120 from full bank, no filters.
-  const handleSimulation = async () => {
-    if (!data.length) return;
-    try {
-      const srsData = await fetchSrsData();
-      const selected = selectSmartQuestions(data, 120, 'simulation', srsData, progress.history, data);
-      if (selected.length === 0) return;
-      startSession(selected, selected.length, 'simulation');
-    } catch (e) {
-      console.error('Simulation selection failed, falling back to random pool:', e);
-      startSession(data, 120, 'simulation');
-    }
-  };
-
-  const handleSpacedRepetition = async () => {
-    setLoadingDue(true);
-    try {
-      const due = await getDueQuestions();
-      if (due.length === 0) {
-        toast.info('אין שאלות לחזרה היום ✨', {
-          description: 'כל החזרות מעודכנות. אפשר לעבור לשאלות חדשות.',
-          action: { label: 'תרגול חכם', onClick: () => handleSmartPractice() },
-          duration: 6000,
-        });
-        return;
-      }
-      startSession(due, Math.min(due.length, 30), 'practice');
-    } finally {
-      setLoadingDue(false);
-    }
-  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
@@ -519,12 +493,14 @@ export default function HomeView() {
               resuming={resuming}
               onResume={async () => {
                 setResuming(true);
-                await resumeSessionFromDb();
-                setResuming(false);
+                try { await resumeSessionFromDb(); }
+                catch (e) { toast.error(attemptErrorMessage(e)); }
+                finally { setResuming(false); }
               }}
-              onClear={clearSavedSession}
+              onClear={() => { void clearSavedSession().catch(() => toast.error('לא הצלחנו למחוק את המפגש השמור. אפשר לנסות שוב.')); }}
               progress={progress}
               data={data}
+              userId={userId}
             />
           </div>
         </div>
@@ -563,35 +539,41 @@ export default function HomeView() {
         <FocusCard
           icon={<PulseIcon><Sparkles className="w-7 h-7" /></PulseIcon>}
           title="Smart Practice"
-          description="אלגוריתם חכם הבוחר עבורך 15 שאלות על בסיס נקודות תורפה."
+          description="15 שאלות מהמאגר, נושאים חלשים ושאלות שהגיע זמנן קודם. בלי מה שענית ב-24 השעות האחרונות."
           onClick={handleSmartPractice}
           accentColor="#f59f0a"
         />
-        <div className="relative">
-          <FocusCard
-            icon={<RotateIcon><RefreshCcw className="w-7 h-7" /></RotateIcon>}
-            title="חזרה מרווחת"
-            description="שאלות שמגיעות לך לחזרה היום על פי אלגוריתם SRS."
-            onClick={handleSpacedRepetition}
-            accentColor="#10b981"
-            disabled={loadingDue}
-            badge={dueCount}
-          />
-          <button
-            onClick={(e) => { e.stopPropagation(); navigate('srs-dashboard'); }}
-            className="absolute bottom-2 right-3 text-xs text-muted-foreground hover:text-foreground underline z-10"
-          >
-            📊 לוח SRS המלא
-          </button>
-        </div>
+        <FocusCard
+          icon={<RotateIcon><RefreshCcw className="w-7 h-7" /></RotateIcon>}
+          title="בוחן אישי"
+          description="בחר כמות שאלות ומועד הצגת הסברים. החזרה המרווחת משולבת בבחירה."
+          onClick={() => navigate('setup-exam')}
+          accentColor="#10b981"
+        />
         <FocusCard
           icon={<SpinIcon><Timer className="w-7 h-7" /></SpinIcon>}
           title="מבחן סימולציה"
-          description="120 שאלות, 3 שעות, ללא הסברים – כמו מבחן אמיתי."
+          description="120 שאלות, שאלות חדשות קודם, הסברים רק בסיום. הזמן הפעיל מתועד, ללא הגבלה."
           onClick={handleSimulation}
           accentColor="#6366f1"
         />
       </motion.div>
+      {pending && (
+        <div role="status" className="rounded-xl border border-border bg-card p-4 space-y-2 text-sm">
+          <p className="font-bold text-foreground">{pending.mode === 'practice' ? 'תרגול מהיר' : 'מבחן סימולציה'}</p>
+          {pending.result.questions.length > 0 && <p className="text-muted-foreground">{compositionText(pending.result.composition)}</p>}
+          <p className={pending.result.questions.length ? 'text-amber-600' : 'text-destructive'}>{shortageText(pending.result.shortage)}</p>
+          <div className="flex flex-wrap gap-2">
+            {pending.result.questions.length > 0 && (
+              <button type="button" onClick={() => launch(pending.mode, pending.result, pending.snap)} className="px-3 py-1.5 rounded-lg bg-primary text-primary-foreground font-bold">
+                התחל עם {pending.result.questions.length}
+              </button>
+            )}
+            <button type="button" onClick={() => navigate(pending.mode === 'practice' ? 'setup-practice' : 'setup-exam')} className="px-3 py-1.5 rounded-lg border border-border font-bold">הגדרות מותאמות</button>
+            <button type="button" onClick={() => setPending(null)} className="px-3 py-1.5 rounded-lg text-muted-foreground">ביטול</button>
+          </div>
+        </div>
+      )}
 
       {/* ═══ SECONDARY CARDS — smaller, 2-3 cols ═══ */}
       <motion.div
@@ -603,20 +585,20 @@ export default function HomeView() {
         <SmallCard
           icon={<FlipIcon><Layers className="w-5 h-5" /></FlipIcon>}
           title="תרגול כרטיסיות"
-          subtitle="כרטיסיות Anki – שאלה ותשובה"
-          onClick={() => navigate('flashcards')}
+          subtitle="בהמשך — עדיין לא זמין"
+          disabled
         />
         <SmallCard
           icon={<BounceIcon><SlidersHorizontal className="w-5 h-5" /></BounceIcon>}
           title="תרגול מותאם"
-          subtitle="בחר נושאים ומספר שאלות ידנית"
+          subtitle="בחר נושאים ומספר שאלות. מותר לחזור על שאלות."
           onClick={() => navigate('setup-practice')}
         />
         <SmallCard
           icon={<ShakeIcon><AlertCircle className="w-5 h-5" /></ShakeIcon>}
           title="חזרה על טעויות"
           subtitle={<><span className="text-primary font-medium">{mistakes}</span> טעויות פתוחות</>}
-          onClick={() => navigate('setup-practice')}
+          onClick={() => { setSourceFilter('mistakes'); navigate('setup-practice'); }}
         />
         <SmallCard
           icon={<BeatIcon><Heart className="w-5 h-5" /></BeatIcon>}
@@ -633,53 +615,36 @@ export default function HomeView() {
         <SmallCard
           icon={<BlinkIcon><Cpu className="w-5 h-5" /></BlinkIcon>}
           title="איך נבחרות השאלות?"
-          subtitle="הצצה לאלגוריתם הניקוד"
+          subtitle="מה באמת קובע את הסדר"
           onClick={() => setAlgoOpen(o => !o)}
         />
       </motion.div>
 
       {/* ═══ ALGORITHM EXPLAINER ═══ */}
-      <TooltipProvider delayDuration={200}>
-        <AnimatePresence>
-          {algoOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-              className="overflow-hidden"
-            >
-              <div className="deep-tile p-6 space-y-5 text-sm text-muted-foreground leading-relaxed" dir="rtl">
-                <p className="text-foreground font-medium">
-                  כל שאלה מקבלת ציון חכם לפי הנוסחה:
-                </p>
-                <div className="bg-muted/30 rounded-lg px-4 py-3 text-xs font-mono text-foreground/80 overflow-x-auto" dir="ltr">
-                  smartScore = W1×<FormulaParam name="srsUrgency" /> + W2×<FormulaParam name="topicWeakness" /> + W3×<FormulaParam name="recencyGap" /> + W4×<FormulaParam name="streakPenalty" /> + W5×<FormulaParam name="examProximity" /> + W6×<FormulaParam name="yieldBoost" />
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                    <h4 className="font-bold text-foreground mb-1">⚡ מהיר (15 שאלות)</h4>
-                    <p>דגש על שאלות SRS דחופות ונושאים חלשים. סבב חזרה מהיר.</p>
-                  </div>
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                    <h4 className="font-bold text-foreground mb-1">📘 רגיל (40 שאלות)</h4>
-                    <p>ניקוד היברידי מאוזן על פני 6 פרמטרים – חזרה + חומר חדש.</p>
-                  </div>
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                    <h4 className="font-bold text-foreground mb-1">🔬 מעמיק (100 שאלות)</h4>
-                    <p>כיסוי רחב עם פיזור נושאים מקסימלי. לסשנים ארוכים.</p>
-                  </div>
-                  <div className="bg-primary/5 border border-primary/10 rounded-xl p-4">
-                    <h4 className="font-bold text-foreground mb-1">🎯 סימולציה (120 שאלות)</h4>
-                    <p>חלוקה פרופורציונלית לפי משקלי נושאים היסטוריים בבחינה. ללא ניקוד.</p>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </TooltipProvider>
+      <AnimatePresence>
+        {algoOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="overflow-hidden"
+          >
+            {/* Describes selectBounded + smartRank as they run. Keep in sync with selectionPolicy.ts / selectionSummary.ts. */}
+            <div className="deep-tile p-6 space-y-3 text-sm text-muted-foreground leading-relaxed" dir="rtl">
+              <p className="text-foreground font-medium">איך נבחרות השאלות בפועל</p>
+              <ul className="list-disc pr-5 space-y-2">
+                <li><span className="text-foreground">המאגר:</span> רק שאלות שזמינות לך, אחרי הסינון שבחרת (נושא, שנה, מקור, טעויות). אם חסר — מוצג כמה נמצאו, בלי השלמה שקטה.</li>
+                <li><span className="text-foreground">בחירה אוטומטית (Smart Practice), בוחן וסימולציה:</span> שאלות שנענו ב-24 השעות האחרונות ושאלות שמתוזמנות לחזרה בעוד יותר משבוע לא נכנסות.</li>
+                <li><span className="text-foreground">תרגול ידני (הגדרות תרגול, חזרה על טעויות):</span> מותר לחזור גם על שאלות שענית לאחרונה. נספר כלמידה, לא כציון בחינה.</li>
+                <li><span className="text-foreground">בוחן וסימולציה:</span> קודם שאלות חדשות, אחריהן טעויות, אחריהן שאלות שהגיע זמן החזרה שלהן, ובסוף חזרות.</li>
+                <li><span className="text-foreground">הסדר בתוך כל קבוצה</span> (ובתרגול — על כל המאגר הזמין): דחיפות החזרה המרווחת, חולשה בנושא, זמן מאז שתרגלת את הנושא, רצף טעויות, קרבה לבחינה ומשקל הנושא בבחינה. שוויון נשבר באקראי.</li>
+                <li><span className="text-foreground">סימולציה:</span> 120 שאלות. חלוקת הנושאים לפי ההתפלגות ההיסטורית של הבחינה עדיין לא משולבת בבחירה. אין שעון ספירה לאחור ואין הגבלת זמן; הזמן הפעיל מתועד ומוצג, והמבחן לא נסגר אוטומטית.</li>
+              </ul>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ═══ RESOURCE LINKS ═══ */}
       <ResourceLinksSection />

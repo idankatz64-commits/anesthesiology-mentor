@@ -15,6 +15,7 @@ import { toast } from 'sonner';
 import { Search, Pencil, Trash2, ChevronRight, ChevronLeft, Loader2, Save, X, Download, ChevronDown, Check, Mail, CalendarIcon, Clock } from 'lucide-react';
 import Papa from 'papaparse';
 import { errorMessage } from './errorMessage';
+import { NOT_OWNER_MESSAGE, requireWrittenRows, useEditorialOwner } from './editorialOwner';
 
 /** מסיר תגי <img> מטקסט לפני ייצוא CSV — explanation מכיל HTML עם תמונות */
 function stripImages(text: string | null | undefined): string {
@@ -23,8 +24,8 @@ function stripImages(text: string | null | undefined): string {
 }
 
 /** מנקה שורת שאלה מ-HTML images לפני ייצוא */
-function sanitizeForCsv(row: Record<string, unknown>): Record<string, unknown> {
-  return { ...row, explanation: stripImages(row.explanation as string) };
+function sanitizeForCsv<T extends { explanation?: string | null }>(row: T): Record<string, unknown> {
+  return { ...row, explanation: stripImages(row.explanation) };
 }
 import { getChapterDisplay, resolveChapterName } from '@/data/millerChapters';
 import { format } from 'date-fns';
@@ -87,8 +88,8 @@ function BatchChapterUpdate() {
     if (!valid) { toast.error('מספר פרק לא תקין'); return; }
     setSavingId(id);
     const chapterVal = parseInt(draft, 10);
-    const { error } = await supabase.from('questions').update({ chapter: chapterVal }).eq('id', id);
-    if (error) toast.error('שגיאה: ' + error.message);
+    const { data, error } = await supabase.from('questions').update({ chapter: chapterVal }).eq('id', id).select('id');
+    if (error || !data?.length) toast.error('שגיאה: ' + (error?.message ?? NOT_OWNER_MESSAGE));
     else {
       toast.success(`פרק עודכן לשאלה ${id}`);
       setRows(r => r.filter(row => row.id !== id));
@@ -104,10 +105,11 @@ function BatchChapterUpdate() {
     let success = 0;
     for (const [id, draft] of entries) {
       const chapterVal = parseInt(draft, 10);
-      const { error } = await supabase.from('questions').update({ chapter: chapterVal }).eq('id', id);
-      if (!error) success++;
+      const { data, error } = await supabase.from('questions').update({ chapter: chapterVal }).eq('id', id).select('id');
+      if (!error && data?.length) success++;
     }
-    toast.success(`${success} שאלות עודכנו בהצלחה`);
+    if (success < entries.length) toast.error(`${entries.length - success} שאלות לא עודכנו. ${NOT_OWNER_MESSAGE}`);
+    if (success > 0) toast.success(`${success} שאלות עודכנו בהצלחה`);
     setSavingAll(false);
     setDrafts({});
     fetchMissing();
@@ -538,7 +540,7 @@ export default function QuestionEditorTab() {
     if (!editQuestion || !editForm) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { data: written, error } = await supabase
         .from('questions')
         .update({
           question: editForm.question,
@@ -558,9 +560,10 @@ export default function QuestionEditorTab() {
           media_link: editForm.media_link,
           manually_edited: true,
         })
-        .eq('id', editQuestion.id);
+        .eq('id', editQuestion.id)
+        .select('id');
 
-      if (error) throw error;
+      requireWrittenRows(written, 1, error);
       toast.success('השאלה עודכנה בהצלחה');
       invalidateQuestions();
 
@@ -600,8 +603,8 @@ export default function QuestionEditorTab() {
     if (!deleteId) return;
     setDeleting(true);
     try {
-      const { error } = await supabase.from('questions').delete().eq('id', deleteId);
-      if (error) throw error;
+      const { data: written, error } = await supabase.from('questions').delete().eq('id', deleteId).select('id');
+      requireWrittenRows(written, 1, error);
       toast.success('השאלה נמחקה');
       invalidateQuestions();
       setDeleteId(null);
@@ -614,16 +617,19 @@ export default function QuestionEditorTab() {
   };
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  // Direct publication controls belong to the editorial owner only (questions RLS, 20260908000001).
+  const owner = useEditorialOwner(useApp().userId);
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-bold text-foreground mb-1">Question Editor</h2>
         <p className="text-sm text-muted-foreground">עריכה ומחיקה של שאלות ({totalCount} שאלות סה״כ)</p>
+        {owner === false && <p role="note" className="text-sm text-amber-700 dark:text-amber-400 mt-2">מצב קריאה בלבד: {NOT_OWNER_MESSAGE}</p>}
       </div>
 
       {/* Batch Chapter Update */}
-      <BatchChapterUpdate />
+      {owner === true && <BatchChapterUpdate />}
 
       {/* Export by Date */}
       <ExportByDateSection />
@@ -701,12 +707,16 @@ export default function QuestionEditorTab() {
                     <td className="px-4 py-3 text-muted-foreground text-xs max-w-[100px] truncate">{q.source || '—'}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-center gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(q)}>
-                          <Pencil className="w-4 h-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => setDeleteId(q.id)}>
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                        {owner === true && (
+                          <>
+                            <Button variant="ghost" size="icon" className="h-8 w-8" aria-label="עריכת שאלה" onClick={() => openEdit(q)}>
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" aria-label="מחיקת שאלה" onClick={() => setDeleteId(q.id)}>
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </td>
                   </tr>

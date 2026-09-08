@@ -19,7 +19,7 @@ export default function ComparativeStats() {
   useEffect(() => {
     supabase.rpc('get_global_topic_stats').then(({ data: stats }) => {
       if (stats) {
-        setGlobalStats(stats.map((s: any) => ({
+        setGlobalStats(stats.map((s) => ({
           topic: s.topic,
           total_users: Number(s.total_users),
           avg_accuracy: Number(s.avg_accuracy),

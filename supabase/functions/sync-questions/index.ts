@@ -1,5 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { parse } from "https://deno.land/std@0.224.0/csv/mod.ts";
+import { ownerDenied, requireEditorialOwner } from "../_shared/editorialOwner.ts";
+import { fetchManuallyEditedIds, type PagedReadClient } from "../_shared/manuallyEditedIds.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://anesthesiology-mentor.vercel.app",
@@ -36,41 +38,23 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Authenticate caller and verify admin
+    // Authenticate the caller (real JWT, verified by GoTrue — config.toml has
+    // verify_jwt = false for this function) and require the configured
+    // editorial owner. Broad is_admin (editors included) no longer suffices:
+    // this function bulk-writes `questions` with the service key, which is a
+    // publication path. Nothing below runs, and no CSV is fetched, on denial.
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader ?? "" } } }
     );
-
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const { data: isAdmin } = await supabaseAdmin.rpc("is_admin", { _user_id: user.id });
-    if (!isAdmin) {
-      return new Response(
-        JSON.stringify({ error: "Forbidden: not an admin" }),
-        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
+    const owner = await requireEditorialOwner(authHeader, supabaseUser, supabaseAdmin);
+    if (!owner.ok) return ownerDenied(owner, corsHeaders);
 
     const supabase = supabaseAdmin;
 
@@ -105,7 +89,7 @@ Deno.serve(async (req) => {
     console.log(`Parsed ${rows.length} CSV rows`);
 
     // Process rows
-    const questions: Record<string, unknown>[] = [];
+    const questions: (Record<string, unknown> & { id: string })[] = [];
     const now = new Date().toISOString();
 
     const seenIds = new Set<string>();
@@ -173,16 +157,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Get manually edited question IDs to skip them
-    const { data: editedRows } = await supabase
-      .from("questions")
-      .select("id")
-      .eq("manually_edited", true);
-    const editedIds = new Set((editedRows || []).map((r: { id: string }) => r.id));
+    // Get manually edited question IDs to skip them. The read is paginated and
+    // fails closed (see _shared/manuallyEditedIds.ts): an unpaginated select is
+    // capped by PostgREST at 1000 rows, and the previous version also ignored
+    // the error, so a truncated or failed read degraded to "nothing is
+    // protected" and the sheet overwrote hand-curated questions. This runs
+    // before the first upsert, so a throw here aborts with nothing written.
+    // The cast is only to stop supabase-js's deeply generic builder types from
+    // being matched structurally against the helper's minimal recursive
+    // interface (TS2589); the runtime shape is exactly what the helper calls.
+    const editedIds = await fetchManuallyEditedIds(supabase as unknown as PagedReadClient);
     console.log(`Skipping ${editedIds.size} manually edited questions`);
 
     // Filter out manually edited questions
-    const toUpsert = questions.filter((q: any) => !editedIds.has(q.id));
+    const toUpsert = questions.filter((q) => !editedIds.has(q.id));
 
     // Upsert in batches of 200
     let upserted = 0;

@@ -92,7 +92,13 @@ function computeEMA(data: { accuracy: number }[], period: number): (number | nul
   return result;
 }
 
-function fetchAllRows<T>(buildQuery: () => any): Promise<T[]> {
+// The single capability fetchAllRows needs from a Supabase query builder. Structural,
+// so any `.select(...)` chain satisfies it without importing Postgrest's generics.
+type RangeQuery = {
+  range(from: number, to: number): PromiseLike<{ data: unknown[] | null; error: unknown }>;
+};
+
+function fetchAllRows<T>(buildQuery: () => RangeQuery): Promise<T[]> {
   const PAGE = 1000;
   const run = async () => {
     let allData: T[] = [];
@@ -185,7 +191,7 @@ function ChartContent({ expanded = false, refreshKey = 0 }: { expanded?: boolean
         // a 0-1 fraction. Everything downstream - the y axis, the tooltip's `%`
         // - is in percent, so scale here, once, at the boundary. Same rounding
         // as the user series above.
-        (groupRes.data as any[]).forEach((r: any) => {
+        groupRes.data.forEach((r) => {
           map[r.day] = Math.round(Number(r.avg_accuracy) * 100 * 10) / 10;
         });
         setGroupDailyAvg(map);
@@ -619,7 +625,7 @@ export default function AccuracyCanvasChart() {
   const refreshKey = useMemo(() => {
     const history = progress.history || {};
     const keys = Object.keys(history);
-    const totalAnswered = Object.values(history).reduce((sum: number, h: any) => sum + (h?.answered ?? 0), 0);
+    const totalAnswered = Object.values(history).reduce((sum, h) => sum + (h?.answered ?? 0), 0);
     return keys.length * 10000 + totalAnswered;
   }, [progress.history]);
 

@@ -1,7 +1,9 @@
 import DOMPurify from "dompurify";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { useApp } from "@/contexts/AppContext";
-import { KEYS } from "@/lib/types";
+import { toast } from "sonner";
+import { attemptErrorMessage } from "@/lib/attemptsRepository";
+import { KEYS, type SessionState } from "@/lib/types";
 import {
   RotateCcw,
   ChevronDown,
@@ -9,23 +11,25 @@ import {
   BookOpen,
   ExternalLink,
   ArrowRight,
-  TrendingUp,
   Trophy,
   Timer,
   Download,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { motion } from "framer-motion";
-import AnimatedNumber from "@/components/AnimatedNumber";
-import { exportSessionToPdf } from "@/lib/exportPdf";
+import SessionLearningSummary from "@/components/SessionLearningSummary";
+import { buildSessionInsights, questionChangeLabel } from "@/lib/sessionInsights";
+import { buildSessionReportHtml } from "@/lib/exportPdf";
+import { writeLastSession } from "@/lib/lastSessionStore";
+import SessionReportPreview from "@/components/SessionReportPreview";
+import { explanationSections } from "@/lib/explanationSections";
+import { LearningReportSection } from "@/components/learning/LearningReportPanel";
+import { useLearningReport } from "@/components/learning/useLearningReport";
+import { ReportQuestionDialog } from "@/components/feedback";
 
-const heroVariant = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { type: "spring" as const, stiffness: 260, damping: 24, delay: i * 0.1 },
-  }),
+export const formatActive = (ms: number) => {
+  const s = Math.max(0, Math.round(ms / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+  return `${h ? `${h}:` : ''}${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 };
 
 /* ── Explanation renderers (unchanged logic) ── */
@@ -33,9 +37,42 @@ function isHtmlContent(text: string): boolean {
   return /<[a-z][\s\S]*>/i.test(text);
 }
 
+/**
+ * The one-line title of a collapsed question row. Some questions are stored as
+ * HTML, and a truncated line inside a button is the wrong place to render
+ * markup — so the tags leaked to the learner as a literal "<p>". Same sanitizer
+ * used everywhere else in this file, with no tags allowed; asking it for a node
+ * rather than a string matters, because the string form re-escapes entities and
+ * a question would read "&nbsp;" out loud. Display only: the question itself is
+ * untouched, and the expanded panel below still shows it in full.
+ */
+function questionPreviewText(text: string): string {
+  if (!isHtmlContent(text)) return text;
+  const stripped = DOMPurify.sanitize(text, { ALLOWED_TAGS: [], ALLOWED_ATTR: [], RETURN_DOM: true });
+  return (stripped.textContent ?? "").replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Question and option text exactly as it is stored. Most of it is plain and is
+ * left untouched; the rows stored as HTML used to leak their own tags to the
+ * learner as a literal "<p>" or "<strong>". Those now go through the same
+ * DOMPurify call the explanation below already uses, so formatting, formulas
+ * and Critical Visuals survive while event handlers and javascript: URLs do
+ * not. Display only — nothing here changes what is stored or what is scored.
+ */
+function StoredContent({ text, className }: { text: string; className: string }) {
+  if (!isHtmlContent(text)) return <span className={className}>{text}</span>;
+  return (
+    <span
+      className={`rich-content block ${className}`}
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }}
+    />
+  );
+}
+
 function ExplanationRenderer({ text }: { text: string }) {
   let processed = text.replace(/<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi, "[$2]($1)");
-  processed = processed.replace(/(?<!\]\()(?<!\()(https?:\/\/[^\s\)]+)/g, "[$1]($1)");
+  processed = processed.replace(/(?<!\]\()(?<!\()(https?:\/\/[^\s)]+)/g, "[$1]($1)");
   return (
     <ReactMarkdown
       components={{
@@ -59,6 +96,13 @@ function ExplanationRenderer({ text }: { text: string }) {
 }
 
 function SmartExplanation({ text }: { text: string }) {
+  return <>{explanationSections(text).map((section, i) => <div key={i}>
+    {section.title && <h4 className="font-bold mt-4 mb-2">{section.title}</h4>}
+    <ExplanationContent text={section.content} />
+  </div>)}</>;
+}
+
+function ExplanationContent({ text }: { text: string }) {
   if (isHtmlContent(text)) {
     return (
       <div
@@ -71,118 +115,53 @@ function SmartExplanation({ text }: { text: string }) {
   return <ExplanationRenderer text={text} />;
 }
 
-/* ── SVG Progress Ring ── */
-function ProgressRing({ value, color = "text-primary", size = 96 }: { value: number; color?: string; size?: number }) {
-  const r = (size - 16) / 2;
-  const circumference = 2 * Math.PI * r;
-  const offset = circumference - (value / 100) * circumference;
-  return (
-    <div className="relative flex items-center justify-center" style={{ width: size, height: size }}>
-      <svg className="transform -rotate-90" width={size} height={size}>
-        <circle
-          className="text-border"
-          cx={size / 2}
-          cy={size / 2}
-          fill="transparent"
-          r={r}
-          stroke="currentColor"
-          strokeWidth="8"
-        />
-        <circle
-          className={color}
-          cx={size / 2}
-          cy={size / 2}
-          fill="transparent"
-          r={r}
-          stroke="currentColor"
-          strokeWidth="8"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          style={{ transition: "stroke-dashoffset 1s ease-out" }}
-        />
-      </svg>
-      <span className="absolute text-xl font-bold text-foreground">{value}%</span>
-    </div>
-  );
-}
-
-/* ── Activity Heatmap (14 days) ── */
-function ActivityHeatmap({ history }: { history: Record<string, any> }) {
-  const days = useMemo(() => {
-    const result: { date: string; count: number }[] = [];
-    const now = new Date();
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date(now);
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().slice(0, 10);
-      let count = 0;
-      Object.values(history).forEach((entry: any) => {
-        if (entry.timestamp) {
-          const entryDate = new Date(entry.timestamp).toISOString().slice(0, 10);
-          if (entryDate === dateStr) count++;
-        }
-      });
-      result.push({ date: dateStr, count });
-    }
-    return result;
-  }, [history]);
-
-  const maxCount = Math.max(...days.map((d) => d.count), 1);
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">מפת פעילות</h4>
-        <span className="text-[10px] text-muted-foreground italic">14 ימים אחרונים</span>
-      </div>
-      <div className="flex flex-wrap gap-2 justify-center">
-        {days.map((d) => {
-          const intensity = d.count === 0 ? 0.05 : Math.max(0.15, d.count / maxCount);
-          return (
-            <div
-              key={d.date}
-              className="w-8 h-8 rounded-sm"
-              style={{ backgroundColor: `hsl(var(--primary) / ${intensity})` }}
-              title={`${d.date}: ${d.count} שאלות`}
-            />
-          );
-        })}
-      </div>
-      <div className="mt-4 flex justify-between items-center text-[10px] text-muted-foreground font-bold uppercase">
-        <span>מאמץ נמוך</span>
-        <div className="flex gap-1">
-          <div className="w-2 h-2 rounded-sm bg-primary/20" />
-          <div className="w-2 h-2 rounded-sm bg-primary/50" />
-          <div className="w-2 h-2 rounded-sm bg-primary" />
-        </div>
-        <span>מוכן למבחן</span>
-      </div>
-    </div>
-  );
-}
-
 /* ── Main Results View ── */
-export default function ResultsView() {
-  const { session, progress, data, navigate, startSession } = useApp();
+/** `archive`: read-only review of a submitted attempt (milestone 2). No restart, no localStorage, back goes to the archive. */
+export default function ResultsView({ archive }: { archive?: { session: SessionState; onBack: () => void } } = {}) {
+  const app = useApp();
+  const [reportQ, setReportQ] = useState<{ id: string; label: string } | null>(null);
+  const { progress, historyLoaded, data, navigate, startSession, resetFilters, setSourceFilter, toggleMultiSelect, toggleUnseenOnly, userId } = app;
+  const session = archive?.session ?? app.session;
   const { quiz, answers, mode } = session;
   const [expandedQ, setExpandedQ] = useState<number | null>(null);
+  const [printableReport, setPrintableReport] = useState<string | null>(null);
+  const questionReviewRef = useRef<HTMLDivElement>(null);
+  const questionListRef = useRef<HTMLDivElement>(null);
+  const openQuestionReview = () => {
+    setExpandedQ(0);
+    if (questionListRef.current) questionListRef.current.scrollTop = 0;
+    questionReviewRef.current?.scrollIntoView({ block: 'start' });
+    questionReviewRef.current?.focus({ preventScroll: true });
+  };
+  // Server value for durable attempts; session value for legacy/Academy paths. Recorded, never a limit.
+  const activeMs = session.attemptResult?.totalActiveMs ?? session.totalActiveMs ?? null;
+  const learningReport = useLearningReport();
+  const openReport = () => setPrintableReport(buildSessionReportHtml({
+    score: results.score, pct: results.pct, mode, details: results.details, insights, totalActiveMs: activeMs, learningReport,
+  }));
 
   const isSimulation = mode === "simulation";
+  const [visibleQuestionCount, setVisibleQuestionCount] = useState(30);
+  const insights = useMemo(() => buildSessionInsights({ bank: data, quiz, answers, baseline: session.learningBaseline, history: progress.history, historyAvailable: historyLoaded }),
+    [data, quiz, answers, session.learningBaseline, progress.history, historyLoaded]);
+  const questionInsightById = useMemo(() => new Map(insights.questions.map(q => [q.id, q])), [insights.questions]);
+  const continueLearning = (topic: string, source: 'all' | 'mistakes', unseenOnly: boolean) => {
+    resetFilters();
+    if (topic !== 'כללי') toggleMultiSelect('topic', topic);
+    setSourceFilter(source);
+    if (unseenOnly) toggleUnseenOnly();
+    navigate('setup-practice');
+  };
 
   const results = useMemo(() => {
-    let score = 0;
-    const details: { q: (typeof quiz)[0]; userAns: string | null; correctAns: string; isCorrect: boolean }[] = [];
-    quiz.forEach((q, i) => {
-      const userAns = answers[i];
-      const correctAns = q[KEYS.CORRECT];
-      const isCorrect = userAns === correctAns;
-      if (userAns && isCorrect) score++;
-      details.push({ q, userAns, correctAns, isCorrect });
-    });
-    const pct = quiz.length > 0 ? Math.round((score / quiz.length) * 100) : 0;
-    return { score, pct, details };
-  }, [quiz, answers]);
+    const details = insights.questions.map(({ q, userAns, correctAns, isCorrect }) => ({ q, userAns, correctAns, isCorrect }));
+    // Durable attempts: the server's scoring is authoritative over the client recount.
+    const server = session.attemptResult;
+    const score = server?.correctCount ?? insights.overall.correct;
+    const total = server ? (mode === "practice" ? server.scoredCount ?? 0 : server.totalCount) : mode === "practice" ? insights.overall.scored : quiz.length;
+    const pct = total ? Math.round(score * 100 / total) : null;
+    return { score, total, pct, details };
+  }, [insights, mode, quiz.length, session.attemptResult]);
 
   // Exam answers are NOT written here. SessionView's processQuizAnswersForSrs
   // already calls updateHistory for every answered question on submit, for both
@@ -192,7 +171,7 @@ export default function ResultsView() {
   // reformat.
 
   // Save last session results to localStorage
-  const lastSessionSaved = useRef(false);
+  const lastSessionSaved = useRef(!!archive);
   useEffect(() => {
     if (quiz.length > 0 && !lastSessionSaved.current) {
       lastSessionSaved.current = true;
@@ -206,71 +185,36 @@ export default function ResultsView() {
         .slice(0, 3)
         .map(([t]) => t);
 
-      localStorage.setItem(
-        "last_session_results",
-        JSON.stringify({
-          score: results.score,
-          total: quiz.length,
-          pct: results.pct,
-          mode,
-          topics: topTopics,
-          timestamp: Date.now(),
-        }),
-      );
+      // Stamped with the owner: Home shows this card only back to the account
+      // that produced it (see lib/lastSessionStore).
+      writeLastSession(userId, {
+        score: results.score,
+        total: results.total,
+        pct: results.pct,
+        mode,
+        topics: topTopics,
+        timestamp: Date.now(),
+      });
     }
-  }, [quiz, results, mode]);
+  }, [quiz, results, mode, userId]);
 
   const handleRestart = () => {
-    startSession(quiz, quiz.length, "practice");
+    const wrongQuestions = results.details.filter(d => d.isCorrect === false).map(d => d.q);
+    Promise.resolve(startSession(wrongQuestions, wrongQuestions.length, "practice")).catch((e) => toast.error(attemptErrorMessage(e)));
   };
 
-  // Compute weak topics
-  const weakTopics = useMemo(() => {
-    const topicStats: Record<string, { total: number; wrong: number }> = {};
-    results.details.forEach((d) => {
-      if (!d.userAns) return;
-      const topic = d.q[KEYS.TOPIC] || "Other";
-      if (!topicStats[topic]) topicStats[topic] = { total: 0, wrong: 0 };
-      topicStats[topic].total++;
-      if (!d.isCorrect) topicStats[topic].wrong++;
-    });
-    return Object.entries(topicStats)
-      .map(([topic, s]) => ({ topic, rate: s.wrong / s.total, count: s.total }))
-      .filter((i) => i.rate > 0 && i.count >= 1)
-      .sort((a, b) => b.rate - a.rate)
-      .slice(0, 5);
-  }, [results.details]);
-
-  // Compute bank progress
-  const bankProgress = useMemo(() => {
-    const answered = Object.keys(progress.history).length;
-    const total = data.length || 1;
-    return Math.round((answered / total) * 100);
-  }, [progress.history, data]);
-
-  // Status badge
-  const statusLabel =
-    results.pct >= 90
-      ? "מועמד מצטיין"
-      : results.pct >= 75
-        ? "ביצוע טוב"
-        : results.pct >= 60
-          ? "בדרך הנכונה"
-          : "צריך חיזוק";
+  const displayPercent = results.pct;
+  const statusLabel = mode === "practice" ? "סיכום תרגול אישי" : "סיכום הבוחן";
 
   // Count errors for review button
-  const errorCount = results.details.filter((d) => d.userAns && !d.isCorrect).length;
+  const errorCount = results.details.filter((d) => d.isCorrect === false).length;
 
   return (
     <div className="max-w-5xl mx-auto p-4 lg:p-8 space-y-8">
       {/* ── Hero: Status + Countdown ── */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Premium Status Card */}
-        <motion.div
-          custom={0}
-          variants={heroVariant}
-          initial="hidden"
-          animate="visible"
+        <div
           className="lg:col-span-2 flex flex-col justify-start rounded-xl shadow-xl bg-gradient-to-br from-card to-secondary border border-border p-6 relative overflow-hidden"
         >
           <div className="absolute -right-4 -top-4 opacity-10 text-primary">
@@ -283,43 +227,38 @@ export default function ResultsView() {
             <div className="flex-1 text-center sm:text-right">
               <p className="text-primary text-xs font-bold tracking-widest uppercase mb-1">{statusLabel}</p>
               <h3 className="text-2xl font-bold text-foreground mb-2">
-                {isSimulation ? "סימולציה הושלמה" : "סשן הושלם בהצלחה"}
+                {isSimulation ? "סיכום הסימולציה" : mode === "practice" ? "סיימת את התרגול" : "סיימת את הבוחן"}
               </h3>
               <p className="text-muted-foreground text-sm max-w-md">
-                ענית על {quiz.length} שאלות עם ציון של {results.pct}%.
-                {results.pct >= 80 ? " המשך כך!" : " תמשיך לתרגל ותשתפר!"}
+                נענו {insights.overall.answered} מתוך {insights.questions.length} שאלות: {insights.overall.correct} נכונות, {insights.overall.wrong} שגויות ו־{insights.overall.skipped} ללא מענה.{insights.overall.answered > insights.overall.scored && ` ${insights.overall.answered - insights.overall.scored} תשובות ללא מפתח תקין לא סווגו כנכונות או כשגויות.`}
               </p>
             </div>
             <div className="flex flex-col items-center justify-center bg-card/80 p-4 rounded-xl border border-border min-w-[120px]">
               <span className="text-3xl font-black text-primary">
-                <AnimatedNumber value={results.score} />/{quiz.length}
+                {results.score}/{results.total}
               </span>
               <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-tighter">
                 תשובות נכונות
               </span>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Countdown / Score Card */}
-        <motion.div
-          custom={1}
-          variants={heroVariant}
-          initial="hidden"
-          animate="visible"
+        <div
           className="rounded-xl shadow-xl bg-card border border-border p-6 flex flex-col justify-between"
         >
           <div className="flex items-center justify-between mb-4">
-            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">ציון סופי</span>
+            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{mode === "practice" ? "דיוק בתשובות שנענו" : "ציון הבוחן"}</span>
             <Timer className="w-5 h-5 text-muted-foreground" />
           </div>
           <div className="flex justify-center items-center py-4">
             <div className="text-center">
               <p className="text-6xl font-black text-primary">
-                <AnimatedNumber value={results.pct} suffix="%" />
+                {displayPercent === null ? "—" : `${Math.round(displayPercent)}%`}
               </p>
               <p className="text-xs text-muted-foreground mt-2 uppercase font-bold">
-                {isSimulation ? "ציון סימולציה" : "ציון סשן"}
+                {mode === "practice" ? "למידה אישית" : "מתוך כלל שאלות הבוחן"}
               </p>
             </div>
           </div>
@@ -327,86 +266,62 @@ export default function ResultsView() {
             <p className="text-xs text-muted-foreground">
               {quiz.length} שאלות • {errorCount} שגיאות
             </p>
+            {activeMs != null && (
+              <p className="text-xs text-muted-foreground mt-1">זמן פעיל: {formatActive(activeMs)}</p>
+            )}
+            {session.attemptResult?.quarter && (
+              <p className="text-xs text-muted-foreground mt-1">
+                רבעון {session.attemptResult.quarter}
+                {session.attemptResult.submittedAt && ` • הוגש ${new Date(session.attemptResult.submittedAt).toLocaleDateString("he-IL", { timeZone: "Asia/Jerusalem" })}`}
+              </p>
+            )}
           </div>
-        </motion.div>
-      </div>
-
-      {/* ── Metric Rings + Heatmap ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {/* Accuracy Ring */}
-        <div className="bg-card p-6 rounded-xl border border-border flex flex-col items-center">
-          <ProgressRing value={results.pct} color="text-primary" />
-          <p className="font-medium text-foreground mt-2">דיוק</p>
-          {results.pct >= 80 && (
-            <p className="text-success text-xs font-bold flex items-center gap-1 mt-1">
-              <TrendingUp className="w-3 h-3" /> ביצוע מצוין
-            </p>
-          )}
-        </div>
-
-        {/* Bank Progress Ring */}
-        <div className="bg-card p-6 rounded-xl border border-border flex flex-col items-center">
-          <ProgressRing value={bankProgress} color="text-warning" />
-          <p className="font-medium text-foreground mt-2">התקדמות במאגר</p>
-          <p className="text-muted-foreground text-xs mt-1">
-            {Object.keys(progress.history).length} / {data.length}
-          </p>
-        </div>
-
-        {/* Activity Heatmap */}
-        <div className="lg:col-span-2 bg-card p-6 rounded-xl border border-border">
-          <ActivityHeatmap history={progress.history} />
         </div>
       </div>
 
-      {/* ── Weak Topics ── */}
-      {weakTopics.length > 0 && (
-        <div className="bg-card rounded-xl border border-border p-6">
-          <h3 className="font-bold text-foreground mb-4 flex items-center gap-2 text-sm uppercase tracking-widest">
-            <span className="text-primary">✨</span> נושאים לחיזוק
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {weakTopics.map((t) => (
-              <span
-                key={t.topic}
-                className="px-3 py-1.5 rounded-full text-xs font-bold bg-destructive/10 text-destructive border border-destructive/20"
-              >
-                {t.topic} ({Math.round(t.rate * 100)}% שגיאות)
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button type="button" onClick={openQuestionReview} className="flex-1 rounded-xl border border-primary/40 bg-primary/10 p-4 font-bold">עיון בשאלות ובהסברים</button>
+        <button type="button" onClick={openReport} className="flex-1 rounded-xl border border-border p-4 font-bold">ייצוא דוח מלא ל־PDF</button>
+      </div>
+
+      <SessionLearningSummary insights={insights} onContinue={continueLearning} />
+      <LearningReportSection state={learningReport} />
 
       {/* ── Question History List ── */}
-      <div className="bg-card rounded-xl border border-border overflow-hidden shadow-xl">
+      <div ref={questionReviewRef} tabIndex={-1} aria-label="עיון בשאלות ובהסברים" className="bg-card rounded-xl border border-border overflow-hidden shadow-xl scroll-mt-24">
         <div className="p-6 border-b border-border flex items-center justify-between">
-          <h3 className="text-lg font-bold text-foreground">{isSimulation ? "פירוט מלא עם הסברים" : "סיכום שאלות"}</h3>
+          <h3 className="text-lg font-bold text-foreground">כל השאלות וההסברים</h3>
           <span className="text-xs text-muted-foreground">{quiz.length} שאלות</span>
         </div>
-        <div className="divide-y divide-border max-h-[600px] overflow-y-auto">
-          {results.details.map((d, i) => (
+        <p className="px-6 py-3 text-sm text-muted-foreground">לחצו על שאלה כדי לפתוח את התשובות וההסבר המלא. העיון אינו משנה את התשובות או את הציון.</p>
+        <div ref={questionListRef} role="region" aria-label="רשימת השאלות" className="divide-y divide-border max-h-[600px] overflow-y-auto">
+          {results.details.slice(0, visibleQuestionCount).map((d, i) => (
             <div key={i}>
               {/* Question row */}
-              <div
-                className="p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors cursor-pointer"
+              <button
+                type="button"
+                aria-expanded={expandedQ === i}
+                aria-controls={`question-explanation-${i}`}
+                aria-label={`${expandedQ === i ? 'סגור' : 'פתח'} שאלה ${i + 1} והסבר`}
+                className="w-full text-right p-4 flex items-center gap-4 hover:bg-muted/30 transition-colors cursor-pointer"
                 onClick={() => setExpandedQ(expandedQ === i ? null : i)}
               >
                 <div
                   className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
                     d.isCorrect
                       ? "bg-success/10 text-success"
-                      : d.userAns
+                      : d.isCorrect === false
                         ? "bg-destructive/10 text-destructive"
                         : "bg-muted text-muted-foreground"
                   }`}
                 >
-                  {d.isCorrect ? "✓" : d.userAns ? "✗" : "—"}
+                  {d.isCorrect ? "✓" : d.isCorrect === false ? "✗" : "—"}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate bidi-text">{d.q[KEYS.QUESTION]}</p>
+                  <p className="text-sm font-semibold text-foreground truncate bidi-text">{questionPreviewText(d.q[KEYS.QUESTION])}</p>
                   <p className="text-xs text-muted-foreground">
                     #{d.q[KEYS.REF_ID]} • {d.q[KEYS.TOPIC] || "כללי"}
+                    {" · "}{questionChangeLabel[questionInsightById.get(d.q[KEYS.ID])?.change ?? "unknown"]}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -414,12 +329,12 @@ export default function ResultsView() {
                     className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${
                       d.isCorrect
                         ? "bg-success/20 text-success"
-                        : d.userAns
+                        : d.isCorrect === false
                           ? "bg-destructive/20 text-destructive"
                           : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {d.isCorrect ? "נכון" : d.userAns ? "שגוי" : "דילוג"}
+                    {d.isCorrect ? "נכון" : d.isCorrect === false ? "שגוי" : d.userAns ? "לא נבדק" : "דילוג"}
                   </span>
                   {expandedQ === i ? (
                     <ChevronUp className="w-4 h-4 text-muted-foreground" />
@@ -427,12 +342,19 @@ export default function ResultsView() {
                     <ChevronDown className="w-4 h-4 text-muted-foreground" />
                   )}
                 </div>
-              </div>
+              </button>
 
               {/* Expanded details */}
               {expandedQ === i && (
-                <div className="p-5 border-t border-border bg-muted/20 space-y-4">
-                  <p className="text-foreground text-sm bidi-text leading-relaxed">{d.q[KEYS.QUESTION]}</p>
+                <div id={`question-explanation-${i}`} role="region" aria-label={`שאלה ${i + 1} והסבר`} className="p-5 border-t border-border bg-muted/20 space-y-4">
+                  <StoredContent text={d.q[KEYS.QUESTION]} className="block text-foreground text-sm bidi-text leading-relaxed" />
+                  <button
+                    type="button"
+                    onClick={() => setReportQ({ id: String(d.q[KEYS.ID]), label: `#${d.q[KEYS.REF_ID]}` })}
+                    className="text-xs text-muted-foreground underline hover:text-foreground"
+                  >
+                    דווח על בעיה בשאלה
+                  </button>
 
                   {/* Options */}
                   <div className="space-y-2">
@@ -447,15 +369,15 @@ export default function ResultsView() {
                           className={`p-3 rounded-lg text-sm flex items-center gap-2 ${
                             isCorrectOpt
                               ? "bg-success/10 text-success font-bold border border-success/20"
-                              : isUserChoice
+                              : isUserChoice && d.isCorrect === false
                                 ? "bg-destructive/10 text-destructive border border-destructive/20"
                                 : "text-muted-foreground"
                           }`}
                         >
                           <span className="font-bold">{opt}.</span>
-                          <span className="bidi-text">{text}</span>
+                          <StoredContent text={text} className="bidi-text" />
                           {isCorrectOpt && <span>✓</span>}
-                          {isUserChoice && !isCorrectOpt && <span>✗</span>}
+                          {isUserChoice && d.isCorrect === false && <span>✗</span>}
                         </div>
                       );
                     })}
@@ -488,9 +410,11 @@ export default function ResultsView() {
         </div>
       </div>
 
+      {visibleQuestionCount < results.details.length && <button type="button" onClick={() => setVisibleQuestionCount(count => count + 30)} className="w-full rounded-xl border border-border p-3 font-bold">הצג עוד שאלות ({results.details.length - visibleQuestionCount} נוספות)</button>}
+
       {/* ── Action Footer ── */}
       <div className="flex flex-col sm:flex-row items-center gap-4 pt-4">
-        {errorCount > 0 && !session.quizId && (
+        {errorCount > 0 && !session.quizId && !archive && (
           <button
             onClick={handleRestart}
             className="w-full sm:flex-1 h-14 bg-primary text-primary-foreground font-black text-lg rounded-xl shadow-[0_0_20px_hsl(var(--primary)/0.3)] hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
@@ -500,20 +424,28 @@ export default function ResultsView() {
           </button>
         )}
         <button
-          onClick={() => exportSessionToPdf({ score: results.score, pct: results.pct, mode, details: results.details })}
+          onClick={openReport}
           className="w-full sm:w-auto h-14 px-6 bg-card border border-border text-foreground font-bold rounded-xl hover:bg-muted transition-all flex items-center justify-center gap-2"
         >
           <Download className="w-5 h-5" />
           ייצוא PDF
         </button>
         <button
-          onClick={() => navigate("home")}
+          onClick={() => (archive ? archive.onBack() : navigate("home"))}
           className="w-full sm:flex-1 h-14 bg-secondary text-foreground font-bold text-lg rounded-xl hover:bg-muted transition-all flex items-center justify-center gap-2"
         >
-          חזרה לראשי
+          {archive ? "חזרה לארכיון" : "חזרה לראשי"}
           <ArrowRight className="w-5 h-5" />
         </button>
       </div>
+      {printableReport && <SessionReportPreview html={printableReport} onClose={() => setPrintableReport(null)} />}
+      <ReportQuestionDialog
+        open={reportQ !== null}
+        onOpenChange={(o) => { if (!o) setReportQ(null); }}
+        questionId={reportQ?.id ?? null}
+        userId={app.userId ?? null}
+        questionLabel={reportQ?.label ?? null}
+      />
     </div>
   );
 }

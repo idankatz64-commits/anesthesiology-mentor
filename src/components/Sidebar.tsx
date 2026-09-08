@@ -14,7 +14,7 @@ import {
   ChevronRight,
   FileText,
   GraduationCap,
-  Brain,
+  Archive,
 } from "lucide-react";
 import { type ViewId } from "@/lib/types";
 import { KEYS } from "@/lib/types";
@@ -22,13 +22,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import SquircleIcon from "./SquircleIcon";
+import { durableAttemptsEnabled } from "@/lib/featureFlags";
 
 const navItems: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: "home", label: "ראשי", icon: <SquircleIcon icon={Heart} gradient="gold" /> },
   { id: "setup-practice", label: "תרגול (Practice)", icon: <SquircleIcon icon={BookOpen} gradient="teal" /> },
   { id: "setup-exam", label: "בחינה (Exam)", icon: <SquircleIcon icon={Timer} gradient="orange" /> },
+  // Milestone 2: archive of submitted attempts, only when the durable-attempts flag is on.
+  ...(durableAttemptsEnabled() ? [{ id: "archive" as ViewId, label: "ארכיון מפגשים", icon: <SquircleIcon icon={Archive} gradient="gold" /> }] : []),
   { id: "stats", label: "סטטיסטיקה", icon: <SquircleIcon icon={BarChart3} gradient="blue" /> },
-  { id: "srs-dashboard", label: "חזרה מרווחת", icon: <SquircleIcon icon={Brain} gradient="rose" /> },
   { id: "notebook", label: "המחברת שלי", icon: <SquircleIcon icon={StickyNote} gradient="cyan" /> },
   { id: "formula-sheet", label: "Formula Sheet", icon: <SquircleIcon icon={FlaskConical} gradient="violet" /> },
   { id: "summaries", label: "סיכומי נושאים", icon: <SquircleIcon icon={FileText} gradient="cyan" /> },

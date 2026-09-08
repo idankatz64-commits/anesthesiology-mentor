@@ -70,7 +70,9 @@ export default function FlashcardView() {
               pool = [...pool, ...extra];
             }
           }
-        } catch {}
+        } catch {
+          // SRS enrichment is best-effort; the random fallback below still gives a deck.
+        }
 
         if (pool.length === 0) {
           // Fallback: random

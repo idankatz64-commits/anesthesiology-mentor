@@ -139,7 +139,7 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
     supabase.rpc('get_global_topic_stats').then(({ data: rows }) => {
       if (!rows) return;
       const map: Record<string, { avg: number; users: number }> = {};
-      rows.forEach((r: any) => {
+      rows.forEach((r) => {
         if (r.topic) map[r.topic] = { avg: Math.round(r.avg_accuracy), users: r.total_users ?? 0 };
       });
       setGroupStats(map);
@@ -164,7 +164,7 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
       if (!rows) return;
 
       const byTopic: Record<string, Record<string, { c: number; t: number }>> = {};
-      rows.forEach((r: any) => {
+      rows.forEach((r) => {
         if (!r.topic) return;
         const day = new Date(r.answered_at).toLocaleDateString('en-CA');
         if (!byTopic[r.topic]) byTopic[r.topic] = {};
@@ -203,7 +203,7 @@ export default function TopicPerformanceTable({ topicData, onTopicClick, progres
   }, [topicData, groupStats]);
 
   const filtered = useMemo(() => {
-    let list = enriched.filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()));
+    const list = enriched.filter(d => d.topic.toLowerCase().includes(searchTerm.toLowerCase()));
     list.sort((a, b) => {
       let cmp = 0;
       switch (sortKey) {
@@ -468,7 +468,7 @@ function ExpandedPanel({ topic, topicStat, groupAvg, totalUsers, onStartPractice
       if (!rows || rows.length === 0) return;
 
       const byDate: Record<string, { correct: number; total: number }> = {};
-      rows.forEach((r: any) => {
+      rows.forEach((r) => {
         const day = new Date(r.answered_at).toLocaleDateString('en-CA', { timeZone: 'Asia/Jerusalem' });
         if (!byDate[day]) byDate[day] = { correct: 0, total: 0 };
         byDate[day].total++;

@@ -37,8 +37,8 @@ export default function ResetPassword() {
       if (error) throw error;
       toast({ title: 'סיסמה עודכנה!', description: 'אתה מועבר להתחברות.' });
       navigate('/auth', { replace: true });
-    } catch (err: any) {
-      toast({ title: 'שגיאה', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      toast({ title: 'שגיאה', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
     } finally {
       setLoading(false);
     }

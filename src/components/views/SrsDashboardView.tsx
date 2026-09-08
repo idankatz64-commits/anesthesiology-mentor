@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
+import { attemptErrorMessage } from '@/lib/attemptsRepository';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/contexts/AppContext';
 import { useSrsDashboard } from '@/components/srs/useSrsDashboard';
@@ -57,7 +58,7 @@ export function SrsDashboardView() {
     // smart mode: pre-slice top-N by urgency (pool is already sorted in poolFor), shuffle within.
     // non-smart: hand entire pool to startSession which will shuffle and slice to n.
     const selected = smart ? resolved.slice(0, n) : resolved;
-    startSession(selected, n, 'practice');
+    Promise.resolve(startSession(selected, n, 'practice')).catch((e) => toast.error(attemptErrorMessage(e)));
   };
 
   const handleStartFromPanel = (filter: SessionFilter, count: number | 'all', smart: boolean) => {

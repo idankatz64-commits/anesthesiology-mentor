@@ -1,13 +1,15 @@
 import { useApp } from "@/contexts/AppContext";
-import { Heart, BookOpen, Timer, BarChart3, GraduationCap } from "lucide-react";
+import { Heart, BookOpen, Timer, BarChart3, GraduationCap, Archive } from "lucide-react";
 import { type ViewId } from "@/lib/types";
 import { motion } from "framer-motion";
 import SquircleIcon from "./SquircleIcon";
+import { durableAttemptsEnabled } from "@/lib/featureFlags";
 
 const bottomNav: { id: ViewId; label: string; icon: React.ReactNode }[] = [
   { id: "home", label: "ראשי", icon: <SquircleIcon icon={Heart} gradient="gold" size="sm" /> },
   { id: "setup-practice", label: "תרגול", icon: <SquircleIcon icon={BookOpen} gradient="teal" size="sm" /> },
   { id: "setup-exam", label: "בחינה", icon: <SquircleIcon icon={Timer} gradient="orange" size="sm" /> },
+  ...(durableAttemptsEnabled() ? [{ id: "archive" as ViewId, label: "ארכיון", icon: <SquircleIcon icon={Archive} gradient="gold" size="sm" /> }] : []),
   { id: "stats", label: "סטטיסטיקה", icon: <SquircleIcon icon={BarChart3} gradient="blue" size="sm" /> },
   { id: "academy", label: "אקדמיה", icon: <SquircleIcon icon={GraduationCap} gradient="rose" size="sm" /> },
 ];

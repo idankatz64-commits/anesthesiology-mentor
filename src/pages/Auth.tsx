@@ -28,8 +28,8 @@ export default function Auth() {
       if (error) throw error;
       toast({ title: 'מייל נשלח!', description: 'בדוק את תיבת המייל לקישור לאיפוס סיסמה.' });
       setIsForgot(false);
-    } catch (err: any) {
-      toast({ title: 'שגיאה', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      toast({ title: 'שגיאה', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
     } finally {
       setLoading(false);
     }
@@ -65,8 +65,8 @@ export default function Auth() {
         if (error) throw error;
         toast({ title: 'נרשמת בהצלחה!', description: 'בדוק את תיבת המייל לאימות החשבון.' });
       }
-    } catch (err: any) {
-      toast({ title: 'שגיאה', description: err.message, variant: 'destructive' });
+    } catch (err) {
+      toast({ title: 'שגיאה', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
     } finally {
       setLoading(false);
     }

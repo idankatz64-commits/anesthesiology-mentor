@@ -68,10 +68,10 @@ export default function FormulaCalculatorPanel({
     // The Supabase table this used to read was never created, so the read
     // always errored and always fell through to formulas.json. Only this path
     // ever ran.
-    const cats: Category[] = formulasJson.categories.map((cat: any) => ({
+    const cats: Category[] = formulasJson.categories.map((cat) => ({
       id: cat.id,
       label: cat.label,
-      formulas: cat.formulas.map((f: any) => ({
+      formulas: cat.formulas.map((f) => ({
         id: f.id,
         name: f.name,
         expression: f.expression,

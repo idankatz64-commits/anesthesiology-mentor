@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { useApp } from '@/contexts/AppContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,6 +11,7 @@ import Papa from 'papaparse';
 import { errorMessage } from './errorMessage';
 import { dedupeImportRows } from './dedupeImportRows';
 import { hashId } from './hashId';
+import { NOT_OWNER_MESSAGE, requireWrittenRows, useEditorialOwner } from './editorialOwner';
 
 /* ── helpers ── */
 
@@ -53,7 +55,7 @@ function CreateSingleQuestion({ categories }: { categories: Category[] }) {
       // `insert`, not `upsert`. On a hashId collision an upsert silently
       // overwrote an unrelated existing question and still reported success.
       // An insert fails loudly instead, and nothing is destroyed.
-      const { error } = await supabase.from('questions').insert({
+      const { data: written, error } = await supabase.from('questions').insert({
         id,
         question: form.question,
         a: form.a, b: form.b, c: form.c, d: form.d,
@@ -68,13 +70,13 @@ function CreateSingleQuestion({ categories }: { categories: Category[] }) {
         media_type: form.media_type || null,
         media_link: form.media_link || null,
         manually_edited: true,
-      });
+      }).select('id');
       // 23505 = unique_violation. Either the same question text was submitted
       // twice, or a genuine hash collision - both mean "do not write".
       if (error?.code === '23505') {
         throw new Error('שאלה עם המזהה ' + id + ' כבר קיימת. לא נוצרה שאלה חדשה ולא נמחק דבר.');
       }
-      if (error) throw error;
+      requireWrittenRows(written, 1, error);
       toast.success('השאלה נוצרה בהצלחה (ID: ' + id + ')');
       setForm({ ...EMPTY_FORM });
     } catch (err: unknown) {
@@ -335,9 +337,9 @@ function BulkCsvImport() {
       const batchSize = 200;
       for (let i = 0; i < unique.length; i += batchSize) {
         const batch = unique.slice(i, i + batchSize);
-        const { error } = await supabase.from('questions').upsert(batch, { onConflict: 'id' });
-        if (error) {
-          errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error.message}`);
+        const { data: written, error } = await supabase.from('questions').upsert(batch, { onConflict: 'id' }).select('id');
+        if (error || (written?.length ?? 0) < batch.length) {
+          errors.push(`Batch ${Math.floor(i / batchSize) + 1}: ${error?.message ?? NOT_OWNER_MESSAGE}`);
           failed += batch.length;
         } else {
           inserted += batch.length;
@@ -512,14 +514,19 @@ export default function ImportQuestionsTab() {
       });
   }, []);
 
+  // Direct publication belongs to the editorial owner only (questions RLS, 20260908000001).
+  const owner = useEditorialOwner(useApp().userId);
+
   return (
     <div className="space-y-8">
       <div>
         <h2 className="text-xl font-bold text-foreground mb-1">Import Questions</h2>
         <p className="text-sm text-muted-foreground">יצירת שאלות חדשות או ייבוא מ-CSV</p>
+        {owner === false && <p role="note" className="text-sm text-amber-700 dark:text-amber-400 mt-2">{NOT_OWNER_MESSAGE}</p>}
+        {owner === null && <p className="text-sm text-muted-foreground mt-2">בודק הרשאת פרסום…</p>}
       </div>
 
-      <CreateSingleQuestion categories={categories} />
+      {owner === true && <CreateSingleQuestion categories={categories} />}
 
       <div className="relative">
         <div className="absolute inset-0 flex items-center">
@@ -530,7 +537,7 @@ export default function ImportQuestionsTab() {
         </div>
       </div>
 
-      <BulkCsvImport />
+      {owner === true && <BulkCsvImport />}
     </div>
   );
 }

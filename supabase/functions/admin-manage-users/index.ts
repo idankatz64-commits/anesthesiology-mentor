@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { ownerDenied, requireEditorialOwner } from "../_shared/editorialOwner.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "https://anesthesiology-mentor.vercel.app",
@@ -12,45 +13,30 @@ Deno.serve(async (req) => {
   }
 
   try {
-    // Verify the caller is authenticated and is an admin
+    // Only the configured editorial owner may add admins/editors. The caller's
+    // JWT is verified by GoTrue first (verify_jwt is off for this function);
+    // broad is_admin / editor status never suffices, and the old "editor can
+    // add editors" branch is gone: that was a privilege-granting path open to
+    // every admin_users row. Denial happens before the body is read.
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("Missing authorization header");
-
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
-
     const supabaseUser = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_ANON_KEY")!,
-      { global: { headers: { Authorization: authHeader } } }
+      { global: { headers: { Authorization: authHeader ?? "" } } }
     );
-
-    const { data: { user }, error: authError } = await supabaseUser.auth.getUser();
-    if (authError || !user) throw new Error("Unauthorized");
-
-    // Check if caller is admin
-    const { data: isAdmin } = await supabaseAdmin.rpc("is_admin", { _user_id: user.id });
-    if (!isAdmin) throw new Error("Forbidden: not an admin");
-
-    // Fetch caller's role to enforce role elevation restrictions
-    const { data: callerRow } = await supabaseAdmin
-      .from("admin_users")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-    const callerRole: string = callerRow?.role ?? "editor";
+    const owner = await requireEditorialOwner(authHeader, supabaseUser, supabaseAdmin);
+    if (!owner.ok) return ownerDenied(owner, corsHeaders);
 
     const { action, email, role } = await req.json();
 
     if (action === "add") {
       if (!email) throw new Error("Email is required");
 
-      // Only full admins can grant admin role; editors cannot elevate to admin
-      if (role === "admin" && callerRole !== "admin") {
-        throw new Error("Forbidden: only an admin can assign the admin role");
-      }
+      if (role !== undefined && role !== "admin" && role !== "editor") throw new Error("Invalid role");
 
       // Find auth user by email using admin API with pagination
       let targetUser = null;
@@ -60,7 +46,7 @@ Deno.serve(async (req) => {
         const { data: { users: batch }, error: listError } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
         if (listError) throw new Error("Failed to list users: " + listError.message);
         if (!batch || batch.length === 0) break;
-        targetUser = batch.find((u: any) => u.email?.toLowerCase() === email.toLowerCase());
+        targetUser = batch.find((u) => u.email?.toLowerCase() === email.toLowerCase());
         if (batch.length < perPage) break;
         page++;
       }

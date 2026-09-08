@@ -50,7 +50,9 @@ export function buildSrsRecordMap(rows: readonly SrsRow[]): Record<string, SrsRe
 }
 
 interface UpsertableTable {
-  upsert: (payload: SrsUpsertPayload, opts: { onConflict: string }) => Promise<{ error: unknown }>;
+  // PromiseLike, not Promise: Postgrest's builder is a thenable, so the real client
+  // satisfies this without a cast. A test mock returning a Promise satisfies it too.
+  upsert: (payload: SrsUpsertPayload, opts: { onConflict: string }) => PromiseLike<{ error: unknown }>;
 }
 
 interface SupabaseLike {

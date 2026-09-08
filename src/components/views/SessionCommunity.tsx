@@ -91,7 +91,7 @@ export const CommunityNotes = forwardRef<HTMLDivElement, CommunityNotesProps>(fu
       if (error) throw error;
       if (inserted) setNotes(prev => [inserted, ...prev]);
       setNewNote('');
-    } catch (err: any) {
+    } catch (err) {
       console.error('Community note error:', err);
       toast({ title: 'שגיאה', description: 'לא הצלחנו לשמור.', variant: 'destructive' });
     } finally {

@@ -73,8 +73,8 @@ export default function AISummaryButton() {
       const json = await res.json();
       if (json.error) throw new Error(json.error);
       setSummary(json.text);
-    } catch (e: any) {
-      setError(e.message || 'שגיאה בטעינת הסיכום');
+    } catch (e) {
+      setError(e instanceof Error && e.message ? e.message : 'שגיאה בטעינת הסיכום');
     } finally {
       setLoading(false);
     }

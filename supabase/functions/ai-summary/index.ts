@@ -35,17 +35,23 @@ serve(async (req) => {
     const hours = period === "week" ? 168 : 24;
     const since = new Date(Date.now() - hours * 60 * 60 * 1000).toISOString();
 
-    const supabaseAdmin = createClient(
-      Deno.env.get("SUPABASE_URL")!,
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
-    );
+    // Same gate as the app: is_approved() decides who may read content at all.
+    const { data: approved, error: approvedError } = await supabaseUser.rpc("is_approved", { _user_id: user.id });
+    if (approvedError) throw new Error(approvedError.message);
+    if (!approved) {
+      return new Response(JSON.stringify({ error: "NOT_APPROVED" }), {
+        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
-    // 1. Fetch answered questions in period
-    const { data: historyRows } = await supabaseAdmin
+    // 1. Fetch answered questions in period — caller-scoped client, so RLS
+    // applies (own answer_history rows only).
+    const { data: historyRows, error: historyError } = await supabaseUser
       .from("answer_history")
       .select("question_id, topic, is_correct")
       .eq("user_id", user.id)
       .gte("answered_at", since);
+    if (historyError) throw new Error(historyError.message);
 
     if (!historyRows || historyRows.length === 0) {
       return new Response(JSON.stringify({ text: "לא נמצאו שאלות שנענו בתקופה זו." }), {
@@ -54,17 +60,20 @@ serve(async (req) => {
     }
 
     // 2. Get unique question IDs (cap at 80)
-    const questionIds = [...new Set(historyRows.map((r: any) => r.question_id))].slice(0, 80);
+    const questionIds = [...new Set(historyRows.map((r) => r.question_id))].slice(0, 80);
 
-    // 3. Fetch question text + explanation
-    const { data: questions } = await supabaseAdmin
+    // 3. Fetch question text + explanation through the caller's RLS — not the
+    // service role — so questions the user is no longer entitled to (e.g.
+    // national bank after revoke) are simply absent, never sent to Claude.
+    const { data: questions, error: questionsError } = await supabaseUser
       .from("questions")
       // `question_text` and `correct_answer` are NULL on all 3,923 rows; the
       // text lives in `question`. This was sending Claude a list of blanks.
       .select("id, question, explanation, topic")
       .in("id", questionIds);
+    if (questionsError) throw new Error(questionsError.message);
 
-    const questionMap = new Map((questions || []).map((q: any) => [q.id, q]));
+    const questionMap = new Map((questions || []).map((q) => [q.id, q]));
 
     // 4. Group by topic — collect explanations
     const topicMap: Record<string, { explanations: string[]; missed: string[] }> = {};

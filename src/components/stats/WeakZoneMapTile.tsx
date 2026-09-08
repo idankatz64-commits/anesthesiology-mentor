@@ -3,7 +3,9 @@ import AnimatedStatsTile from './AnimatedStatsTile';
 import GaugeDial from './GaugeDial';
 import type { WeakZone } from './useStatsData';
 import { useApp } from '@/contexts/AppContext';
-import { KEYS } from '@/lib/types';
+import { toast } from 'sonner';
+import { attemptErrorMessage } from '@/lib/attemptsRepository';
+import { KEYS, type Question } from '@/lib/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronDown } from 'lucide-react';
 
@@ -23,7 +25,7 @@ export default function WeakZoneMapTile({ zones }: Props) {
 
   const startZoneSession = (ids: string[]) => {
     const questions = data.filter((q) => ids.includes(q[KEYS.ID]));
-    if (questions.length > 0) startSession(questions, Math.min(questions.length, 20), 'practice');
+    if (questions.length > 0) Promise.resolve(startSession(questions, Math.min(questions.length, 20), 'practice')).catch((e) => toast.error(attemptErrorMessage(e)));
   };
 
   const groupByTopic = (ids: string[]) => {
@@ -63,7 +65,7 @@ export default function WeakZoneMapTile({ zones }: Props) {
 
 function ExpandedZoneSection({ emoji, label, color, topics, data: allData, onPractice, showPractice
 
-}: {emoji: string;label: string;color: string;topics: [string, string[]][];data: any[];onPractice?: () => void;showPractice: boolean;}) {
+}: {emoji: string;label: string;color: string;topics: [string, string[]][];data: Question[];onPractice?: () => void;showPractice: boolean;}) {
   const [openTopic, setOpenTopic] = useState<string | null>(null);
   const total = topics.reduce((s, [, ids]) => s + ids.length, 0);
 
@@ -101,7 +103,7 @@ function ExpandedZoneSection({ emoji, label, color, topics, data: allData, onPra
             <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
                     <div className="pl-4 pr-2 pb-2 space-y-1 max-h-40 overflow-y-auto">
                       {ids.slice(0, 15).map((id) => {
-                  const q = allData.find((x: any) => x[KEYS.ID] === id);
+                  const q = allData.find((x) => x[KEYS.ID] === id);
                   return (
                     <div key={id} className="text-[11px] text-muted-foreground truncate bg-muted/20 px-2 py-1 rounded">
                             {q ? q[KEYS.QUESTION].slice(0, 80) : id}

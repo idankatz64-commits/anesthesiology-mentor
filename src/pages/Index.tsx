@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { AppProvider, useApp } from "@/contexts/AppContext";
+import { AppBugDialog } from "@/components/feedback";
 import Sidebar from "@/components/Sidebar";
 import MobileHeader from "@/components/MobileHeader";
 import MobileBottomNav from "@/components/MobileBottomNav";
@@ -12,16 +14,16 @@ import ReviewView from "@/components/views/ReviewView";
 import ResultsView from "@/components/views/ResultsView";
 import StatsView from "@/components/views/StatsView";
 import NotebookView from "@/components/views/NotebookView";
-import FlashcardView from "@/components/views/FlashcardView";
 import FormulaSheetView from "@/components/views/FormulaSheetView";
 import SummariesView from "@/components/views/SummariesView";
 import MillerGuideView from "@/components/views/MillerGuideView";
-import { SrsDashboardView } from "@/components/views/SrsDashboardView";
 import AcademyView from "@/components/views/AcademyView";
-import { motion, AnimatePresence } from "framer-motion";
-import { slideFromRight } from "@/lib/animations";
+import ArchiveView from "@/components/views/ArchiveView";
+import ResidentOnboardingView from "@/components/views/ResidentOnboardingView";
+import { motion } from "framer-motion";
 import { Navigate } from "react-router-dom";
-import { resolveGate } from "@/lib/accessGate";
+import { resolveGate, resolveResidentGate } from "@/lib/accessGate";
+import { residentOnboardingEnabled } from "@/lib/featureFlags";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
@@ -62,15 +64,21 @@ function PendingApproval() {
 }
 
 function AppContent() {
-  const { currentView, loading, academyOnly, membershipResolved, userId, authResolved, approved } = useApp();
+  const { currentView, loading, academyOnly, membershipResolved, userId, authResolved, approved, roleResolved, isEditor, resident, residentResolved } = useApp();
 
   // Access gate (lockdown 2026-08-14). Runs before ANY app chrome renders —
   // nav, sidebar and views are all downstream of this. The database enforces
   // the same rule via is_approved(), so this is the display half, not the lock.
   const gate = resolveGate({ authResolved, userId, approved });
+  const [bugOpen, setBugOpen] = useState(false);
   if (gate === "loading") return <FullScreenLoader />;
   if (gate === "signin") return <Navigate to="/auth" replace />;
   if (gate === "pending") return <PendingApproval />;
+  // Resident gate (2026-09-07): approved but not linked to the roster, or not
+  // yet onboarded. Display only — RLS decides which questions are readable.
+  const residentGate = resolveResidentGate({ enabled: residentOnboardingEnabled(), roleResolved, isEditor, residentResolved, resident });
+  if (residentGate === "loading") return <FullScreenLoader />;
+  if (residentGate !== "app") return <ResidentOnboardingView />;
 
   const renderView = () => {
     // membershipResolved is only ever false while a logged-in user's academy
@@ -116,7 +124,7 @@ function AppContent() {
       case "notebook":
         return <NotebookView />;
       case "flashcards":
-        return <FlashcardView />;
+        return <HomeView />;
       case "formula-sheet":
         return <FormulaSheetView />;
       case "summaries":
@@ -124,9 +132,11 @@ function AppContent() {
       case "miller-guide":
         return <MillerGuideView />;
       case "srs-dashboard":
-        return <SrsDashboardView />;
+        return <SetupView mode="practice" />;
       case "academy":
         return <AcademyView />;
+      case "archive":
+        return <ArchiveView />;
       default:
         return <HomeView />;
     }
@@ -158,24 +168,27 @@ function AppContent() {
             </div>
           )}
 
-          <AnimatePresence mode="wait">
-            <motion.div
+            <div
               key={currentView}
-              initial={slideFromRight.initial}
-              animate={slideFromRight.animate}
-              exit={slideFromRight.exit}
-              transition={slideFromRight.transition}
               className="w-full px-4"
-              style={{ willChange: "transform", minHeight: "60vh" }}
+              style={{ minHeight: "60vh" }}
             >
               {renderView()}
-            </motion.div>
-          </AnimatePresence>
+            </div>
         </main>
 
         <MobileBottomNav />
         <WelcomeModal />
         <QuoteSplash />
+        {/* App-shell bug report (B's dialog), tied to the active user and current view. */}
+        <button
+          type="button"
+          onClick={() => setBugOpen(true)}
+          className="hidden md:block fixed bottom-4 left-4 z-40 rounded-full border border-border bg-card/90 px-3 py-1.5 text-xs text-muted-foreground shadow hover:text-foreground"
+        >
+          דיווח על תקלה
+        </button>
+        <AppBugDialog open={bugOpen} onOpenChange={setBugOpen} userId={userId} pageContext={currentView} />
       </div>
     </div>
   );

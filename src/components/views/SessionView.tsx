@@ -3,7 +3,9 @@ import DOMPurify from "dompurify";
 import { motion, AnimatePresence } from "framer-motion";
 import { springGentle } from "@/lib/animations";
 import { useApp } from "@/contexts/AppContext";
+import { RESULTS_READ_FAILED, attemptErrorMessage } from "@/lib/attemptsRepository";
 import { KEYS, type ConfidenceLevel } from "@/lib/types";
+import { sessionFeedback } from "@/lib/sessionFeedback";
 import { evaluateSimulationOutcome } from "@/lib/simulationSubmit";
 import { fireAndCatchSrs } from "@/lib/srsCallbacks";
 import { confidenceFromCorrectness } from "@/lib/srsConfidence";
@@ -42,6 +44,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import SquircleIcon from "@/components/SquircleIcon";
 import RichTextEditor from "@/components/RichTextEditor";
 import ShareQuestionButton from "@/components/ShareQuestionButton";
+import { ReportQuestionDialog } from "@/components/feedback";
 import ImageGallery from "@/components/ImageGallery";
 import { useToast } from "@/hooks/use-toast";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -101,10 +104,27 @@ function SmartContent({ text, inheritSize = false }: { text: string; inheritSize
   );
 }
 
+/**
+ * Answer options are stored as HTML by the question editor, so rendering them as a
+ * React text node prints the tags literally. This is SmartContent's sanitise-then-
+ * inject half only: options live inside the option `<button>`, and SmartContent's
+ * ImageGallery is itself made of buttons, which a button may not contain — nesting
+ * it there breaks the option's own click target. Inline `<img>` still renders.
+ */
+function OptionContent({ text, className }: { text: string; className: string }) {
+  if (!isHtmlContent(text)) return <span className={className}>{text}</span>;
+  return (
+    <span
+      className={`rich-content ${className}`}
+      dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(text) }}
+    />
+  );
+}
+
 /** Parse URLs and <a> tags inside explanation text into clickable links */
 function ExplanationRenderer({ text }: { text: string }) {
   let processed = text.replace(/<a\s+(?:[^>]*?\s+)?href=["']([^"']*)["'][^>]*>(.*?)<\/a>/gi, "[$2]($1)");
-  processed = processed.replace(/(?<!\]\()(?<!\()(https?:\/\/[^\s\)]+)/g, "[$1]($1)");
+  processed = processed.replace(/(?<!\]\()(?<!\()(https?:\/\/[^\s)]+)/g, "[$1]($1)");
 
   return (
     <ReactMarkdown
@@ -193,7 +213,9 @@ function parseExplanation(text: string): { titles: string[]; html: string } {
     try {
       const titles = JSON.parse(match[1]);
       return { titles: Array.isArray(titles) ? titles.map(String) : [], html: match[2] };
-    } catch {}
+    } catch {
+      // Not a META_TITLES payload after all — fall through to the untouched text.
+    }
   }
   return { titles: [], html: text };
 }
@@ -234,20 +256,30 @@ export default function SessionView() {
     removeTag,
     saveSessionToDb,
     clearSavedSession,
+    confirmAnswer,
+    finishAttempt,
+    recordSessionTime,
+    abandonCurrentAttempt,
     invalidateQuestions,
     updateQuizQuestion,
     isEditor,
     registerAttemptedQuestions,
+    userId,
   } = useApp();
+  const [reportOpen, setReportOpen] = useState(false);
   const { toast } = useToast();
   const isAdmin = useIsAdmin();
 
-  const { quiz, index, mode, answers, confidence, flagged, skipped, resumedTimerSeconds, resumedSimTimerSeconds } =
-    session;
+  const { quiz, index, mode, answers, confidence, flagged, skipped, resumedTimerSeconds } = session;
   const [showNote, setShowNote] = useState(false);
   const [tagInput, setTagInput] = useState("");
   const [timerSeconds, setTimerSeconds] = useState(resumedTimerSeconds ?? 0);
-  const [simTimerSeconds, setSimTimerSeconds] = useState(resumedSimTimerSeconds ?? 3 * 60 * 60);
+  // Durable attempts (milestone 2): the server owns scoring/credit; this view
+  // only confirms ratings, submits, abandons, and tracks per-question time.
+  const isDurable = !!session.attemptId;
+  const questionMsRef = useRef<number[]>([...(session.questionMs ?? [])]);
+  const indexRef = useRef(index);
+  indexRef.current = index;
   const [calcOpen, setCalcOpen] = useState(false);
   const [resourceLinks, setResourceLinks] = useState<{ id: string; title: string; url: string; category: string }[]>(
     [],
@@ -278,13 +310,13 @@ export default function SessionView() {
   const [answersDraft, setAnswersDraft] = useState({ A: "", B: "", C: "", D: "" });
   const [savingQuestion, setSavingQuestion] = useState(false);
   const [autoSaved, setAutoSaved] = useState(false);
+  const [submissionStarted, setSubmissionStarted] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
   // Refs that always hold the latest timer values — needed for the unmount cleanup below
   const timerRef = useRef(timerSeconds);
   timerRef.current = timerSeconds;
-  const simTimerRef = useRef(simTimerSeconds);
-  simTimerRef.current = simTimerSeconds;
 
   // Auto-save on navigate-away — disabled when session is intentionally ended/discarded
   const quizLengthRef = useRef(quiz.length);
@@ -304,6 +336,8 @@ export default function SessionView() {
   // catches the second click within the same event-loop tick (React state
   // would not).
   const isSubmittingRef = useRef<boolean>(false);
+  const submittedSrsRef = useRef(new Set<string>());
+  const submittedHistoryRef = useRef(new Set<string>());
 
   // Wrapped with createInFlightGuard to prevent stacking when Supabase is slow:
   // the 60s interval below would otherwise fire fresh saves while a previous
@@ -313,9 +347,13 @@ export default function SessionView() {
   const triggerAutoSave = useMemo(
     () =>
       createInFlightGuard(async () => {
-        await saveSessionToDb(timerRef.current, simTimerRef.current);
-        setAutoSaved(true);
-        setTimeout(() => setAutoSaved(false), 2500);
+        try {
+          await saveSessionToDb(timerRef.current, undefined, questionMsRef.current);
+          setAutoSaved(true);
+          setTimeout(() => setAutoSaved(false), 2500);
+        } catch (error) {
+          console.error("Auto-save failed; retaining current session", error);
+        }
       }),
     [saveSessionToDb],
   );
@@ -344,36 +382,110 @@ export default function SessionView() {
   const isSimulation = mode === "simulation";
   const isExam = mode === "exam";
 
-  // Timer for exam mode (count up)
+  // Every mode (practice/exam/simulation/Academy quiz) counts active use without a deadline.
   useEffect(() => {
-    if (mode !== "exam") return;
-    const interval = setInterval(() => setTimerSeconds((p) => p + 1), 1000);
+    if (mode === "review" || showExitDialog) return;
+    const interval = setInterval(() => {
+      if (document.visibilityState === "hidden") return;
+      setTimerSeconds((p) => p + 1);
+      const i = indexRef.current;
+      questionMsRef.current[i] = (questionMsRef.current[i] ?? 0) + 1000;
+    }, 1000);
     return () => clearInterval(interval);
-  }, [mode]);
+  }, [mode, showExitDialog]);
 
   // Periodic auto-save every 60 seconds (shows a brief indicator)
   useEffect(() => {
     const id = setInterval(() => {
-      if (quizLengthRef.current > 0) triggerAutoSave();
+      if (shouldAutoSaveRef.current && quizLengthRef.current > 0) triggerAutoSave();
     }, 60_000);
     return () => clearInterval(id);
   }, [triggerAutoSave]);
 
-  // Timer for simulation mode (countdown from 3 hours)
-  useEffect(() => {
-    if (!isSimulation) return;
-    const interval = setInterval(
-      () =>
-        setSimTimerSeconds((p) => {
-          if (p <= 0) return 0;
-          return p - 1;
-        }),
-      1000,
-    );
-    return () => clearInterval(interval);
-  }, [isSimulation]);
+  // Keyboard shortcuts — single stable listener via ref to avoid re-attaching every render.
+  // Both hooks sit ABOVE the `!quiz.length` early return: React matches hooks by call
+  // order, so a hook below that return changes the hook count whenever a session empties
+  // or fills in place (a quarantined bank, an attempt whose questions land late) and React
+  // crashes with "Rendered fewer/more hooks than expected". The mirror object is assigned
+  // further down, once there is a question to act on; until then the listener no-ops.
+  const kbStateRef = useRef<null | {
+    needsConfidence: boolean;
+    answerLocked: boolean;
+    isReviewMode: boolean;
+    isExam: boolean;
+    isSimulation: boolean;
+    showExitDialog: boolean;
+    editingExplanation: boolean;
+    editingQuestion: boolean;
+    editingCorrectAnswer: boolean;
+    serialNumber: string;
+    handleConfidenceSelect: (level: ConfidenceLevel) => void;
+    handleAnswer: (opt: string) => void;
+    handleNext: () => void;
+    handlePrev: () => void;
+    toggleFavorite: (id: string) => void;
+  }>(null);
 
-  if (!quiz.length) return null;
+  useEffect(() => {
+    const ANSWER_KEYS: Record<string, string> = { "1": "A", "2": "B", "3": "C", "4": "D" };
+    const CONFIDENCE_KEYS: Record<string, ConfidenceLevel> = {
+      "1": "confident",
+      "2": "hesitant",
+      "3": "guessed",
+    };
+
+    const onKey = (e: KeyboardEvent) => {
+      const s = kbStateRef.current;
+      if (!s) return; // no question on screen yet — nothing to act on
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
+      if (s.showExitDialog || isSubmittingRef.current) return;
+      if (s.editingExplanation || s.editingQuestion || s.editingCorrectAnswer) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+
+      const key = e.key;
+      // Enter/Space on a focused control belongs to that control. Consuming
+      // it as "next question" prevented keyboard users from choosing answers.
+      if ((key === "Enter" || key === " ") && (e.target as HTMLElement).closest?.('button, a, [role="button"], [role="checkbox"]')) return;
+
+      if (s.needsConfidence && key in CONFIDENCE_KEYS) {
+        e.preventDefault();
+        s.handleConfidenceSelect(CONFIDENCE_KEYS[key]);
+        return;
+      }
+
+      if (key in ANSWER_KEYS && !s.answerLocked && !s.isReviewMode) {
+        e.preventDefault();
+        s.handleAnswer(ANSWER_KEYS[key]);
+        return;
+      }
+
+      const canGoNext = !s.needsConfidence && (s.isReviewMode || s.answerLocked || s.isExam || s.isSimulation);
+      if ((key === "ArrowRight" || key === " " || key === "Enter") && canGoNext) {
+        e.preventDefault();
+        s.handleNext();
+        return;
+      }
+      if (key === "ArrowLeft") {
+        e.preventDefault();
+        s.handlePrev();
+        return;
+      }
+
+      if (key === "f" || key === "F") {
+        e.preventDefault();
+        s.toggleFavorite(s.serialNumber);
+      }
+    };
+
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []); // mounted once — always reads latest state via kbStateRef
+
+  if (!quiz.length) {
+    kbStateRef.current = null;
+    return null;
+  }
 
   const qData = quiz[index];
   const serialNumber = qData[KEYS.ID];
@@ -381,16 +493,16 @@ export default function SessionView() {
   const savedAns = answers[index];
   const savedConfidence = confidence[index];
   const correctAns = qData[KEYS.CORRECT];
-  const isPracticeRevealed = mode === "practice" && savedAns !== null && savedConfidence !== null;
   const isReviewMode = mode === "review";
-  const showFeedback = !isSimulation && (isPracticeRevealed || isReviewMode);
+  const feedback = sessionFeedback(mode, session.feedbackTiming, savedAns, savedConfidence);
+  const { showFeedback, needsConfidence } = feedback;
+  const answerLocked = feedback.answerLocked || submissionStarted;
 
   const isFav = progress.favorites.includes(serialNumber);
   const noteText = progress.notes[serialNumber] || "";
   const rating = progress.ratings[serialNumber];
   const tags = progress.tags[serialNumber] || [];
 
-  const needsConfidence = mode === "practice" && savedAns !== null && savedConfidence === null;
 
   // ── Explanation parsing ──
   const rawExp = qData[KEYS.EXPLANATION] || "";
@@ -411,13 +523,30 @@ export default function SessionView() {
   };
 
   const handleAnswer = (opt: string) => {
-    if (isPracticeRevealed || isReviewMode) return;
+    if (answerLocked || isReviewMode || isSubmittingRef.current) return;
     setAnswer(index, opt);
     if (isSimulation || isExam) return;
   };
 
   const handleConfidenceSelect = (level: ConfidenceLevel) => {
-    if (mode !== "practice" || savedAns === null) return;
+    if (!needsConfidence || savedAns == null || isSubmittingRef.current || submissionStarted) return;
+    if (isDurable) {
+      // Practice and exam alike: the rating confirms the answer on the server.
+      // Confidence is stored locally only after the server accepted it.
+      if (!tryAcquireConfidenceLock(serialNumber, confidenceLockRef.current)) return;
+      confirmAnswer(index, level, questionMsRef.current[index] ?? 0)
+        .catch((err) => {
+          toast({ title: "התשובה לא אושרה בשרת", description: attemptErrorMessage(err), variant: "destructive" });
+        })
+        .finally(() => releaseConfidenceLock(serialNumber, confidenceLockRef.current));
+      return;
+    }
+    if (isExam) {
+      // Exam ratings stay in the draft until submission. No write lock is
+      // needed here; changing an unrevealed answer asks for a fresh rating.
+      setConfidence(index, level);
+      return;
+    }
     // Synchronously block double-submit. React's needsConfidence flip only
     // takes effect on the next render — two clicks within the same tick
     // would otherwise both pass the guard above and fire two
@@ -439,6 +568,7 @@ export default function SessionView() {
   };
 
   const handleNext = async () => {
+    if (needsConfidence || isSubmittingRef.current) return;
     if (index < quiz.length - 1) {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
@@ -452,15 +582,22 @@ export default function SessionView() {
     // The isSubmittingRef guard prevents a second click on "next" while the
     // awaited Promise.allSettled is still in flight from re-firing every SRS
     // write and double-counting answers.
-    if (isExam) {
+    // A non-Academy simulation is an exam with a label: same rating check, same submit path.
+    if (isExam || (isSimulation && !session.quizId)) {
       if (isSubmittingRef.current) return;
+      const unratedIndex = answers.findIndex((answer, i) => answer != null && confidence[i] == null);
+      if (!submissionStarted && unratedIndex !== -1) {
+        setSessionIndex(unratedIndex);
+        toast({ title: "בחר רמת ביטחון לתשובה שסימנת", description: "הדירוג משמש להתאמת החזרות שלך." });
+        return;
+      }
       isSubmittingRef.current = true;
       try {
         await handleSubmitExam();
       } finally {
         isSubmittingRef.current = false;
+        setIsFinishing(false);
       }
-      navigate("review");
       return;
     }
     // Academy quiz simulations must submit via handleSubmitSimulation (server-side
@@ -471,14 +608,15 @@ export default function SessionView() {
       await handleSubmitSimulation();
       return;
     }
-    shouldAutoSaveRef.current = false;
-    clearSavedSession();
-    if (isReviewMode) navigate("results");
-    else if (isSimulation) navigate("results");
-    else navigate("review");
+    if (isDurable) {
+      await handleSubmitAttempt();
+      return;
+    }
+    await finishSession();
   };
 
   const handlePrev = () => {
+    if (isSubmittingRef.current) return;
     if (index > 0) {
       setSessionIndex(index - 1);
       mainRef.current?.scrollTo(0, 0);
@@ -486,18 +624,18 @@ export default function SessionView() {
   };
 
   const handleSkip = () => {
+    if (needsConfidence || isSubmittingRef.current) return;
     skipQuestion(index);
     if (index < quiz.length - 1) {
       setSessionIndex(index + 1);
       mainRef.current?.scrollTo(0, 0);
     } else {
-      shouldAutoSaveRef.current = false;
-      if (isSimulation) navigate("results");
-      else navigate("review");
+      void handleNext();
     }
   };
 
   const handleExit = () => {
+    if (isSubmittingRef.current) return;
     if (isReviewMode) {
       shouldAutoSaveRef.current = false;
       navigate("results");
@@ -507,34 +645,97 @@ export default function SessionView() {
   };
 
   const handleSaveAndExit = async () => {
-    shouldAutoSaveRef.current = false; // already saving manually below
-    await saveSessionToDb(timerSeconds, simTimerSeconds);
-    toast({ title: "הסשן נשמר ✅", description: "תוכל להמשיך מאוחר יותר מדף הבית." });
-    setShowExitDialog(false);
-    navigate("home");
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    try {
+      await saveSessionToDb(timerSeconds, undefined, questionMsRef.current);
+      shouldAutoSaveRef.current = false;
+      toast({ title: "הסשן נשמר ✅", description: "תוכל להמשיך מאוחר יותר מדף הבית." });
+      setShowExitDialog(false);
+      navigate("home");
+    } catch {
+      toast({ title: "השמירה לא הצליחה", description: "המפגש עדיין פתוח. אפשר לנסות לשמור שוב.", variant: "destructive" });
+    } finally {
+      isSubmittingRef.current = false;
+    }
   };
 
-  const handleExitWithoutSaving = () => {
+  const finishSession = async (destination: "home" | "results" = "results") => {
+    setIsFinishing(true);
     shouldAutoSaveRef.current = false;
-    clearSavedSession();
-    setShowExitDialog(false);
-    navigate("home");
+    try {
+      recordSessionTime?.(timerRef.current * 1000);
+      await clearSavedSession();
+      setShowExitDialog(false);
+      navigate(destination);
+      return true;
+    } catch {
+      shouldAutoSaveRef.current = true;
+      toast({ title: "לא הצלחנו לסגור את המפגש השמור", description: "המפגש עדיין פתוח. אפשר לנסות שוב.", variant: "destructive" });
+      return false;
+    } finally {
+      setIsFinishing(false);
+    }
+  };
+
+  const handleExitWithoutSaving = async () => {
+    if (isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
+    try {
+      if (isDurable) {
+        try { await abandonCurrentAttempt(); }
+        catch (err) {
+          // Already submitted/closed on the server: nothing to abandon, leaving is still allowed.
+          if ((err as Error).message !== "ATTEMPT_NOT_OPEN") {
+            toast({ title: "לא הצלחנו לסגור את המפגש בשרת", description: attemptErrorMessage(err), variant: "destructive" });
+            return;
+          }
+        }
+      }
+      await finishSession("home");
+    }
+    finally { isSubmittingRef.current = false; }
+  };
+
+  // Durable submit: the server scores and credits (practice credit already
+  // happened per confirmation; exam credit happens here). Retrying after a
+  // failure is safe — attempt_submit is idempotent.
+  const handleSubmitAttempt = async () => {
+    setSubmissionStarted(true);
+    setIsFinishing(true);
+    try {
+      await finishAttempt(timerRef.current * 1000);
+    } catch (err) {
+      // Answers stay locked: the submit may have landed even when the response was lost.
+      setIsFinishing(false);
+      const accepted = (err as Error).message === RESULTS_READ_FAILED;
+      toast({ title: accepted ? "ההגשה נשמרה בשרת" : "ההגשה לא אושרה בשרת", description: attemptErrorMessage(err), variant: "destructive" });
+      return false;
+    }
+    return finishSession();
   };
 
   // Shared SRS-write loop for end-of-quiz modes (simulation + exam).
-  // Confidence is derived from correctness via confidenceFromCorrectness
-  // since these modes don't ask the user "how confident were you?".
+  // Prefer the user's rating. The fallback remains for legacy simulations;
+  // regular exams require ratings for all answered questions before submission.
   const processQuizAnswersForSrs = async (label: string) => {
+    setSubmissionStarted(true);
+    setIsFinishing(true);
     const srsPromises: Promise<unknown>[] = [];
     quiz.forEach((q, i) => {
       const userAns = answers[i];
       if (userAns) {
         const isCorrect = userAns === q[KEYS.CORRECT];
-        updateHistory(q[KEYS.ID], isCorrect, q[KEYS.TOPIC]);
+        const id = q[KEYS.ID];
+        if (!submittedHistoryRef.current.has(id)) {
+          updateHistory(id, isCorrect, q[KEYS.TOPIC]);
+          submittedHistoryRef.current.add(id);
+        }
+        if (submittedSrsRef.current.has(id)) return;
         srsPromises.push(
           Promise.resolve(
-            updateSpacedRepetition(q[KEYS.ID], isCorrect, confidenceFromCorrectness(isCorrect), q[KEYS.TOPIC]),
-          ),
+            updateSpacedRepetition(q[KEYS.ID], isCorrect, confidence[i] ?? confidenceFromCorrectness(isCorrect), q[KEYS.TOPIC]),
+          ).then(() => { submittedSrsRef.current.add(id); }),
         );
       }
     });
@@ -545,7 +746,7 @@ export default function SessionView() {
       console.error(`${label}: ${outcome.failedCount}/${outcome.totalCount} SRS writes failed`, results);
       toast({
         title: "שמירת SRS חלקית",
-        description: `${outcome.failedCount} מתוך ${outcome.totalCount} שאלות לא נשמרו ל-SRS. הסשן נשמר כדי שתוכל לנסות שוב.`,
+        description: `${outcome.failedCount} מתוך ${outcome.totalCount} שאלות לא נשמרו לחזרה מרווחת. יש לשמור את המפגש לפני היציאה.`,
         variant: "destructive",
       });
     }
@@ -560,7 +761,17 @@ export default function SessionView() {
     const questionIds = quiz.map((q) => String(q[KEYS.ID]));
     const normalizedAnswers = quiz.map((_, i) => answers[i] ?? null);
     try {
-      await submitQuizAttempt(session.quizId as string, questionIds, normalizedAnswers);
+      const outcome = await submitQuizAttempt(session.quizId as string, questionIds, normalizedAnswers, {
+        totalActiveMs: timerRef.current * 1000,
+        answerMs: quiz.map((_, i) => questionMsRef.current[i] ?? 0),
+        confidence: quiz.map((_, i) => confidence[i] ?? null),
+      });
+      if (!outcome.timingPersisted) {
+        toast({
+          title: "הבוחן נקלט, אבל זמן וביטחון לא נשמרו",
+          description: `הציון (${outcome.score}/${outcome.total}) נשמר במלואו; השרת לא תומך עדיין בשמירת זמן וביטחון לבוחן הזה, ולכן לא ייכללו בדוח.`,
+        });
+      }
       registerAttemptedQuestions(questionIds);
       return true;
     } catch (e) {
@@ -599,23 +810,23 @@ export default function SessionView() {
   const handleSubmitSimulation = async () => {
     if (isSubmittingRef.current) return;
     isSubmittingRef.current = true;
+    setIsFinishing(true);
     try {
       if (session.quizId) {
         const ok = await submitQuizAttemptFlow();
         if (!ok) return; // keep session + autosave alive so the resident can retry
-        shouldAutoSaveRef.current = false;
-        clearSavedSession();
-        navigate("results");
+        await finishSession();
+        return;
+      }
+      if (isDurable) {
+        await handleSubmitAttempt();
         return;
       }
       const outcome = await processQuizAnswersForSrs("handleSubmitSimulation");
-      shouldAutoSaveRef.current = false;
-      if (outcome.canClearSession) {
-        clearSavedSession();
-      }
-      navigate("results");
+      if (outcome.canClearSession) await finishSession();
     } finally {
       isSubmittingRef.current = false;
+      setIsFinishing(false);
     }
   };
 
@@ -624,11 +835,10 @@ export default function SessionView() {
   // continue-the-quiz path. The isSubmittingRef guard lives at the call site
   // to keep navigation timing consistent across both modes.
   const handleSubmitExam = async () => {
+    if (isDurable) return handleSubmitAttempt();
     const outcome = await processQuizAnswersForSrs("handleSubmitExam");
-    shouldAutoSaveRef.current = false;
-    if (outcome.canClearSession) {
-      clearSavedSession();
-    }
+    if (!outcome.canClearSession) return false;
+    return finishSession();
   };
 
   const handleAddTag = () => {
@@ -637,29 +847,16 @@ export default function SessionView() {
     setTagInput("");
   };
 
-  // Keyboard shortcuts — single stable listener via ref to avoid re-attaching every render
-  const kbStateRef = useRef({
-    needsConfidence,
-    isPracticeRevealed,
-    isReviewMode,
-    isExam,
-    isSimulation,
-    editingExplanation,
-    editingQuestion,
-    editingCorrectAnswer,
-    serialNumber,
-    handleConfidenceSelect,
-    handleAnswer,
-    handleNext,
-    handlePrev,
-    toggleFavorite,
-  });
+  // Keyboard shortcuts — the state mirror. Only the assignment lives here,
+  // below the `!quiz.length` early return; the ref and the listener are
+  // declared above it so the hook count never depends on the data.
   kbStateRef.current = {
     needsConfidence,
-    isPracticeRevealed,
+    answerLocked,
     isReviewMode,
     isExam,
     isSimulation,
+    showExitDialog,
     editingExplanation,
     editingQuestion,
     editingCorrectAnswer,
@@ -670,69 +867,11 @@ export default function SessionView() {
     handlePrev,
     toggleFavorite,
   };
-
-  useEffect(() => {
-    const ANSWER_KEYS: Record<string, string> = { "1": "A", "2": "B", "3": "C", "4": "D" };
-    const CONFIDENCE_KEYS: Record<string, ConfidenceLevel> = {
-      "1": "confident",
-      "2": "hesitant",
-      "3": "guessed",
-    };
-
-    const onKey = (e: KeyboardEvent) => {
-      const s = kbStateRef.current;
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || (e.target as HTMLElement).isContentEditable) return;
-      if (s.editingExplanation || s.editingQuestion || s.editingCorrectAnswer) return;
-      if (e.metaKey || e.ctrlKey || e.altKey) return;
-
-      const key = e.key;
-
-      if (s.needsConfidence && key in CONFIDENCE_KEYS) {
-        e.preventDefault();
-        s.handleConfidenceSelect(CONFIDENCE_KEYS[key]);
-        return;
-      }
-
-      if (key in ANSWER_KEYS && !s.isPracticeRevealed && !s.isReviewMode) {
-        e.preventDefault();
-        s.handleAnswer(ANSWER_KEYS[key]);
-        return;
-      }
-
-      const canGoNext = s.isReviewMode || s.isPracticeRevealed || s.isExam || s.isSimulation;
-      if ((key === "ArrowRight" || key === " " || key === "Enter") && canGoNext) {
-        e.preventDefault();
-        s.handleNext();
-        return;
-      }
-      if (key === "ArrowLeft") {
-        e.preventDefault();
-        s.handlePrev();
-        return;
-      }
-
-      if (key === "f" || key === "F") {
-        e.preventDefault();
-        s.toggleFavorite(s.serialNumber);
-      }
-    };
-
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []); // mounted once — always reads latest state via kbStateRef
 
   const formatTime = (s: number) =>
     `${Math.floor(s / 60)
       .toString()
       .padStart(2, "0")}:${(s % 60).toString().padStart(2, "0")}`;
-
-  const formatCountdown = (s: number) => {
-    const h = Math.floor(s / 3600);
-    const m = Math.floor((s % 3600) / 60);
-    const sec = s % 60;
-    return `${h.toString().padStart(2, "0")}:${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
-  };
 
   const getOptionClasses = (opt: string) => {
     // Base: clean border-2, no glow, no backdrop-blur — Notion-style minimal
@@ -751,7 +890,7 @@ export default function SessionView() {
       return base + "border-border/40 bg-transparent opacity-50";
     }
 
-    if (isPracticeRevealed) {
+    if (showFeedback) {
       if (opt === correctAns) return base + "border-success/60 bg-success/8 text-foreground";
       if (opt === savedAns) return base + "border-destructive/50 bg-destructive/8 text-foreground";
       return base + "border-border/40 bg-transparent opacity-45";
@@ -814,19 +953,8 @@ export default function SessionView() {
                 </motion.span>
               )}
             </AnimatePresence>
-            {isSimulation && (
-              <span
-                className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg border ${
-                  simTimerSeconds < 600
-                    ? "bg-destructive/10 text-destructive border-destructive/20 animate-pulse"
-                    : "bg-card text-success border-border"
-                }`}
-              >
-                ⏱ {formatCountdown(simTimerSeconds)}
-              </span>
-            )}
-            {isExam && (
-              <span className="bg-card text-success text-xs font-mono font-bold px-3 py-1.5 rounded-lg border border-border">
+            {!isReviewMode && (
+              <span aria-label="זמן למידה פעיל ללא הגבלה" className="bg-card text-success text-xs font-mono font-bold px-3 py-1.5 rounded-lg border border-border">
                 {formatTime(timerSeconds)}
               </span>
             )}
@@ -841,8 +969,18 @@ export default function SessionView() {
               topic={qData[KEYS.TOPIC]}
               serialNumber={serialNumber}
             />
+            {(showFeedback || isReviewMode) && (
+              <button
+                type="button"
+                onClick={() => setReportOpen(true)}
+                className="bg-card text-muted-foreground text-xs px-3 py-1.5 rounded-lg border border-border hover:text-foreground"
+              >
+                דווח על שאלה
+              </button>
+            )}
             <button
               onClick={handleExit}
+              aria-label="יציאה מהמפגש"
               className="text-muted-foreground hover:text-destructive text-sm font-medium px-2 py-1 rounded-lg hover:bg-destructive/10 transition"
             >
               <X className="w-4 h-4" />
@@ -1052,18 +1190,20 @@ export default function SessionView() {
                   <button
                     key={opt}
                     onClick={() => handleAnswer(opt)}
-                    disabled={isPracticeRevealed || isReviewMode}
+                    disabled={answerLocked || isReviewMode}
                     className={getOptionClasses(opt)}
                   >
                     <span className="w-7 h-7 rounded-lg border border-border/60 text-muted-foreground font-mono text-xs font-bold flex items-center justify-center ml-4 shrink-0 group-hover:border-primary/40 group-hover:text-primary transition-colors">
                       {opt}
                     </span>
-                    <span className="flex-grow text-foreground text-base leading-relaxed bidi-text">{text}</span>
-                    {!isSimulation && (isPracticeRevealed || isReviewMode) && opt === correctAns && (
+                    <OptionContent
+                      text={text}
+                      className="flex-grow text-foreground text-base leading-relaxed bidi-text"
+                    />
+                    {showFeedback && opt === correctAns && (
                       <span className="absolute left-5 text-success text-xl">✓</span>
                     )}
-                    {!isSimulation &&
-                      (isPracticeRevealed || isReviewMode) &&
+                    {showFeedback &&
                       opt === savedAns &&
                       opt !== correctAns && <span className="absolute left-5 text-destructive text-xl">✗</span>}
                   </button>
@@ -1073,6 +1213,10 @@ export default function SessionView() {
           )}
 
           {/* Confidence Tracker - Segmented Control */}
+          {(isExam || isSimulation) && savedConfidence && !needsConfidence && <p className="mt-4 text-sm text-muted-foreground">רמת הביטחון שנבחרה: {{ confident: 'בטוח', hesitant: 'מתלבט', guessed: 'ניחוש' }[savedConfidence]}</p>}
+          {answerLocked && !submissionStarted && !isReviewMode && <p role="status" className="mt-4 text-sm text-muted-foreground">
+            {showFeedback ? 'התשובה אושרה וההסבר נחשף, ולכן אי אפשר לשנות אותה. אפשר לעיין או להמשיך לשאלה הבאה.' : 'התשובה אושרה. ההסבר יוצג בסיום המפגש.'}
+          </p>}
           {needsConfidence && (
             <div className="mt-8">
               <p className="text-sm font-bold text-muted-foreground mb-3 text-center">עד כמה אתה בטוח בתשובה?</p>
@@ -1109,7 +1253,7 @@ export default function SessionView() {
           )}
 
           {/* Mark for review — visible after answer is revealed */}
-          {(needsConfidence || isPracticeRevealed) && !isSimulation && !isReviewMode && (
+          {mode === "practice" && showFeedback && (
             <div className="mt-3 flex justify-center">
               <button
                 onClick={async () => {
@@ -1212,6 +1356,10 @@ export default function SessionView() {
                 <span className="text-success flex items-center gap-2">
                   ✅ יפה מאוד! —{" "}
                   <span className="font-extrabold">{qData[KEYS[correctAns as keyof typeof KEYS]] || correctAns}</span>
+                </span>
+              ) : !/^[A-D]$/.test(correctAns ?? "") ? (
+                <span className="text-muted-foreground flex items-center gap-2">
+                  ℹ️ לשאלה זו אין מפתח תשובה מאומת — התשובה שלך נשמרה אך לא נבדקה ולא נספרה.
                 </span>
               ) : (
                 <span className="text-destructive flex items-center gap-2">
@@ -1612,10 +1760,10 @@ export default function SessionView() {
         )}
 
         {/* ── Bottom Navigation ── */}
-        <div className="border-t border-border p-5 flex justify-between items-center sticky bottom-0 z-10 bg-card/80 backdrop-blur-md rounded-b-xl">
+        <div className="border-t border-border p-3 sm:p-5 flex flex-wrap gap-2 justify-between items-center sticky bottom-0 z-10 bg-card/80 backdrop-blur-md rounded-b-xl">
           <button
             onClick={handlePrev}
-            className={`text-muted-foreground hover:text-foreground px-4 py-2.5 font-medium transition flex items-center gap-2 rounded-xl hover:bg-muted ${index === 0 ? "invisible" : ""}`}
+            className={`text-muted-foreground hover:text-foreground px-4 py-2.5 font-medium transition flex items-center gap-2 rounded-xl hover:bg-muted ${index === 0 ? "hidden" : ""}`}
           >
             <ChevronRight className="w-4 h-4" /> הקודם
           </button>
@@ -1653,12 +1801,13 @@ export default function SessionView() {
 
           <button
             onClick={handleNext}
-            disabled={needsConfidence}
-            className={`bg-primary text-primary-foreground px-8 py-3 rounded-xl hover:opacity-90 font-bold shadow-lg transition flex items-center gap-2 text-base ${
+            disabled={needsConfidence || isFinishing}
+            aria-busy={isFinishing}
+            className={`bg-primary text-primary-foreground px-4 sm:px-8 py-3 rounded-xl hover:opacity-90 font-bold shadow-lg transition flex items-center gap-2 text-base ${
               needsConfidence ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {index === quiz.length - 1 ? (isReviewMode ? "סיים תחקור" : isSimulation ? "הבא" : "סיום וסיכום") : "הבא"}
+            {isFinishing ? "מסכם ושומר..." : index === quiz.length - 1 ? (isReviewMode ? "סיים תחקור" : isSimulation ? "הבא" : "סיום וסיכום") : "הבא"}
             <ChevronLeft className="w-4 h-4" />
           </button>
         </div>
@@ -1697,6 +1846,13 @@ export default function SessionView() {
           </div>
         </div>
       )}
+      <ReportQuestionDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        questionId={qData ? String(qData[KEYS.ID]) : null}
+        userId={userId ?? null}
+        questionLabel={serialNumber ? `#${serialNumber}` : null}
+      />
     </div>
   );
 }

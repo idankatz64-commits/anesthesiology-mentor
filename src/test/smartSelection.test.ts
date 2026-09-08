@@ -88,7 +88,7 @@ const overdueSrsRecord = (daysOverdue: number): SrsRecord => ({
   interval_days: 1,
   ease_factor: 2.5,
   repetitions: 0,
-  confidence: 0.5,
+  confidence: 'hesitant',
   last_correct: null,
 });
 

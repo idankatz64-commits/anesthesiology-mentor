@@ -2,6 +2,8 @@ import { useMemo } from 'react';
 import AnimatedStatsTile from './AnimatedStatsTile';
 import type { ForgettingRisk } from './useStatsData';
 import { useApp } from '@/contexts/AppContext';
+import { toast } from 'sonner';
+import { attemptErrorMessage } from '@/lib/attemptsRepository';
 import { KEYS } from '@/lib/types';
 import { AlertTriangle } from 'lucide-react';
 import { Treemap, ResponsiveContainer, Tooltip } from 'recharts';
@@ -55,7 +57,27 @@ function getRiskColor(risk: number) {
   return stops[stops.length - 1].color;
 }
 
-function RiskTreemapContent(props: any) {
+// One rectangle of the treemap. Recharts spreads the node's own fields onto the
+// content element alongside the computed geometry, and mounts it as `<RiskTreemapContent />`
+// with no props, so every field has to be optional.
+type RiskTreemapNode = {
+  name: string;
+  topic: string;
+  size: number;
+  risk: number;
+  daysSince: number;
+  accuracy: number;
+};
+
+type RiskTreemapContentProps = Partial<RiskTreemapNode> & {
+  x?: number;
+  y?: number;
+  width?: number;
+  height?: number;
+  depth?: number;
+};
+
+function RiskTreemapContent(props: RiskTreemapContentProps) {
   const { x = 0, y = 0, width = 0, height = 0, topic, risk = 0, depth } = props;
   if (depth !== 1) return null;
 
@@ -79,7 +101,7 @@ function RiskTreemapContent(props: any) {
   );
 }
 
-const RiskTooltip = ({ active, payload }: any) => {
+const RiskTooltip = ({ active, payload }: { active?: boolean; payload?: { payload?: RiskTreemapNode }[] }) => {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   if (!d) return null;
@@ -99,10 +121,10 @@ export default function ForgettingRiskTile({ risks }: Props) {
 
   const handlePractice = (topic: string) => {
     const questions = data.filter(q => q[KEYS.TOPIC] === topic);
-    if (questions.length > 0) startSession(questions, Math.min(questions.length, 15), 'practice');
+    if (questions.length > 0) Promise.resolve(startSession(questions, Math.min(questions.length, 15), 'practice')).catch((e) => toast.error(attemptErrorMessage(e)));
   };
 
-  const treemapData = useMemo(() => {
+  const treemapData = useMemo<RiskTreemapNode[]>(() => {
     return risks.map(r => ({
       name: r.topic,
       topic: r.topic,

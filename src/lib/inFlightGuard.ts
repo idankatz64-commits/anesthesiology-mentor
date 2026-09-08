@@ -1,4 +1,4 @@
-type AnyAsyncFn = (...args: any[]) => Promise<unknown>;
+type AnyAsyncFn = (...args: never[]) => Promise<unknown>;
 
 export function createInFlightGuard<T extends AnyAsyncFn>(fn: T): T {
   let inFlight = false;

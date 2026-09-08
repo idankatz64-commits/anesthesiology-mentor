@@ -42,6 +42,16 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     if (asChild) {
       return <Slot className={cn(buttonVariants({ variant, size, className }))} ref={ref} {...props} />;
     }
+    // framer-motion redefines these six handlers with its own signatures (an
+    // animation definition, a drag info object), so React's button attributes and
+    // motion.button's disagree on exactly them and on nothing else. They are not part
+    // of this button's API and no caller passes them, so they stay out of the spread
+    // instead of being forced through with a cast.
+    const {
+      onAnimationStart, onAnimationEnd, onAnimationIteration,
+      onDrag, onDragStart, onDragEnd,
+      ...motionProps
+    } = props;
     return (
       <motion.button
         whileTap={{ scale: 0.96 }}
@@ -49,7 +59,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         transition={{ duration: 0.1 }}
         className={cn(buttonVariants({ variant, size, className }))}
         ref={ref}
-        {...(props as any)}
+        {...motionProps}
       />
     );
   },

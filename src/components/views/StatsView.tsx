@@ -1,6 +1,8 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/contexts/AppContext';
-import { KEYS } from '@/lib/types';
+import { toast } from 'sonner';
+import { attemptErrorMessage } from '@/lib/attemptsRepository';
+import { KEYS, type UserProgress } from '@/lib/types';
 import { Download, Upload, AlertTriangle, BookOpen, Target, Brain, BarChart3, CheckCircle, XCircle, Repeat, TrendingUp, TrendingDown } from 'lucide-react';
 import { motion } from 'framer-motion';
 import AnimatedNumber from '@/components/AnimatedNumber';
@@ -15,6 +17,7 @@ import TopicTreemap from '@/components/stats/TopicTreemap';
 import PersonalStatsDrilldown, { type DrilldownMetric } from '@/components/stats/PersonalStatsDrilldown';
 import DailyReportTile from '@/components/stats/DailyReportTile';
 import AISummaryButton from '@/components/stats/AISummaryButton';
+import LearningReportPanel from '@/components/learning/LearningReportPanel';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -93,13 +96,13 @@ export default function StatsView() {
   const handleTopicClick = (topic: string) => {
     const topicQuestions = data.filter((q) => q[KEYS.TOPIC] === topic);
     if (topicQuestions.length === 0) return;
-    startSession(topicQuestions, Math.min(topicQuestions.length, 15), 'practice');
+    Promise.resolve(startSession(topicQuestions, Math.min(topicQuestions.length, 15), 'practice')).catch((e) => toast.error(attemptErrorMessage(e)));
   };
 
   const handleDrilldownPractice = (questionIds: string[]) => {
     const questions = data.filter(q => questionIds.includes(q[KEYS.ID]));
     if (questions.length === 0) return;
-    startSession(questions, Math.min(questions.length, 15), 'practice');
+    Promise.resolve(startSession(questions, Math.min(questions.length, 15), 'practice')).catch((e) => toast.error(attemptErrorMessage(e)));
   };
 
   const handleExport = () => {
@@ -129,13 +132,14 @@ export default function StatsView() {
         }
         const oldData = parsed?.data || parsed;
         if (oldData && typeof oldData === 'object') {
-          const normalized: any = {
+          // `plan` used to be carried along here; UserProgress has no such field and
+          // nothing ever read it back, so the old-format import now maps onto the real shape.
+          const normalized: UserProgress = {
             history: oldData.history || {},
             favorites: Array.isArray(oldData.favorites) ? oldData.favorites : [],
             notes: oldData.notes || {},
             ratings: oldData.ratings || {},
             tags: oldData.tags || {},
-            plan: null,
           };
           const count = Object.keys(normalized.history).length;
           if (count > 0) {
@@ -315,6 +319,11 @@ export default function StatsView() {
             progress={progress}
             data={data}
           />
+        </motion.div>
+
+        {/* ROW 7b — Cumulative learning report (durable evidence) + core plan */}
+        <motion.div variants={itemVariants}>
+          <LearningReportPanel withPlan />
         </motion.div>
 
         {/* ROW 8 — Daily Summary + Import/Export */}

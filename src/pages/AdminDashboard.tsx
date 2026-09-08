@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AppProvider } from "@/contexts/AppContext";
+import { AppProvider, useApp } from "@/contexts/AppContext";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { Link } from "react-router-dom";
 import {
@@ -25,6 +25,10 @@ import AcademyMembersTab from "@/components/admin/AcademyMembersTab";
 import AcademyQuizzesTab from "@/components/admin/AcademyQuizzesTab";
 import AcademyDashboardTab from "@/components/admin/AcademyDashboardTab";
 import ManagerDashboardTab from "@/components/admin/ManagerDashboardTab";
+import CurriculumConfigTab from "@/components/admin/CurriculumConfigTab";
+import ManagementAggregateTab from "@/components/admin/ManagementAggregateTab";
+import FsrsShadowTab from "@/components/admin/FsrsShadowTab";
+import FeedbackQueueTab from "@/components/admin/FeedbackQueueTab";
 import { motion } from "framer-motion";
 import { fadeUp } from "@/lib/animations";
 
@@ -39,7 +43,11 @@ type AdminTab =
   | "academy-members"
   | "academy-quizzes"
   | "academy-dashboard"
-  | "manager-dashboard";
+  | "manager-dashboard"
+  | "curriculum"
+  | "management-aggregate"
+  | "fsrs-comparison"
+  | "feedback-queue";
 
 const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
   { id: "user-management", label: "User Management", icon: <Users className="w-5 h-5" /> },
@@ -61,7 +69,30 @@ const tabs: { id: AdminTab; label: string; icon: React.ReactNode }[] = [
     label: "דשבורד מנהל",
     icon: <Users className="w-5 h-5" />,
   },
+  { id: "curriculum", label: "תוכנית ליבה", icon: <BookOpen className="w-5 h-5" /> },
+  { id: "management-aggregate", label: "דוח כיסוי מחזור", icon: <BarChart3 className="w-5 h-5" /> },
+  { id: "feedback-queue", label: "תור משוב", icon: <FileEdit className="w-5 h-5" /> },
+  { id: "fsrs-comparison", label: "השוואת FSRS", icon: <BarChart3 className="w-5 h-5" /> },
 ];
+
+// Every tab's local state (owner flags, drafts, pending toasts) belongs to one identity:
+// remount the whole tab area when the signed-in user changes or signs out.
+function IdentityScoped({ children }: { children: React.ReactNode }) {
+  const { userId } = useApp();
+  return <div key={userId ?? 'anon'} className="max-w-5xl mx-auto fade-in">{children}</div>;
+}
+
+// B's queue tab takes the current identity as a prop; tabs render inside this page's own AppProvider.
+function FeedbackQueueMount() {
+  const { userId } = useApp();
+  return <FeedbackQueueTab userId={userId} />;
+}
+
+// C's shadow tab: same contract, current identity from this page's AppProvider.
+function FsrsShadowMount() {
+  const { userId } = useApp();
+  return <FsrsShadowTab userId={userId} />;
+}
 
 export default function AdminDashboard() {
   const { loading, isAdmin } = useAdminGuard();
@@ -127,7 +158,7 @@ export default function AdminDashboard() {
 
         {/* Main content */}
         <main className="flex-1 p-8 overflow-y-auto">
-          <div className="max-w-5xl mx-auto fade-in">
+          <IdentityScoped>
             {activeTab === "user-management" && <UserManagementTab />}
             {activeTab === "import-questions" && <ImportQuestionsTab />}
             {activeTab === "formula-management" && <FormulaManagementTab />}
@@ -139,7 +170,11 @@ export default function AdminDashboard() {
             {activeTab === "academy-quizzes" && <AcademyQuizzesTab />}
             {activeTab === "academy-dashboard" && <AcademyDashboardTab />}
             {activeTab === "manager-dashboard" && <ManagerDashboardTab />}
-          </div>
+            {activeTab === "curriculum" && <CurriculumConfigTab />}
+            {activeTab === "management-aggregate" && <ManagementAggregateTab />}
+            {activeTab === "fsrs-comparison" && <FsrsShadowMount />}
+            {activeTab === "feedback-queue" && <FeedbackQueueMount />}
+          </IdentityScoped>
         </main>
       </motion.div>
     </AppProvider>

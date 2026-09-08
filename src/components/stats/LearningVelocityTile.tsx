@@ -44,7 +44,16 @@ function computeMovingAverages(raw: DayPoint[]) {
   });
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+// Recharts mounts tooltip content as `<CustomTooltip />` and injects these at render time,
+// so every field is optional. `payload[0].payload` is the row computeMovingAverages produced.
+type ChartRow = ReturnType<typeof computeMovingAverages>[number];
+type ChartTooltipProps = {
+  active?: boolean;
+  payload?: { payload?: ChartRow }[];
+  label?: string;
+};
+
+const CustomTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   return (
@@ -58,7 +67,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   );
 };
 
-const VolumeTooltip = ({ active, payload, label }: any) => {
+const VolumeTooltip = ({ active, payload, label }: ChartTooltipProps) => {
   if (!active || !payload?.length) return null;
   const d = payload[0]?.payload;
   return (
