@@ -29,7 +29,8 @@ vi.mock('@/integrations/supabase/client', () => ({ supabase: {
   },
 } }));
 vi.mock('@/lib/csvService', () => ({ fetchQuestions: vi.fn(async () => [launchQuestion()]), invalidateQuestionsCache: vi.fn(), setQuestionsCacheScope: vi.fn(() => false) }));
-vi.mock('@/lib/academyRepository', () => ({ claimAcademyMembership: async () => null, fetchMyAttempts: async () => [] }));
+const academy = vi.hoisted(() => ({ claim: vi.fn() }));
+vi.mock('@/lib/academyRepository', () => ({ claimAcademyMembership: () => academy.claim(), fetchMyAttempts: async () => [] }));
 const toast = vi.hoisted(() => ({ error: vi.fn(), warning: vi.fn() }));
 vi.mock('sonner', () => ({ toast }));
 
@@ -47,9 +48,40 @@ describe('resident state and cache scope in AppContext', () => {
   beforeEach(() => {
     vi.clearAllMocks(); vi.stubEnv('VITE_DURABLE_ATTEMPTS', ''); vi.stubEnv('VITE_RESIDENT_ONBOARDING', 'true');
     db.saved = null; db.role = null; db.session = { user: { id: 'user-a' } };
+    academy.claim.mockResolvedValue(null);
     db.rpc.mockImplementation(async (name: string) => name === 'resident_me' ? { data: { linked: true, reason: null, member: memberRow }, error: null } : { data: true, error: null });
   });
   afterEach(cleanup);
+
+  it('gives an active linked resident the home/exam navigation and the server-scoped bank before any academy quiz', async () => {
+    academy.claim.mockResolvedValue({ access_level: 'academy', status: 'active' });
+    const { result } = await load();
+    await waitFor(() => expect(result.current.membershipResolved).toBe(true));
+    expect(result.current.academyOnly).toBe(false);
+    expect(result.current.data.map(q => q.id)).toEqual(['demo-question']);
+    act(() => result.current.navigate('setup-exam'));
+    expect(result.current.currentView).toBe('setup-exam');
+    expect(setQuestionsCacheScope).toHaveBeenCalledWith('user-a:open');
+    act(() => { result.current.startSession(result.current.data, 1, 'exam'); });
+    expect(result.current.currentView).toBe('session');
+    expect(result.current.session.quiz.map(q => q.id)).toEqual(['demo-question']);
+  });
+
+  it('retains the quiz-only restriction for a suspended membership', async () => {
+    academy.claim.mockResolvedValue({ access_level: 'academy', status: 'suspended' });
+    db.rpc.mockImplementation(async (name: string) => name === 'resident_me' ? { data: { linked: true, reason: null, member: { ...memberRow, status: 'suspended' } }, error: null } : { data: true, error: null });
+    const { result } = await load();
+    expect(result.current.academyOnly).toBe(true);
+    expect(result.current.data).toEqual([]);
+  });
+
+  it('retains the legacy quiz-only pool when resident onboarding is disabled', async () => {
+    vi.stubEnv('VITE_RESIDENT_ONBOARDING', '');
+    academy.claim.mockResolvedValue({ access_level: 'academy', status: 'active' });
+    const { result } = await load();
+    expect(result.current.academyOnly).toBe(true);
+    expect(result.current.data).toEqual([]);
+  });
 
   it('fetches resident_me after sign-in and scopes the cache to user + entitlement', async () => {
     const { result } = await load();

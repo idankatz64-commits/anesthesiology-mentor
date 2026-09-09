@@ -363,10 +363,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [authResolved, setAuthResolved] = useState(false);
   const [approved, setApproved] = useState<boolean | null>(null);
 
-  // Status is intentionally NOT checked here: a suspended academy-tier member
-  // must stay academy-locked (not fall through to the full app). AcademyView
-  // renders a suspended notice instead of the quiz list for that case.
-  const academyOnly = !!academyMember && academyMember.access_level === "academy" && !isAdmin && !isEditor;
+  // Linked active residents use the full learning UI with the bank already
+  // scoped by server permissions. The old quiz-only restriction still applies
+  // before linkage, while the rollout flag is off, and to suspended members.
+  const residentLearningAccess = residentOnboardingEnabled() && resident?.linked
+    && resident.member?.status === "active" && academyMember?.status === "active";
+  const academyOnly = !!academyMember && academyMember.access_level === "academy" && !isAdmin && !isEditor && !residentLearningAccess;
 
   // Amendment 2: academy-tier residents only see questions from quizzes they've
   // already submitted (union of quiz_attempts.question_ids). This projection
