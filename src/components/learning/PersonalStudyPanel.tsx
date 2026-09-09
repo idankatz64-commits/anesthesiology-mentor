@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { GuideHelp } from '@/components/UserGuide';
 import { useApp } from '@/contexts/AppContext';
 import { fetchCurriculumConfig, type HashedConfig } from '@/lib/curriculumRepository';
 import { readStudyPreferences, saveStudyPreferences } from '@/lib/studyPreferencesRepository';
@@ -83,6 +84,7 @@ function PersonalStudyContent() {
           <label className="flex flex-wrap items-center gap-2">תאריך תחילת הלמידה שלי<input aria-label="תאריך תחילת הלמידה שלי" type="date" required min="2000-01-01" max={today} value={draft.startDate} onChange={e => setDraft({ ...draft, startDate: e.target.value })} className={field} /></label>
           <p className="text-xs text-muted-foreground">בחרו את תאריך התחילה שלכם. כל רבעון נמשך שלושה חודשי לוח מתאריך זה.</p>
           <label className="flex flex-wrap items-center gap-2">מסלול למידה<select aria-label="מסלול למידה" className={field} value={draft.mode} onChange={e => setDraft({ ...draft, mode: e.target.value as StudyMode })}>{modes.map(m => <option key={m.id} value={m.id}>{m.label}</option>)}</select></label>
+          <GuideHelp sectionId="plan" label="הסבר על מסלולי הלמידה" />
           {!config && <p>רשימת הליבה ממתינה להפעלה. אפשר לשמור תאריך התחלה ולהמשיך ללמוד בחומר הזמין.</p>}
           {draft.mode === 'quarterly' && config && <>
             {!saved && <p>בחרו תאריך תחילה והצעת פרקים, ואז שמרו את התכנית.</p>}
@@ -105,6 +107,7 @@ function PersonalStudyContent() {
     </Dialog>
     {saved?.mode === 'random' && <p className="text-xs text-amber-700 dark:text-amber-400">{RANDOM_PLAN_NOTICE}</p>}
     <h3 className="text-sm font-bold">הפרקים הפעילים שלי</h3>
+    <GuideHelp sectionId="metrics" label="כיצד מחושבים מדדי ההתקדמות?" />
     {evidence.status === 'loading' && <p>טוען התקדמות…</p>}
     {evidence.status === 'unavailable' && <p role="alert">{evidence.message}</p>}
     {evidence.status === 'ready' && <>

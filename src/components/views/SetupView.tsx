@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useStudyScope, RANDOM_PLAN_NOTICE } from '@/components/learning/useStudyScope';
+import { GuideHelp } from '@/components/UserGuide';
 import { useApp } from '@/contexts/AppContext';
 import { durableAttemptsEnabled } from '@/lib/featureFlags';
 import { attemptErrorMessage } from '@/lib/attemptsRepository';
@@ -230,6 +231,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
       {studyChapters && <section className="rounded-xl border border-primary/40 bg-primary/5 p-4" aria-label="סינון לפי התכנית"><p>מוצגים רק הפרקים הפעילים בתכנית: {studyChapters.join(', ') || 'טרם נבחרו פרקים — בחרו 2–3 פרקים בתכנית במסך הראשי'}.</p><button type="button" className="underline" onClick={() => navigate('home')}>שינוי התכנית במסך הראשי</button></section>}
       {study.preferences?.mode === 'random' && <p role="note" className="rounded-xl border border-amber-500/40 p-4">{RANDOM_PLAN_NOTICE}</p>}
 
+      <GuideHelp sectionId="practice" label="הסבר על תרגול, בחינה וסינון" />
       <section className="space-y-3" aria-label="מועד הצגת התשובות">
         <h3 className="font-bold">מתי להציג תשובה והסבר?</h3>
         <div className="flex gap-3">

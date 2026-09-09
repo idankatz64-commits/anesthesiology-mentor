@@ -6,6 +6,7 @@ import { LogIn, LogOut, User, ChevronDown, BookOpen, Activity, Heart, FolderOpen
 import type { User as SupaUser } from '@supabase/supabase-js';
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from '@/components/ui/tooltip';
 import { motion, AnimatePresence } from 'framer-motion';
+import UserGuide from './UserGuide';
 import SquircleIcon from './SquircleIcon';
 
 const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>(function TopNav(_props, ref) {
@@ -60,6 +61,7 @@ const TopNav = forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<'div'>>
 
       {/* Right side actions */}
       <div className="flex items-center gap-2">
+        <UserGuide />
         {/* Resource links from DB */}
         {resourceLinks.map(link => {
           const Icon = link.category === 'drive' ? FolderOpen : link.category === 'pdf' ? FileText : LinkIcon;

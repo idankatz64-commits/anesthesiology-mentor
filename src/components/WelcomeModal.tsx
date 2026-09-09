@@ -1,3 +1,4 @@
+import guide from '@/content/userGuide.he.json';
 import { useApp } from '@/contexts/AppContext';
 import { GraduationCap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,17 +25,11 @@ export default function WelcomeModal() {
             onClick={closeWelcome}
           />
           <motion.div
-            className="glass-card w-full max-w-lg rounded-3xl shadow-2xl p-8 text-center relative overflow-hidden card-accent-top z-10"
+            className="glass-card w-full max-w-lg rounded-3xl shadow-2xl p-8 text-center relative max-h-[90dvh] overflow-y-auto card-accent-top z-10"
             initial={{ y: "100%", opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: "100%", opacity: 0, transition: { duration: 0.2 } }}
             transition={springGentle}
-            drag="y"
-            dragConstraints={{ top: 0 }}
-            dragElastic={0.2}
-            onDragEnd={(_, info) => {
-              if (info.offset.y > 100) closeWelcome();
-            }}
             style={{ willChange: 'transform' }}
           >
             <div className="w-10 h-1 bg-muted-foreground/30 rounded-full mx-auto mb-4" />
@@ -47,6 +42,7 @@ export default function WelcomeModal() {
               <p>המערכת תוכננה לסייע למתמחים בהכנה למבחני שלב א' ו-ABA Basic Exam.</p>
               <p>השאלות מבוססות על <strong>Miller's Anesthesia, 10th Edition</strong> ומאפשרות תרגול חכם, מעקב אחר טעויות וניתוח ביצועים מותאם אישית.</p>
             </div>
+            <div dir="rtl" className="text-start mb-6 text-sm"><h3 className="font-bold mb-2">מתחילים כאן</h3><ol className="list-decimal ps-5 space-y-2">{guide.sections[0].steps.map(step => <li key={step}>{step}</li>)}</ol><p className="mt-3 text-muted-foreground">המדריך המלא זמין בכל עת בסרגל העליון.</p></div>
             <div className="bg-destructive/10 border border-destructive/20 p-4 rounded-xl mb-8">
               <p className="text-destructive text-xs font-bold">⚠️ המערכת נועדה לתרגול בלבד. המידע אינו מהווה תחליף לשיקול דעת רפואי.</p>
             </div>
@@ -54,7 +50,7 @@ export default function WelcomeModal() {
               onClick={closeWelcome}
               className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all hover-glow"
             >
-              התחל לתרגל
+              מעבר למסך הראשי
             </button>
           </motion.div>
         </motion.div>
