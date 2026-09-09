@@ -58,3 +58,4 @@ reports/master_stats_*.json
 # archify visual-check screenshots (the .html diagram itself is tracked)
 docs/diagrams/*.png
 docs/diagrams/*.visual-check.*
+.vercel

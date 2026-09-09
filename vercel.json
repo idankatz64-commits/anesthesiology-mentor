@@ -4,5 +4,11 @@
     "deploymentEnabled": {
       "codex/ysnp-launch-v1": false
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }
