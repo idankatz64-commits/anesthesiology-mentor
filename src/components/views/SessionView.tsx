@@ -1213,7 +1213,7 @@ export default function SessionView() {
           )}
 
           {/* Confidence Tracker - Segmented Control */}
-          {(isExam || isSimulation) && savedConfidence && !needsConfidence && <p className="mt-4 text-sm text-muted-foreground">רמת הביטחון שנבחרה: {{ confident: 'בטוח', hesitant: 'מתלבט', guessed: 'ניחוש' }[savedConfidence]}</p>}
+          {savedConfidence && !needsConfidence && <p className="mt-4 text-sm text-muted-foreground">רמת הביטחון שנבחרה: {{ confident: 'בטוח', hesitant: 'מתלבט', guessed: 'ניחוש' }[savedConfidence]}</p>}
           {answerLocked && !submissionStarted && !isReviewMode && <p role="status" className="mt-4 text-sm text-muted-foreground">
             {showFeedback ? 'התשובה אושרה וההסבר נחשף, ולכן אי אפשר לשנות אותה. אפשר לעיין או להמשיך לשאלה הבאה.' : 'התשובה אושרה. ההסבר יוצג בסיום המפגש.'}
           </p>}

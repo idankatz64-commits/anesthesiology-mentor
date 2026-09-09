@@ -49,6 +49,24 @@ describe('FeedbackQueueTab', () => {
   });
   afterEach(cleanup);
 
+  it('renders review images and formatting safely and prominently identifies the question', async () => {
+    vi.mocked(fetchFeedbackReview).mockResolvedValue(review({
+      questionText: '<b>שאלה עם תמונה</b><img src="/question.png" alt="תרשים השאלה" onerror="alert(1)">',
+      explanationText: '<p>הסבר <strong>מלא</strong></p><img src="/explanation.png" alt="תרשים הסבר">',
+      proposedText: '<img src="/proposal.png" alt="תמונה מוצעת"><script>alert(2)</script>',
+    }));
+    render(<FeedbackQueueTab userId="owner-1" />);
+    await waitFor(() => expect(rowOf('17')).toBeInTheDocument());
+    fireEvent.click(within(rowOf('17')).getByRole('button', { name: 'בדיקה' }));
+    await waitFor(() => expect(within(panel()).getByRole('img', { name: 'תרשים השאלה' })).toBeInTheDocument());
+    expect(within(panel()).getByRole('img', { name: 'תרשים הסבר' })).toBeInTheDocument();
+    expect(within(panel()).getByRole('img', { name: 'תמונה מוצעת' })).toBeInTheDocument();
+    expect(within(panel()).getByRole('img', { name: 'מדיה של השאלה' })).toHaveAttribute('src', 'https://example.invalid/17.png');
+    expect(within(panel()).getByText('שאלה 17 · מזהה מאגר: q1')).toBeInTheDocument();
+    expect(panel().querySelector('script, [onerror]')).toBeNull();
+    expect(approveFeedback).not.toHaveBeenCalled();
+  });
+
   it('is closed to anyone who is not the owner, even an admin', async () => {
     vi.mocked(fetchMyFeedbackRole).mockResolvedValue({ owner: false, author: false, approved: true });
     render(<FeedbackQueueTab userId="owner-1" />);
@@ -68,7 +86,7 @@ describe('FeedbackQueueTab', () => {
     expect(within(panel).getByText('שאלה 17')).toBeInTheDocument();
     // the whole live question is on screen, because approval is bound to a hash of all of it
     expect(within(panel).getByText(/אופציה א/)).toBeInTheDocument();
-    expect(within(panel).getByText(/אופציה ב.*✓/)).toBeInTheDocument();
+    expect(within(panel).getByText('אופציה ב').closest('li')).toHaveTextContent('✓');
     expect(within(panel).getByText('B')).toBeInTheDocument();
     expect(within(panel).getByText('הסבר חי מלא')).toBeInTheDocument();
     expect(within(panel).getByLabelText('הקשר השאלה')).toHaveTextContent('מזהה: 17 · מקור: בית חולים · נושא: נשימה · פרק: 12 · מילר: 10e · שנה: 2023 · סוג: past · מדיה: image · קישור מדיה: https://example.invalid/17.png');

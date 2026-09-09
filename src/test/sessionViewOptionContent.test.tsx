@@ -50,6 +50,20 @@ describe('SessionView renders answer options stored as HTML', () => {
   beforeEach(() => { vi.clearAllMocks(); HTMLElement.prototype.scrollTo = vi.fn(); });
   afterEach(cleanup);
 
+  it('shows the saved confidence when returning to an answered practice question', () => {
+    mockSession([launchQuestion('q-1')]);
+    const app = vi.mocked(useApp)();
+    app.session.answers[0] = 'A';
+    app.session.confidence[0] = 'hesitant';
+    const { rerender } = render(<SessionView />);
+    expect(screen.getByText('רמת הביטחון שנבחרה: מתלבט')).toBeInTheDocument();
+    app.session.confidence[0] = 'confident';
+    rerender(<SessionView />);
+    expect(screen.getByText('רמת הביטחון שנבחרה: בטוח')).toBeInTheDocument();
+    expect(setAnswer).not.toHaveBeenCalled();
+    expect(app.setConfidence).not.toHaveBeenCalled();
+  });
+
   it('applies the markup instead of printing the tags', () => {
     mockSession([{ ...launchQuestion('q-1'), A: '<b>נתרן</b> 140' }]);
     render(<SessionView />);

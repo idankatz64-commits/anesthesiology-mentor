@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import DOMPurify from "dompurify";
+import { explanationSections } from "@/lib/explanationSections";
 import {
   FEEDBACK_KIND_LABEL, FEEDBACK_STATUSES, FEEDBACK_STATUS_LABEL, FEEDBACK_TARGET_LABEL, approveFeedback, feedbackErrorMessage,
   fetchAuthorCandidates, fetchFeedbackQueue, fetchFeedbackReview, fetchMyFeedbackRole, resolveFeedback, setExplanationAuthor,
@@ -18,6 +20,20 @@ export interface FeedbackQueueTabProps {
 }
 
 type PanelProps = { onNotOwner: () => void };
+
+function ReviewContent({ text }: { text: string | null }) {
+  return <div className="rich-content whitespace-pre-wrap break-words [&_img]:max-w-full [&_img]:h-auto [&_table]:block [&_table]:overflow-x-auto">
+    {explanationSections(text ?? "(ריק)").map((part, i) => <div key={i}>
+      {part.title && <h5 className="font-semibold">{part.title}</h5>}
+      {/<[a-z][\s\S]*>/i.test(part.content)
+        ? <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(part.content, {
+          ALLOWED_TAGS: ['p', 'br', 'strong', 'b', 'i', 'em', 'u', 'sub', 'sup', 'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'blockquote', 'code', 'pre', 'h3', 'h4', 'a', 'img', 'hr', 'span', 'div'],
+          ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'colspan', 'rowspan'],
+        }) }} />
+        : part.content}
+    </div>)}
+  </div>;
+}
 
 // Owner-only review panel: the whole live question next to the proposal, because
 // approval is bound to a hash of all of it. Approve is disabled while the base is
@@ -69,16 +85,20 @@ function ReviewPanel({ id, onDone, onNotOwner }: PanelProps & { id: string; onDo
   return (
     <section aria-label="בדיקת דיווח" className="space-y-3 rounded-xl border bg-muted/30 p-4">
       <h4 className="font-semibold">{FEEDBACK_KIND_LABEL[review.kind]}{review.target ? ` · ${FEEDBACK_TARGET_LABEL[review.target]}` : ""}</h4>
+      {review.questionId && <p className="font-semibold break-words">שאלה {review.questionRefId ?? "ללא מספר מקור"} · מזהה מאגר: {review.questionId}</p>}
       {review.questionExists && (
         <div className="space-y-1 rounded-lg border bg-background p-2 text-sm" aria-label="השאלה כפי שהיא כרגע">
-          <p><span className="text-muted-foreground">השאלה: </span>{review.questionText}</p>
+          <div><span className="text-muted-foreground">השאלה: </span><ReviewContent text={review.questionText} /></div>
           <ol className="space-y-0.5">
             {options.map(([k, text]) => (
-              <li key={k} className={k === review.currentKey ? "font-semibold" : ""}><span className="font-mono" dir="ltr">{k}.</span> {text ?? "(ריק)"}{k === review.currentKey ? " ✓" : ""}</li>
+              <li key={k} className={k === review.currentKey ? "font-semibold" : ""}><span className="font-mono" dir="ltr">{k}.</span><ReviewContent text={text} />{k === review.currentKey ? " ✓" : ""}</li>
             ))}
           </ol>
           <p><span className="text-muted-foreground">תשובה נכונה כרגע: </span><span className="font-mono" dir="ltr">{review.currentKey ?? "(ריק)"}</span></p>
-          <p className="whitespace-pre-wrap"><span className="text-muted-foreground">ההסבר כרגע: </span>{review.explanationText ?? "(ריק)"}</p>
+          <div><span className="text-muted-foreground">ההסבר כרגע: </span><ReviewContent text={review.explanationText} /></div>
+          {review.questionMediaType === "image" && review.questionMediaLink && /^(https?:\/\/|data:image\/(?:png|jpeg|gif|webp);base64,)/i.test(review.questionMediaLink) && (
+            <img src={review.questionMediaLink} alt="מדיה של השאלה" className="max-h-96 max-w-full object-contain" />
+          )}
           {/* provenance/media are part of the approval hash too, so they are on screen */}
           <p className="text-xs text-muted-foreground" aria-label="הקשר השאלה">
             {[["מזהה", review.questionRefId], ["מקור", review.questionSource], ["נושא", review.questionTopic], ["פרק", review.questionChapter], ["מילר", review.questionMiller],
@@ -92,8 +112,8 @@ function ReviewPanel({ id, onDone, onNotOwner }: PanelProps & { id: string; onDo
       {review.reference && <p className="text-sm"><span className="text-muted-foreground">מקור: </span>{review.reference}</p>}
       {isCorrection && (
         <div className="grid gap-3 sm:grid-cols-2">
-          <div className="rounded-lg border bg-background p-2"><div className="text-xs text-muted-foreground">הגרסה החיה כרגע</div><pre className="whitespace-pre-wrap font-sans text-sm">{review.currentText ?? "(ריק)"}</pre></div>
-          <div className="rounded-lg border border-green-600/50 bg-background p-2"><div className="text-xs text-muted-foreground">הנוסח המוצע (מה שיפורסם)</div><pre className="whitespace-pre-wrap font-sans text-sm">{review.proposedText}</pre></div>
+          <div className="min-w-0 rounded-lg border bg-background p-2"><div className="text-xs text-muted-foreground">הגרסה החיה כרגע</div><ReviewContent text={review.currentText} /></div>
+          <div className="min-w-0 rounded-lg border border-green-600/50 bg-background p-2"><div className="text-xs text-muted-foreground">הנוסח המוצע (מה שיפורסם)</div><ReviewContent text={review.proposedText} /></div>
         </div>
       )}
       {review.stale && <p role="alert" className="text-sm text-amber-700 dark:text-amber-400">הבסיס השתנה מאז שההצעה נכתבה. אי אפשר לאשר; אפשר לדחות ולבקש הצעה חדשה.</p>}
