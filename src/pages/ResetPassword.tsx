@@ -1,4 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import type { Session } from '@supabase/supabase-js';
+import { updatePasswordForSession } from '@/lib/passwordRecovery';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,34 +15,64 @@ export default function ResetPassword() {
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [loading, setLoading] = useState(false);
-  const [ready, setReady] = useState(false);
+  const [status, setStatus] = useState<'checking' | 'ready' | 'invalid' | 'done'>('checking');
+  const [account, setAccount] = useState<{ id: string; email?: string } | null>(null);
+  const sessionRef = useRef<Session | null>(null);
+  const identityEpoch = useRef(0);
+  const mounted = useRef(true);
+  const saving = useRef(false);
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    // Supabase sets the session automatically from the URL hash after redirect
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true);
+    let active = true;
+    let authRevision = 0;
+    mounted.current = true;
+    identityEpoch.current++;
+    const acceptSession = (session: Session | null) => {
+      if (!active) return;
+      if (session?.user.id !== sessionRef.current?.user.id) {
+        identityEpoch.current++;
+        setPassword(''); setConfirm(''); setLoading(false); saving.current = false;
+      }
+      sessionRef.current = session;
+      setAccount(session ? { id: session.user.id, email: session.user.email } : null);
+      setStatus(session ? 'ready' : 'invalid');
+    };
+    const invalidLink = new URLSearchParams(window.location.hash.slice(1)).has('error') || new URLSearchParams(window.location.search).has('error');
+    if (invalidLink) { setStatus('invalid'); return () => { mounted.current = false; }; }
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      authRevision++;
+      acceptSession(session);
     });
-    return () => subscription.unsubscribe();
+    const initialRevision = authRevision;
+    supabase.auth.getSession().then(({ data, error }) => {
+      if (authRevision === initialRevision) acceptSession(error ? null : data.session);
+    }).catch(() => { if (authRevision === initialRevision) acceptSession(null); });
+    return () => { active = false; mounted.current = false; subscription.unsubscribe(); };
   }, []);
 
   const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
+    const target = sessionRef.current;
+    const epoch = identityEpoch.current;
+    const current = () => mounted.current && identityEpoch.current === epoch;
+    if (saving.current || status !== 'ready' || !target || target.user.id !== account?.id) return;
     if (password !== confirm) {
       toast({ title: 'שגיאה', description: 'הסיסמאות אינן תואמות', variant: 'destructive' });
       return;
     }
-    setLoading(true);
+    saving.current = true; setLoading(true);
     try {
-      const { error } = await supabase.auth.updateUser({ password });
-      if (error) throw error;
-      toast({ title: 'סיסמה עודכנה!', description: 'אתה מועבר להתחברות.' });
-      navigate('/auth', { replace: true });
+      await updatePasswordForSession(target, password);
+      if (!current()) return;
+      setPassword(''); setConfirm(''); setStatus('done');
+      toast({ title: 'הסיסמה עודכנה', description: 'הסיסמה החדשה נשמרה לחשבון שלכם.' });
     } catch (err) {
+      if (!current()) return;
       toast({ title: 'שגיאה', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
     } finally {
-      setLoading(false);
+      if (current()) { saving.current = false; setLoading(false); }
     }
   };
 
@@ -66,15 +98,20 @@ export default function ResetPassword() {
         </div>
 
         <div className="glass-card rounded-2xl p-6 space-y-6 shadow-lg card-accent-top">
-          {!ready ? (
+          {status === 'checking' ? (
             <p className="text-center text-muted-foreground text-sm">מאמת קישור...</p>
+          ) : status === 'invalid' ? (
+            <div className="space-y-4 text-center"><p role="alert">הקישור אינו תקין או שפג תוקפו. בקשו קישור חדש דרך ״שכחתי סיסמה״.</p><Button onClick={() => navigate('/auth', { replace: true })}>חזרה להתחברות</Button></div>
+          ) : status === 'done' ? (
+            <div className="space-y-4 text-center"><p role="status">הסיסמה נשמרה. אפשר להמשיך לחשבון שלכם.</p><Button onClick={() => navigate('/', { replace: true })}>המשך לאפליקציה</Button></div>
           ) : (
             <form onSubmit={handleReset} className="space-y-4">
+              <p className="text-sm">הגדרת סיסמה לחשבון: <bdi>{account?.email}</bdi></p>
               <div className="space-y-2">
                 <Label htmlFor="new-password">סיסמה חדשה</Label>
                 <div className="relative">
                   <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input id="new-password" type="password" placeholder="••••••••" dir="ltr"
+                  <Input id="new-password" type="password" autoComplete="new-password" placeholder="••••••••" dir="ltr"
                     className="pr-10 bg-muted/50 border-border"
                     value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
                 </div>
@@ -83,7 +120,7 @@ export default function ResetPassword() {
                 <Label htmlFor="confirm-password">אימות סיסמה</Label>
                 <div className="relative">
                   <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input id="confirm-password" type="password" placeholder="••••••••" dir="ltr"
+                  <Input id="confirm-password" type="password" autoComplete="new-password" placeholder="••••••••" dir="ltr"
                     className="pr-10 bg-muted/50 border-border"
                     value={confirm} onChange={e => setConfirm(e.target.value)} required minLength={6} />
                 </div>

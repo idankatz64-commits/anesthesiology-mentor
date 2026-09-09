@@ -74,7 +74,7 @@ describe('resident onboarding screen', () => {
 
   it.each([
     ['NOT_ON_ROSTER', /לא נמצאת ברשימת המתמחים/],
-    ['EMAIL_NOT_VERIFIED', /Google|אישור המייל/],
+    ['EMAIL_NOT_VERIFIED', /קישור האימות/],
     ['EMAIL_ALREADY_LINKED', /כבר מקושרת/],
     ['NOT_LINKED', /להתחבר מחדש/],
   ] as const)('explains %s without offering any self-service verification, with recheck and sign-out', async (reason, text) => {

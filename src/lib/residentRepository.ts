@@ -41,7 +41,7 @@ const HEBREW: Record<string, string> = {
   INVALID_INPUT: 'הנתונים שהוזנו אינם תקינים.',
   NOT_ON_ROSTER: 'כתובת המייל שלך לא נמצאת ברשימת המתמחים. פנו למנהל.',
   EMAIL_ALREADY_LINKED: 'כתובת המייל הזו כבר מקושרת לחשבון אחר.',
-  EMAIL_NOT_VERIFIED: 'נדרש אימות של כתובת המייל (כניסה עם Google או אישור המייל) לפני הקישור.',
+  EMAIL_NOT_VERIFIED: 'נדרש אישור של כתובת המייל באמצעות קישור האימות שנשלח אליכם לפני הקישור לרשימה.',
   NOT_LINKED: 'החשבון עדיין לא קושר. נסו להתחבר מחדש.',
 };
 export const residentErrorMessage = (error: unknown): string =>
