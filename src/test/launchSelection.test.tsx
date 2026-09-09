@@ -1,3 +1,5 @@
+vi.mock('@/lib/studyPreferencesRepository', () => ({ readStudyPreferences: vi.fn().mockResolvedValue(null) }));
+vi.mock('@/components/learning/PersonalStudyPanel', () => ({ default: () => null }));
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { useApp } from '@/contexts/AppContext';

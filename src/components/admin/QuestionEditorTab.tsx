@@ -417,13 +417,14 @@ function ExportByDateSection() {
   );
 }
 
-export default function QuestionEditorTab() {
+export default function QuestionEditorTab({ initialQuestionId = null }: { initialQuestionId?: string | null } = {}) {
   const { invalidateQuestions } = useApp();
   const [questions, setQuestions] = useState<QuestionRow[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
+  const [exactQuestionId, setExactQuestionId] = useState(initialQuestionId);
   const [topicFilter, setTopicFilter] = useState<string>('__all__');
   const [topics, setTopics] = useState<string[]>([]);
 
@@ -447,6 +448,7 @@ export default function QuestionEditorTab() {
         let query = supabase
           .from('questions')
           .select('id, ref_id, question, a, b, c, d, correct, explanation, topic, year, source, kind, miller, chapter, media_type, media_link');
+        if (exactQuestionId) query = query.eq('id', exactQuestionId);
 
         if (searchTerm.trim()) {
           query = query.or(`question.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%,ref_id.ilike.%${searchTerm}%`);
@@ -500,6 +502,8 @@ export default function QuestionEditorTab() {
         .from('questions')
         .select('*', { count: 'exact' });
 
+      if (exactQuestionId) query = query.eq('id', exactQuestionId);
+
       if (searchTerm.trim()) {
         query = query.or(`question.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%,ref_id.ilike.%${searchTerm}%`);
       }
@@ -519,7 +523,7 @@ export default function QuestionEditorTab() {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, topicFilter]);
+  }, [page, searchTerm, topicFilter, exactQuestionId]);
 
   useEffect(() => {
     fetchQuestions();
@@ -635,6 +639,7 @@ export default function QuestionEditorTab() {
       <ExportByDateSection />
 
       {/* Filters */}
+      {exactQuestionId && <p className="text-sm">שאלה מהדיווח: {exactQuestionId} <Button variant="outline" onClick={() => { setExactQuestionId(null); setPage(0); }}>הצגת כל השאלות</Button></p>}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />

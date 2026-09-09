@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useStudyScope, RANDOM_PLAN_NOTICE } from '@/components/learning/useStudyScope';
 import { useApp } from '@/contexts/AppContext';
 import { durableAttemptsEnabled } from '@/lib/featureFlags';
 import { attemptErrorMessage } from '@/lib/attemptsRepository';
@@ -86,13 +87,17 @@ export const MAX_CUSTOM_COUNT = 500;
 
 export default function SetupView({ mode }: { mode: SessionMode }) {
   const {
-    data, progress, session, multiSelect, confidenceMap,
+    data, progress, session, multiSelect, confidenceMap, userId,
     setSourceFilter, toggleUnseenOnly, getFilteredQuestions, startSession, navigate,
     toggleMultiSelect, fetchSrsData, resetFilters, recommendation, clearRecommendation,
   } = useApp();
 
   // A learning recommendation opened from the report: exact count/filters, pool never wider than its chapters/ids.
   const rec = recommendation && recommendation.setup.mode === mode ? recommendation : null;
+  const study = useStudyScope(userId);
+  const studyChapters = !rec && study.preferences && study.preferences.mode !== 'random' ? study.preferences.chapters : null;
+  const studyBlocked = study.loading || study.error;
+  const scopedData = useMemo(() => data.filter(q => !studyChapters || studyChapters.includes(q[KEYS.CHAPTER])), [data, studyChapters]);
   useEffect(() => {
     if (!rec) return;
     if (session.sourceFilter !== rec.setup.source) setSourceFilter(rec.setup.source);
@@ -117,10 +122,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   useEffect(() => { loadSrs().catch(() => {}); }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [seed] = useState(() => Math.floor(Math.random() * 2 ** 32));
 
-  const topics = useMemo(() => [...new Set(data.map(q => q[KEYS.TOPIC]).filter(Boolean))].sort(), [data]);
-  const years = useMemo(() => [...new Set(data.map(q => q[KEYS.YEAR]).filter(Boolean))].sort(), [data]);
-  const kinds = useMemo(() => [...new Set(data.map(q => q[KEYS.KIND]).filter(x => x && x.trim()))].sort(), [data]);
-  const institutions = useMemo(() => [...new Set(data.map(q => q[KEYS.SOURCE]).filter(x => x && x !== 'N/A' && x.trim()))].sort(), [data]);
+  const topics = useMemo(() => [...new Set(scopedData.map(q => q[KEYS.TOPIC]).filter(Boolean))].sort(), [scopedData]);
+  const years = useMemo(() => [...new Set(scopedData.map(q => q[KEYS.YEAR]).filter(Boolean))].sort(), [scopedData]);
+  const kinds = useMemo(() => [...new Set(scopedData.map(q => q[KEYS.KIND]).filter(x => x && x.trim()))].sort(), [scopedData]);
+  const institutions = useMemo(() => [...new Set(scopedData.map(q => q[KEYS.SOURCE]).filter(x => x && x !== 'N/A' && x.trim()))].sort(), [scopedData]);
   const userTags = useMemo(() => {
     const allTags = new Set<string>();
     Object.values(progress.tags).forEach(tags => tags.forEach(t => allTags.add(t)));
@@ -139,10 +144,10 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   // The rule below reads them as unnecessary, because getFilteredQuestions takes only
   // two arguments; the ref reads are invisible to it.
   const basePool = useMemo(
-    () => getFilteredQuestions(serial, textSearch),
+    () => getFilteredQuestions(serial, textSearch).filter(q => !studyChapters || studyChapters.includes(q[KEYS.CHAPTER])),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
-      getFilteredQuestions, serial, textSearch,
+      getFilteredQuestions, serial, textSearch, studyChapters,
       data, progress, confidenceMap, multiSelect,
       session.sourceFilter, session.unseenOnly,
     ],
@@ -150,7 +155,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   const recChapters = useMemo(() => new Set(rec?.setup.chapters ?? []), [rec]);
   const recIds = useMemo(() => (rec?.setup.questionIds ? new Set(rec.setup.questionIds) : null), [rec]);
   const pool = useMemo(
-    () => (rec ? basePool.filter(q => recChapters.has(q[KEYS.CHAPTER]) && (!recIds || recIds.has(q[KEYS.ID]))) : basePool),
+    () => (rec ? basePool.filter(q => ((rec.kind === 'study-plan' && recChapters.size === 0) || recChapters.has(q[KEYS.CHAPTER])) && (!recIds || recIds.has(q[KEYS.ID]))) : basePool),
     [rec, basePool, recChapters, recIds],
   );
   // The ranking pass walks the whole bank and the whole history, and none of the filters
@@ -176,6 +181,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
   const noneEligible = preview !== null && preview.questions.length === 0;
 
   const handleStart = async () => {
+    if (studyBlocked) return;
     setStarting(true);
     setStartError('');
     try {
@@ -218,6 +224,11 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
           <p className="text-sm text-foreground/70">תרגול ידני: מותר לחזור גם על שאלות שענית לאחרונה. נספר כלמידה, לא כציון בחינה.</p>
         )}
       </section>
+
+      {study.loading && <p role="status">טוען את הסינון מהתכנית שלך…</p>}
+      {study.error && <p role="alert">לא ניתן לטעון את התכנית. רעננו לפני התחלת למידה כדי לשמור על הסינון הנכון.</p>}
+      {studyChapters && <section className="rounded-xl border border-primary/40 bg-primary/5 p-4" aria-label="סינון לפי התכנית"><p>מוצגים רק הפרקים הפעילים בתכנית: {studyChapters.join(', ') || 'טרם נבחרו פרקים — בחרו 2–3 פרקים בתכנית במסך הראשי'}.</p><button type="button" className="underline" onClick={() => navigate('home')}>שינוי התכנית במסך הראשי</button></section>}
+      {study.preferences?.mode === 'random' && <p role="note" className="rounded-xl border border-amber-500/40 p-4">{RANDOM_PLAN_NOTICE}</p>}
 
       <section className="space-y-3" aria-label="מועד הצגת התשובות">
         <h3 className="font-bold">מתי להציג תשובה והסבר?</h3>
@@ -436,7 +447,7 @@ export default function SetupView({ mode }: { mode: SessionMode }) {
         </div>
         <button
           onClick={handleStart}
-          disabled={starting || pool.length === 0 || noneEligible}
+          disabled={studyBlocked || starting || pool.length === 0 || noneEligible}
           className="bg-primary hover:bg-primary/90 text-primary-foreground font-black text-lg px-12 py-4 rounded-xl shadow-2xl shadow-primary/30 flex items-center gap-3 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed group"
         >
           {starting ? 'מכין שאלות...' : `התחל ${isPractice ? 'תרגול' : 'בחינה'}`}

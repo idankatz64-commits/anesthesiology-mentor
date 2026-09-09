@@ -129,7 +129,7 @@ export type ChapterSignal = {
   correctedCount: number;
 };
 
-export type RecommendationKind = 'review-explanations' | 'targeted-mistakes' | 'due-review' | 'unseen-coverage';
+export type RecommendationKind = 'review-explanations' | 'targeted-mistakes' | 'due-review' | 'unseen-coverage' | 'study-plan';
 /** What Setup would be opened with. Chapters are never wider than the caller's scope. */
 export type SetupParams = {
   mode: 'practice' | 'exam';
@@ -150,7 +150,7 @@ export type Recommendation = {
   caveats: string[];
   setup: SetupParams;
   countIsSuggestion: true;
-  provenance: { engine: 'learningInsights'; version: number; asOf: number; denominatorVersion: string };
+  provenance: { engine: 'learningInsights' | 'personalStudyPlan'; version: number; asOf: number; denominatorVersion: string };
 };
 
 export type FollowUp = {

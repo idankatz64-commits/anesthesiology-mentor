@@ -17,6 +17,7 @@ const notOwner = (e: unknown) => e instanceof Error && e.message === "NOT_OWNER"
 export interface FeedbackQueueTabProps {
   /** Current auth user id from AppContext; null = signed out. Any change remounts the whole tab. */
   userId: string | null;
+  onOpenQuestion?: (id: string) => void;
 }
 
 type PanelProps = { onNotOwner: () => void };
@@ -38,7 +39,7 @@ function ReviewContent({ text }: { text: string | null }) {
 // Owner-only review panel: the whole live question next to the proposal, because
 // approval is bound to a hash of all of it. Approve is disabled while the base is
 // stale; the server re-checks the hash anyway.
-function ReviewPanel({ id, onDone, onNotOwner }: PanelProps & { id: string; onDone: (id: string) => void }) {
+function ReviewPanel({ id, onDone, onNotOwner, onOpenQuestion }: PanelProps & { id: string; onDone: (id: string) => void; onOpenQuestion?: (id: string) => void }) {
   const [review, setReview] = useState<FeedbackReview | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -86,6 +87,7 @@ function ReviewPanel({ id, onDone, onNotOwner }: PanelProps & { id: string; onDo
     <section aria-label="בדיקת דיווח" className="space-y-3 rounded-xl border bg-muted/30 p-4">
       <h4 className="font-semibold">{FEEDBACK_KIND_LABEL[review.kind]}{review.target ? ` · ${FEEDBACK_TARGET_LABEL[review.target]}` : ""}</h4>
       {review.questionId && <p className="font-semibold break-words">שאלה {review.questionRefId ?? "ללא מספר מקור"} · מזהה מאגר: {review.questionId}</p>}
+      {review.questionExists && review.questionId && onOpenQuestion && <button type="button" disabled={busy} className={`${BTN} border`} onClick={() => onOpenQuestion(review.questionId!)}>פתיחת השאלה בעורך</button>}
       {review.questionExists && (
         <div className="space-y-1 rounded-lg border bg-background p-2 text-sm" aria-label="השאלה כפי שהיא כרגע">
           <div><span className="text-muted-foreground">השאלה: </span><ReviewContent text={review.questionText} /></div>
@@ -218,7 +220,7 @@ function AuthorsPanel({ onNotOwner }: PanelProps) {
 // survives and its in-flight answers land on nothing. Within one identity, each fetch
 // is tied to the tab/review it was started for, and a NOT_OWNER answer to any call
 // (revocation mid-session) collapses the tab back to the refusal view.
-function Queue({ userId }: FeedbackQueueTabProps) {
+function Queue({ userId, onOpenQuestion }: FeedbackQueueTabProps) {
   const [owner, setOwner] = useState<boolean | null>(userId ? null : false);
   const [status, setStatus] = useState<FeedbackStatus>("pending");
   const [items, setItems] = useState<FeedbackQueueItem[]>([]);
@@ -282,13 +284,13 @@ function Queue({ userId }: FeedbackQueueTabProps) {
             {!loading && items.length === 0 && <tr><td colSpan={6} className="p-4 text-center text-muted-foreground">אין דיווחים בסטטוס הזה.</td></tr>}
           </tbody>
         </table>
-        {selected && <ReviewPanel key={selected} id={selected} onDone={onDone} onNotOwner={deny} />}
+        {selected && <ReviewPanel key={selected} id={selected} onDone={onDone} onNotOwner={deny} onOpenQuestion={onOpenQuestion} />}
       </div>
       <AuthorsPanel onNotOwner={deny} />
     </div>
   );
 }
 
-export default function FeedbackQueueTab({ userId }: FeedbackQueueTabProps) {
-  return <Queue key={userId ?? ""} userId={userId} />;
+export default function FeedbackQueueTab({ userId, onOpenQuestion }: FeedbackQueueTabProps) {
+  return <Queue key={userId ?? ""} userId={userId} onOpenQuestion={onOpenQuestion} />;
 }

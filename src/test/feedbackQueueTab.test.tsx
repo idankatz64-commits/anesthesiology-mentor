@@ -67,6 +67,17 @@ describe('FeedbackQueueTab', () => {
     expect(approveFeedback).not.toHaveBeenCalled();
   });
 
+  it('opens the precise database question without publishing anything', async () => {
+    const onOpenQuestion = vi.fn();
+    render(<FeedbackQueueTab userId="owner-1" onOpenQuestion={onOpenQuestion} />);
+    await waitFor(() => expect(rowOf('17')).toBeInTheDocument());
+    fireEvent.click(within(rowOf('17')).getByRole('button', { name: 'בדיקה' }));
+    await waitFor(() => expect(within(panel()).getByRole('button', { name: 'פתיחת השאלה בעורך' })).toBeInTheDocument());
+    fireEvent.click(within(panel()).getByRole('button', { name: 'פתיחת השאלה בעורך' }));
+    expect(onOpenQuestion).toHaveBeenCalledWith('q1');
+    expect(approveFeedback).not.toHaveBeenCalled();
+  });
+
   it('is closed to anyone who is not the owner, even an admin', async () => {
     vi.mocked(fetchMyFeedbackRole).mockResolvedValue({ owner: false, author: false, approved: true });
     render(<FeedbackQueueTab userId="owner-1" />);

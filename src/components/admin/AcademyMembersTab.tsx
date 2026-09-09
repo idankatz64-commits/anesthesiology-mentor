@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import ResidentAddForm from './ResidentAddForm';
 import { isDemo, maskEmail, maskName } from "@/lib/demoMode";
 import {
   parseEmailList,
@@ -167,7 +168,7 @@ export default function AcademyMembersTab() {
 
   return (
     <div className="space-y-6" dir="rtl">
-      {realAdmin ? <RosterImport onImported={reload} /> : (
+      {realAdmin ? <><ResidentAddForm onSaved={reload} /><RosterImport onImported={reload} /></> : (
         <p className="text-sm text-muted-foreground border rounded-xl p-4">ייבוא רשימת המתמחים ופתיחת שאלות ארצי זמינים למנהל בלבד.</p>
       )}
       <div className="border rounded-xl p-4 space-y-3">

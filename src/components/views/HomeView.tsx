@@ -17,6 +17,9 @@ import { selectBounded, type SelectionResult } from '@/lib/selectionPolicy';
 import { policyModeFor, compositionText, shortageText, smartRank } from '@/lib/selectionSummary';
 import { readLastSession } from '@/lib/lastSessionStore';
 import MatrixCountdown from '@/components/MatrixCountdown';
+import { readStudyPreferences } from '@/lib/studyPreferencesRepository';
+import { RANDOM_PLAN_NOTICE } from '@/components/learning/useStudyScope';
+import PersonalStudyPanel from '@/components/learning/PersonalStudyPanel';
 import HomeStatsSummary from '@/components/stats/HomeStatsSummary';
 import HomeTopicHeatmap from '@/components/stats/HomeTopicHeatmap';
 import DailyReportModal from '@/components/DailyReportModal';
@@ -428,9 +431,12 @@ export default function HomeView() {
     if (!snap.data.length) return;
     let result: SelectionResult;
     try {
-      const srsData = await fetchSrsData();
+      const [srsData, preferences] = await Promise.all([fetchSrsData(), readStudyPreferences()]);
       if (abortIfStale(snap)) return;
-      result = selectBounded(snap.data, snap.history, srsData, {
+      const bank = preferences && preferences.mode !== 'random' ? snap.data.filter(q => preferences.chapters.includes(q[KEYS.CHAPTER])) : snap.data;
+      if (preferences?.mode === 'random') toast.info(RANDOM_PLAN_NOTICE);
+      if (preferences && preferences.mode !== 'random' && !preferences.chapters.length) { toast.info('בחרו 2–3 פרקים פעילים בתכנית הלמידה לפני ההתחלה.'); return; }
+      result = selectBounded(bank, snap.history, srsData, {
         mode: policyModeFor(mode), count, rank: smartRank(snap.data, snap.history, srsData, count),
       });
     } catch (e) {
@@ -528,6 +534,8 @@ export default function HomeView() {
           />
         </div>
       </header>
+
+      <PersonalStudyPanel />
 
       {/* ═══ FOCUS SESSIONS — 3 large cards ═══ */}
       <motion.div

@@ -83,9 +83,9 @@ function IdentityScoped({ children }: { children: React.ReactNode }) {
 }
 
 // B's queue tab takes the current identity as a prop; tabs render inside this page's own AppProvider.
-function FeedbackQueueMount() {
+function FeedbackQueueMount({ onOpenQuestion }: { onOpenQuestion: (id: string) => void }) {
   const { userId } = useApp();
-  return <FeedbackQueueTab userId={userId} />;
+  return <FeedbackQueueTab userId={userId} onOpenQuestion={onOpenQuestion} />;
 }
 
 // C's shadow tab: same contract, current identity from this page's AppProvider.
@@ -97,6 +97,7 @@ function FsrsShadowMount() {
 export default function AdminDashboard() {
   const { loading, isAdmin } = useAdminGuard();
   const [activeTab, setActiveTab] = useState<AdminTab>("user-management");
+  const [questionToOpen, setQuestionToOpen] = useState<string | null>(null);
 
   if (loading || !isAdmin) {
     return (
@@ -162,7 +163,7 @@ export default function AdminDashboard() {
             {activeTab === "user-management" && <UserManagementTab />}
             {activeTab === "import-questions" && <ImportQuestionsTab />}
             {activeTab === "formula-management" && <FormulaManagementTab />}
-            {activeTab === "question-editor" && <QuestionEditorTab />}
+            {activeTab === "question-editor" && <QuestionEditorTab key={questionToOpen ?? 'all'} initialQuestionId={questionToOpen} />}
             {activeTab === "resource-links" && <ResourceLinksTab />}
             {activeTab === "summaries" && <SummariesManagementTab />}
             {activeTab === "editor-activity" && <EditorActivityTab isActive={activeTab === "editor-activity"} />}
@@ -173,7 +174,7 @@ export default function AdminDashboard() {
             {activeTab === "curriculum" && <CurriculumConfigTab />}
             {activeTab === "management-aggregate" && <ManagementAggregateTab />}
             {activeTab === "fsrs-comparison" && <FsrsShadowMount />}
-            {activeTab === "feedback-queue" && <FeedbackQueueMount />}
+            {activeTab === "feedback-queue" && <FeedbackQueueMount onOpenQuestion={id => { setQuestionToOpen(id); setActiveTab('question-editor'); }} />}
           </IdentityScoped>
         </main>
       </motion.div>
