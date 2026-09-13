@@ -6,6 +6,7 @@ import MobileHeader from "@/components/MobileHeader";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import TopNav from "@/components/TopNav";
 import WelcomeModal from "@/components/WelcomeModal";
+import EmailOtpNotice from "@/components/EmailOtpNotice";
 import QuoteSplash from "@/components/QuoteSplash";
 import HomeView from "@/components/views/HomeView";
 import SetupView from "@/components/views/SetupView";
@@ -21,7 +22,7 @@ import AcademyView from "@/components/views/AcademyView";
 import ArchiveView from "@/components/views/ArchiveView";
 import ResidentOnboardingView from "@/components/views/ResidentOnboardingView";
 import { motion } from "framer-motion";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { resolveGate, resolveResidentGate } from "@/lib/accessGate";
 import { residentOnboardingEnabled } from "@/lib/featureFlags";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,6 +56,8 @@ function PendingApproval() {
           <br />
           פנה לעידן כדי לקבל גישה.
         </p>
+        <p className="text-sm text-muted-foreground mb-4">אם נרשמתם בעבר והגישה נשארה חסומה, היכנסו עם קוד למייל של החשבון כדי להשלים את האימות והשיוך. אם הכתובת אינה ברשימת המתמחים, פנו לעידן עם הכתובת המדויקת.</p>
+        <Button asChild className="mb-4"><Link to="/auth">אימות המייל באמצעות קוד</Link></Button>
         <Button variant="outline" onClick={() => supabase.auth.signOut()}>
           התנתקות
         </Button>
@@ -173,6 +176,7 @@ function AppContent() {
               className="w-full px-4"
               style={{ minHeight: "60vh" }}
             >
+              {currentView !== "session" && <EmailOtpNotice />}
               {renderView()}
             </div>
         </main>

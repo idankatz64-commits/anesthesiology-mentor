@@ -1,4 +1,5 @@
 import { useState } from "react";
+import EmailOtpNotice from "@/components/EmailOtpNotice";
 import { AppProvider, useApp } from "@/contexts/AppContext";
 import { useAdminGuard } from "@/hooks/useAdminGuard";
 import { Link } from "react-router-dom";
@@ -159,6 +160,7 @@ export default function AdminDashboard() {
 
         {/* Main content */}
         <main className="flex-1 p-8 overflow-y-auto">
+          <EmailOtpNotice />
           <IdentityScoped>
             {activeTab === "user-management" && <UserManagementTab />}
             {activeTab === "import-questions" && <ImportQuestionsTab />}

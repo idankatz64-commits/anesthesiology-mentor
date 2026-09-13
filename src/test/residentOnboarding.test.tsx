@@ -74,14 +74,14 @@ describe('resident onboarding screen', () => {
 
   it.each([
     ['NOT_ON_ROSTER', /לא נמצאת ברשימת המתמחים/],
-    ['EMAIL_NOT_VERIFIED', /קישור האימות/],
+    ['EMAIL_NOT_VERIFIED', /קוד חד־פעמי/],
     ['EMAIL_ALREADY_LINKED', /כבר מקושרת/],
     ['NOT_LINKED', /להתחבר מחדש/],
-  ] as const)('explains %s without offering any self-service verification, with recheck and sign-out', async (reason, text) => {
+  ] as const)('explains %s with OTP entry, recheck and sign-out', async (reason, text) => {
     setup({ linked: false, reason, member: null });
     expect(screen.getByRole('status')).toHaveTextContent(text);
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /אמת|אימות עכשיו/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'כניסה עם קוד במייל' })).toHaveAttribute('href', '/auth');
     fireEvent.click(screen.getByRole('button', { name: /בדיקה מחדש/ }));
     await waitFor(() => expect(refreshResident).toHaveBeenCalledTimes(1));
     fireEvent.click(screen.getByRole('button', { name: /התנתקות/ }));

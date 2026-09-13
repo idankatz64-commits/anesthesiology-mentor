@@ -1,161 +1,97 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { GraduationCap, Mail, Lock, Loader2 } from 'lucide-react';
+import { GraduationCap, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
-import { motion } from 'framer-motion';
-import { fadeUp } from '@/lib/animations';
+
+function errorMessage(error: unknown, verifying: boolean) {
+  const code = (error as { code?: string; status?: number })?.code;
+  if ((error as { status?: number })?.status === 429 || code === 'over_email_send_rate_limit' || code === 'over_request_rate_limit') return 'נשלחו יותר מדי בקשות. המתינו דקה ונסו שוב.';
+  if (verifying && (code === 'otp_expired' || code === 'validation_failed')) return 'הקוד שגוי או שפג תוקפו. בדקו את הקוד במייל האחרון או בקשו קוד חדש.';
+  return verifying ? 'לא הצלחנו לאמת את הקוד. בדקו את החיבור ונסו שוב.' : 'לא הצלחנו לשלוח קוד. בדקו את כתובת המייל ואת החיבור ונסו שוב. אם הבעיה נמשכת, פנו לעידן.';
+}
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [isForgot, setIsForgot] = useState(false);
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [sentEmail, setSentEmail] = useState<string | null>(null);
+  const [token, setToken] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [resendAt, setResendAt] = useState(0);
+  const [now, setNow] = useState(Date.now());
+  const inFlight = useRef(false);
   const navigate = useNavigate();
-  const { toast } = useToast();
-
-  const handleForgotPassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loading) return;
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-        redirectTo: `${window.location.origin}/reset-password`,
-      });
-      if (error) throw error;
-      toast({ title: 'הבקשה התקבלה', description: 'אם קיים חשבון מתאים לכתובת, יישלח אליו קישור להגדרת סיסמה. בדקו גם בדואר הזבל.' });
-      setIsForgot(false);
-    } catch (err) {
-      toast({ title: 'שגיאה', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const remaining = Math.max(0, Math.ceil((resendAt - now) / 1000));
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate('/', { replace: true });
-    });
-    return () => subscription.unsubscribe();
-  }, [navigate]);
+    if (!resendAt) return;
+    const timer = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(timer);
+  }, [resendAt]);
 
-  const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (loading) return;
-    setLoading(true);
+  const sendCode = async (e?: FormEvent) => {
+    e?.preventDefault();
+    if (inFlight.current || (sentEmail && Date.now() < resendAt)) return;
+    const address = (sentEmail ?? email).trim().toLowerCase();
+    inFlight.current = true; setBusy(true); setError('');
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email: email.trim().toLowerCase(), password });
-        if (error) throw error;
-      } else {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(), password,
-          options: { emailRedirectTo: window.location.origin },
-        });
-        if (error) throw error;
-        toast({ title: 'הבקשה התקבלה', description: data.session ? 'הגישה לחומר תלויה באישור החשבון ובשיוך לרשימת המתמחים.' : 'בדקו את תיבת המייל להשלמת האימות. אם כבר נרשמתם, השתמשו בהתחברות או באיפוס סיסמה.' });
-      }
-    } catch (err) {
-      toast({ title: 'שגיאה', description: err instanceof Error ? err.message : String(err), variant: 'destructive' });
-    } finally {
-      setLoading(false);
-    }
+      const { error } = await supabase.auth.signInWithOtp({ email: address, options: { shouldCreateUser: true } });
+      if (error) throw error;
+      setSentEmail(address); setToken('');
+      const time = Date.now(); setNow(time); setResendAt(time + 60_000);
+    } catch (error) { setError(errorMessage(error, false)); }
+    finally { inFlight.current = false; setBusy(false); }
+  };
+  const verifyCode = async (e: FormEvent) => {
+    e.preventDefault();
+    if (inFlight.current || !sentEmail) return;
+    if (!/^\d{6,8}$/.test(token)) { setError('הזינו את הקוד המלא מהמייל.'); return; }
+    inFlight.current = true; setBusy(true); setError('');
+    try {
+      const { data, error } = await supabase.auth.verifyOtp({ email: sentEmail, token, type: 'email' });
+      if (error) throw error;
+      if (!data.session) throw new Error('Missing session');
+      navigate('/', { replace: true });
+    } catch (error) { setError(errorMessage(error, true)); }
+    finally { inFlight.current = false; setBusy(false); }
   };
 
   return (
-    <motion.div
-      className="min-h-screen bg-background bg-grid-pattern flex items-center justify-center p-4"
-      dir="rtl"
-      initial={fadeUp.initial}
-      animate={fadeUp.animate}
-      exit={fadeUp.exit}
-      transition={fadeUp.transition}
-    >
-      {/* Radial glow behind the card */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-        <div className="w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px]" />
-      </div>
-
-      <div className="w-full max-w-md space-y-8 relative z-10">
+    <div className="min-h-screen bg-background bg-grid-pattern flex items-center justify-center p-4" dir="rtl">
+      <div className="w-full max-w-md space-y-6">
         <div className="text-center space-y-3">
-          <div className="mx-auto w-16 h-16 rounded-full bg-primary/15 flex items-center justify-center border border-primary/20 glow-border">
-            <GraduationCap className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-2xl font-bold text-foreground">סימולטור הרדמה</h1>
-          <p className="text-muted-foreground text-sm">איכילוב – הכנה למבחני בורד</p>
+          <GraduationCap className="mx-auto h-12 w-12 text-primary" />
+          <h1 className="text-2xl font-bold">כניסה ל־YouShellNotPass</h1>
+          <p className="text-muted-foreground">קוד חד־פעמי למייל — בלי לזכור סיסמה</p>
         </div>
-
-        <div className="glass-card rounded-2xl p-6 space-y-6 shadow-lg card-accent-top">
-          {isForgot ? (
-            <form onSubmit={handleForgotPassword} className="space-y-4">
-              <div className="text-center space-y-1">
-                <p className="font-semibold text-foreground">איפוס סיסמה</p>
-                <p className="text-xs text-muted-foreground">נשלח לך קישור לאיפוס למייל</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email-forgot">אימייל</Label>
-                <div className="relative">
-                  <Mail className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input id="email-forgot" autoComplete="email" type="email" placeholder="you@example.com" dir="ltr" className="pr-10 bg-muted/50 border-border"
-                    value={email} onChange={e => setEmail(e.target.value)} required />
-                </div>
-              </div>
-              <Button type="submit" className="w-full h-11 hover-glow" disabled={loading}>
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'שלח קישור לאיפוס'}
-              </Button>
-              <p className="text-center text-sm text-muted-foreground">
-                <button type="button" disabled={loading} onClick={() => setIsForgot(false)} className="text-primary font-medium hover:underline">
-                  חזור להתחברות
-                </button>
-              </p>
-            </form>
-          ) : (
-            <>
-              <form onSubmit={handleEmailAuth} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">אימייל</Label>
-                  <div className="relative">
-                    <Mail className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="email" autoComplete="email" type="email" placeholder="you@example.com" dir="ltr" className="pr-10 bg-muted/50 border-border"
-                      value={email} onChange={e => setEmail(e.target.value)} required />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">סיסמה</Label>
-                    {isLogin && (
-                      <button type="button" disabled={loading} onClick={() => { setIsForgot(true); setPassword(''); }} className="text-xs text-muted-foreground hover:text-primary hover:underline">
-                        שכחתי סיסמה
-                      </button>
-                    )}
-                  </div>
-                  <div className="relative">
-                    <Lock className="absolute right-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input id="password" autoComplete={isLogin ? 'current-password' : 'new-password'} type="password" placeholder="••••••••" dir="ltr" className="pr-10 bg-muted/50 border-border"
-                      value={password} onChange={e => setPassword(e.target.value)} required minLength={6} />
-                  </div>
-                </div>
-                <Button type="submit" className="w-full h-11 hover-glow" disabled={loading}>
-                  {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : isLogin ? 'התחבר' : 'הרשם'}
-                </Button>
-              </form>
-
-              <p className="text-sm text-muted-foreground">הכניסה מתבצעת באמצעות אימייל וסיסמה. אם נכנסתם בעבר דרך Google, בחרו ״שכחתי סיסמה״ עם אותה כתובת אימייל כדי להגדיר סיסמה לחשבון הקיים.</p>
-
-              <p className="text-center text-sm text-muted-foreground">
-                {isLogin ? 'אין לך חשבון?' : 'כבר יש לך חשבון?'}{' '}
-                <button type="button" disabled={loading} onClick={() => { setIsLogin(!isLogin); setPassword(''); }} className="text-primary font-medium hover:underline">
-                  {isLogin ? 'הרשם כאן' : 'התחבר כאן'}
-                </button>
-              </p>
-            </>
-          )}
+        <div className="glass-card rounded-2xl p-6 space-y-5 shadow-lg">
+          <form onSubmit={sentEmail ? verifyCode : sendCode} className="space-y-4">
+            {sentEmail ? <>
+              <p role="status" className="text-sm">בדקו את תיבת המייל של <bdi>{sentEmail}</bdi> והזינו את הקוד מההודעה האחרונה. בדקו גם בדואר הזבל.</p>
+              <Label htmlFor="otp">קוד האימות</Label>
+              <Input id="otp" autoFocus autoComplete="one-time-code" inputMode="numeric" type="text" dir="ltr" className="text-center text-xl tracking-widest" value={token} onChange={e => setToken(e.target.value.replace(/\s/g, ''))} maxLength={8} required disabled={busy} />
+            </> : <>
+              <Label htmlFor="email">כתובת המייל</Label>
+              <Input id="email" autoComplete="email" inputMode="email" type="email" dir="ltr" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required disabled={busy} />
+            </>}
+            {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
+            <Button type="submit" className="w-full h-11" disabled={busy}>
+              {busy ? <><Loader2 className="h-4 w-4 animate-spin ml-2" />{sentEmail ? 'מאמתים…' : 'שולחים…'}</> : sentEmail ? 'אימות וכניסה' : 'שלחו לי קוד'}
+            </Button>
+          </form>
+          {sentEmail && <div className="flex flex-wrap justify-between gap-2">
+            <Button variant="ghost" disabled={busy || remaining > 0} onClick={() => void sendCode()}>שליחה חוזרת{remaining > 0 ? ` בעוד ${remaining} שניות` : ''}</Button>
+            <Button variant="ghost" disabled={busy} onClick={() => { setSentEmail(null); setToken(''); setError(''); }}>שינוי כתובת המייל</Button>
+          </div>}
+          <div className="border-t pt-4 text-sm text-muted-foreground space-y-2">
+            <p><strong>כבר השתמשתם במערכת?</strong> הזינו את אותה כתובת שבה נרשמתם, גם אם נכנסתם בעבר דרך Google. ההתקדמות והחשבון הקיים נשמרים.</p>
+            <p><strong>זו הכניסה הראשונה?</strong> השתמשו בכתובת שמסרתם ברשימת המתמחים. אין צורך בהרשמה נפרדת או בהגדרת סיסמה. הגישה לחומר ניתנת לפי הרשאות החשבון לאחר אימות הקוד.</p>
+            <p>אם כתובתכם ברשימה שונה מהכתובת שבה השתמשתם בעבר, פנו לעידן לתיקון השיוך לפני יצירת חשבון נוסף.</p>
+          </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

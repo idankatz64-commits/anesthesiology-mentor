@@ -5,6 +5,7 @@ import { GraduationCap, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/contexts/AppContext";
 import { supabase } from "@/integrations/supabase/client";
+import EmailOtpNotice from "@/components/EmailOtpNotice";
 import { completeMyOnboarding, residentErrorMessage, RESIDENCY_YEARS, type UnlinkedReason } from "@/lib/residentRepository";
 
 // Shown after the approval gate to a resident whose roster link or onboarding
@@ -24,6 +25,7 @@ function Shell({ icon, title, children }: { icon: React.ReactNode; title: string
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md">
         <div className="mx-auto w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center mb-6">{icon}</div>
         <h1 className="text-2xl font-semibold text-foreground mb-3 text-center">{title}</h1>
+        <EmailOtpNotice />
         {children}
       </motion.div>
     </div>
@@ -39,7 +41,8 @@ function Notice({ title, body, hint, retryLabel }: { title: string; body: string
     <Shell icon={<ShieldAlert className="w-8 h-8 text-primary" />} title={title}>
       <p role="status" className="text-muted-foreground leading-relaxed mb-8 text-center">{body}</p>
       {hint && <p className="text-sm text-muted-foreground leading-relaxed mb-6 text-center">{hint}</p>}
-      <div className="flex justify-center gap-3">
+      <div className="flex flex-wrap justify-center gap-3">
+        <Button asChild variant="outline"><a href="/auth">כניסה עם קוד במייל</a></Button>
         <Button disabled={checking} onClick={async () => { setChecking(true); try { await refreshResident(); } finally { setChecking(false); } }}>{retryLabel}</Button>
         <Button variant="outline" onClick={() => supabase.auth.signOut()}>התנתקות</Button>
       </div>
