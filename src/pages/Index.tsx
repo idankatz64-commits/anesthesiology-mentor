@@ -27,6 +27,7 @@ import { resolveGate, resolveResidentGate } from "@/lib/accessGate";
 import { residentOnboardingEnabled } from "@/lib/featureFlags";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import ApprovalConnectionError from "@/components/ApprovalConnectionError";
 import { Clock } from "lucide-react";
 
 function FullScreenLoader() {
@@ -44,6 +45,8 @@ function FullScreenLoader() {
 
 /** Logged in, but not on the approved list. Shows a notice instead of an empty app. */
 function PendingApproval() {
+  const { approvalError } = useApp();
+  if (approvalError) return <ApprovalConnectionError onRetry={() => window.location.reload()} />;
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-background p-6" dir="rtl">
       <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="max-w-md text-center">

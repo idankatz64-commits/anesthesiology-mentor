@@ -14,7 +14,7 @@ import { resolveGate } from "@/lib/accessGate";
 const db = vi.hoisted(() => ({
   session: { user: { id: "user-a" } } as unknown,
   callback: null as null | ((event: string, session: unknown) => void),
-  approvalAnswers: [] as boolean[],
+  approvalAnswers: [] as (boolean | Error)[],
   approvalCalls: 0,
   claim: (async () => null) as () => Promise<unknown>,
   residentEnabled: false,
@@ -38,7 +38,7 @@ vi.mock("@/integrations/supabase/client", () => ({
       if (name !== "is_approved") return Promise.resolve({ data: null, error: null });
       const answer = db.approvalAnswers[Math.min(db.approvalCalls, db.approvalAnswers.length - 1)] ?? false;
       db.approvalCalls++;
-      return Promise.resolve({ data: answer, error: null });
+      return Promise.resolve({ data: answer instanceof Error ? null : answer, error: answer instanceof Error ? answer : null });
     },
     from: () => {
       const query = {
@@ -101,6 +101,18 @@ describe("membership claim vs the approval gate", () => {
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+  });
+
+  it("distinguishes failed approval lookup from a real denial and clears the error on recheck", async () => {
+    db.approvalAnswers = [new Error('network')];
+    await mount();
+    await waitFor(() => expect(latest.approved).toBe(false));
+    expect(latest.approvalError).toBe(true);
+    db.approvalAnswers = [true];
+    await act(async () => db.callback?.('SIGNED_IN', db.session));
+    await waitFor(() => expect(latest.approved).toBe(true));
+    expect(latest.approvalError).toBe(false);
+    expect(latest.roleResolved).toBe(true);
   });
 
   it("refreshes an unlinked resident after the OTP membership claim finishes", async () => {

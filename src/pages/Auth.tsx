@@ -18,6 +18,8 @@ export default function Auth() {
   const [sentEmail, setSentEmail] = useState<string | null>(null);
   const [token, setToken] = useState('');
   const [busy, setBusy] = useState(false);
+  const [sessionEmail, setSessionEmail] = useState<string | null>(null);
+  const codeInput = useRef<HTMLInputElement>(null);
   const [error, setError] = useState('');
   const [resendAt, setResendAt] = useState(0);
   const [now, setNow] = useState(Date.now());
@@ -30,6 +32,18 @@ export default function Auth() {
     const timer = window.setInterval(() => setNow(Date.now()), 1000);
     return () => window.clearInterval(timer);
   }, [resendAt]);
+
+  useEffect(() => {
+    let active = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (active) setSessionEmail(data.session?.user.email ?? null);
+    }).catch(() => {});
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (sentEmail && error && !busy) codeInput.current?.focus();
+  }, [sentEmail, error, busy]);
 
   const sendCode = async (e?: FormEvent) => {
     e?.preventDefault();
@@ -54,7 +68,11 @@ export default function Auth() {
       if (error) throw error;
       if (!data.session) throw new Error('Missing session');
       navigate('/', { replace: true });
-    } catch (error) { setError(errorMessage(error, true)); }
+    } catch (error) {
+      const code = (error as { code?: string })?.code;
+      if (code === 'otp_expired' || code === 'validation_failed') setToken('');
+      setError(errorMessage(error, true));
+    }
     finally { inFlight.current = false; setBusy(false); }
   };
 
@@ -67,11 +85,12 @@ export default function Auth() {
           <p className="text-muted-foreground">קוד חד־פעמי למייל — בלי לזכור סיסמה</p>
         </div>
         <div className="glass-card rounded-2xl p-6 space-y-5 shadow-lg">
+          {sessionEmail && <p className="text-sm">אתם כבר מחוברים כ־<bdi>{sessionEmail}</bdi>. אם הגישה חסומה, אימות בכתובת אחרת עלול ליצור חשבון נפרד ולא יתקן את השיוך. פנו לעידן לתיקון השיוך, או אמתו שוב את אותה כתובת.</p>}
           <form onSubmit={sentEmail ? verifyCode : sendCode} className="space-y-4">
             {sentEmail ? <>
               <p role="status" className="text-sm">בדקו את תיבת המייל של <bdi>{sentEmail}</bdi> והזינו את הקוד מההודעה האחרונה. בדקו גם בדואר הזבל.</p>
               <Label htmlFor="otp">קוד האימות</Label>
-              <Input id="otp" autoFocus autoComplete="one-time-code" inputMode="numeric" type="text" dir="ltr" className="text-center text-xl tracking-widest" value={token} onChange={e => setToken(e.target.value.replace(/\s/g, ''))} maxLength={8} required disabled={busy} />
+              <Input ref={codeInput} id="otp" autoFocus autoComplete="one-time-code" inputMode="numeric" type="text" dir="ltr" className="text-center text-xl tracking-widest" value={token} onChange={e => setToken(e.target.value.replace(/\D/g, '').slice(0, 8))} required disabled={busy} />
             </> : <>
               <Label htmlFor="email">כתובת המייל</Label>
               <Input id="email" autoComplete="email" inputMode="email" type="email" dir="ltr" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required disabled={busy} />

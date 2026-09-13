@@ -3,10 +3,11 @@ import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import Auth from '@/pages/Auth';
 
-const auth = vi.hoisted(() => ({ signInWithOtp: vi.fn(), verifyOtp: vi.fn(), onAuthStateChange: vi.fn() }));
+const auth = vi.hoisted(() => ({ signInWithOtp: vi.fn(), verifyOtp: vi.fn(), getSession: vi.fn(), onAuthStateChange: vi.fn() }));
 vi.mock('@/integrations/supabase/client', () => ({ supabase: { auth } }));
 beforeEach(() => {
   vi.clearAllMocks();
+  auth.getSession.mockResolvedValue({ data: { session: null } });
   auth.signInWithOtp.mockResolvedValue({ error: null });
   auth.verifyOtp.mockResolvedValue({ error: null, data: { session: { user: { id: 'existing' } } } });
   auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
@@ -37,7 +38,8 @@ it('keeps the code step after an expired code and explains the error in Hebrew',
   fireEvent.change(code, { target: { value: '123456' } });
   fireEvent.click(screen.getByRole('button', { name: 'אימות וכניסה' }));
   expect(await screen.findByRole('alert')).toHaveTextContent('פג תוקפו');
-  expect(screen.getByLabelText('קוד האימות')).toBeInTheDocument();
+  expect(code).toHaveValue('');
+  expect(code).toHaveFocus();
 });
 it('explains mail failures and does not pretend that a code was sent', async () => {
   auth.signInWithOtp.mockRejectedValue(new Error('network'));
@@ -83,4 +85,30 @@ it('blocks duplicate sends while the mail request is still pending', async () =>
   fireEvent.click(button); fireEvent.click(button);
   expect(auth.signInWithOtp).toHaveBeenCalledTimes(1);
   await act(async () => resolve({ error: null }));
+});
+
+it('normalizes invisible marks before limiting an eight-digit code', async () => {
+  setup(); const code = await requestCode();
+  expect(code).not.toHaveAttribute('maxlength', '8');
+  fireEvent.change(code, { target: { value: '\u200f1234\u00a05678\u200e' } });
+  expect(code).toHaveValue('12345678');
+  fireEvent.click(screen.getByRole('button', { name: 'אימות וכניסה' }));
+  await act(async () => {});
+  expect(auth.verifyOtp).toHaveBeenCalledWith({ email: 'resident@example.com', token: '12345678', type: 'email' });
+});
+it('preserves the code for a retry when verification has a network failure', async () => {
+  auth.verifyOtp.mockRejectedValue(new Error('network'));
+  setup(); const code = await requestCode();
+  fireEvent.change(code, { target: { value: '12345678' } });
+  fireEvent.click(screen.getByRole('button', { name: 'אימות וכניסה' }));
+  await screen.findByRole('alert');
+  expect(code).toHaveValue('12345678');
+  expect(code).toHaveFocus();
+});
+it('identifies an existing session without redirecting or sending email', async () => {
+  auth.getSession.mockResolvedValue({ data: { session: { user: { email: 'existing@example.com' } } } });
+  setup();
+  expect(await screen.findByText('existing@example.com')).toBeInTheDocument();
+  expect(screen.getByLabelText('כתובת המייל')).toBeInTheDocument();
+  expect(auth.signInWithOtp).not.toHaveBeenCalled();
 });

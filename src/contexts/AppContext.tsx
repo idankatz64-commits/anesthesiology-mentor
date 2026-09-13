@@ -92,6 +92,7 @@ interface AppContextType {
   // Result of the is_approved() RPC — null while that round trip is in flight.
   // The DB enforces this too; this only decides what the UI shows.
   approved: boolean | null;
+  approvalError: boolean;
   registerAttemptedQuestions: (ids: string[]) => void;
 
   navigate: (view: ViewId, param?: string | null) => void;
@@ -362,6 +363,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [userId, setUserId] = useState<string | null>(null);
   const [authResolved, setAuthResolved] = useState(false);
   const [approved, setApproved] = useState<boolean | null>(null);
+  const [approvalError, setApprovalError] = useState(false);
 
   // Linked active residents use the full learning UI with the bank already
   // scoped by server permissions. The old quiz-only restriction still applies
@@ -608,21 +610,22 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const ask = () =>
       supabase.rpc("is_approved", { _user_id: uid })
         .then(
-          ({ data, error }) => !error && data === true,
+          ({ data, error }) => ({ ok: !error && data === true, failed: !!error }),
           (error) => {
             console.warn("Failed to verify approval:", error);
-            return false;
+            return { ok: false, failed: true };
           },
         );
-    let ok = await ask();
+    let result = await ask();
     // A claim that never answers must not strand the gate on "loading" forever;
     // past the bound the first (fail-closed) answer stands.
-    if (!ok && claim && (await claimSettledWithin(claim, CLAIM_WAIT_MS))) ok = await ask();
+    if (!result.ok && claim && (await claimSettledWithin(claim, CLAIM_WAIT_MS))) result = await ask();
     // Identity/generation guard unchanged: nothing is written unless this is
     // still the current check for the still-current user.
     if (approvalGenRef.current !== gen || userIdRef.current !== uid) return;
-    setApproved(ok);
-    if (!ok) clearUnapprovedPrivateState();
+    setApproved(result.ok);
+    setApprovalError(result.failed);
+    if (!result.ok) clearUnapprovedPrivateState();
   }, [clearUnapprovedPrivateState]);
 
   // Admin edit notifications. Created only once the CURRENT approval is true
@@ -701,6 +704,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Access gate (lockdown 2026-08-14). Same function the RLS policies use,
         // so the screen can never disagree with what the database will hand over.
         setApproved(null);
+        setApprovalError(false);
         // Started before the gate is asked so loadApproval can wait on it, and
         // published on the ref so a token refresh inside the window waits too.
         const claimed = claimAcademyMembership();
@@ -793,6 +797,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setResidentResolved(true);
         setResidentError(null);
         setApproved(false);
+        setApprovalError(false);
         setLoading(false);
         setLoadingSavedSession(false);
         // Signed out — drop the cached question bank with the session.
@@ -825,6 +830,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         // Close the outer gate before this verification; a false/error result
         // quarantines all private state, while a true result keeps this session.
         setApproved(null);
+        setApprovalError(false);
         loadApproval(userId, ++approvalGenRef.current);
         scopeInputsRef.current = { uid: userId, resident: null, residentKnown: !residentOnboardingEnabled() };
         setScopeReady(false);
@@ -1906,6 +1912,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     userId,
     authResolved,
     approved,
+    approvalError,
     registerAttemptedQuestions,
     invalidateQuestions,
     navigate,

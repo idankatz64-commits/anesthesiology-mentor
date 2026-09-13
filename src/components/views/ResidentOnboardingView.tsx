@@ -34,7 +34,7 @@ function Shell({ icon, title, children }: { icon: React.ReactNode; title: string
 
 // Unlinked notice and the fail-closed "could not verify" screen share one
 // shape: explanation, a retry that re-reads resident_me, and sign-out.
-function Notice({ title, body, hint, retryLabel }: { title: string; body: string; hint?: string; retryLabel: string }) {
+function Notice({ title, body, hint, retryLabel, allowCode = false, reloadRequired = false }: { title: string; body: string; hint?: string; retryLabel: string; allowCode?: boolean; reloadRequired?: boolean }) {
   const { refreshResident } = useApp();
   const [checking, setChecking] = useState(false);
   return (
@@ -42,8 +42,8 @@ function Notice({ title, body, hint, retryLabel }: { title: string; body: string
       <p role="status" className="text-muted-foreground leading-relaxed mb-8 text-center">{body}</p>
       {hint && <p className="text-sm text-muted-foreground leading-relaxed mb-6 text-center">{hint}</p>}
       <div className="flex flex-wrap justify-center gap-3">
-        <Button asChild variant="outline"><a href="/auth">כניסה עם קוד במייל</a></Button>
-        <Button disabled={checking} onClick={async () => { setChecking(true); try { await refreshResident(); } finally { setChecking(false); } }}>{retryLabel}</Button>
+        {allowCode && <Button asChild variant="outline"><a href="/auth">כניסה עם קוד במייל</a></Button>}
+        {reloadRequired ? <Button asChild><a href="/">טעינה מחדש לאחר תיקון השיוך</a></Button> : <Button disabled={checking} onClick={async () => { setChecking(true); try { await refreshResident(); } finally { setChecking(false); } }}>{retryLabel}</Button>}
         <Button variant="outline" onClick={() => supabase.auth.signOut()}>התנתקות</Button>
       </div>
     </Shell>
@@ -113,6 +113,10 @@ export default function ResidentOnboardingView() {
       />
     );
   }
-  if (!resident.linked) { const text = UNLINKED[resident.reason ?? "NOT_LINKED"]; return <Notice title={text.title} body={text.body} retryLabel="בדיקה מחדש" />; }
+  if (!resident.linked) {
+    const text = UNLINKED[resident.reason ?? "NOT_LINKED"];
+    const needsSupport = resident.reason === "NOT_ON_ROSTER" || resident.reason === "EMAIL_ALREADY_LINKED";
+    return <Notice title={text.title} body={text.body} hint={needsSupport ? "אתם כבר מחוברים. פנו לעידן עם כתובת החשבון לתיקון השיוך לפני יצירת חשבון נוסף. לאחר התיקון טענו מחדש את האפליקציה." : undefined} reloadRequired={needsSupport} allowCode={!needsSupport} retryLabel="בדיקה מחדש" />;
+  }
   return <OnboardingForm />;
 }

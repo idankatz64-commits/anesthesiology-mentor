@@ -81,9 +81,16 @@ describe('resident onboarding screen', () => {
     setup({ linked: false, reason, member: null });
     expect(screen.getByRole('status')).toHaveTextContent(text);
     expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'כניסה עם קוד במייל' })).toHaveAttribute('href', '/auth');
-    fireEvent.click(screen.getByRole('button', { name: /בדיקה מחדש/ }));
-    await waitFor(() => expect(refreshResident).toHaveBeenCalledTimes(1));
+    if (reason === 'NOT_ON_ROSTER' || reason === 'EMAIL_ALREADY_LINKED') {
+      expect(screen.queryByRole('link', { name: 'כניסה עם קוד במייל' })).not.toBeInTheDocument();
+      expect(screen.getByText(/לפני יצירת חשבון נוסף/)).toBeInTheDocument();
+    } else expect(screen.getByRole('link', { name: 'כניסה עם קוד במייל' })).toHaveAttribute('href', '/auth');
+    if (reason === 'NOT_ON_ROSTER' || reason === 'EMAIL_ALREADY_LINKED') {
+      expect(screen.getByRole('link', { name: /טעינה מחדש לאחר תיקון/ })).toHaveAttribute('href', '/');
+    } else {
+      fireEvent.click(screen.getByRole('button', { name: /בדיקה מחדש/ }));
+      await waitFor(() => expect(refreshResident).toHaveBeenCalledTimes(1));
+    }
     fireEvent.click(screen.getByRole('button', { name: /התנתקות/ }));
     await waitFor(() => expect(auth.signOut).toHaveBeenCalled());
   });
