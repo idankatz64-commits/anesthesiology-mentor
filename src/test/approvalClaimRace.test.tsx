@@ -17,7 +17,10 @@ const db = vi.hoisted(() => ({
   approvalAnswers: [] as boolean[],
   approvalCalls: 0,
   claim: (async () => null) as () => Promise<unknown>,
+  residentEnabled: false,
+  residentAnswers: [] as unknown[],
 }));
+vi.mock("@/lib/featureFlags", () => ({ residentOnboardingEnabled: () => db.residentEnabled }));
 
 vi.mock("@/integrations/supabase/client", () => ({
   supabase: {
@@ -31,6 +34,7 @@ vi.mock("@/integrations/supabase/client", () => ({
       },
     },
     rpc: (name: string) => {
+      if (name === "resident_me") return Promise.resolve({ data: db.residentAnswers.shift(), error: null });
       if (name !== "is_approved") return Promise.resolve({ data: null, error: null });
       const answer = db.approvalAnswers[Math.min(db.approvalCalls, db.approvalAnswers.length - 1)] ?? false;
       db.approvalCalls++;
@@ -91,10 +95,22 @@ describe("membership claim vs the approval gate", () => {
     db.approvalAnswers = [true];
     db.approvalCalls = 0;
     db.claim = async () => null;
+    db.residentEnabled = false;
+    db.residentAnswers = [];
   });
   afterEach(() => {
     cleanup();
     vi.useRealTimers();
+  });
+
+  it("refreshes an unlinked resident after the OTP membership claim finishes", async () => {
+    db.residentEnabled = true;
+    db.residentAnswers = [{ linked: false, reason: 'NOT_LINKED', member: null }, { linked: true, reason: null, member: { id: 'member-a', email: 'a@example.com', access_level: 'full', status: 'active' } }];
+    let finish!: (value: unknown) => void;
+    db.claim = () => new Promise(resolve => { finish = resolve; });
+    await mount();
+    await act(async () => finish(membership));
+    await waitFor(() => expect(latest.resident?.linked).toBe(true));
   });
 
   it("opens the app on the FIRST load when the claim links the roster row after the gate already asked", async () => {

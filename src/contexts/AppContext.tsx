@@ -504,9 +504,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   // Fail closed: a failed lookup drops the previous resident privilege and the
   // gate shows the unavailable (retry / sign-out) screen until a fresh success.
   // The scope still settles (as non-national) so an editor's bank can load.
-  const loadResident = useCallback((uid: string, gen: number) =>
-    fetchMyResident()
-      .then((r) => {
+  const loadResident = useCallback((uid: string, gen: number) => {
+    const claim = pendingClaimRef.current;
+    return fetchMyResident()
+      .then(async (r) => {
+        // The first OTP can link the roster while this read is already in flight.
+        // Re-read server state after that claim instead of showing a stale block.
+        if (!r.linked && claim && (await claimSettledWithin(claim, 8000))) {
+          if (residentGenRef.current !== gen) return;
+          r = await fetchMyResident();
+        }
         if (residentGenRef.current !== gen) return;
         setResident(r);
         setResidentError(null);
@@ -522,7 +529,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         setResidentResolved(true);
         scopeInputsRef.current = { ...scopeInputsRef.current, uid, resident: null, residentKnown: true };
         settleScope();
-      }), [settleScope]);
+      });
+  }, [settleScope]);
 
   // Role lookup shared by hydration and token refresh. Fails closed: an error
   // (or an out-of-date result) leaves no admin/editor privilege behind, so a
