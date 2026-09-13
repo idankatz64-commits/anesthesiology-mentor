@@ -2,6 +2,7 @@
 
 Status: deployed to LIVE on 2026-09-13. The private helper and both email templates are installed; public Auth settings confirm `mailer_autoconfirm=false`. Four authorized test emails were received in the owner's Gmail inbox: two QA and two LIVE. New and returning account OTP login succeeded in both environments. No trainee emails were sent.
 
+Follow-up 2026-09-13: manual-audit findings C-01/C-02/C-05/C-06 were corrected and deployed in `dpl_HRE8Xg7F3FMF7gwkoomihgB82i89` (source `fbdb9cc`). See [audit fixes and remaining gaps](email-otp-audit-fixes.md). The original mailbox evidence below is unchanged; no additional emails were sent.
 Verified on 2026-09-13: 691 tests across 86 files passed; TypeScript, changed-source ESLint (zero errors, four existing AppContext warnings), production build and synthetic SQL checks passed. The updated three-page Hebrew guide was visually inspected. QA uses six-digit codes and a 3,600-second expiry; the real LIVE messages used eight-digit codes, accepted by the UI. Browser responsive capture remained unreliable, so narrow-screen visual acceptance is still pending.
 
 Hosted QA revealed a second race: resident state could be read before the membership claim completed, leaving a stale NOT_LINKED screen. A failing regression test reproduced it. `loadResident` now re-reads after a successful bounded pending claim, retaining generation guards and server authorization. Independent review passed, and the hosted QA retry reached onboarding automatically without clicking refresh.
