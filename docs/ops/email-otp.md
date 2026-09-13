@@ -1,8 +1,16 @@
 # Email OTP migration — 2026-09-13
 
-Status: implementation and local validation complete; QA database helper and both QA email templates updated. Real email receipt/verification and LIVE cutover are pending. Do not treat this document as deployment evidence.
+Status: deployed to LIVE on 2026-09-13. The private helper and both email templates are installed; public Auth settings confirm `mailer_autoconfirm=false`. Four authorized test emails were received in the owner's Gmail inbox: two QA and two LIVE. New and returning account OTP login succeeded in both environments. No trainee emails were sent.
 
-Verified on 2026-09-13: 690 tests across 86 files passed; TypeScript, changed-source ESLint, production build and synthetic SQL checks passed. The updated three-page Hebrew guide was visually inspected. QA dashboard shows Confirm email enabled, six-digit codes and a 3,600-second expiry; these provider settings were read without changing them. Browser responsive capture remained clipped, so narrow-screen visual acceptance is still pending.
+Verified on 2026-09-13: 691 tests across 86 files passed; TypeScript, changed-source ESLint (zero errors, four existing AppContext warnings), production build and synthetic SQL checks passed. The updated three-page Hebrew guide was visually inspected. QA uses six-digit codes and a 3,600-second expiry; the real LIVE messages used eight-digit codes, accepted by the UI. Browser responsive capture remained unreliable, so narrow-screen visual acceptance is still pending.
+
+Hosted QA revealed a second race: resident state could be read before the membership claim completed, leaving a stale NOT_LINKED screen. A failing regression test reproduced it. `loadResident` now re-reads after a successful bounded pending claim, retaining generation guards and server authorization. Independent review passed, and the hosted QA retry reached onboarding automatically without clicking refresh.
+
+LIVE evidence: deployment `dpl_8APMsCHTHJzd6S6pk3s3P5yC4w14` is Ready at https://anesthesiology-mentor.vercel.app. Bundle `index-CTopAONv.js` SHA-256 `ff0c81f5066aa357dc12563c24d297ba007ca2a5e07a9d07d5fc489db463731d` matches the local prebuilt artifact. Both feature flags were explicitly true during build; the bundle contains the LIVE ref and no QA ref. Source commits: `e27ca35` and `86b6b00`, pushed to the existing branch.
+
+QA simulated the previously auto-confirmed condition only on the controlled test account, then verified a real subsequent email OTP and automatic matching-roster linkage with only `open` scope. LIVE new-user state had no confirmed email or session before OTP; both successful logins retained the same test account ID. Reuse of a consumed LIVE code returned 403/otp_expired. The original 37 LIVE user IDs have the same hash before/after; only the controlled LIVE test account was added, without learning approval. No real account was manually verified or linked.
+
+Remaining acceptance limits: individual affected trainees have not yet tried the new method; address mismatches still need identity review; a Google-only identity transition was not exercised with a real mailbox; mobile visual acceptance remains open. These limits do not mean those flows failed, and successful synthetic accounts do not prove every user's mailbox delivers.
 
 ## User journey
 
